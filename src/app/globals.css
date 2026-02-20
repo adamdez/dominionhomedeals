@@ -1,0 +1,96 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ================================================================
+   DOMINION HOMES — Design System
+   Warm · Trustworthy · Pacific Northwest
+   ================================================================ */
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    @apply bg-stone-50 text-ink-600 font-body;
+    overflow-x: hidden;
+  }
+
+  ::selection {
+    background: rgba(45, 90, 58, 0.12);
+    color: #1B3A25;
+  }
+
+  *:focus-visible {
+    @apply outline-none ring-2 ring-forest-400 ring-offset-2 ring-offset-stone-50;
+  }
+
+  /* Smooth text rendering for display font */
+  .font-display {
+    font-feature-settings: "liga" 1, "kern" 1;
+  }
+}
+
+@layer components {
+  /* Primary CTA — forest green, warm and confident */
+  .btn-primary {
+    @apply relative inline-flex items-center justify-center
+           px-7 py-3.5 font-body font-semibold text-white text-[15px]
+           bg-forest-500 rounded-xl
+           transition-all duration-200 ease-out
+           hover:bg-forest-600 hover:shadow-elevated
+           active:scale-[0.98]
+           focus-visible:ring-2 focus-visible:ring-forest-400 focus-visible:ring-offset-2;
+  }
+
+  /* Secondary CTA — outlined */
+  .btn-secondary {
+    @apply inline-flex items-center justify-center
+           px-7 py-3.5 font-body font-semibold text-forest-600 text-[15px]
+           bg-transparent border-2 border-forest-200 rounded-xl
+           transition-all duration-200 ease-out
+           hover:border-forest-500 hover:bg-forest-50
+           active:scale-[0.98];
+  }
+
+  /* Amber accent button — for urgency */
+  .btn-amber {
+    @apply inline-flex items-center justify-center
+           px-7 py-3.5 font-body font-semibold text-ink-700 text-[15px]
+           bg-amber-300 rounded-xl
+           transition-all duration-200 ease-out
+           hover:bg-amber-400 hover:shadow-soft
+           active:scale-[0.98];
+  }
+
+  /* Section spacing */
+  .section-wrap {
+    @apply mx-auto max-w-6xl px-5 sm:px-6 lg:px-8;
+    padding-top: clamp(3.5rem, 7vw, 7rem);
+    padding-bottom: clamp(3.5rem, 7vw, 7rem);
+  }
+
+  /* Trust badge */
+  .trust-badge {
+    @apply inline-flex items-center gap-2 px-3.5 py-1.5
+           bg-forest-50 border border-forest-200 rounded-full
+           text-xs font-semibold text-forest-600 tracking-wide;
+  }
+
+  /* Card hover */
+  .card-lift {
+    @apply transition-all duration-200;
+  }
+  .card-lift:hover {
+    @apply -translate-y-0.5 shadow-elevated;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}
