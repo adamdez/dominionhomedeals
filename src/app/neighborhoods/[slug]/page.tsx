@@ -456,7 +456,7 @@ export function generateStaticParams() {
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params
-  const data = neighborhoods[params.slug]
+  const data = neighborhoods[slug]
   if (!data) return {}
   const location = `${data.name}, ${data.state}`
   return {
@@ -476,7 +476,8 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 /*  Page Component                                                    */
 /* ------------------------------------------------------------------ */
 
-export default function NeighborhoodPage({ params }: { params: { slug: string } }) {
+export default async function NeighborhoodPage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params
   const data = neighborhoods[params.slug]
   if (!data) notFound()
 
