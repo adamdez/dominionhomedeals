@@ -7,6 +7,7 @@ import { Footer } from "@/components/layout/Footer";
 import { SITE } from "@/lib/constants";
 import type { MetadataRoute } from 'next'
 import { LocalBusinessSchema, FAQSchema } from './structured-data'
+import { GoogleAnalytics } from './analytics'
 
 const playfair = Playfair_Display({
   subsets: ["latin"],
@@ -114,6 +115,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="icon" href="/icons/favicon.ico" sizes="any" />
       </head>
       <body className="min-h-screen bg-stone-50 font-body text-ink-600 antialiased">
+        <GoogleAnalytics />
         <Header />
         <main id="main-content">{children}</main>
         <LocalBusinessSchema />
