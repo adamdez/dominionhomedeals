@@ -454,7 +454,8 @@ export function generateStaticParams() {
   return Object.keys(neighborhoods).map((slug) => ({ slug }))
 }
 
-export function generateMetadata({ params }: { params: { slug: string } }): Metadata {
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+  const { slug } = await params
   const data = neighborhoods[params.slug]
   if (!data) return {}
   const location = `${data.name}, ${data.state}`
