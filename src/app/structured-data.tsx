@@ -4,7 +4,7 @@ export function LocalBusinessSchema() {
     '@type': 'LocalBusiness',
     name: 'Dominion Homes, LLC',
     description: 'We buy houses for cash in Spokane County WA and Kootenai County ID. Fair cash offers in 24 hours, close in as fast as 2 weeks. No agents, no commissions, no repairs.',
-    url: 'https://www.dominionhomedeals.com',
+    url: 'https://dominionhomedeals.com',
     telephone: '+1-208-625-8078',
     email: 'offers@dominionhomedeals.com',
     address: {
