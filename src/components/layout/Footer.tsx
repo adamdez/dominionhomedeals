@@ -23,8 +23,8 @@ export function Footer() {
               <span className="font-display text-lg text-stone-100">Dominion Homes</span>
             </div>
             <p className="text-sm leading-relaxed text-stone-400">
-              Your local cash home buyers serving Spokane County, WA and
-              Kootenai County, ID. Based in Post Falls.
+              Your local cash home buyers serving Spokane County, WA and Kootenai
+              County, ID. Based in Post Falls.
             </p>
             <p className="mt-3 text-sm font-semibold text-amber-400">{SITE.phone}</p>
           </div>
@@ -38,9 +38,14 @@ export function Footer() {
                 { label: "How It Works", href: "/how-we-work" },
                 { label: "About Us", href: "/about" },
                 { label: "Areas We Serve", href: "/neighborhoods" },
+                { label: "Privacy Policy", href: "/privacy-policy" },
+                { label: "Terms & Conditions", href: "/terms-and-conditions" },
               ].map((link) => (
                 <li key={link.href}>
-                  <Link href={link.href} className="text-sm text-stone-400 hover:text-amber-400 transition-colors">
+                  <Link
+                    href={link.href}
+                    className="text-sm text-stone-400 hover:text-amber-400 transition-colors"
+                  >
                     {link.label}
                   </Link>
                 </li>
@@ -54,7 +59,10 @@ export function Footer() {
             <ul className="space-y-2">
               {topNeighborhoods.slice(0, 8).map((n) => (
                 <li key={n.slug}>
-                  <Link href={`/neighborhoods/${n.slug}`} className="text-sm text-stone-400 hover:text-amber-400 transition-colors">
+                  <Link
+                    href={`/neighborhoods/${n.slug}`}
+                    className="text-sm text-stone-400 hover:text-amber-400 transition-colors"
+                  >
                     {n.name}, {n.state}
                   </Link>
                 </li>
@@ -92,17 +100,26 @@ export function Footer() {
           <div className="space-y-2 text-[11px] leading-relaxed text-stone-500">
             <p>
               © {year} {SITE.legalName}. All rights reserved.
+              {" · "}
+              <Link href="/privacy-policy" className="underline hover:text-stone-300 transition-colors">
+                Privacy Policy
+              </Link>
+              {" · "}
+              <Link href="/terms-and-conditions" className="underline hover:text-stone-300 transition-colors">
+                Terms &amp; Conditions
+              </Link>
             </p>
             <p>
               Dominion Homes, LLC is a real estate investment company. We are
               principals — not licensed real estate agents or brokers. We buy
               properties directly. We are not affiliated with any government
-              agency. This is not a solicitation for listings. 
+              agency. This is not a solicitation for listings.
             </p>
             <p>
-              Serving Spokane County, WA and Kootenai County, ID. Title
-              services provided by WFG National Title Insurance Company, Eastern WA. https://wfgtitle.com/eastern-washington/ &
-              North Idaho Title   https://www.northidahotitle.com/
+              Serving Spokane County, WA and Kootenai County, ID. Title services
+              provided by WFG National Title Insurance Company, Eastern WA.
+              https://wfgtitle.com/eastern-washington/ &amp; North Idaho Title
+              https://www.northidahotitle.com/
             </p>
           </div>
         </div>
