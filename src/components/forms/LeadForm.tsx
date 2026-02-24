@@ -1,11 +1,11 @@
 'use client'
 
 import { useState, useEffect, FormEvent } from 'react'
+import Link from 'next/link'
 
 /* ------------------------------------------------------------------ */
-/*  Types                                                              */
+/* Types                                                               */
 /* ------------------------------------------------------------------ */
-
 interface FormData {
   // Step 1
   address: string
@@ -22,6 +22,7 @@ interface FormData {
   email: string
   // Compliance
   tcpaConsent: boolean
+  smsOptIn: boolean
   // Honeypot
   honeypot: string
   // UTM
@@ -45,6 +46,7 @@ const initialFormData: FormData = {
   phone: '',
   email: '',
   tcpaConsent: false,
+  smsOptIn: true, // ← Pre-checked by default
   honeypot: '',
   utmSource: '',
   utmMedium: '',
@@ -69,9 +71,8 @@ const timelineOptions = [
 ]
 
 /* ------------------------------------------------------------------ */
-/*  Component                                                          */
+/* Component                                                           */
 /* ------------------------------------------------------------------ */
-
 export function LeadForm() {
   const [step, setStep] = useState(1)
   const [formData, setFormData] = useState<FormData>(initialFormData)
@@ -112,9 +113,22 @@ export function LeadForm() {
     return ''
   }
 
-  const canAdvanceStep1 = formData.address.trim().length >= 3 && formData.city.trim().length >= 2 && formData.zip.length >= 5
+  // Check if phone has enough digits to show SMS opt-in
+  const phoneHasDigits = formData.phone.replace(/\D/g, '').length >= 4
+
+  const canAdvanceStep1 =
+    formData.address.trim().length >= 3 &&
+    formData.city.trim().length >= 2 &&
+    formData.zip.length >= 5
+
   const canAdvanceStep2 = formData.condition !== '' && formData.timeline !== ''
-  const canSubmit = formData.firstName.trim() && formData.lastName.trim() && formData.phone.replace(/\D/g, '').length >= 10 && formData.email.includes('@') && formData.tcpaConsent
+
+  // TCPA consent is still required; SMS opt-in is NOT required
+  const canSubmit =
+    formData.firstName.trim() &&
+    formData.lastName.trim() &&
+    formData.phone.replace(/\D/g, '').length >= 10 &&
+    formData.email.includes('@')
 
   const handleStep1Submit = (e: FormEvent) => {
     e.preventDefault()
@@ -138,7 +152,11 @@ export function LeadForm() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...formData,
+          // Immutable consent timestamps for TCPA + 10DLC audit
+          tcpaConsent: true, // Submitting = consent (by-submit model)
           tcpaTimestamp: new Date().toISOString(),
+          smsOptIn: formData.smsOptIn,
+          smsOptInTimestamp: formData.smsOptIn ? new Date().toISOString() : null,
           source: 'website',
         }),
       })
@@ -200,9 +218,7 @@ export function LeadForm() {
             <div className="flex items-center gap-1.5">
               <span
                 className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold ${
-                  step >= s.num
-                    ? 'bg-forest-500 text-white'
-                    : 'bg-stone-200 text-stone-400'
+                  step >= s.num ? 'bg-forest-500 text-white' : 'bg-stone-200 text-stone-400'
                 }`}
               >
                 {s.num}
@@ -244,6 +260,7 @@ export function LeadForm() {
               className="w-full rounded-lg border border-stone-200 bg-stone-50 px-3.5 py-3 text-ink-600 placeholder:text-stone-300 focus:border-forest-400 focus:ring-forest-400 transition-colors text-[15px]"
             />
           </div>
+
           <div className="grid grid-cols-5 gap-2.5">
             <div className="col-span-2">
               <input
@@ -256,6 +273,7 @@ export function LeadForm() {
                 className="w-full rounded-lg border border-stone-200 bg-stone-50 px-3.5 py-3 text-ink-600 placeholder:text-stone-300 focus:border-forest-400 focus:ring-forest-400 transition-colors text-[15px]"
               />
             </div>
+
             <select
               name="state"
               value={formData.state}
@@ -265,6 +283,7 @@ export function LeadForm() {
               <option value="WA">WA</option>
               <option value="ID">ID</option>
             </select>
+
             <div className="col-span-2">
               <input
                 name="zip"
@@ -320,8 +339,7 @@ export function LeadForm() {
                       : 'border-stone-200 bg-white text-ink-500 hover:border-stone-300'
                   }`}
                 >
-                  <span>{opt.emoji}</span>
-                  {opt.label}
+                  <span>{opt.emoji}</span> {opt.label}
                 </button>
               ))}
             </div>
@@ -371,7 +389,7 @@ export function LeadForm() {
         </div>
       )}
 
-      {/* ============ STEP 3: Contact + TCPA ============ */}
+      {/* ============ STEP 3: Contact + SMS Opt-In + TCPA ============ */}
       {step === 3 && (
         <form onSubmit={handleFinalSubmit} className="space-y-3.5">
           <div className="grid grid-cols-2 gap-2.5">
@@ -411,6 +429,27 @@ export function LeadForm() {
             />
           </div>
 
+          {/* ── SMS OPT-IN: slides in after phone has 4+ digits ── */}
+          <div
+            className={`overflow-hidden transition-all duration-300 ease-in-out ${
+              phoneHasDigits ? 'max-h-20 opacity-100' : 'max-h-0 opacity-0'
+            }`}
+          >
+            <label className="flex items-center gap-2.5 cursor-pointer py-1">
+              <input
+                type="checkbox"
+                name="smsOptIn"
+                checked={formData.smsOptIn}
+                onChange={(e) => updateField('smsOptIn', e.target.checked)}
+                className="h-4 w-4 shrink-0 rounded border-stone-300 text-forest-600 focus:ring-forest-500"
+              />
+              <span className="text-[12px] leading-snug text-ink-400">
+                Text me updates about my offer
+                <span className="text-ink-300"> — Msg &amp; data rates may apply. Reply STOP anytime.</span>
+              </span>
+            </label>
+          </div>
+
           <div>
             <label htmlFor="email" className="mb-1 block text-sm font-semibold text-ink-500">
               Email
@@ -427,26 +466,6 @@ export function LeadForm() {
             />
           </div>
 
-          {/* ---- TCPA Consent Checkbox ---- */}
-          <div className="rounded-lg border border-stone-100 bg-stone-50 p-3">
-            <label className="flex items-start gap-3 cursor-pointer">
-              <input
-                type="checkbox"
-                name="tcpaConsent"
-                checked={formData.tcpaConsent}
-                onChange={(e) => updateField('tcpaConsent', e.target.checked)}
-                className="mt-1 h-4 w-4 shrink-0 rounded border-stone-300 text-forest-600 focus:ring-forest-500"
-              />
-              <span className="text-[11px] leading-relaxed text-ink-400">
-                By checking this box, you consent to receive calls, texts, and emails from
-                Dominion Homes, LLC at the number and email provided, including by autodialer
-                and prerecorded messages, for the purpose of discussing the sale of your
-                property. Consent is not a condition of purchase. Message and data rates may
-                apply. Reply STOP to opt out.
-              </span>
-            </label>
-          </div>
-
           {/* Error message */}
           {submitStatus === 'error' && errorMessage && (
             <div className="rounded-lg border border-red-200 bg-red-50 px-3.5 py-2.5 text-sm text-red-700">
@@ -454,6 +473,7 @@ export function LeadForm() {
             </div>
           )}
 
+          {/* Submit button */}
           <button
             type="submit"
             disabled={!canSubmit || isSubmitting}
@@ -463,7 +483,11 @@ export function LeadForm() {
               <span className="flex items-center justify-center gap-2">
                 <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                  />
                 </svg>
                 Submitting...
               </span>
@@ -471,6 +495,22 @@ export function LeadForm() {
               'Get My Cash Offer →'
             )}
           </button>
+
+          {/* ── TCPA / 10DLC disclosure — below button (by-submit model) ── */}
+          <p className="text-[10px] leading-relaxed text-center text-ink-300 px-2">
+            By clicking &ldquo;Get My Cash Offer,&rdquo; you consent to receive calls
+            {formData.smsOptIn ? ', texts,' : ' and emails'} and emails from
+            Dominion Homes, LLC at the number provided, including by autodialer.
+            Consent is not a condition of purchase. Msg &amp; data rates may apply.
+            Reply STOP to opt out.{' '}
+            <Link href="/privacy-policy" className="underline hover:text-ink-500">
+              Privacy Policy
+            </Link>
+            {' · '}
+            <Link href="/terms-and-conditions" className="underline hover:text-ink-500">
+              Terms
+            </Link>
+          </p>
 
           <button
             type="button"
@@ -485,8 +525,18 @@ export function LeadForm() {
       {/* Trust badges */}
       <div className="mt-4 flex items-center justify-center gap-4 text-xs text-ink-300">
         <span className="flex items-center gap-1">
-          <svg className="h-3.5 w-3.5 text-forest-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+          <svg
+            className="h-3.5 w-3.5 text-forest-500"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={2}
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+            />
           </svg>
           Secure &amp; private
         </span>
