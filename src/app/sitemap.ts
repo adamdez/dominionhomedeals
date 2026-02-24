@@ -9,7 +9,7 @@ const neighborhoods = [
 ]
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const baseUrl = 'https://www.dominionhomedeals.com'
+  const baseUrl = 'https://dominionhomedeals.com'
 
   const staticPages = [
     { url: baseUrl, lastModified: new Date(), changeFrequency: 'weekly' as const, priority: 1.0 },
