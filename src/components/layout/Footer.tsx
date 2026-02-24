@@ -101,7 +101,8 @@ export function Footer() {
             </p>
             <p>
               Serving Spokane County, WA and Kootenai County, ID. Title
-              services provided by WFG National Title Insurance Company, Eastern WA.
+              services provided by WFG National Title Insurance Company, Eastern WA. https://wfgtitle.com/eastern-washington/ &
+              North Idaho Title   https://www.northidahotitle.com/
             </p>
           </div>
         </div>
