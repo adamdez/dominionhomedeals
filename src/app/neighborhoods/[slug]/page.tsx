@@ -462,11 +462,11 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   return {
     title: `Cash for Houses ${location} — Sell Fast | Dominion Homes`,
     description: `Get a fair cash offer on your ${location} home in 24 hours. No agents, no commissions, no repairs. Local team based in Post Falls, ID. Call 208-625-8078.`,
-    alternates: { canonical: `https://dominionhomedeals.com/neighborhoods/${slug}` },
+    alternates: { canonical: `https://www.dominionhomedeals.com/neighborhoods/${slug}` },
     openGraph: {
       title: `Sell Your ${data.name} Home for Cash | Dominion Homes`,
       description: `We buy houses in ${data.name} in any condition. Fair cash offer in 24 hours, close in as fast as 2 weeks. ${data.county}.`,
-      url: `https://dominionhomedeals.com/neighborhoods/${slug}`,
+      url: `https://www.dominionhomedeals.com/neighborhoods/${slug}`,
       type: 'website',
     },
   }
@@ -495,7 +495,7 @@ export default async function NeighborhoodPage({ params }: { params: Promise<{ s
             name: 'Dominion Homes, LLC',
             description: `Cash home buyers in ${data.name}, ${data.county}, ${data.state}. We buy houses in any condition.`,
             telephone: '+1-208-625-8078',
-            url: `https://dominionhomedeals.com/neighborhoods/${slug}`,
+            url: `https://www.dominionhomedeals.com/neighborhoods/${slug}`,
             address: {
               '@type': 'PostalAddress',
               addressLocality: 'Post Falls',

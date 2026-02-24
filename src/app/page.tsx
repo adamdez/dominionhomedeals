@@ -5,6 +5,7 @@ import { FadeIn } from "@/components/animations/FadeIn";
 import { Testimonials } from "@/components/sections/Testimonials";
 import { Situations } from "@/components/sections/Situations";
 import { SITE, PROCESS_STEPS, TRUST_STATS, TEAM } from "@/lib/constants";
+import { FAQSchema } from "./structured-data";
 
 export const metadata: Metadata = {
   title: "Sell Your House Fast for Cash in Spokane & CDA | Dominion Homes",
@@ -15,6 +16,7 @@ export const metadata: Metadata = {
 export default function HomePage() {
   return (
     <>
+      <FAQSchema />
       {/* ======== HERO ======== */}
       <section className="relative overflow-hidden pt-28 pb-14 sm:pt-36 sm:pb-20 lg:pt-40 lg:pb-24">
         {/* Warm gradient background */}

@@ -6,7 +6,7 @@ export const SITE = {
   tagline: "Your Local Cash Home Buyers — Spokane & CDA",
   description:
     "Local Spokane and Coeur d'Alene team that buys houses for cash in any condition. No commissions, no repairs, close on your timeline. We meet you in person.",
-  url: "https://dominionhomedeals.com",
+  url: "https://www.dominionhomedeals.com",
   phone: "208-625-8078", 
   email: "offers@dominionhomedeals.com", 
   address: {
