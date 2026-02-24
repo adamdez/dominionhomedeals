@@ -21,6 +21,11 @@ export function GoogleAnalytics() {
           gtag('config', '${GOOGLE_ADS_ID}');
         `}
       </Script>
+      <Script id="google-ads-conversion" strategy="afterInteractive">
+        {`
+          gtag('event', 'ads_conversion_Request_quote_1', {});
+        `}
+      </Script>
     </>
   )
 }

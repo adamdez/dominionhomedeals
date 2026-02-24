@@ -5,8 +5,6 @@ import "./globals.css";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { SITE } from "@/lib/constants";
-import type { MetadataRoute } from 'next'
-import { LocalBusinessSchema, FAQSchema } from './structured-data'
 import { GoogleAnalytics } from './analytics'
 
 const playfair = Playfair_Display({
@@ -118,8 +116,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <GoogleAnalytics />
         <Header />
         <main id="main-content">{children}</main>
-        <LocalBusinessSchema />
-        <FAQSchema />
         <Footer />
       </body>
     </html>
