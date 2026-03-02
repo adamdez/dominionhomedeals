@@ -1,6 +1,6 @@
 // src/app/page.tsx
 import type { Metadata } from "next";
-import LeadForm from "@/components/forms/LeadForm";
+import { LeadForm } from "@/components/forms/LeadForm";
 import { FadeIn } from "@/components/animations/FadeIn";
 import { Testimonials } from "@/components/sections/Testimonials";
 import { Situations } from "@/components/sections/Situations";
