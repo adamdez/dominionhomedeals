@@ -19,7 +19,7 @@
 
 // ── Configuration ──────────────────────────────────────────────
 
-const GOOGLE_ADS_ID = 'AW-17965617200';
+const GOOGLE_ADS_ID = 'AW-18000167888';
 
 // Read conversion labels from public env vars — empty string = not configured yet
 const GADS_FORM_LABEL = process.env.NEXT_PUBLIC_GADS_FORM_LABEL || '';

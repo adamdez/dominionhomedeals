@@ -5,7 +5,7 @@ import Script from 'next/script'
 import { trackCallIntent } from '@/lib/tracking'
 
 const GA_MEASUREMENT_ID = 'G-5GJ6T8KXLE'
-const GOOGLE_ADS_ID = 'AW-17965617200'
+const GOOGLE_ADS_ID = 'AW-18000167888'
 
 /** Derive a CTA location label from the DOM context of a clicked element. */
 function getCTALocation(el: Element): string {
