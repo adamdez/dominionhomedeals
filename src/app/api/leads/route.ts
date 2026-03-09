@@ -139,7 +139,7 @@ async function sendEmailNotification(lead: Record<string, unknown>) {
       },
       body: JSON.stringify({
         from: 'Dominion Homes Leads <leads@dominionhomedeals.com>',
-        to: ['offers@dominionhomedeals.com'],
+        to: ['adam@dominionhomedeals.com', 'logan@dominionhomedeals.com'],
         subject: `${priorityLabel} New Lead: ${lead.firstName} ${lead.lastName} — ${lead.address}, ${lead.city}`,
         html: htmlBody,
       }),
@@ -149,7 +149,7 @@ async function sendEmailNotification(lead: Record<string, unknown>) {
       const errorText = await res.text()
       console.error('[EMAIL ERROR]', errorText)
     } else {
-      console.log('[EMAIL] Sent to offers@dominionhomedeals.com')
+      console.log('[EMAIL] Sent to adam@ and logan@dominionhomedeals.com')
     }
   } catch (err) {
     console.error('[EMAIL ERROR]', err)
@@ -174,29 +174,35 @@ async function sendSmsNotification(lead: Record<string, unknown>) {
 
   const message = `${priorityEmoji} NEW LEAD\n${lead.firstName} ${lead.lastName}\n📍 ${lead.address}, ${lead.city} ${lead.state}\n📱 ${lead.phone}\n🏠 ${lead.condition} | ${lead.timeline}\n\nCall them back ASAP!`
 
-  try {
-    const res = await fetch(
-      `https://api.twilio.com/2010-04-01/Accounts/${TWILIO_SID}/Messages.json`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-          Authorization: 'Basic ' + Buffer.from(`${TWILIO_SID}:${TWILIO_TOKEN}`).toString('base64'),
-        },
-        body: new URLSearchParams({
-          To: '+12086258078',
-          From: TWILIO_FROM,
-          Body: message,
-        }),
-      }
-    )
+  const recipients = ['+15095907091', '+15096669518']
 
-    if (!res.ok) {
-      const errorText = await res.text()
-      console.error('[SMS ERROR]', errorText)
-    } else {
-      console.log('[SMS] Sent to 208-625-8078')
-    }
+  try {
+    await Promise.allSettled(
+      recipients.map(async (to) => {
+        const res = await fetch(
+          `https://api.twilio.com/2010-04-01/Accounts/${TWILIO_SID}/Messages.json`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/x-www-form-urlencoded',
+              Authorization: 'Basic ' + Buffer.from(`${TWILIO_SID}:${TWILIO_TOKEN}`).toString('base64'),
+            },
+            body: new URLSearchParams({
+              To: to,
+              From: TWILIO_FROM,
+              Body: message,
+            }),
+          }
+        )
+
+        if (!res.ok) {
+          const errorText = await res.text()
+          console.error(`[SMS ERROR] Failed to send to ${to}:`, errorText)
+        } else {
+          console.log(`[SMS] Sent to ${to}`)
+        }
+      })
+    )
   } catch (err) {
     console.error('[SMS ERROR]', err)
   }
