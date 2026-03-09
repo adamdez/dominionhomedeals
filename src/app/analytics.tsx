@@ -18,11 +18,11 @@ function getCTALocation(el: Element): string {
 }
 
 export function GoogleAnalytics() {
-  // Global click-to-call tracking — catches every tel: link across the site
+  // Global contact-intent tracking — catches every tel: and sms: link across the site
   // Uses event delegation so it works with dynamically rendered links too
   useEffect(() => {
-    function handleTelClick(e: MouseEvent) {
-      const target = (e.target as HTMLElement).closest('a[href^="tel:"]')
+    function handleContactClick(e: MouseEvent) {
+      const target = (e.target as HTMLElement).closest('a[href^="tel:"], a[href^="sms:"]')
       if (target) {
         trackCallIntent(
           target.textContent?.trim() || 'phone',
@@ -30,8 +30,8 @@ export function GoogleAnalytics() {
         )
       }
     }
-    document.addEventListener('click', handleTelClick)
-    return () => document.removeEventListener('click', handleTelClick)
+    document.addEventListener('click', handleContactClick)
+    return () => document.removeEventListener('click', handleContactClick)
   }, [])
 
   return (

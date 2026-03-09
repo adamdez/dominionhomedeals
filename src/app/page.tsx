@@ -298,10 +298,10 @@ export default function HomePage() {
                 Get My Cash Offer
               </a>
               <a
-                href={`tel:${SITE.phone.replace(/\D/g, "")}`}
+                href={`sms:${SITE.phone.replace(/\D/g, "")}`}
                 className="text-sm font-semibold text-stone-300 hover:text-amber-400 transition-colors"
               >
-                Or call/text {SITE.phone}
+                Or text us: {SITE.phone}
               </a>
             </div>
           </div>

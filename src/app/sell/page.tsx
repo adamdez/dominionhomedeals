@@ -201,11 +201,11 @@ export default function SellPage() {
               Start Step 1 — It&apos;s Free
             </a>
             <a
-              href={`tel:${phoneClean}`}
+              href={`sms:${phoneClean}`}
               className="text-sm font-semibold text-ink-400 hover:text-forest-600 transition-colors inline-flex items-center gap-1.5"
             >
               <PhoneIcon />
-              Or call/text {SITE.phone}
+              Or text us: {SITE.phone}
             </a>
           </div>
         </FadeIn>
@@ -321,11 +321,11 @@ export default function SellPage() {
                 Get My Cash Offer
               </a>
               <a
-                href={`tel:${phoneClean}`}
+                href={`sms:${phoneClean}`}
                 className="text-sm font-semibold text-stone-300 hover:text-amber-400 transition-colors inline-flex items-center gap-1.5"
               >
                 <PhoneIcon />
-                Or call/text {SITE.phone}
+                Or text us: {SITE.phone}
               </a>
             </div>
           </div>

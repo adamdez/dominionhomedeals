@@ -547,10 +547,10 @@ export default async function NeighborhoodPage({ params }: { params: Promise<{ s
               Get Your Cash Offer
             </Link>
             <a
-              href="tel:5098225460"
+              href="sms:5098225460"
               className="inline-flex items-center gap-2 text-lg font-medium text-ink-500 transition hover:text-forest-700"
             >
-              Or call/text 509-822-5460
+              Or text us: 509-822-5460
             </a>
           </div>
         </div>
@@ -711,10 +711,10 @@ export default async function NeighborhoodPage({ params }: { params: Promise<{ s
               Get My Cash Offer
             </Link>
             <a
-              href="tel:5098225460"
+              href="sms:5098225460"
               className="inline-flex items-center gap-2 text-lg font-medium text-ink-500 transition hover:text-forest-700"
             >
-              Or call/text 509-822-5460
+              Or text us: 509-822-5460
             </a>
           </div>
         </div>
