@@ -176,7 +176,7 @@ const neighborhoods: Record<string, NeighborhoodData> = {
     name: 'Airway Heights',
     state: 'WA',
     county: 'Spokane County',
-    tagline: 'We Buy Houses in Airway Heights — Cash Offers in 24 Hours',
+    tagline: 'We Buy Houses in Airway Heights — Fast Cash Offers',
     description:
       'Airway Heights is one of the fastest-growing communities in Spokane County, with Fairchild Air Force Base driving much of the local economy. We buy houses in any condition across Airway Heights — whether you\'re PCSing and need a fast sale, or own a property that needs work.',
     highlights: [
@@ -461,11 +461,11 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const location = `${data.name}, ${data.state}`
   return {
     title: `Cash for Houses ${location} — Sell Fast | Dominion Homes`,
-    description: `Get a fair cash offer on your ${location} home in 24 hours. No agents, no commissions, no repairs. Local team based in Post Falls, ID. Call 208-625-8078.`,
+    description: `Get a fair cash offer on your ${location} home. No agents, no commissions, no repairs. Local team based in Post Falls, ID. Call 509-822-5460.`,
     alternates: { canonical: `https://dominionhomedeals.com/neighborhoods/${slug}` },
     openGraph: {
       title: `Sell Your ${data.name} Home for Cash | Dominion Homes`,
-      description: `We buy houses in ${data.name} in any condition. Fair cash offer in 24 hours, close in as fast as 2 weeks. ${data.county}.`,
+      description: `We buy houses in ${data.name} in any condition. Fair cash offer, close in as fast as 2 weeks. ${data.county}.`,
       url: `https://dominionhomedeals.com/neighborhoods/${slug}`,
       type: 'website',
     },
@@ -494,7 +494,7 @@ export default async function NeighborhoodPage({ params }: { params: Promise<{ s
             '@type': 'LocalBusiness',
             name: 'Dominion Homes, LLC',
             description: `Cash home buyers in ${data.name}, ${data.county}, ${data.state}. We buy houses in any condition.`,
-            telephone: '+1-208-625-8078',
+            telephone: '+1-509-822-5460',
             url: `https://dominionhomedeals.com/neighborhoods/${slug}`,
             address: {
               '@type': 'PostalAddress',
@@ -513,7 +513,7 @@ export default async function NeighborhoodPage({ params }: { params: Promise<{ s
             makesOffer: {
               '@type': 'Offer',
               name: `Cash offer for houses in ${data.name}`,
-              description: `Fair cash offer for your ${data.name} home in 24 hours. No agents, no commissions, no repairs.`,
+              description: `Fair cash offer for your ${data.name} home. No agents, no commissions, no repairs.`,
             },
           }),
         }}
@@ -536,7 +536,7 @@ export default async function NeighborhoodPage({ params }: { params: Promise<{ s
             <span className="text-forest-600">{data.name}</span>
           </h1>
           <p className="mx-auto mt-5 max-w-2xl text-lg text-ink-400">
-            {data.tagline}. Fair cash offer in 24 hours. Close in as fast as two
+            {data.tagline}. Fair cash offer, fast. Close in as fast as two
             weeks. No agents, no commissions, no&nbsp;repairs.
           </p>
           <div className="mt-8 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
@@ -547,10 +547,10 @@ export default async function NeighborhoodPage({ params }: { params: Promise<{ s
               Get Your Cash Offer
             </Link>
             <a
-              href="tel:2086258078"
+              href="tel:5098225460"
               className="inline-flex items-center gap-2 text-lg font-medium text-ink-500 transition hover:text-forest-700"
             >
-              Or call 208-625-8078
+              Or call/text 509-822-5460
             </a>
           </div>
         </div>
@@ -613,7 +613,7 @@ export default async function NeighborhoodPage({ params }: { params: Promise<{ s
                   </div>
                   <div>
                     <p className="text-xs font-medium uppercase tracking-wider text-ink-300">Our Offer</p>
-                    <p className="mt-1 font-medium text-forest-600">Cash • 24-hour response • Close in 14 days</p>
+                    <p className="mt-1 font-medium text-forest-600">Cash • Fast response • Close in 14 days</p>
                   </div>
                 </div>
 
@@ -700,8 +700,8 @@ export default async function NeighborhoodPage({ params }: { params: Promise<{ s
             Ready to Get a Cash Offer on Your {data.name}&nbsp;Home?
           </h2>
           <p className="mx-auto mt-4 max-w-xl text-lg text-ink-400">
-            No pressure. No obligation. Fill out the form or call us — Adam, Nathan,
-            or Logan will get back to you within 24&nbsp;hours.
+            No pressure. No obligation. Fill out the form or call us — Adam or
+            Logan will get back to you personally.
           </p>
           <div className="mt-8 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
             <Link
@@ -711,10 +711,10 @@ export default async function NeighborhoodPage({ params }: { params: Promise<{ s
               Get My Cash Offer
             </Link>
             <a
-              href="tel:2086258078"
+              href="tel:5098225460"
               className="inline-flex items-center gap-2 text-lg font-medium text-ink-500 transition hover:text-forest-700"
             >
-              Or call 208-625-8078
+              Or call/text 509-822-5460
             </a>
           </div>
         </div>

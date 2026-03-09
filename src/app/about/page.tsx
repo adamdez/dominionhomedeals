@@ -4,12 +4,12 @@ import Link from 'next/link'
 export const metadata: Metadata = {
   title: 'About Us — Meet the Dominion Homes Team | Post Falls, ID',
   description:
-    'Adam, Nathan, and Logan — three local guys who buy houses for cash across Spokane County and Kootenai County. Based in Post Falls, ID. Meet our team.',
+    'Adam and Logan — a local team that buys houses for cash across Spokane County and Kootenai County. Based in Post Falls, ID. Meet our team.',
   alternates: { canonical: 'https://dominionhomedeals.com/about' },
   openGraph: {
     title: 'About Dominion Homes | Local Cash Home Buyers',
     description:
-      'Based in Post Falls, ID. We buy houses for cash across Spokane County, WA and Kootenai County, ID. No agents, no games — just three local guys.',
+      'Based in Post Falls, ID. We buy houses for cash across Spokane County, WA and Kootenai County, ID. No agents, no games — just a local team.',
     url: 'https://dominionhomedeals.com/about',
     type: 'website',
   },
@@ -21,12 +21,6 @@ const team = [
     initials: 'AD',
     role: 'Operations',
     bio: 'Adam runs the day-to-day at Dominion Homes from our Post Falls office. He oversees every deal from first call to closing, making sure the process stays smooth and every seller gets treated right. When he\'s not reviewing contracts, he\'s probably driving through a neighborhood with a coffee in hand.',
-  },
-  {
-    name: 'Nathan',
-    initials: 'NW',
-    role: 'Sales & Acquisitions',
-    bio: 'Nathan is usually the first person you\'ll talk to. He meets sellers at their kitchen table, walks the property, and puts together fair offers based on real numbers — not algorithms. He grew up in the Spokane area and knows these neighborhoods block by block.',
   },
   {
     name: 'Logan',
@@ -90,7 +84,7 @@ export default function AboutPage() {
             description:
               'Local cash home buyers serving Spokane County, WA and Kootenai County, ID. We buy houses in any condition — no agents, no commissions, no repairs.',
             url: 'https://dominionhomedeals.com',
-            telephone: '+1-208-625-8078',
+            telephone: '+1-509-822-5460',
             address: {
               '@type': 'PostalAddress',
               addressLocality: 'Post Falls',
@@ -103,7 +97,6 @@ export default function AboutPage() {
             ],
             founder: [
               { '@type': 'Person', name: 'Adam', jobTitle: 'Operations' },
-              { '@type': 'Person', name: 'Nathan', jobTitle: 'Sales & Acquisitions' },
               { '@type': 'Person', name: 'Logan', jobTitle: 'Sales & Dispositions' },
             ],
           }),
@@ -150,7 +143,7 @@ export default function AboutPage() {
                 <p>
                   We live here. We raise our families here. When we say we&rsquo;ll meet
                   you at your kitchen table to talk through your options, we mean it.
-                  Adam&rsquo;s in Post Falls. Nathan and Logan are too. We know the
+                  We&rsquo;re both based in Post Falls. We know the
                   neighborhoods because we drive through them every single day.
                 </p>
                 <p>
@@ -184,8 +177,8 @@ export default function AboutPage() {
                     </svg>
                   </div>
                   <div>
-                    <p className="font-medium text-ink-600">3-person local team</p>
-                    <p className="mt-1 text-sm text-ink-400">You work directly with Adam, Nathan, or Logan</p>
+                    <p className="font-medium text-ink-600">2-person local team</p>
+                    <p className="mt-1 text-sm text-ink-400">You work directly with Adam or Logan</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-4">
@@ -206,7 +199,7 @@ export default function AboutPage() {
                     </svg>
                   </div>
                   <div>
-                    <p className="font-medium text-ink-600">Call us: 208-625-8078</p>
+                    <p className="font-medium text-ink-600">Call or text: 509-822-5460</p>
                     <p className="mt-1 text-sm text-ink-400">A real person answers — not a recording</p>
                   </div>
                 </div>
@@ -307,7 +300,7 @@ export default function AboutPage() {
             Let&rsquo;s Talk About Your Property
           </h2>
           <p className="mx-auto mt-4 max-w-xl text-lg text-forest-200">
-            Reach out anytime. One of us — Adam, Nathan, or Logan — will get back
+            Reach out anytime. One of us — Adam or Logan — will get back
             to you personally.
           </p>
           <div className="mt-8 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
@@ -318,10 +311,10 @@ export default function AboutPage() {
               Get My Cash Offer
             </Link>
             <a
-              href="tel:2086258078"
+              href="tel:5098225460"
               className="inline-flex items-center gap-2 text-lg font-medium text-white/90 transition hover:text-white"
             >
-              Or call 208-625-8078
+              Or call/text 509-822-5460
             </a>
           </div>
         </div>

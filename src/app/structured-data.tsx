@@ -3,9 +3,9 @@ export function LocalBusinessSchema() {
     '@context': 'https://schema.org',
     '@type': 'LocalBusiness',
     name: 'Dominion Homes, LLC',
-    description: 'We buy houses for cash in Spokane County WA and Kootenai County ID. Fair cash offers in 24 hours, close in as fast as 2 weeks. No agents, no commissions, no repairs.',
+    description: 'We buy houses for cash in Spokane County WA and Kootenai County ID. Fair cash offers, close in as fast as 2 weeks. No agents, no commissions, no repairs.',
     url: 'https://dominionhomedeals.com',
-    telephone: '+1-208-625-8078',
+    telephone: '+1-509-822-5460',
     email: 'offers@dominionhomedeals.com',
     address: {
       '@type': 'PostalAddress',
@@ -75,7 +75,7 @@ export function FAQSchema() {
         name: 'How do I get a cash offer on my house?',
         acceptedAnswer: {
           '@type': 'Answer',
-          text: 'Fill out our short form or call 208-625-8078. We will review your property details and present a fair, no-obligation cash offer within 24 hours.',
+          text: 'Fill out our short form or call 509-822-5460. We will review your property details and present a fair, no-obligation cash offer.',
         },
       },
       {

@@ -1,7 +1,8 @@
 'use client'
 
-import { useState, useEffect, FormEvent } from 'react'
+import { useState, useEffect, useRef, FormEvent } from 'react'
 import Link from 'next/link'
+import { trackLeadFormSubmission, trackFormStep } from '@/lib/tracking'
 
 /* ------------------------------------------------------------------ */
 /* Types                                                               */
@@ -79,6 +80,7 @@ export function LeadForm() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle')
   const [errorMessage, setErrorMessage] = useState('')
+  const hasTrackedConversion = useRef(false)
 
   // Capture UTM params on mount
   useEffect(() => {
@@ -132,11 +134,17 @@ export function LeadForm() {
 
   const handleStep1Submit = (e: FormEvent) => {
     e.preventDefault()
-    if (canAdvanceStep1) setStep(2)
+    if (canAdvanceStep1) {
+      setStep(2)
+      trackFormStep(2, 'property_details')
+    }
   }
 
   const handleStep2Continue = () => {
-    if (canAdvanceStep2) setStep(3)
+    if (canAdvanceStep2) {
+      setStep(3)
+      trackFormStep(3, 'contact_info')
+    }
   }
 
   const handleFinalSubmit = async (e: FormEvent) => {
@@ -165,12 +173,28 @@ export function LeadForm() {
 
       if (response.ok && data.success) {
         setSubmitStatus('success')
+
+        // Fire conversion tracking once — GA4 generate_lead + Google Ads conversion
+        // Ref guard ensures this fires exactly once even on retries or re-renders
+        if (!hasTrackedConversion.current) {
+          hasTrackedConversion.current = true
+          trackLeadFormSubmission({
+            landingPage: formData.landingPage,
+            utmSource: formData.utmSource,
+            utmMedium: formData.utmMedium,
+            utmCampaign: formData.utmCampaign,
+            propertyCity: formData.city,
+            propertyState: formData.state,
+            sellerTimeline: formData.timeline,
+            propertyCondition: formData.condition,
+          })
+        }
       } else {
-        setErrorMessage(data.error || 'Something went wrong. Please call us at 208-625-8078.')
+        setErrorMessage(data.error || 'Something went wrong. Please call us at 509-822-5460.')
         setSubmitStatus('error')
       }
     } catch {
-      setErrorMessage('Network error. Please call us at 208-625-8078.')
+      setErrorMessage('Network error. Please call us at 509-822-5460.')
       setSubmitStatus('error')
     } finally {
       setIsSubmitting(false)
@@ -188,13 +212,13 @@ export function LeadForm() {
         </div>
         <h3 className="font-display text-2xl text-ink-700">We Got Your Info!</h3>
         <p className="mt-2 text-ink-400">
-          One of our team — Adam, Nathan, or Logan — will reach out within 15 minutes to discuss your property at{' '}
+          One of our team — Adam or Logan — will reach out within 15 minutes to discuss your property at{' '}
           <span className="font-medium text-ink-600">{formData.address}, {formData.city}</span>.
         </p>
         <p className="mt-4 text-sm text-ink-300">
           Need to talk sooner?{' '}
-          <a href="tel:2086258078" className="font-medium text-forest-600 hover:text-forest-700">
-            Call 208-625-8078
+          <a href="tel:5098225460" className="font-medium text-forest-600 hover:text-forest-700">
+            Call or text 509-822-5460
           </a>
         </p>
       </div>

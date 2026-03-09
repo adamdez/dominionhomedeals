@@ -58,7 +58,7 @@ export default function NeighborhoodsPage() {
             '@type': 'LocalBusiness',
             name: 'Dominion Homes, LLC',
             description: 'Cash home buyers serving Spokane County, WA and Kootenai County, ID.',
-            telephone: '+1-208-625-8078',
+            telephone: '+1-509-822-5460',
             url: 'https://dominionhomedeals.com',
             address: {
               '@type': 'PostalAddress',
@@ -184,10 +184,10 @@ export default function NeighborhoodsPage() {
               Get Your Cash Offer
             </Link>
             <a
-              href="tel:2086258078"
+              href="tel:5098225460"
               className="inline-flex items-center gap-2 text-lg font-medium text-ink-500 transition hover:text-forest-700"
             >
-              Or call 208-625-8078
+              Or call/text 509-822-5460
             </a>
           </div>
         </div>
@@ -200,7 +200,7 @@ export default function NeighborhoodsPage() {
             We Know These Neighborhoods Because We Live&nbsp;Here
           </h2>
           <p className="mx-auto mt-4 max-w-xl text-lg text-forest-200">
-            Adam, Nathan, and Logan are based in Post Falls. We drive these streets
+            Adam and Logan are based in Post Falls. We drive these streets
             every day. Let us make you a fair cash offer on your property.
           </p>
           <div className="mt-8 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
@@ -211,10 +211,10 @@ export default function NeighborhoodsPage() {
               Get My Cash Offer
             </Link>
             <a
-              href="tel:2086258078"
+              href="tel:5098225460"
               className="inline-flex items-center gap-2 text-lg font-medium text-white/90 transition hover:text-white"
             >
-              Or call 208-625-8078
+              Or call/text 509-822-5460
             </a>
           </div>
         </div>

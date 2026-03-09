@@ -18,7 +18,7 @@ const REVIEWS = [
     name: "Recent Seller",
     location: "Spokane County, WA",
     quote:
-      "I was nervous about selling to a cash buyer but meeting Nathan in person changed everything. He was upfront about the numbers, explained the whole process, and followed through on every promise. I'd recommend Dominion Homes to anyone.",
+      "I was nervous about selling to a cash buyer but meeting the team in person changed everything. They were upfront about the numbers, explained the whole process, and followed through on every promise. I'd recommend Dominion Homes to anyone.",
     closedIn: "2 weeks",
   },
 ];

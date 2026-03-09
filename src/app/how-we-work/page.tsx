@@ -4,12 +4,12 @@ import Link from 'next/link'
 export const metadata: Metadata = {
   title: 'How We Buy Houses for Cash in Spokane & CDA | Dominion Homes',
   description:
-    'Our simple 3-step process: tell us about your property, get a fair cash offer in 24 hours, and close on your schedule. No agents, no commissions, no repairs. Based in Post Falls, ID.',
+    'Our simple 3-step process: tell us about your property, get a fair cash offer, and close on your schedule. No agents, no commissions, no repairs. Based in Post Falls, ID.',
   alternates: { canonical: 'https://dominionhomedeals.com/how-we-work' },
   openGraph: {
     title: 'How We Buy Houses for Cash | Dominion Homes',
     description:
-      'Fair cash offer in 24 hours. Close in as fast as 2 weeks. No repairs, no commissions. See exactly how it works.',
+      'Fair cash offer, fast. Close in as fast as 2 weeks. No repairs, no commissions. See exactly how it works.',
     url: 'https://dominionhomedeals.com/how-we-work',
     type: 'website',
   },
@@ -21,7 +21,7 @@ const steps = [
     time: '60 seconds',
     title: 'Tell Us About Your Property',
     description:
-      'Fill out our short form or give us a call at 208-625-8078. We just need a property address and a little context — that\'s it. No inspections, no prep work, no cleaning. We buy houses in any condition across Spokane County and Kootenai County.',
+      'Fill out our short form or call/text us at 509-822-5460. We just need a property address and a little context — that\'s it. No inspections, no prep work, no cleaning. We buy houses in any condition across Spokane County and Kootenai County.',
     details: [
       'Takes about 60 seconds — no obligation',
       'We never share your information with third parties',
@@ -30,12 +30,12 @@ const steps = [
   },
   {
     number: '02',
-    time: '24 hours',
+    time: '1–2 days',
     title: 'Get a Fair Cash Offer',
     description:
-      'Adam, Nathan, or Logan will review your property — often the same day. We look at comparable sales, property condition, and local market data to build a fair, transparent cash offer. We\'ll walk you through the numbers so nothing feels hidden.',
+      'Adam or Logan will review your property — often the same day. We look at comparable sales, property condition, and local market data to build a fair, transparent cash offer. We\'ll walk you through the numbers so nothing feels hidden.',
     details: [
-      'Most offers delivered within 24 hours',
+      'Most offers delivered within a day or two',
       'We explain exactly how we arrived at our price',
       'Zero pressure — if it doesn\'t work, no hard feelings',
     ],
@@ -317,8 +317,8 @@ export default function HowWeWorkPage() {
             Ready to See What Your Home Is&nbsp;Worth?
           </h2>
           <p className="mx-auto mt-4 max-w-xl text-lg text-forest-200">
-            No obligation. No pressure. Fill out the form above or give us a call —
-            one of us will pick up the phone.
+            No obligation. No pressure. Fill out the form or call/text us —
+            one of us will get back to you.
           </p>
           <div className="mt-8 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
             <Link
@@ -328,10 +328,10 @@ export default function HowWeWorkPage() {
               Get My Cash Offer
             </Link>
             <a
-              href="tel:2086258078"
+              href="tel:5098225460"
               className="inline-flex items-center gap-2 text-lg font-medium text-white/90 transition hover:text-white"
             >
-              Or call 208-625-8078
+              Or call/text 509-822-5460
             </a>
           </div>
         </div>

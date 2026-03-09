@@ -291,7 +291,7 @@ export async function POST(request: NextRequest) {
   } catch (err) {
     console.error('[LEAD API ERROR]', err)
     return NextResponse.json(
-      { error: 'Something went wrong. Please call us at 208-625-8078.' },
+      { error: 'Something went wrong. Please call or text us at 509-822-5460.' },
       { status: 500 }
     )
   }

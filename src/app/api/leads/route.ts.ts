@@ -184,7 +184,7 @@ async function sendSmsNotification(lead: Record<string, unknown>) {
           Authorization: 'Basic ' + Buffer.from(`${TWILIO_SID}:${TWILIO_TOKEN}`).toString('base64'),
         },
         body: new URLSearchParams({
-          To: '+12086258078',
+          To: '+15098225460',
           From: TWILIO_FROM,
           Body: message,
         }),
@@ -195,7 +195,7 @@ async function sendSmsNotification(lead: Record<string, unknown>) {
       const errorText = await res.text()
       console.error('[SMS ERROR]', errorText)
     } else {
-      console.log('[SMS] Sent to 208-625-8078')
+      console.log('[SMS] Sent to 509-822-5460')
     }
   } catch (err) {
     console.error('[SMS ERROR]', err)
@@ -285,7 +285,7 @@ export async function POST(request: NextRequest) {
   } catch (err) {
     console.error('[LEAD API ERROR]', err)
     return NextResponse.json(
-      { error: 'Something went wrong. Please call us at 208-625-8078.' },
+      { error: 'Something went wrong. Please call us at 509-822-5460.' },
       { status: 500 }
     )
   }

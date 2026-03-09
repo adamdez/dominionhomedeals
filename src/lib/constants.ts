@@ -7,7 +7,7 @@ export const SITE = {
   description:
     "Local Spokane and Coeur d'Alene team that buys houses for cash in any condition. No commissions, no repairs, close on your timeline. We meet you in person.",
   url: "https://dominionhomedeals.com",
-  phone: "208-625-8078", 
+  phone: "509-822-5460",
   email: "offers@dominionhomedeals.com", 
   address: {
     city: "Post Falls",
@@ -23,13 +23,6 @@ export const TEAM = [
     role: "Operations",
     bio: "Grew up on the Palouse, served in the military, then built and led sales and operations teams for a local startup. Adam handles the details so every deal runs smooth and every seller is taken care of from first call to closing day.",
     image: "/images/team/adam.jpg",
-    location: "Post Falls, ID",
-  },
-  {
-    name: "Nathan Walsh",
-    role: "Sales & Acquisitions",
-    bio: "Nathan meets sellers face-to-face across Spokane and North Idaho. He listens first, then builds an offer that works for your situation. No scripts, no pressure — just a straight conversation about what your home is worth and how fast you want to move.",
-    image: "/images/team/nathan.jpg",
     location: "Post Falls, ID",
   },
   {
@@ -53,8 +46,8 @@ export const PROCESS_STEPS = [
     number: "2",
     title: "Get a Fair Cash Offer",
     description:
-      "We'll review your property and come back with a straightforward cash offer — usually within 24 hours. No obligations, no games. If it works for you, great. If not, no hard feelings.",
-    duration: "24 hours",
+      "We'll review your property and come back with a straightforward cash offer — most within a day or two. No obligations, no games. If it works for you, great. If not, no hard feelings.",
+    duration: "1–2 days",
   },
   {
     number: "3",
@@ -69,7 +62,7 @@ export const PROCESS_STEPS = [
 export const TRUST_STATS = [
   { value: "2", label: "Weeks to Close" },
   { value: "$0", label: "Commissions or Fees" },
-  { value: "3", label: "Local Team Members" },
+  { value: "2", label: "Local Team Members" },
   { value: "Any", label: "Condition Accepted" },
 ] as const;
 
@@ -125,4 +118,32 @@ export const SITUATIONS = [
   { title: "Relocating", desc: "Got a job offer or need to move quickly? We close on your timeline, not the market's." },
   { title: "Tired Landlord", desc: "Done dealing with tenants and repairs? We buy rental properties as-is, even with tenants." },
   { title: "Needs Major Repairs", desc: "Can't afford the repairs to list it? We buy in any condition — roof, foundation, whatever." },
+] as const;
+
+/** FAQs for the /sell landing page — seller-focused, honest, actionable */
+export const SELL_PAGE_FAQS = [
+  {
+    q: "How fast can you close?",
+    a: "That depends on your situation. Some sellers need to close in two weeks — we can do that. Others need a few months to figure out their next move. You pick the timeline, and we work around it.",
+  },
+  {
+    q: "Do I need to make any repairs first?",
+    a: "No. We buy houses in any condition — roof issues, foundation problems, outdated everything, or just a house you don't want to deal with anymore. You don't need to fix, clean, or stage anything.",
+  },
+  {
+    q: "How does the cash offer work?",
+    a: "You tell us about your property (form or phone call), we review it, and we come back with a straightforward cash offer. If it works for you, we move forward. If not, no hard feelings. There's zero obligation.",
+  },
+  {
+    q: "Are there any fees or commissions?",
+    a: "None. No agent commissions, no closing costs on your side, no hidden fees. The offer we make is the amount you walk away with.",
+  },
+  {
+    q: "What if my house has tenants in it?",
+    a: "We buy houses with tenants in place. You don't need to evict anyone or wait for a lease to end. We handle the transition.",
+  },
+  {
+    q: "Who are you, exactly?",
+    a: "We're Adam and Logan — a local two-person team based in Post Falls, ID. We buy houses directly across Spokane County and North Idaho. No call center, no scripts, no middlemen. Call or text us at 509-822-5460 — one of us picks up. Every conversation is direct, and there's never any obligation.",
+  },
 ] as const;
