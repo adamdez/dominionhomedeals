@@ -26,12 +26,13 @@ interface FormData {
   smsOptIn: boolean
   // Honeypot
   honeypot: string
-  // UTM
+  // UTM + Attribution
   utmSource: string
   utmMedium: string
   utmCampaign: string
   utmTerm: string
   utmContent: string
+  gclid: string
   landingPage: string
 }
 
@@ -54,6 +55,7 @@ const initialFormData: FormData = {
   utmCampaign: '',
   utmTerm: '',
   utmContent: '',
+  gclid: '',
   landingPage: '',
 }
 
@@ -93,6 +95,7 @@ export function LeadForm() {
         utmCampaign: params.get('utm_campaign') || '',
         utmTerm: params.get('utm_term') || '',
         utmContent: params.get('utm_content') || '',
+        gclid: params.get('gclid') || '',
         landingPage: window.location.pathname,
       }))
     }
@@ -523,7 +526,7 @@ export function LeadForm() {
           {/* ── TCPA / 10DLC disclosure — below button (by-submit model) ── */}
           <p className="text-[10px] leading-relaxed text-center text-ink-300 px-2">
             By clicking &ldquo;Get My Cash Offer,&rdquo; you consent to receive calls
-            {formData.smsOptIn ? ', texts,' : ' and emails'} and emails from
+            {formData.smsOptIn ? ', texts, and emails' : ' and emails'} from
             Dominion Homes, LLC at the number provided, including by autodialer.
             Consent is not a condition of purchase. Msg &amp; data rates may apply.
             Reply STOP to opt out.{' '}

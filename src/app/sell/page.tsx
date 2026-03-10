@@ -2,7 +2,7 @@
 import type { Metadata } from "next";
 import { LeadForm } from "@/components/forms/LeadForm";
 import { FadeIn } from "@/components/animations/FadeIn";
-import { Testimonials } from "@/components/sections/Testimonials";
+// Testimonials removed from /sell until real reviews are available
 import { Situations } from "@/components/sections/Situations";
 import {
   SITE,
@@ -299,8 +299,7 @@ export default function SellPage() {
         </div>
       </section>
 
-      {/* ══════════ TESTIMONIALS ══════════ */}
-      <Testimonials />
+      {/* Testimonials section removed — re-add once real seller reviews exist */}
 
       {/* ══════════ FINAL CTA ══════════ */}
       <section className="section-wrap">

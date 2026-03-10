@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { getSupabaseAdmin } from '@/lib/supabase'
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -17,6 +18,8 @@ interface LeadPayload {
   email: string
   tcpaConsent: boolean
   tcpaTimestamp: string
+  smsOptIn?: boolean
+  smsOptInTimestamp?: string | null
   honeypot?: string
   source?: string
   landingPage?: string
@@ -25,6 +28,7 @@ interface LeadPayload {
   utmCampaign?: string
   utmTerm?: string
   utmContent?: string
+  gclid?: string
 }
 
 /* ------------------------------------------------------------------ */
@@ -40,7 +44,14 @@ function validateEmail(email: string): boolean {
 }
 
 function sanitize(str: string): string {
-  return str.trim().replace(/<[^>]*>/g, '').substring(0, 500)
+  return str
+    .trim()
+    .substring(0, 500)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
 }
 
 // Rate limiting
@@ -209,6 +220,85 @@ async function sendSmsNotification(lead: Record<string, unknown>) {
 }
 
 /* ------------------------------------------------------------------ */
+/*  Supabase persistence                                               */
+/* ------------------------------------------------------------------ */
+
+async function persistToSupabase(lead: Record<string, unknown>): Promise<void> {
+  const supabase = getSupabaseAdmin()
+  if (!supabase) {
+    console.log('[DB] Supabase not configured — skipping persistence')
+    return
+  }
+
+  // Determine market from state
+  const market = lead.state === 'ID' ? 'kootenai' : 'spokane'
+
+  // Determine source channel from UTM or gclid
+  const sourceChannel = lead.gclid
+    ? 'google_ads'
+    : lead.utmSource
+      ? String(lead.utmSource)
+      : 'direct'
+
+  // Insert lead
+  const { data: insertedLead, error: leadError } = await supabase
+    .from('leads')
+    .insert({
+      first_name: lead.firstName,
+      last_name: lead.lastName,
+      phone: lead.phone,
+      email: lead.email,
+      property_address: lead.address,
+      property_city: lead.city,
+      property_state: lead.state,
+      property_zip: lead.zip,
+      market,
+      condition: lead.condition,
+      timeline: lead.timeline,
+      tcpa_consented: lead.tcpaConsented,
+      tcpa_timestamp: lead.tcpaTimestamp,
+      tcpa_ip: lead.tcpaIP,
+      sms_opt_in: lead.smsOptIn,
+      sms_opt_in_timestamp: lead.smsOptInTimestamp || null,
+      landing_page: lead.landingPage,
+      source: lead.source,
+      stage: 'lead',
+    })
+    .select('id')
+    .single()
+
+  if (leadError) {
+    console.error('[DB] Failed to insert lead:', leadError.message)
+    return
+  }
+
+  console.log(`[DB] Lead persisted with id=${insertedLead.id}`)
+
+  // Insert attribution record
+  const { error: attrError } = await supabase
+    .from('lead_attribution')
+    .insert({
+      lead_id: insertedLead.id,
+      gclid: lead.gclid || null,
+      landing_page: lead.landingPage,
+      landing_domain: 'dominionhomedeals.com',
+      source_channel: sourceChannel,
+      market,
+      utm_source: lead.utmSource || null,
+      utm_medium: lead.utmMedium || null,
+      utm_campaign: lead.utmCampaign || null,
+      utm_term: lead.utmTerm || null,
+      utm_content: lead.utmContent || null,
+    })
+
+  if (attrError) {
+    console.error('[DB] Failed to insert attribution:', attrError.message)
+  } else {
+    console.log(`[DB] Attribution persisted for lead id=${insertedLead.id}`)
+  }
+}
+
+/* ------------------------------------------------------------------ */
 /*  POST handler                                                       */
 /* ------------------------------------------------------------------ */
 
@@ -267,16 +357,28 @@ export async function POST(request: NextRequest) {
       tcpaConsented: true,
       tcpaTimestamp: body.tcpaTimestamp || new Date().toISOString(),
       tcpaIP: ip,
+      smsOptIn: body.smsOptIn ?? false,
+      smsOptInTimestamp: body.smsOptInTimestamp || null,
       source: sanitize(body.source || 'website'),
       landingPage: sanitize(body.landingPage || '/'),
       utmSource: sanitize(body.utmSource || ''),
       utmMedium: sanitize(body.utmMedium || ''),
       utmCampaign: sanitize(body.utmCampaign || ''),
+      utmTerm: sanitize(body.utmTerm || ''),
+      utmContent: sanitize(body.utmContent || ''),
+      gclid: body.gclid ? sanitize(body.gclid) : null,
       submittedAt: new Date().toISOString(),
     }
 
     // Always log to console (visible in Vercel logs too)
     console.log('[NEW LEAD]', JSON.stringify(lead, null, 2))
+
+    // Persist to Supabase first (best-effort — failure doesn't block notifications)
+    try {
+      await persistToSupabase(lead)
+    } catch (err) {
+      console.error('[DB] Persistence error (non-blocking):', err)
+    }
 
     // Send email + SMS in parallel (don't block the response)
     await Promise.allSettled([
