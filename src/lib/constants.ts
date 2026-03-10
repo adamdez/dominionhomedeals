@@ -97,7 +97,7 @@ export const NEIGHBORHOODS: Array<{
   { slug: "otis-orchards", name: "Otis Orchards", city: "Otis Orchards", county: "Spokane", state: "WA", zip: "99027" },
   { slug: "greenacres", name: "Greenacres", city: "Greenacres", county: "Spokane", state: "WA", zip: "99016" },
   // Kootenai County
-  { slug: "coeur-dalene", name: "Coeur d'Alene", city: "Coeur d'Alene", county: "Kootenai", state: "ID", zip: "83814" },
+  { slug: "coeur-d-alene", name: "Coeur d'Alene", city: "Coeur d'Alene", county: "Kootenai", state: "ID", zip: "83814" },
   { slug: "post-falls", name: "Post Falls", city: "Post Falls", county: "Kootenai", state: "ID", zip: "83854" },
   { slug: "hayden", name: "Hayden", city: "Hayden", county: "Kootenai", state: "ID", zip: "83835" },
   { slug: "rathdrum", name: "Rathdrum", city: "Rathdrum", county: "Kootenai", state: "ID", zip: "83858" },

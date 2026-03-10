@@ -1,10 +1,30 @@
 // src/app/page.tsx
 import type { Metadata } from "next";
+import Link from "next/link";
 import { LeadForm } from "@/components/forms/LeadForm";
 import { FadeIn } from "@/components/animations/FadeIn";
 import { Testimonials } from "@/components/sections/Testimonials";
 import { Situations } from "@/components/sections/Situations";
 import { SITE, PROCESS_STEPS, TRUST_STATS, TEAM } from "@/lib/constants";
+
+/** Display name → slug map for homepage neighborhood links */
+const HOMEPAGE_AREAS: { name: string; slug: string }[] = [
+  { name: "Spokane Valley", slug: "spokane-valley" },
+  { name: "North Spokane", slug: "north-spokane" },
+  { name: "South Hill", slug: "south-hill" },
+  { name: "Downtown Spokane", slug: "downtown-spokane" },
+  { name: "Coeur d\u2019Alene", slug: "coeur-d-alene" },
+  { name: "Post Falls", slug: "post-falls" },
+  { name: "Hayden", slug: "hayden" },
+  { name: "Liberty Lake", slug: "liberty-lake" },
+  { name: "Rathdrum", slug: "rathdrum" },
+  { name: "Deer Park", slug: "deer-park" },
+  { name: "Airway Heights", slug: "airway-heights" },
+  { name: "Mead", slug: "mead" },
+  { name: "Cheney", slug: "cheney" },
+  { name: "Medical Lake", slug: "medical-lake" },
+  { name: "Millwood", slug: "millwood" },
+];
 
 export const metadata: Metadata = {
   title: "Sell Your House Fast for Cash in Spokane & CDA | Dominion Homes",
@@ -38,10 +58,10 @@ export default function HomePage() {
 
               <FadeIn delay={80}>
                 <h1 className="font-display text-hero text-ink-700 text-balance">
-                  Sell Your Home for Cash.
+                  Sell Your Spokane Home
                   <br />
                   <span className="text-forest-500">
-                    Skip the Stress.
+                    for Cash. Skip the Stress.
                   </span>
                 </h1>
               </FadeIn>
@@ -262,19 +282,23 @@ export default function HomePage() {
 
         <FadeIn delay={150}>
           <div className="mt-10 grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
-            {[
-              "Spokane Valley", "North Spokane", "South Hill", "Downtown Spokane",
-              "Coeur d'Alene", "Post Falls", "Hayden", "Liberty Lake",
-              "Rathdrum", "Deer Park", "Airway Heights", "Mead",
-              "Cheney", "Medical Lake", "Millwood",
-            ].map((name) => (
-              <div
-                key={name}
+            {HOMEPAGE_AREAS.map((area) => (
+              <Link
+                key={area.slug}
+                href={`/neighborhoods/${area.slug}`}
                 className="rounded-xl border border-stone-200 bg-white px-3 py-2.5 text-center text-sm font-medium text-ink-500 transition-colors hover:border-forest-300 hover:bg-forest-50"
               >
-                {name}
-              </div>
+                {area.name}
+              </Link>
             ))}
+          </div>
+          <div className="mt-4 text-center">
+            <Link
+              href="/neighborhoods"
+              className="text-sm font-medium text-forest-600 transition-colors hover:text-forest-700"
+            >
+              View all areas we serve →
+            </Link>
           </div>
         </FadeIn>
       </section>

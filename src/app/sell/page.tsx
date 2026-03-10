@@ -12,7 +12,7 @@ import {
 } from "@/lib/constants";
 
 export const metadata: Metadata = {
-  title: "Sell Your House Fast for Cash in Spokane | Dominion Homes",
+  title: "Sell Your House Fast for Cash in Spokane",
   description:
     "Local Spokane cash home buyers. Get a fair cash offer — no repairs, no fees, close on your timeline. We buy houses in any condition. Call or text 509-822-5460.",
   alternates: { canonical: `${SITE.url}/sell` },

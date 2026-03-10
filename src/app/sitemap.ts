@@ -1,11 +1,36 @@
 import type { MetadataRoute } from 'next'
 
+// ─── Single source of truth for neighborhood slugs ───────────────────────────
+// Must match exactly the keys in src/app/neighborhoods/[slug]/page.tsx
+// If you add or remove a neighborhood page, update this array.
 const neighborhoods = [
-  'spokane-valley', 'post-falls', 'coeur-dalene', 'hayden', 'rathdrum',
-  'liberty-lake', 'cheney', 'airway-heights', 'medical-lake', 'deer-park',
-  'mead', 'north-spokane', 'south-hill', 'downtown-spokane', 'west-plains',
-  'millwood', 'otis-orchards', 'newman-lake', 'hauser', 'spirit-lake',
-  'athol', 'dalton-gardens', 'huetter', 'greenacres', 'veradale',
+  // Spokane County
+  'spokane-valley',
+  'north-spokane',
+  'south-hill',
+  'downtown-spokane',
+  'cheney',
+  'airway-heights',
+  'liberty-lake',
+  'mead',
+  'deer-park',
+  'medical-lake',
+  'millwood',
+  'otis-orchards',
+  'nine-mile-falls',
+  'elk',
+  'spangle',
+  // Kootenai County
+  'coeur-d-alene',
+  'post-falls',
+  'hayden',
+  'rathdrum',
+  'dalton-gardens',
+  'spirit-lake',
+  'athol',
+  'hauser',
+  'harrison',
+  'worley',
 ]
 
 export default function sitemap(): MetadataRoute.Sitemap {
@@ -13,6 +38,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
 
   const staticPages = [
     { url: baseUrl, lastModified: new Date(), changeFrequency: 'weekly' as const, priority: 1.0 },
+    { url: `${baseUrl}/sell`, lastModified: new Date(), changeFrequency: 'weekly' as const, priority: 0.9 },
     { url: `${baseUrl}/how-we-work`, lastModified: new Date(), changeFrequency: 'monthly' as const, priority: 0.9 },
     { url: `${baseUrl}/about`, lastModified: new Date(), changeFrequency: 'monthly' as const, priority: 0.8 },
     { url: `${baseUrl}/neighborhoods`, lastModified: new Date(), changeFrequency: 'weekly' as const, priority: 0.9 },

@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 
 export const metadata: Metadata = {
-  title: 'Areas We Serve — Spokane County & Kootenai County | Dominion Homes',
+  title: 'Areas We Serve — Spokane County & Kootenai County',
   description:
     'We buy houses for cash across Spokane County, WA and Kootenai County, ID. Spokane Valley, North Spokane, South Hill, Post Falls, CDA, Hayden, and more.',
   alternates: { canonical: 'https://dominionhomedeals.com/neighborhoods' },

@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 
 export const metadata: Metadata = {
-  title: 'About Us — Meet the Dominion Homes Team | Post Falls, ID',
+  title: 'About Us — Meet the Team | Post Falls, ID',
   description:
     'Adam and Logan — a local team that buys houses for cash across Spokane County and Kootenai County. Based in Post Falls, ID. Meet our team.',
   alternates: { canonical: 'https://dominionhomedeals.com/about' },

@@ -5,8 +5,6 @@ import "./globals.css";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { SITE } from "@/lib/constants";
-import type { MetadataRoute } from 'next'
-import { LocalBusinessSchema, FAQSchema } from './structured-data'
 import { GoogleAnalytics } from './analytics'
 
 const playfair = Playfair_Display({
@@ -25,7 +23,7 @@ export const metadata: Metadata = {
   metadataBase: new URL(SITE.url),
   title: {
     default: "Sell Your House Fast for Cash — Spokane & CDA | Dominion Homes",
-    template: "%s | Dominion Homes — Cash Home Buyers",
+    template: "%s | Dominion Homes",
   },
   description:
     "Local Spokane and Coeur d'Alene team that buys houses for cash in any condition. No commissions, no repairs, close on your timeline. Based in Post Falls, ID.",
@@ -63,7 +61,7 @@ function JsonLd() {
     "@context": "https://schema.org",
     "@graph": [
       {
-        "@type": ["LocalBusiness", "RealEstateAgent"],
+        "@type": "LocalBusiness",
         "@id": `${SITE.url}/#business`,
         name: SITE.legalName,
         alternateName: SITE.name,
@@ -120,8 +118,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <GoogleAnalytics />
         <Header />
         <main id="main-content">{children}</main>
-        <LocalBusinessSchema />
-        <FAQSchema />
         <Footer />
       </body>
     </html>
