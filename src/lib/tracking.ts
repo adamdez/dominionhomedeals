@@ -21,9 +21,9 @@
 
 const GOOGLE_ADS_CONVERSION_ID = 'AW-18000301728';
 
-// Read conversion labels from public env vars — empty string = not configured yet
+// Conversion labels from Google Ads conversion actions
 const GADS_FORM_LABEL = process.env.NEXT_PUBLIC_GADS_FORM_LABEL || '';
-const GADS_CALL_LABEL = process.env.NEXT_PUBLIC_GADS_CALL_LABEL || '';
+const GADS_CALL_LABEL = '10-DCJvTz4UcEKCdm4dD';
 
 // ── gtag helper ────────────────────────────────────────────────
 // Safe wrapper — silently no-ops if gtag hasn't loaded (ad blocker, slow load)
@@ -107,8 +107,8 @@ export function trackCallIntent(linkText: string, ctaLocation: string): void {
     cta_location: ctaLocation,
   });
 
-  // Google Ads conversion — only on /sell (PPC landing page)
-  if (GADS_CALL_LABEL && pagePath === '/sell') {
+  // Google Ads conversion — fires on any page with a tel: click
+  if (GADS_CALL_LABEL) {
     gtag('event', 'conversion', {
       send_to: `${GOOGLE_ADS_CONVERSION_ID}/${GADS_CALL_LABEL}`,
       value: 1.0,
