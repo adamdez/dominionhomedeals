@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getSupabaseAdmin } from '@/lib/supabase'
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -220,81 +219,68 @@ async function sendSmsNotification(lead: Record<string, unknown>) {
 }
 
 /* ------------------------------------------------------------------ */
-/*  Supabase persistence                                               */
+/*  Forward lead to Sentinel CRM                                       */
 /* ------------------------------------------------------------------ */
 
-async function persistToSupabase(lead: Record<string, unknown>): Promise<void> {
-  const supabase = getSupabaseAdmin()
-  if (!supabase) {
-    console.log('[DB] Supabase not configured — skipping persistence')
+async function forwardToSentinel(lead: Record<string, unknown>): Promise<void> {
+  const sentinelUrl = process.env.SENTINEL_API_URL
+  const intakeSecret = process.env.SENTINEL_INTAKE_SECRET
+
+  if (!sentinelUrl || !intakeSecret) {
+    console.log('[SENTINEL] Not configured — skipping CRM forwarding')
     return
   }
 
-  // Determine market from state
-  const market = lead.state === 'ID' ? 'kootenai' : 'spokane'
+  try {
+    const res = await fetch(`${sentinelUrl}/api/inbound/webform`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-intake-secret': intakeSecret,
+      },
+      body: JSON.stringify({
+        // Contact info
+        name: `${lead.firstName} ${lead.lastName}`.trim(),
+        owner_name: `${lead.firstName} ${lead.lastName}`.trim(),
+        phone: lead.phone,
+        email: lead.email,
 
-  // Determine source channel from UTM or gclid
-  const sourceChannel = lead.gclid
-    ? 'google_ads'
-    : lead.utmSource
-      ? String(lead.utmSource)
-      : 'direct'
+        // Property
+        property_address: lead.address,
+        address: lead.address,
+        city: lead.city,
+        state: lead.state,
+        zip: lead.zip,
 
-  // Insert lead
-  const { data: insertedLead, error: leadError } = await supabase
-    .from('leads')
-    .insert({
-      first_name: lead.firstName,
-      last_name: lead.lastName,
-      phone: lead.phone,
-      email: lead.email,
-      property_address: lead.address,
-      property_city: lead.city,
-      property_state: lead.state,
-      property_zip: lead.zip,
-      market,
-      condition: lead.condition,
-      timeline: lead.timeline,
-      tcpa_consented: lead.tcpaConsented,
-      tcpa_timestamp: lead.tcpaTimestamp,
-      tcpa_ip: lead.tcpaIP,
-      sms_opt_in: lead.smsOptIn,
-      sms_opt_in_timestamp: lead.smsOptInTimestamp || null,
-      landing_page: lead.landingPage,
-      source: lead.source,
-      stage: 'lead',
-    })
-    .select('id')
-    .single()
+        // Attribution
+        gclid: lead.gclid || null,
+        landing_page: lead.landingPage || null,
+        source_vendor: 'dominionhomedeals.com',
+        source_campaign: lead.utmCampaign || null,
+        intake_method: 'website_form',
 
-  if (leadError) {
-    console.error('[DB] Failed to insert lead:', leadError.message)
-    return
-  }
+        // Context
+        notes: [
+          `Condition: ${lead.condition}`,
+          `Timeline: ${lead.timeline}`,
+          lead.utmSource ? `UTM: ${lead.utmSource}/${lead.utmMedium}/${lead.utmCampaign}` : null,
+        ].filter(Boolean).join('\n'),
 
-  console.log(`[DB] Lead persisted with id=${insertedLead.id}`)
-
-  // Insert attribution record
-  const { error: attrError } = await supabase
-    .from('lead_attribution')
-    .insert({
-      lead_id: insertedLead.id,
-      gclid: lead.gclid || null,
-      landing_page: lead.landingPage,
-      landing_domain: 'dominionhomedeals.com',
-      source_channel: sourceChannel,
-      market,
-      utm_source: lead.utmSource || null,
-      utm_medium: lead.utmMedium || null,
-      utm_campaign: lead.utmCampaign || null,
-      utm_term: lead.utmTerm || null,
-      utm_content: lead.utmContent || null,
+        // Raw payload for audit
+        raw_source_ref: `website_${lead.submittedAt}`,
+        received_at: lead.submittedAt,
+      }),
     })
 
-  if (attrError) {
-    console.error('[DB] Failed to insert attribution:', attrError.message)
-  } else {
-    console.log(`[DB] Attribution persisted for lead id=${insertedLead.id}`)
+    if (!res.ok) {
+      const errorText = await res.text()
+      console.error('[SENTINEL] Forward failed:', res.status, errorText)
+    } else {
+      const data = await res.json()
+      console.log('[SENTINEL] Lead forwarded successfully:', data.leadId ?? data.resolution ?? 'ok')
+    }
+  } catch (err) {
+    console.error('[SENTINEL] Forward error:', err)
   }
 }
 
@@ -373,17 +359,12 @@ export async function POST(request: NextRequest) {
     // Always log to console (visible in Vercel logs too)
     console.log('[NEW LEAD]', JSON.stringify(lead, null, 2))
 
-    // Persist to Supabase first (best-effort — failure doesn't block notifications)
-    try {
-      await persistToSupabase(lead)
-    } catch (err) {
-      console.error('[DB] Persistence error (non-blocking):', err)
-    }
-
-    // Send email + SMS in parallel (don't block the response)
+    // Send email + SMS + forward to Sentinel CRM in parallel
+    // All are best-effort — failures don't block the response
     await Promise.allSettled([
       sendEmailNotification(lead),
       sendSmsNotification(lead),
+      forwardToSentinel(lead),
     ])
 
     return NextResponse.json({
