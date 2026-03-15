@@ -500,6 +500,23 @@ export function LeadForm() {
             </div>
           )}
 
+          {/* ── TCPA / 10DLC disclosure — above button (by-submit model)503
+           ── */}
+          <p className="text-[11px] leading-relaxed text-center text-ink-400 px-2">
+            By clicking &ldquo;Get My Cash Offer,&rdquo; you consent to receive calls
+            {formData.smsOptIn ? ', texts, and emails' : ' and emails'} from
+            Dominion Homes, LLC at the number provided, including by autodialer.
+            Consent is not a condition of purchase. Msg &amp; data rates may apply.
+            Reply STOP to opt out.{' '}
+            <Link href="/privacy" className="underline hover:text-ink-500">
+              Privacy Policy
+            </Link>
+            {' · '}
+            <Link href="/terms" className="underline hover:text-ink-500">
+              Terms
+            </Link>
+          </p>
+
           {/* Submit button */}
           <button
             type="submit"
@@ -522,22 +539,6 @@ export function LeadForm() {
               'Get My Cash Offer →'
             )}
           </button>
-
-          {/* ── TCPA / 10DLC disclosure — below button (by-submit model) ── */}
-          <p className="text-[10px] leading-relaxed text-center text-ink-300 px-2">
-            By clicking &ldquo;Get My Cash Offer,&rdquo; you consent to receive calls
-            {formData.smsOptIn ? ', texts, and emails' : ' and emails'} from
-            Dominion Homes, LLC at the number provided, including by autodialer.
-            Consent is not a condition of purchase. Msg &amp; data rates may apply.
-            Reply STOP to opt out.{' '}
-            <Link href="/privacy" className="underline hover:text-ink-500">
-              Privacy Policy
-            </Link>
-            {' · '}
-            <Link href="/terms" className="underline hover:text-ink-500">
-              Terms
-            </Link>
-          </p>
 
           <button
             type="button"
