@@ -48,7 +48,7 @@ export function GoogleAnalytics() {
                                                         gtag('config', '${GA_MEASUREMENT_ID}');
                                                                   gtag('config', '${GOOGLE_ADS_ID}');
                                                                           `}
-              </Script>Script>
-        </>>
+              </Script>
+        </>
       )
-}</>
+}
