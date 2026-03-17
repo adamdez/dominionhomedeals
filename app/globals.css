@@ -1,0 +1,12 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+.hero-bg {
+  background: linear-gradient(rgba(0,0,0,0.75), rgba(0,0,0,0.85)), url('https://img-v2.gtsstatic.net/reno/imagereader.aspx?url=https%3A%2F%2Fm.sothebysrealty.com%2F1228i215%2F74ec0nvv182k4qyrctnjbbvay2i215&w=3840&q=75&option=N&permitphotoenlargement=false&fallbackimageurl=https://www.sothebysrealty.com/resources/siteresources/commonresources/images/nophoto/no_image_new.png') center/cover no-repeat fixed;
+  background-attachment: fixed;
+}
+
+.gold-text {
+  color: #facc15;
+}
