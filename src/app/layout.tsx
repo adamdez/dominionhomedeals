@@ -9,13 +9,17 @@ import { GoogleAnalytics } from './analytics'
 
 const playfair = Playfair_Display({
   subsets: ["latin"],
+  weight: "400",
+  style: "normal",
   display: "optional",
   variable: "--font-display",
 });
 
 const sourceSans = Source_Sans_3({
   subsets: ["latin"],
+  style: "normal",
   display: "optional",
+  preload: false,
   variable: "--font-body",
 });
 
