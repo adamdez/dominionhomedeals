@@ -62,68 +62,60 @@ export default function HomePage() {
                 </span>
               </h1>
 
-              <FadeIn delay={160}>
-                <p className="mt-5 max-w-lg text-lg leading-relaxed text-ink-400">
-                  We&apos;re Adam and Logan — a local team that buys houses
-                  for cash across Spokane County and North Idaho. No agents,
-                  no commissions, no repairs. Just a fair offer and a
-                  handshake.
-                </p>
-              </FadeIn>
+              <p className="mt-5 max-w-lg text-lg leading-relaxed text-ink-400">
+                We&apos;re Adam and Logan — a local team that buys houses
+                for cash across Spokane County and North Idaho. No agents,
+                no commissions, no repairs. Just a fair offer and a
+                handshake.
+              </p>
 
-              <FadeIn delay={240}>
-                <div className="mt-7 flex flex-wrap items-center gap-3">
-                  <a href="#get-offer" className="btn-primary">
-                    Get Your Cash Offer
-                  </a>
-                  <a
-                    href={`tel:${SITE.phone.replace(/\D/g, "")}`}
-                    className="btn-secondary"
-                  >
-                    Call or Text {SITE.phone}
-                  </a>
-                </div>
-              </FadeIn>
+              <div className="mt-7 flex flex-wrap items-center gap-3">
+                <a href="#get-offer" className="btn-primary">
+                  Get Your Cash Offer
+                </a>
+                <a
+                  href={`tel:${SITE.phone.replace(/\D/g, "")}`}
+                  className="btn-secondary"
+                >
+                  Call or Text {SITE.phone}
+                </a>
+              </div>
 
-              <FadeIn delay={320}>
-                <div className="mt-7 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-ink-300">
-                  <span className="flex items-center gap-1.5">
-                    <svg className="h-4 w-4 text-forest-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                    </svg>
-                    No commissions
-                  </span>
-                  <span className="flex items-center gap-1.5">
-                    <svg className="h-4 w-4 text-forest-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                    </svg>
-                    Any condition
-                  </span>
-                  <span className="flex items-center gap-1.5">
-                    <svg className="h-4 w-4 text-forest-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                    </svg>
-                    Close in 2 weeks
-                  </span>
-                  <span className="flex items-center gap-1.5">
-                    <svg className="h-4 w-4 text-forest-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                    </svg>
-                    We meet in person
-                  </span>
-                </div>
-              </FadeIn>
+              <div className="mt-7 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-ink-300">
+                <span className="flex items-center gap-1.5">
+                  <svg className="h-4 w-4 text-forest-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                  </svg>
+                  No commissions
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <svg className="h-4 w-4 text-forest-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                  </svg>
+                  Any condition
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <svg className="h-4 w-4 text-forest-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                  </svg>
+                  Close in 2 weeks
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <svg className="h-4 w-4 text-forest-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                  </svg>
+                  We meet in person
+                </span>
+              </div>
             </div>
 
             {/* Form */}
-            <FadeIn delay={200} direction="left">
-              <div id="get-offer" className="scroll-mt-24">
-                <p className="mb-3 text-center text-sm font-medium text-forest-600">
-                  Takes about 60 seconds — no obligation
-                </p>
-                <LeadForm />
-              </div>
-            </FadeIn>
+            <div id="get-offer" className="scroll-mt-24">
+              <p className="mb-3 text-center text-sm font-medium text-forest-600">
+                Takes about 60 seconds — no obligation
+              </p>
+              <LeadForm />
+            </div>
           </div>
         </div>
       </section>

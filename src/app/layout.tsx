@@ -10,14 +10,12 @@ import { GoogleAnalytics } from './analytics'
 const playfair = Playfair_Display({
   subsets: ["latin"],
   display: "optional",
-  preload: false,
   variable: "--font-display",
 });
 
 const sourceSans = Source_Sans_3({
   subsets: ["latin"],
   display: "optional",
-  preload: false,
   variable: "--font-body",
 });
 
