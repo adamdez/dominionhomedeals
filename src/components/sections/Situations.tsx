@@ -27,7 +27,7 @@ export function Situations() {
           {SITUATIONS.map((s, i) => (
             <FadeIn key={s.title} delay={i * 80}>
               <div className="rounded-xl border border-forest-400/20 bg-forest-600/40 p-5 backdrop-blur-sm transition-colors hover:bg-forest-600/60">
-                <span className="text-2xl">{ICONS[i]}</span>
+                <span className="text-2xl" aria-hidden="true">{ICONS[i]}</span>
                 <h3 className="mt-3 font-display text-lg text-white">
                   {s.title}
                 </h3>

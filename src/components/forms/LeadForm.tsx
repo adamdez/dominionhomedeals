@@ -96,7 +96,7 @@ export function LeadForm() {
         utmTerm: params.get('utm_term') || '',
         utmContent: params.get('utm_content') || '',
         gclid: params.get('gclid') || '',
-        landingPage: window.location.pathname,
+        landingPage: window.location.pathname + window.location.search,
       }))
     }
   }, [])
@@ -290,7 +290,9 @@ export function LeadForm() {
 
           <div className="grid grid-cols-5 gap-2.5">
             <div className="col-span-2">
+              <label htmlFor="city" className="sr-only">City</label>
               <input
+                id="city"
                 name="city"
                 type="text"
                 required
@@ -301,7 +303,9 @@ export function LeadForm() {
               />
             </div>
 
+            <label htmlFor="state" className="sr-only">State</label>
             <select
+              id="state"
               name="state"
               value={formData.state}
               onChange={(e) => updateField('state', e.target.value)}
@@ -312,7 +316,9 @@ export function LeadForm() {
             </select>
 
             <div className="col-span-2">
+              <label htmlFor="zip" className="sr-only">ZIP code</label>
               <input
+                id="zip"
                 name="zip"
                 type="text"
                 required
@@ -420,24 +426,32 @@ export function LeadForm() {
       {step === 3 && (
         <form onSubmit={handleFinalSubmit} className="space-y-3.5">
           <div className="grid grid-cols-2 gap-2.5">
-            <input
-              name="firstName"
-              type="text"
-              required
-              placeholder="First name"
-              value={formData.firstName}
-              onChange={(e) => updateField('firstName', e.target.value)}
-              className="w-full rounded-lg border border-stone-200 bg-stone-50 px-3.5 py-3 text-ink-600 placeholder:text-stone-300 focus:border-forest-400 focus:ring-forest-400 transition-colors text-[15px]"
-            />
-            <input
-              name="lastName"
-              type="text"
-              required
-              placeholder="Last name"
-              value={formData.lastName}
-              onChange={(e) => updateField('lastName', e.target.value)}
-              className="w-full rounded-lg border border-stone-200 bg-stone-50 px-3.5 py-3 text-ink-600 placeholder:text-stone-300 focus:border-forest-400 focus:ring-forest-400 transition-colors text-[15px]"
-            />
+            <div>
+              <label htmlFor="firstName" className="sr-only">First name</label>
+              <input
+                id="firstName"
+                name="firstName"
+                type="text"
+                required
+                placeholder="First name"
+                value={formData.firstName}
+                onChange={(e) => updateField('firstName', e.target.value)}
+                className="w-full rounded-lg border border-stone-200 bg-stone-50 px-3.5 py-3 text-ink-600 placeholder:text-stone-300 focus:border-forest-400 focus:ring-forest-400 transition-colors text-[15px]"
+              />
+            </div>
+            <div>
+              <label htmlFor="lastName" className="sr-only">Last name</label>
+              <input
+                id="lastName"
+                name="lastName"
+                type="text"
+                required
+                placeholder="Last name"
+                value={formData.lastName}
+                onChange={(e) => updateField('lastName', e.target.value)}
+                className="w-full rounded-lg border border-stone-200 bg-stone-50 px-3.5 py-3 text-ink-600 placeholder:text-stone-300 focus:border-forest-400 focus:ring-forest-400 transition-colors text-[15px]"
+              />
+            </div>
           </div>
 
           <div>
@@ -495,7 +509,7 @@ export function LeadForm() {
 
           {/* Error message */}
           {submitStatus === 'error' && errorMessage && (
-            <div className="rounded-lg border border-red-200 bg-red-50 px-3.5 py-2.5 text-sm text-red-700">
+            <div role="alert" className="rounded-lg border border-red-200 bg-red-50 px-3.5 py-2.5 text-sm text-red-700">
               {errorMessage}
             </div>
           )}
@@ -525,7 +539,7 @@ export function LeadForm() {
           >
             {isSubmitting ? (
               <span className="flex items-center justify-center gap-2">
-                <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
+                <svg aria-hidden="true" className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                   <path
                     className="opacity-75"
@@ -554,6 +568,7 @@ export function LeadForm() {
       <div className="mt-4 flex items-center justify-center gap-4 text-xs text-ink-300">
         <span className="flex items-center gap-1">
           <svg
+            aria-hidden="true"
             className="h-3.5 w-3.5 text-forest-500"
             fill="none"
             viewBox="0 0 24 24"

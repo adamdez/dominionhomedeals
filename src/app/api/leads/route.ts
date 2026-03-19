@@ -39,7 +39,7 @@ function validatePhone(phone: string): boolean {
 }
 
 function validateEmail(email: string): boolean {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
+  return /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i.test(email)
 }
 
 function sanitize(str: string): string {
@@ -74,8 +74,7 @@ function isRateLimited(ip: string): boolean {
 async function sendEmailNotification(lead: Record<string, unknown>) {
   const RESEND_API_KEY = process.env.RESEND_API_KEY
   if (!RESEND_API_KEY) {
-    console.log('[EMAIL] No RESEND_API_KEY set — skipping email. Lead data:')
-    console.log(JSON.stringify(lead, null, 2))
+    console.log('[EMAIL] No RESEND_API_KEY set — skipping email for lead:', lead.firstName, lead.lastName, lead.city)
     return
   }
 
@@ -341,7 +340,7 @@ export async function POST(request: NextRequest) {
       phone: body.phone.replace(/\D/g, '').substring(0, 11),
       email: sanitize(body.email).toLowerCase(),
       tcpaConsented: true,
-      tcpaTimestamp: body.tcpaTimestamp || new Date().toISOString(),
+      tcpaTimestamp: new Date().toISOString(),
       tcpaIP: ip,
       smsOptIn: body.smsOptIn ?? false,
       smsOptInTimestamp: body.smsOptInTimestamp || null,
@@ -356,8 +355,8 @@ export async function POST(request: NextRequest) {
       submittedAt: new Date().toISOString(),
     }
 
-    // Always log to console (visible in Vercel logs too)
-    console.log('[NEW LEAD]', JSON.stringify(lead, null, 2))
+    // Log non-PII summary (visible in Vercel logs)
+    console.log('[NEW LEAD]', lead.firstName, lead.lastName, '—', lead.city, lead.state, '—', lead.timeline, '—', lead.condition)
 
     // Send email + SMS + forward to Sentinel CRM in parallel
     // All are best-effort — failures don't block the response

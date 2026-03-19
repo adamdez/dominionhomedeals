@@ -79,7 +79,7 @@ function JsonLd() {
           postalCode: SITE.address.zip,
           addressCountry: "US",
         },
-        geo: { "@type": "GeoCoordinates", latitude: 47.7177, longitude: -116.9516 },
+        geo: { "@type": "GeoCoordinates", latitude: 47.7182, longitude: -116.9516 },
         areaServed: [
           { "@type": "AdministrativeArea", name: "Spokane County, WA" },
           { "@type": "AdministrativeArea", name: "Kootenai County, ID" },
@@ -119,6 +119,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png" />
       </head>
       <body className="min-h-screen bg-stone-50 font-body text-ink-600 antialiased">
+        <a href="#main-content" className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[100] focus:rounded-lg focus:bg-forest-600 focus:px-4 focus:py-2 focus:text-white focus:shadow-lg">
+          Skip to main content
+        </a>
         <GoogleAnalytics />
         <Header />
         <main id="main-content">{children}</main>
