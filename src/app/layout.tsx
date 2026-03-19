@@ -9,13 +9,13 @@ import { GoogleAnalytics } from './analytics'
 
 const playfair = Playfair_Display({
   subsets: ["latin"],
-  display: "swap",
+  display: "optional",
   variable: "--font-display",
 });
 
 const sourceSans = Source_Sans_3({
   subsets: ["latin"],
-  display: "swap",
+  display: "optional",
   variable: "--font-body",
 });
 
@@ -110,8 +110,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en" className={`${playfair.variable} ${sourceSans.variable}`} suppressHydrationWarning>
       <head>
         <JsonLd />
-        {/* Preconnect only to origins actually loaded in the critical path */}
-        <link rel="preconnect" href="https://www.googletagmanager.com" />
         <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32x32.png" />
         <link rel="icon" type="image/png" sizes="16x16" href="/icons/favicon-16x16.png" />
         <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png" />
