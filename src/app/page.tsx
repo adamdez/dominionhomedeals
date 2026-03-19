@@ -39,8 +39,6 @@ export default function HomePage() {
       <section className="relative overflow-hidden pt-28 pb-14 sm:pt-36 sm:pb-20 lg:pt-40 lg:pb-24">
         {/* Warm gradient background */}
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-stone-50 via-forest-50/20 to-stone-50" />
-        <div className="pointer-events-none absolute -top-20 -right-20 h-[400px] w-[400px] rounded-full bg-forest-100/30 blur-3xl" />
-        <div className="pointer-events-none absolute -bottom-20 -left-20 h-[350px] w-[350px] rounded-full bg-amber-100/20 blur-3xl" />
 
         <div className="relative mx-auto max-w-6xl px-5 sm:px-6 lg:px-8">
           <div className="grid items-start gap-10 lg:grid-cols-2 lg:gap-14">
