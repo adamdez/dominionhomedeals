@@ -166,49 +166,49 @@ async function sendEmailNotification(lead: Record<string, unknown>) {
 }
 
 /* ------------------------------------------------------------------ */
-/*  SMS via Twilio                                                     */
+/*  SMS via email-to-SMS carrier gateway (uses Resend, no Twilio)      */
 /* ------------------------------------------------------------------ */
 
 async function sendSmsNotification(lead: Record<string, unknown>) {
-  const TWILIO_SID = process.env.TWILIO_ACCOUNT_SID
-  const TWILIO_TOKEN = process.env.TWILIO_AUTH_TOKEN
-  const TWILIO_FROM = process.env.TWILIO_PHONE_NUMBER
-
-  if (!TWILIO_SID || !TWILIO_TOKEN || !TWILIO_FROM) {
-    console.log('[SMS] Twilio not configured — skipping SMS notification')
+  const RESEND_API_KEY = process.env.RESEND_API_KEY
+  if (!RESEND_API_KEY) {
+    console.log('[SMS] No RESEND_API_KEY — skipping SMS notification')
     return
   }
 
-  const priorityEmoji = lead.timeline === 'ASAP' ? '🔴' : lead.timeline === 'Soon' ? '🟡' : '🟢'
+  const priorityEmoji = lead.timeline === 'ASAP' ? '🔴 URGENT' : lead.timeline === 'Soon' ? '🟡 SOON' : '🟢'
 
-  const message = `${priorityEmoji} NEW LEAD\n${lead.firstName} ${lead.lastName}\n📍 ${lead.address}, ${lead.city} ${lead.state}\n📱 ${lead.phone}\n🏠 ${lead.condition} | ${lead.timeline}\n\nCall them back ASAP!`
+  // Keep it short — carrier SMS gateways truncate long messages
+  const message = `${priorityEmoji} NEW LEAD: ${lead.firstName} ${lead.lastName}\n${lead.address}, ${lead.city} ${lead.state}\nPhone: ${lead.phone}\n${lead.condition} | ${lead.timeline}\n\nCall them back ASAP!`
 
-  const recipients = ['+15095907091', '+15096669518']
+  // Email-to-SMS carrier gateways
+  const smsRecipients = [
+    '5095907091@txt.att.net',    // Adam — AT&T
+    '5096669518@vtext.com',      // Logan — Verizon
+  ]
 
   try {
     await Promise.allSettled(
-      recipients.map(async (to) => {
-        const res = await fetch(
-          `https://api.twilio.com/2010-04-01/Accounts/${TWILIO_SID}/Messages.json`,
-          {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/x-www-form-urlencoded',
-              Authorization: 'Basic ' + Buffer.from(`${TWILIO_SID}:${TWILIO_TOKEN}`).toString('base64'),
-            },
-            body: new URLSearchParams({
-              To: to,
-              From: TWILIO_FROM,
-              Body: message,
-            }),
-          }
-        )
+      smsRecipients.map(async (gateway) => {
+        const res = await fetch('https://api.resend.com/emails', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${RESEND_API_KEY}`,
+          },
+          body: JSON.stringify({
+            from: 'Dominion Leads <leads@dominionhomedeals.com>',
+            to: [gateway],
+            subject: `New Lead: ${lead.firstName} ${lead.lastName}`,
+            text: message,
+          }),
+        })
 
         if (!res.ok) {
           const errorText = await res.text()
-          console.error(`[SMS ERROR] Failed to send to ${to}:`, errorText)
+          console.error(`[SMS] Failed to send to ${gateway}:`, errorText)
         } else {
-          console.log(`[SMS] Sent to ${to}`)
+          console.log(`[SMS] Sent to ${gateway}`)
         }
       })
     )
