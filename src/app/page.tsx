@@ -46,25 +46,21 @@ export default function HomePage() {
           <div className="grid items-start gap-10 lg:grid-cols-2 lg:gap-14">
             {/* Copy */}
             <div className="pt-2">
-              <FadeIn>
-                <div className="trust-badge mb-5">
-                  <span className="relative flex h-1.5 w-1.5">
-                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-forest-500 opacity-75" />
-                    <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-forest-500" />
-                  </span>
-                  Local Spokane & CDA Team · Based in Post Falls
-                </div>
-              </FadeIn>
+              <div className="trust-badge mb-5">
+                <span className="relative flex h-1.5 w-1.5">
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-forest-500 opacity-75" />
+                  <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-forest-500" />
+                </span>
+                Local Spokane & CDA Team · Based in Post Falls
+              </div>
 
-              <FadeIn delay={80}>
-                <h1 className="font-display text-hero text-ink-700 text-balance">
-                  Sell Your Spokane Home
-                  <br />
-                  <span className="text-forest-500">
-                    for Cash. Skip the Stress.
-                  </span>
-                </h1>
-              </FadeIn>
+              <h1 className="font-display text-hero text-ink-700 text-balance">
+                Sell Your Spokane Home
+                <br />
+                <span className="text-forest-500">
+                  for Cash. Skip the Stress.
+                </span>
+              </h1>
 
               <FadeIn delay={160}>
                 <p className="mt-5 max-w-lg text-lg leading-relaxed text-ink-400">
