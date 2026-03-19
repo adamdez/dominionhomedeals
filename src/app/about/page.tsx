@@ -221,7 +221,7 @@ export default function AboutPage() {
             </h2>
           </div>
 
-          <div className="mt-12 grid gap-8 md:grid-cols-3">
+          <div className="mt-12 grid gap-8 sm:grid-cols-2 max-w-2xl mx-auto">
             {team.map((member) => (
               <div
                 key={member.name}
@@ -244,10 +244,7 @@ export default function AboutPage() {
             ))}
           </div>
 
-          <p className="mt-8 text-center text-sm text-ink-300">
-            Want to add real team photos? Replace the initials above with actual headshots
-            for maximum trust. E-E-A-T demands it.
-          </p>
+          {/* TODO: Replace initials with real headshots for E-E-A-T */}
         </div>
       </section>
 

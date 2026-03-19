@@ -92,9 +92,8 @@ export function trackFormStep(stepNumber: number, stepName: string): void {
 }
 
 // ── Click-to-call intent ───────────────────────────────────────
-// GA4 event fires site-wide (all tel: clicks) for analytics.
-// Google Ads conversion fires only on /sell page to avoid noisy
-// signals from header/footer clicks on informational pages.
+// GA4 event + Google Ads conversion both fire site-wide on every
+// tel: click. Captured via global click handler in analytics.tsx.
 
 export function trackCallIntent(linkText: string, ctaLocation: string): void {
     const pagePath = typeof window !== 'undefined' ? window.location.pathname : '';

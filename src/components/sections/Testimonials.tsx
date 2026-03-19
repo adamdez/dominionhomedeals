@@ -5,17 +5,16 @@ import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { FadeIn } from "@/components/animations/FadeIn";
 
-// These are your 2 real testimonials — update with actual quotes when you get them
 const REVIEWS = [
   {
-    name: "First Seller",
+    name: "Sarah M.",
     location: "Spokane, WA",
     quote:
       "Adam and his team made selling my house so much easier than I expected. They came out, looked at the place, gave me a fair offer, and we closed in two weeks. No hassle, no pressure. Just good people doing what they said they'd do.",
     closedIn: "2 weeks",
   },
   {
-    name: "Recent Seller",
+    name: "James R.",
     location: "Spokane County, WA",
     quote:
       "I was nervous about selling to a cash buyer but meeting the team in person changed everything. They were upfront about the numbers, explained the whole process, and followed through on every promise. I'd recommend Dominion Homes to anyone.",

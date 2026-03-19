@@ -34,7 +34,7 @@ export function Footer() {
             <h3 className="mb-3 text-xs font-bold uppercase tracking-widest text-stone-400">Company</h3>
             <ul className="space-y-2">
               {[
-                { label: "Get a Cash Offer", href: "#get-offer" },
+                { label: "Get a Cash Offer", href: "/#get-offer" },
                 { label: "How It Works", href: "/how-we-work" },
                 { label: "About Us", href: "/about" },
                 { label: "Areas We Serve", href: "/neighborhoods" },

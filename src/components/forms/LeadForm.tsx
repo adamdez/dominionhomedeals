@@ -514,8 +514,7 @@ export function LeadForm() {
             </div>
           )}
 
-          {/* ── TCPA / 10DLC disclosure — above button (by-submit model)503
-           ── */}
+          {/* ── TCPA / 10DLC disclosure — above button (by-submit model) ── */}
           <p className="text-[11px] leading-relaxed text-center text-ink-400 px-2">
             By clicking &ldquo;Get My Cash Offer,&rdquo; you consent to receive calls
             {formData.smsOptIn ? ', texts, and emails' : ' and emails'} from
