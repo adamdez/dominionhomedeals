@@ -520,7 +520,7 @@ export function LeadForm() {
             {formData.smsOptIn ? ', texts, and emails' : ' and emails'} from
             Dominion Homes, LLC at the number provided, including by autodialer.
             Consent is not a condition of purchase. Msg &amp; data rates may apply.
-            Reply STOP to opt out.{' '}
+            Message frequency varies. Reply STOP to opt out. Reply HELP for help.{' '}
             <Link href="/privacy" className="underline hover:text-ink-500">
               Privacy Policy
             </Link>
