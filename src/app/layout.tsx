@@ -90,6 +90,7 @@ function JsonLd() {
           opens: "08:00",
           closes: "18:00",
         },
+        ...(SITE.sameAs.length > 0 && { sameAs: SITE.sameAs }),
       },
       {
         "@type": "WebSite",

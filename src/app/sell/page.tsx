@@ -52,21 +52,6 @@ const SELL_TRUST_STATS = [
   { value: "Local", label: "Not a Call Center", icon: "📍" },
 ];
 
-/* ── FAQ JSON-LD ─────────────────────────────────────────────── */
-
-function FAQJsonLd() {
-  const schema = {
-    "@context": "https://schema.org",
-    "@type": "FAQPage",
-    mainEntity: SELL_PAGE_FAQS.map((faq) => ({
-      "@type": "Question",
-      name: faq.q,
-      acceptedAnswer: { "@type": "Answer", text: faq.a },
-    })),
-  };
-  return <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }} />;
-}
-
 /* ── Page ─────────────────────────────────────────────────────── */
 
 export default function SellPage() {
@@ -74,7 +59,22 @@ export default function SellPage() {
 
   return (
     <>
-      <FAQJsonLd />
+      {/* FAQPage schema — matches on-page SELL_PAGE_FAQS content */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "FAQPage",
+            mainEntity: SELL_PAGE_FAQS.map((faq) => ({
+              "@type": "Question",
+              name: faq.q,
+              acceptedAnswer: { "@type": "Answer", text: faq.a },
+            })),
+          }),
+        }}
+      />
+
       {/* ══════════ HERO ══════════ */}
       <section className="relative overflow-hidden pt-28 pb-14 sm:pt-36 sm:pb-20 lg:pt-40 lg:pb-24">
         {/* Background */}

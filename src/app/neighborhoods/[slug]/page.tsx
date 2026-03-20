@@ -518,6 +518,36 @@ export default async function NeighborhoodPage({ params }: { params: Promise<{ s
           }),
         }}
       />
+      {/* BreadcrumbList — Home > Areas We Serve > {name} */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            '@context': 'https://schema.org',
+            '@type': 'BreadcrumbList',
+            itemListElement: [
+              {
+                '@type': 'ListItem',
+                position: 1,
+                name: 'Home',
+                item: 'https://dominionhomedeals.com',
+              },
+              {
+                '@type': 'ListItem',
+                position: 2,
+                name: 'Areas We Serve',
+                item: 'https://dominionhomedeals.com/neighborhoods',
+              },
+              {
+                '@type': 'ListItem',
+                position: 3,
+                name: data.name,
+                item: `https://dominionhomedeals.com/neighborhoods/${slug}`,
+              },
+            ],
+          }),
+        }}
+      />
 
       {/* Hero */}
       <section className="relative bg-cream-50 pt-32 pb-20 md:pt-40 md:pb-28">

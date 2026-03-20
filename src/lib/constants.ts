@@ -14,6 +14,9 @@ export const SITE = {
     state: "ID",
     zip: "83854",
   },
+  // Add your profile URLs here once live (GBP, Facebook, etc.)
+  // Schema sameAs in layout.tsx reads from this array.
+  sameAs: [] as readonly string[],
 } as const;
 
 /** Team — real people, real bios, honest */
