@@ -9,9 +9,10 @@
  * form_step — form step progression (GA4 only — funnel insight)
  * click_to_call — tel: link click (GA4 site-wide, Google Ads on /sell only)
  *
- * Google Ads conversion labels are read from public env vars:
- * NEXT_PUBLIC_GADS_FORM_LABEL — "Lead Form" conversion label
- * NEXT_PUBLIC_GADS_CALL_LABEL — "Call Intent" conversion label
+ * Google Ads:
+ * NEXT_PUBLIC_GADS_FORM_SEND_TO — full send_to for lead form (default matches
+ *   Google Ads → Submit lead form). Optional override if the action changes.
+ * NEXT_PUBLIC_GADS_CALL_LABEL — call conversion label (paired with primary Ads ID)
  *
  * These are set in Vercel env vars (or .env.local) after creating
  * conversion actions in Google Ads UI. GA4 events fire regardless.
@@ -19,11 +20,15 @@
 
 // ── Configuration ──────────────────────────────────────────────
 
-const GOOGLE_ADS_CONVERSION_ID = 'AW-17989282213';
+/** Call-intent conversions still use the primary Ads account tag on the site */
+const GOOGLE_ADS_PRIMARY_ID = 'AW-17989282213';
 
-// Conversion labels from Google Ads conversion actions
-const GADS_FORM_LABEL = process.env.NEXT_PUBLIC_GADS_FORM_LABEL || 'KWB_CIaVnYgcEKXT-oFD';
-const GADS_CALL_LABEL = '10-DCJvTz4UcEKCdm4dD';
+/** "Submit lead form" (WEBPAGE) — ID + label must match Google Ads conversion setup */
+const GADS_FORM_SEND_TO =
+  process.env.NEXT_PUBLIC_GADS_FORM_SEND_TO ||
+  'AW-18000301728/LJHYCOnlx4QcEKCdm4dD';
+
+const GADS_CALL_LABEL = process.env.NEXT_PUBLIC_GADS_CALL_LABEL || '10-DCJvTz4UcEKCdm4dD';
 
 // ── gtag helper ────────────────────────────────────────────────
 // Safe wrapper — silently no-ops if gtag hasn't loaded (ad blocker, slow load)
@@ -69,13 +74,12 @@ export function trackLeadFormSubmission(data: LeadTrackingData): void {
         value: 1,
   });
 
-  // Google Ads direct conversion — fires only if label is configured
-  if (GADS_FORM_LABEL) {
-        gtag('event', 'conversion', {
-                send_to: `${GOOGLE_ADS_CONVERSION_ID}/${GADS_FORM_LABEL}`,
-                value: 1.0,
-                currency: 'USD',
-        });
+  if (GADS_FORM_SEND_TO) {
+    gtag('event', 'conversion', {
+      send_to: GADS_FORM_SEND_TO,
+      value: 1.0,
+      currency: 'USD',
+    });
   }
 }
 
@@ -108,10 +112,10 @@ export function trackCallIntent(linkText: string, ctaLocation: string): void {
 
   // Google Ads conversion — fires on any page with a tel: click
   if (GADS_CALL_LABEL) {
-        gtag('event', 'conversion', {
-                send_to: `${GOOGLE_ADS_CONVERSION_ID}/${GADS_CALL_LABEL}`,
-                value: 1.0,
-                currency: 'USD',
-        });
+    gtag('event', 'conversion', {
+      send_to: `${GOOGLE_ADS_PRIMARY_ID}/${GADS_CALL_LABEL}`,
+      value: 1.0,
+      currency: 'USD',
+    });
   }
 }
