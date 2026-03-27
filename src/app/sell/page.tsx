@@ -1,6 +1,7 @@
 // src/app/sell/page.tsx
 import type { Metadata } from "next";
 import { LeadForm } from "@/components/forms/LeadForm";
+import { TextUsForm } from "@/components/forms/TextUsForm";
 import { FadeIn } from "@/components/animations/FadeIn";
 // Testimonials removed from /sell until real reviews are available
 import { Situations } from "@/components/sections/Situations";
@@ -216,13 +217,9 @@ export default function SellPage() {
             <a href="#get-offer" className="btn-primary">
               Start Step 1 — It&apos;s Free
             </a>
-            <a
-              href={`sms:${phoneClean}`}
-              className="text-sm font-semibold text-ink-400 hover:text-forest-600 transition-colors inline-flex items-center gap-1.5"
-            >
-              <PhoneIcon />
-              Or text us: {SITE.phone}
-            </a>
+          </div>
+          <div className="mx-auto mt-8 max-w-sm">
+            <TextUsForm />
           </div>
         </FadeIn>
       </section>
@@ -335,13 +332,9 @@ export default function SellPage() {
               <a href="#get-offer" className="btn-primary !bg-white !text-ink-600 hover:!bg-stone-100">
                 Get My Cash Offer
               </a>
-              <a
-                href={`sms:${phoneClean}`}
-                className="text-sm font-semibold text-stone-300 hover:text-amber-400 transition-colors inline-flex items-center gap-1.5"
-              >
-                <PhoneIcon />
-                Or text us: {SITE.phone}
-              </a>
+            </div>
+            <div className="mx-auto mt-8 max-w-sm">
+              <TextUsForm />
             </div>
           </div>
         </FadeIn>

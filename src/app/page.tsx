@@ -2,6 +2,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { LeadForm } from "@/components/forms/LeadForm";
+import { TextUsForm } from "@/components/forms/TextUsForm";
 import { FadeIn } from "@/components/animations/FadeIn";
 import { Testimonials } from "@/components/sections/Testimonials";
 import { Situations } from "@/components/sections/Situations";
@@ -309,12 +310,9 @@ export default function HomePage() {
               <a href="#get-offer" className="btn-primary !bg-white !text-ink-600 hover:!bg-stone-100">
                 Get My Cash Offer
               </a>
-              <a
-                href={`sms:${SITE.phone.replace(/\D/g, "")}`}
-                className="text-sm font-semibold text-stone-300 hover:text-amber-400 transition-colors"
-              >
-                Or text us: {SITE.phone}
-              </a>
+            </div>
+            <div className="mx-auto mt-8 max-w-sm">
+              <TextUsForm />
             </div>
           </div>
         </FadeIn>
