@@ -7,6 +7,17 @@ const nextConfig: NextConfig = {
           imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
           minimumCacheTTL: 60 * 60 * 24 * 30,
     },
+    async rewrites() {
+          return {
+            beforeFiles: [
+              {
+                source: "/:path*",
+                has: [{ type: "host", value: "al.dominionhomedeals.com" }],
+                destination: "/al/:path*",
+              },
+            ],
+          };
+    },
     async redirects() {
           return [
             {
@@ -17,6 +28,12 @@ const nextConfig: NextConfig = {
             {
                       source: "/terms-and-conditions",
                       destination: "/terms",
+                      permanent: true,
+            },
+            {
+                      source: "/al/:path*",
+                      has: [{ type: "host", value: "(?:www\\.)?dominionhomedeals\\.com" }],
+                      destination: "https://al.dominionhomedeals.com/:path*",
                       permanent: true,
             },
                 ];
