@@ -11,7 +11,7 @@ const nextConfig: NextConfig = {
           return {
             beforeFiles: [
               {
-                source: "/:path*",
+                source: "/:path((?!api/|_next/).*)",
                 has: [{ type: "host", value: "al.dominionhomedeals.com" }],
                 destination: "/al/:path*",
               },
