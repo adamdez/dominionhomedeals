@@ -401,21 +401,28 @@ If you need more information from your vault training data to give a good answer
 }
 
 async function executeWebSearch(query: string): Promise<string> {
-  const apiKey = process.env.TAVILY_API_KEY;
+  const apiKey = process.env.TAVILY_API_KEY?.trim();
   if (!apiKey) return "Web search is not configured. Ask the admin to set TAVILY_API_KEY.";
   try {
     const res = await fetch("https://api.tavily.com/search", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${apiKey}`,
+      },
       body: JSON.stringify({
-        api_key: apiKey,
         query,
-        max_results: 5,
-        include_answer: true,
+        topic: "general",
         search_depth: "basic",
+        max_results: 5,
+        include_answer: "basic",
       }),
     });
-    if (!res.ok) return `Search failed (${res.status}). Try rephrasing.`;
+    if (!res.ok) {
+      const err = await res.json().catch(() => null);
+      const detail = err?.detail?.error || `HTTP ${res.status}`;
+      return `Search failed: ${detail}. Try rephrasing.`;
+    }
     const data = await res.json();
     let out = "";
     if (data.answer) out += `Quick answer: ${data.answer}\n\n`;

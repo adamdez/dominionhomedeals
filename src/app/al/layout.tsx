@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 export const metadata: Metadata = {
   title: "Al Boreland — Command Center",
   robots: { index: false, follow: false },
+  alternates: { canonical: "https://al.dominionhomedeals.com/" },
 };
 
 export default function AlLayout({ children }: { children: React.ReactNode }) {

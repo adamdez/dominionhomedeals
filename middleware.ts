@@ -103,6 +103,28 @@ function blockedCountryResponse(request: NextRequest): NextResponse {
 }
 
 export function middleware(request: NextRequest) {
+  const hostname = request.headers.get("host") || "";
+  const isAlSubdomain = hostname.startsWith("al.");
+  const { pathname } = request.nextUrl;
+
+  if (isAlSubdomain) {
+    if (pathname === "/") {
+      const url = request.nextUrl.clone();
+      url.pathname = "/al";
+      return NextResponse.rewrite(url);
+    }
+
+    const response = NextResponse.next();
+    response.headers.set("X-DNS-Prefetch-Control", "on");
+    response.headers.set("Strict-Transport-Security", "max-age=63072000; includeSubDomains; preload");
+    return response;
+  }
+
+  if (pathname === "/al" || pathname.startsWith("/al/")) {
+    const target = new URL("https://al.dominionhomedeals.com/");
+    return NextResponse.redirect(target, 308);
+  }
+
   if (shouldBlockByCountry(request)) {
     return blockedCountryResponse(request);
   }
@@ -111,14 +133,13 @@ export function middleware(request: NextRequest) {
   response.headers.set("X-DNS-Prefetch-Control", "on");
   response.headers.set("Strict-Transport-Security", "max-age=63072000; includeSubDomains; preload");
 
-  // Audit log for lead API access
-  if (request.nextUrl.pathname.startsWith("/api/leads")) {
+  if (pathname.startsWith("/api/leads")) {
     console.log(JSON.stringify({
       type: "LEAD_API_ACCESS",
       timestamp: new Date().toISOString(),
       ip: request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown",
       method: request.method,
-      path: request.nextUrl.pathname,
+      path: pathname,
     }));
   }
 
