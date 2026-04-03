@@ -7,9 +7,21 @@ import {
   useCallback,
   type FormEvent,
 } from "react";
-import { Send, Menu, Loader2, X } from "lucide-react";
+import { Send, Menu, Loader2, X, Paperclip, FileText, Globe } from "lucide-react";
 import { AuthScreen } from "./AuthScreen";
 import { Sidebar } from "./Sidebar";
+
+/* ------------------------------------------------------------------ */
+/*  Types                                                              */
+/* ------------------------------------------------------------------ */
+
+interface Attachment {
+  id: string;
+  name: string;
+  type: string;
+  size: number;
+  data?: string;
+}
 
 interface Message {
   id: string;
@@ -17,10 +29,93 @@ interface Message {
   content: string;
   timestamp: number;
   typing?: boolean;
+  attachments?: Attachment[];
 }
+
+/* ------------------------------------------------------------------ */
+/*  Constants                                                          */
+/* ------------------------------------------------------------------ */
 
 const STORAGE_KEY = "al_chat_messages";
 const MAX_HISTORY = 30;
+const MAX_FILES = 5;
+const MAX_FILE_SIZE = 5 * 1024 * 1024;
+const MAX_IMAGE_DIM = 1600;
+const ACCEPTED_TYPES = [
+  "image/jpeg",
+  "image/png",
+  "image/gif",
+  "image/webp",
+  "application/pdf",
+];
+
+/* ------------------------------------------------------------------ */
+/*  File processing helpers                                            */
+/* ------------------------------------------------------------------ */
+
+function formatBytes(n: number): string {
+  if (n < 1024) return `${n} B`;
+  if (n < 1024 * 1024) return `${(n / 1024).toFixed(0)} KB`;
+  return `${(n / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function readBlobAsDataUri(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const r = new FileReader();
+    r.onload = () => resolve(r.result as string);
+    r.onerror = reject;
+    r.readAsDataURL(blob);
+  });
+}
+
+function resizeImage(file: File): Promise<Blob> {
+  return new Promise((resolve) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      const { width, height } = img;
+      if (width <= MAX_IMAGE_DIM && height <= MAX_IMAGE_DIM && file.size < 1024 * 1024) {
+        resolve(file);
+        return;
+      }
+      const ratio = Math.min(MAX_IMAGE_DIM / width, MAX_IMAGE_DIM / height, 1);
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.round(width * ratio);
+      canvas.height = Math.round(height * ratio);
+      const ctx = canvas.getContext("2d")!;
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      canvas.toBlob((b) => resolve(b || file), "image/jpeg", 0.85);
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      resolve(file);
+    };
+    img.src = url;
+  });
+}
+
+async function processFile(file: File): Promise<Attachment | null> {
+  if (!ACCEPTED_TYPES.includes(file.type)) return null;
+  if (file.size > MAX_FILE_SIZE) return null;
+
+  let blob: Blob = file;
+  let mime = file.type;
+
+  if (file.type.startsWith("image/") && file.type !== "image/gif") {
+    blob = await resizeImage(file);
+    mime = "image/jpeg";
+  }
+
+  const data = await readBlobAsDataUri(blob);
+  return {
+    id: crypto.randomUUID(),
+    name: file.name,
+    type: mime,
+    size: blob.size,
+    data,
+  };
+}
 
 function getGreeting(): string {
   const h = new Date().getHours();
@@ -29,6 +124,10 @@ function getGreeting(): string {
   return "Good evening";
 }
 
+/* ------------------------------------------------------------------ */
+/*  Main component                                                     */
+/* ------------------------------------------------------------------ */
+
 export function ChatApp() {
   const [authed, setAuthed] = useState<boolean | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -36,13 +135,22 @@ export function ChatApp() {
   const [loading, setLoading] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [pendingFiles, setPendingFiles] = useState<Attachment[]>([]);
+  const [dragActive, setDragActive] = useState(false);
+  const [searchQuery, setSearchQuery] = useState<string | null>(null);
 
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const messagesRef = useRef<Message[]>([]);
+  const pendingRef = useRef<Attachment[]>([]);
   const abortRef = useRef<AbortController | null>(null);
-  messagesRef.current = messages;
+  const dragCounter = useRef(0);
 
+  messagesRef.current = messages;
+  pendingRef.current = pendingFiles;
+
+  // --- Auth ---
   useEffect(() => {
     fetch("/api/al/verify")
       .then((r) => r.json())
@@ -50,6 +158,7 @@ export function ChatApp() {
       .catch(() => setAuthed(false));
   }, []);
 
+  // --- Restore messages ---
   useEffect(() => {
     if (typeof window === "undefined") return;
     try {
@@ -61,9 +170,13 @@ export function ChatApp() {
     } catch {}
   }, []);
 
+  // --- Persist messages (strip attachment data to stay within localStorage limits) ---
   useEffect(() => {
     if (messages.length > 0) {
-      const toSave = messages.map(({ typing, ...rest }) => rest);
+      const toSave = messages.map(({ typing, ...rest }) => ({
+        ...rest,
+        attachments: rest.attachments?.map(({ data, ...a }) => a),
+      }));
       localStorage.setItem(STORAGE_KEY, JSON.stringify(toSave));
     }
   }, [messages]);
@@ -76,25 +189,86 @@ export function ChatApp() {
     return () => abortRef.current?.abort();
   }, []);
 
+  // --- File handling ---
+
+  async function addFiles(fileList: File[]) {
+    const remaining = MAX_FILES - pendingRef.current.length;
+    if (remaining <= 0) return;
+    const toProcess = fileList.slice(0, remaining);
+    const results = await Promise.all(toProcess.map(processFile));
+    const valid = results.filter(Boolean) as Attachment[];
+    if (valid.length > 0) {
+      setPendingFiles((prev) => [...prev, ...valid]);
+    }
+  }
+
+  function removeFile(id: string) {
+    setPendingFiles((prev) => prev.filter((f) => f.id !== id));
+  }
+
+  function handleFileInput(e: React.ChangeEvent<HTMLInputElement>) {
+    if (e.target.files) {
+      addFiles(Array.from(e.target.files));
+      e.target.value = "";
+    }
+  }
+
+  function handlePaste(e: React.ClipboardEvent) {
+    const files = Array.from(e.clipboardData.files);
+    if (files.length > 0) {
+      e.preventDefault();
+      addFiles(files);
+    }
+  }
+
+  function handleDragEnter(e: React.DragEvent) {
+    e.preventDefault();
+    dragCounter.current++;
+    if (e.dataTransfer.types.includes("Files")) setDragActive(true);
+  }
+
+  function handleDragLeave(e: React.DragEvent) {
+    e.preventDefault();
+    dragCounter.current--;
+    if (dragCounter.current === 0) setDragActive(false);
+  }
+
+  function handleDragOver(e: React.DragEvent) {
+    e.preventDefault();
+  }
+
+  function handleDrop(e: React.DragEvent) {
+    e.preventDefault();
+    dragCounter.current = 0;
+    setDragActive(false);
+    const files = Array.from(e.dataTransfer.files);
+    if (files.length > 0) addFiles(files);
+  }
+
+  // --- Send ---
+
   const sendMessage = useCallback(
     async (text: string) => {
-      if (!text.trim() || loading) return;
+      const files = pendingRef.current;
+      if (!text.trim() && files.length === 0) return;
+      if (loading) return;
+
+      setPendingFiles([]);
+      setInput("");
+      setLoading(true);
+
+      if (inputRef.current) inputRef.current.style.height = "auto";
 
       const userMsg: Message = {
         id: crypto.randomUUID(),
         role: "user",
         content: text.trim(),
         timestamp: Date.now(),
+        attachments: files.length > 0 ? files : undefined,
       };
 
       const currentMessages = [...messagesRef.current, userMsg];
       setMessages(currentMessages);
-      setInput("");
-      setLoading(true);
-
-      if (inputRef.current) {
-        inputRef.current.style.height = "auto";
-      }
 
       const alId = crypto.randomUUID();
       setMessages((prev) => [
@@ -110,19 +284,28 @@ export function ChatApp() {
       abortRef.current = new AbortController();
 
       try {
+        const body: Record<string, unknown> = {
+          message: text.trim(),
+          history: history.slice(0, -1),
+        };
+
+        if (files.length > 0) {
+          body.attachments = files.map(({ name, type, size, data }) => ({
+            name,
+            type,
+            size,
+            data,
+          }));
+        }
+
         const res = await fetch("/api/al/chat", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            message: text.trim(),
-            history: history.slice(0, -1),
-          }),
+          body: JSON.stringify(body),
           signal: abortRef.current.signal,
         });
 
-        if (!res.ok || !res.body) {
-          throw new Error(`Server error ${res.status}`);
-        }
+        if (!res.ok || !res.body) throw new Error(`Server error ${res.status}`);
 
         const reader = res.body.getReader();
         const decoder = new TextDecoder();
@@ -146,26 +329,31 @@ export function ChatApp() {
                 accumulated += accumulated
                   ? `\n\n---\nError: ${parsed.error}`
                   : `Error: ${parsed.error}`;
+                setMessages((prev) =>
+                  prev.map((m) =>
+                    m.id === alId ? { ...m, content: accumulated } : m
+                  )
+                );
+              } else if (parsed.status === "searching") {
+                setSearchQuery(parsed.query || "the web");
               } else if (parsed.t) {
+                setSearchQuery(null);
                 accumulated += parsed.t;
+                setMessages((prev) =>
+                  prev.map((m) =>
+                    m.id === alId ? { ...m, content: accumulated } : m
+                  )
+                );
               }
-              setMessages((prev) =>
-                prev.map((m) =>
-                  m.id === alId ? { ...m, content: accumulated } : m
-                )
-              );
             } catch {}
           }
         }
 
+        setSearchQuery(null);
         setMessages((prev) =>
           prev.map((m) =>
             m.id === alId
-              ? {
-                  ...m,
-                  content: accumulated || "No response received.",
-                  typing: false,
-                }
+              ? { ...m, content: accumulated || "No response received.", typing: false }
               : m
           )
         );
@@ -175,12 +363,7 @@ export function ChatApp() {
           setMessages((prev) =>
             prev.map((m) =>
               m.id === alId
-                ? {
-                    ...m,
-                    content:
-                      "Failed to reach Al. Check your connection and try again.",
-                    typing: false,
-                  }
+                ? { ...m, content: "Failed to reach Al. Check your connection and try again.", typing: false }
                 : m
             )
           );
@@ -227,6 +410,8 @@ export function ChatApp() {
     );
   }
 
+  const canSend = input.trim() || pendingFiles.length > 0;
+
   // --- Render gates ---
 
   if (authed === null) {
@@ -255,7 +440,28 @@ export function ChatApp() {
         }}
       />
 
-      <div className="flex flex-1 flex-col min-w-0">
+      <div
+        className="relative flex flex-1 flex-col min-w-0"
+        onDragEnter={handleDragEnter}
+        onDragLeave={handleDragLeave}
+        onDragOver={handleDragOver}
+        onDrop={handleDrop}
+      >
+        {/* Drag overlay */}
+        {dragActive && (
+          <div className="absolute inset-0 z-20 flex items-center justify-center bg-emerald-500/[0.04] backdrop-blur-[1px]">
+            <div className="rounded-2xl border-2 border-dashed border-emerald-500/25 bg-[#0a0f0d]/80 px-8 py-6 text-center">
+              <Paperclip className="mx-auto mb-2 h-6 w-6 text-emerald-400/60" />
+              <p className="text-sm font-medium text-emerald-200/60">
+                Drop files here
+              </p>
+              <p className="mt-1 text-xs text-emerald-200/25">
+                Images and PDFs up to 5 MB
+              </p>
+            </div>
+          </div>
+        )}
+
         {/* Top bar */}
         <header className="flex items-center gap-3 border-b border-emerald-900/20 px-4 py-3 lg:px-6">
           <button
@@ -290,13 +496,9 @@ export function ChatApp() {
           {messages.length === 0 ? (
             <div className="flex h-full flex-col items-center justify-center text-center px-4">
               <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-2xl bg-emerald-500/10 ring-1 ring-emerald-500/15">
-                <span className="text-3xl font-display text-emerald-400">
-                  A
-                </span>
+                <span className="text-3xl font-display text-emerald-400">A</span>
               </div>
-              <h2 className="font-display text-xl text-[#e2ede8]">
-                {getGreeting()}
-              </h2>
+              <h2 className="font-display text-xl text-[#e2ede8]">{getGreeting()}</h2>
               <p className="mt-2 max-w-sm text-sm leading-relaxed text-emerald-200/35">
                 Your command center is ready. Use the sidebar for quick actions,
                 or type a message below to get started.
@@ -307,7 +509,8 @@ export function ChatApp() {
               {messages.map((msg) => (
                 <MessageBubble key={msg.id} message={msg} />
               ))}
-              {loading && !messages.some((m) => m.typing) && <ThinkingDots />}
+              {loading && searchQuery && <SearchingWeb query={searchQuery} />}
+              {loading && !searchQuery && !messages.some((m) => m.typing) && <ThinkingDots />}
               <div ref={bottomRef} />
             </div>
           )}
@@ -315,55 +518,112 @@ export function ChatApp() {
 
         {/* Input */}
         <div className="border-t border-emerald-900/20 p-4 lg:p-6">
-          <form
-            onSubmit={handleSubmit}
-            className="mx-auto flex max-w-3xl items-end gap-3"
-          >
-            <div className="relative flex-1">
-              <textarea
-                ref={inputRef}
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyDown={handleKeyDown}
-                placeholder="Message Al..."
-                rows={1}
-                disabled={loading}
-                className="w-full resize-none rounded-xl border border-emerald-900/25 bg-[#111916] px-4 py-3 text-sm text-[#e2ede8] placeholder-emerald-200/25 transition-colors focus:border-emerald-500/40 focus:outline-none focus:ring-1 focus:ring-emerald-500/20 disabled:opacity-50"
-                style={{ minHeight: 48, maxHeight: 160 }}
-                onInput={(e) => {
-                  const el = e.target as HTMLTextAreaElement;
-                  el.style.height = "auto";
-                  el.style.height = `${Math.min(el.scrollHeight, 160)}px`;
-                }}
+          <div className="mx-auto max-w-3xl">
+            {/* File preview strip */}
+            {pendingFiles.length > 0 && (
+              <div className="mb-2 flex gap-2 overflow-x-auto pb-1 al-scrollbar">
+                {pendingFiles.map((f) => (
+                  <div key={f.id} className="relative flex-shrink-0 group/file">
+                    {f.type.startsWith("image/") && f.data ? (
+                      <img
+                        src={f.data}
+                        alt={f.name}
+                        className="h-16 w-16 rounded-lg object-cover border border-emerald-900/25"
+                      />
+                    ) : (
+                      <div className="flex h-16 items-center gap-2 rounded-lg border border-emerald-900/25 bg-[#0d1410] px-3">
+                        <FileText className="h-4 w-4 flex-shrink-0 text-emerald-400/50" />
+                        <div className="max-w-[120px]">
+                          <p className="truncate text-xs text-[#e2ede8]">{f.name}</p>
+                          <p className="text-[10px] text-emerald-200/30">
+                            {formatBytes(f.size)}
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                    <button
+                      onClick={() => removeFile(f.id)}
+                      className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full border border-emerald-900/30 bg-[#0a0f0d] text-emerald-200/50 transition-colors hover:border-red-400/30 hover:text-red-400"
+                      aria-label={`Remove ${f.name}`}
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <form onSubmit={handleSubmit} className="flex items-end gap-2">
+              <input
+                ref={fileInputRef}
+                type="file"
+                multiple
+                accept="image/*,.pdf"
+                className="hidden"
+                onChange={handleFileInput}
               />
-            </div>
-            {loading ? (
               <button
                 type="button"
-                onClick={stopGenerating}
-                className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl border border-emerald-900/25 bg-[#111916] text-emerald-200/50 transition-all hover:bg-[#1a2820] hover:text-emerald-200/70 active:scale-95"
-                aria-label="Stop generating"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={loading || pendingFiles.length >= MAX_FILES}
+                className="flex h-12 w-10 flex-shrink-0 items-center justify-center rounded-lg text-emerald-200/35 transition-colors hover:bg-emerald-500/10 hover:text-emerald-200/60 disabled:opacity-30 disabled:cursor-not-allowed"
+                aria-label="Attach files"
               >
-                <div className="h-3.5 w-3.5 rounded-sm bg-emerald-400/70" />
+                <Paperclip className="h-4 w-4" />
               </button>
-            ) : (
-              <button
-                type="submit"
-                disabled={!input.trim()}
-                className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl bg-emerald-600 text-white transition-all hover:bg-emerald-500 active:scale-95 disabled:cursor-not-allowed disabled:opacity-30"
-                aria-label="Send message"
-              >
-                <Send className="h-4 w-4" />
-              </button>
-            )}
-          </form>
-          <p className="mx-auto mt-2 max-w-3xl text-center text-[11px] text-emerald-200/15">
-            Enter to send &middot; Shift+Enter for new line
-          </p>
+
+              <div className="relative flex-1">
+                <textarea
+                  ref={inputRef}
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  onPaste={handlePaste}
+                  placeholder={
+                    pendingFiles.length > 0
+                      ? "Add a message or just send the files..."
+                      : "Message Al..."
+                  }
+                  rows={1}
+                  disabled={loading}
+                  className="w-full resize-none rounded-xl border border-emerald-900/25 bg-[#111916] px-4 py-3 text-sm text-[#e2ede8] placeholder-emerald-200/25 transition-colors focus:border-emerald-500/40 focus:outline-none focus:ring-1 focus:ring-emerald-500/20 disabled:opacity-50"
+                  style={{ minHeight: 48, maxHeight: 160 }}
+                  onInput={(e) => {
+                    const el = e.target as HTMLTextAreaElement;
+                    el.style.height = "auto";
+                    el.style.height = `${Math.min(el.scrollHeight, 160)}px`;
+                  }}
+                />
+              </div>
+
+              {loading ? (
+                <button
+                  type="button"
+                  onClick={stopGenerating}
+                  className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl border border-emerald-900/25 bg-[#111916] text-emerald-200/50 transition-all hover:bg-[#1a2820] hover:text-emerald-200/70 active:scale-95"
+                  aria-label="Stop generating"
+                >
+                  <div className="h-3.5 w-3.5 rounded-sm bg-emerald-400/70" />
+                </button>
+              ) : (
+                <button
+                  type="submit"
+                  disabled={!canSend}
+                  className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl bg-emerald-600 text-white transition-all hover:bg-emerald-500 active:scale-95 disabled:cursor-not-allowed disabled:opacity-30"
+                  aria-label="Send message"
+                >
+                  <Send className="h-4 w-4" />
+                </button>
+              )}
+            </form>
+            <p className="mt-2 text-center text-[11px] text-emerald-200/15">
+              Enter to send &middot; Shift+Enter for new line &middot; Paste or
+              drag images &amp; PDFs
+            </p>
+          </div>
         </div>
       </div>
 
-      {/* Settings modal */}
       {settingsOpen && (
         <SettingsModal
           onClose={() => setSettingsOpen(false)}
@@ -387,6 +647,7 @@ function MessageBubble({ message }: { message: Message }) {
     hour: "2-digit",
     minute: "2-digit",
   });
+  const atts = message.attachments;
 
   return (
     <div
@@ -410,7 +671,33 @@ function MessageBubble({ message }: { message: Message }) {
             )}
           </div>
         )}
-        <div className="whitespace-pre-wrap break-words">{message.content}</div>
+
+        {/* Attachment renders */}
+        {atts && atts.length > 0 && (
+          <div className="mb-2 flex flex-wrap gap-2">
+            {atts.map((att) =>
+              att.type.startsWith("image/") ? (
+                att.data ? (
+                  <img
+                    key={att.id}
+                    src={att.data}
+                    alt={att.name}
+                    className="max-h-48 max-w-full rounded-lg object-contain"
+                  />
+                ) : (
+                  <AttachmentBadge key={att.id} att={att} />
+                )
+              ) : (
+                <AttachmentBadge key={att.id} att={att} />
+              )
+            )}
+          </div>
+        )}
+
+        {message.content && (
+          <div className="whitespace-pre-wrap break-words">{message.content}</div>
+        )}
+
         <div
           className={`mt-1.5 text-[10px] transition-opacity ${
             isUser
@@ -425,13 +712,23 @@ function MessageBubble({ message }: { message: Message }) {
   );
 }
 
+function AttachmentBadge({ att }: { att: Attachment }) {
+  return (
+    <div className="flex items-center gap-2 rounded-lg bg-black/20 px-3 py-2">
+      <FileText className="h-4 w-4 flex-shrink-0 text-emerald-400/50" />
+      <div className="min-w-0">
+        <p className="truncate text-xs">{att.name}</p>
+        <p className="text-[10px] opacity-50">{formatBytes(att.size)}</p>
+      </div>
+    </div>
+  );
+}
+
 function ThinkingDots() {
   return (
     <div className="flex justify-start animate-fade-up">
       <div className="rounded-2xl border border-emerald-900/15 bg-[#141f1a] px-4 py-3">
-        <div className="mb-1.5 text-xs font-medium text-emerald-400/60">
-          Al
-        </div>
+        <div className="mb-1.5 text-xs font-medium text-emerald-400/60">Al</div>
         <div className="flex items-center gap-1.5">
           {[0, 1, 2].map((i) => (
             <span
@@ -443,6 +740,23 @@ function ThinkingDots() {
             />
           ))}
         </div>
+      </div>
+    </div>
+  );
+}
+
+function SearchingWeb({ query }: { query: string }) {
+  return (
+    <div className="flex justify-start animate-fade-up">
+      <div className="rounded-2xl border border-emerald-900/15 bg-[#141f1a] px-4 py-3">
+        <div className="mb-1.5 text-xs font-medium text-emerald-400/60">Al</div>
+        <div className="flex items-center gap-2">
+          <Globe className="h-3.5 w-3.5 animate-spin text-emerald-400/60" style={{ animationDuration: "2s" }} />
+          <span className="text-sm text-emerald-200/50">Searching the web&hellip;</span>
+        </div>
+        <p className="mt-1.5 max-w-xs truncate text-xs italic text-emerald-200/20">
+          &ldquo;{query}&rdquo;
+        </p>
       </div>
     </div>
   );
@@ -472,32 +786,37 @@ function SettingsModal({
             <X className="h-4 w-4" />
           </button>
         </div>
-
         <div className="space-y-5">
           <div className="rounded-xl border border-emerald-900/20 bg-[#0d1410] px-4 py-3">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-[#e2ede8]">Model</p>
-                <p className="mt-0.5 text-xs text-emerald-200/35">
-                  Claude Sonnet 4
-                </p>
+                <p className="mt-0.5 text-xs text-emerald-200/35">Claude Sonnet 4</p>
               </div>
               <div className="flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-2.5 py-1">
                 <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
-                <span className="text-[11px] font-medium text-emerald-400">
-                  Connected
-                </span>
+                <span className="text-[11px] font-medium text-emerald-400">Connected</span>
               </div>
             </div>
           </div>
-
+          <div className="rounded-xl border border-emerald-900/20 bg-[#0d1410] px-4 py-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-[#e2ede8]">Web Search</p>
+                <p className="mt-0.5 text-xs text-emerald-200/35">Tavily-powered live internet access</p>
+              </div>
+              <div className="flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-2.5 py-1">
+                <Globe className="h-3 w-3 text-emerald-400" />
+                <span className="text-[11px] font-medium text-emerald-400">Active</span>
+              </div>
+            </div>
+          </div>
           <div className="rounded-xl border border-emerald-900/20 bg-[#0d1410] px-4 py-3">
             <p className="text-sm font-medium text-[#e2ede8]">Trajectory Logging</p>
             <p className="mt-0.5 text-xs text-emerald-200/35">
               Every exchange is logged to the Supabase trajectories table when configured.
             </p>
           </div>
-
           <div className="flex items-center justify-between border-t border-emerald-900/20 pt-5">
             <button
               onClick={() => {
