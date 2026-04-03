@@ -11,7 +11,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   const { password } = await request.json();
-  const correct = process.env.AL_ACCESS_PASSWORD || "dominion2024";
+  const correct = (process.env.AL_ACCESS_PASSWORD || "dominion2024").trim();
 
   if (password !== correct) {
     return NextResponse.json({ success: false }, { status: 401 });
