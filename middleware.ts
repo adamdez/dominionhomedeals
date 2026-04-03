@@ -107,6 +107,9 @@ export function middleware(request: NextRequest) {
   const isAlSubdomain = hostname.startsWith("al.");
   const { pathname } = request.nextUrl;
 
+  // Debug: always set a header so we know middleware ran
+  const debugInfo = `host=${hostname}|al=${isAlSubdomain}|path=${pathname}`;
+
   if (isAlSubdomain) {
     // Rewrite all subdomain requests to the /al route group
     const url = request.nextUrl.clone();
@@ -120,6 +123,7 @@ export function middleware(request: NextRequest) {
     response.headers.set("X-DNS-Prefetch-Control", "on");
     response.headers.set("Strict-Transport-Security", "max-age=63072000; includeSubDomains; preload");
     response.headers.set("x-middleware-cache", "no-cache");
+    response.headers.set("x-debug-middleware", debugInfo);
     return response;
   }
 
@@ -135,6 +139,7 @@ export function middleware(request: NextRequest) {
   const response = NextResponse.next();
   response.headers.set("X-DNS-Prefetch-Control", "on");
   response.headers.set("Strict-Transport-Security", "max-age=63072000; includeSubDomains; preload");
+  response.headers.set("x-debug-middleware", debugInfo);
 
   if (pathname.startsWith("/api/leads")) {
     console.log(JSON.stringify({
