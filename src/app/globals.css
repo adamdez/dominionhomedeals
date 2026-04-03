@@ -105,3 +105,32 @@
     text-wrap: balance;
   }
 }
+
+/* ================================================================
+   AL COMMAND CENTER — Dark theme utilities
+   ================================================================ */
+
+.al-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+.al-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.al-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(16, 185, 129, 0.12);
+  border-radius: 3px;
+}
+.al-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(16, 185, 129, 0.25);
+}
+
+@keyframes alDotPulse {
+  0%, 80%, 100% {
+    opacity: 0.25;
+    transform: scale(0.75);
+  }
+  40% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
