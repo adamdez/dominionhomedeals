@@ -19,14 +19,19 @@ You have access to a web_search tool. Use it when:
 - The user asks about recent news, events, or current data
 - You need up-to-date pricing, market data, or statistics
 - The user explicitly asks you to search or look something up
-- You need current information about a specific company, property, or person
-Do NOT search for general knowledge you already have.`;
+Do NOT search for general knowledge you already have.
+
+When the vault tools are available, you can read and write files in the user's Obsidian vault. Use them when:
+- The user asks you to create notes, documents, or project folders
+- The user asks you to read or review files from their vault
+- The user references their knowledge base or notes
+Always confirm what you're about to do before writing. After writing, confirm the path and a brief summary.`;
 
 /* ------------------------------------------------------------------ */
 /*  Tool definitions                                                   */
 /* ------------------------------------------------------------------ */
 
-const TOOLS: Anthropic.Tool[] = [
+const SERVER_TOOLS: Anthropic.Tool[] = [
   {
     name: "web_search",
     description:
@@ -44,6 +49,77 @@ const TOOLS: Anthropic.Tool[] = [
   },
 ];
 
+const VAULT_TOOLS: Anthropic.Tool[] = [
+  {
+    name: "vault_list",
+    description:
+      "List files and folders in the user's Obsidian vault. Use '.' for the root directory.",
+    input_schema: {
+      type: "object" as const,
+      properties: {
+        path: {
+          type: "string",
+          description:
+            "Relative folder path within the vault (e.g. '.' for root, 'projects/book')",
+        },
+      },
+      required: ["path"],
+    },
+  },
+  {
+    name: "vault_read",
+    description:
+      "Read a file from the user's Obsidian vault. Supports .md, .txt, .json, .yaml, .csv files.",
+    input_schema: {
+      type: "object" as const,
+      properties: {
+        path: {
+          type: "string",
+          description: "Relative file path (e.g. 'notes/meeting.md')",
+        },
+      },
+      required: ["path"],
+    },
+  },
+  {
+    name: "vault_write",
+    description:
+      "Create or overwrite a file in the user's Obsidian vault. Parent folders are created automatically.",
+    input_schema: {
+      type: "object" as const,
+      properties: {
+        path: {
+          type: "string",
+          description: "Relative file path (e.g. 'projects/book/outline.md')",
+        },
+        content: {
+          type: "string",
+          description: "The full file content to write",
+        },
+      },
+      required: ["path", "content"],
+    },
+  },
+  {
+    name: "vault_mkdir",
+    description: "Create a new folder in the user's Obsidian vault.",
+    input_schema: {
+      type: "object" as const,
+      properties: {
+        path: {
+          type: "string",
+          description: "Relative folder path to create (e.g. 'projects/new-venture')",
+        },
+      },
+      required: ["path"],
+    },
+  },
+];
+
+function isVaultTool(name: string) {
+  return name.startsWith("vault_");
+}
+
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
 /* ------------------------------------------------------------------ */
@@ -58,6 +134,12 @@ interface RequestAttachment {
   type: string;
   size: number;
   data: string;
+}
+
+interface ContinuationData {
+  assistantBlocks: Anthropic.ContentBlockParam[];
+  precomputedResults: Anthropic.ToolResultBlockParam[];
+  toolResults: Anthropic.ToolResultBlockParam[];
 }
 
 type ImageMediaType = "image/jpeg" | "image/png" | "image/gif" | "image/webp";
@@ -89,7 +171,6 @@ async function logTrajectory(action: string, outcome: string) {
 async function executeWebSearch(query: string): Promise<string> {
   const apiKey = process.env.TAVILY_API_KEY;
   if (!apiKey) return "Web search is not configured. Ask the admin to set TAVILY_API_KEY.";
-
   try {
     const res = await fetch("https://api.tavily.com/search", {
       method: "POST",
@@ -102,9 +183,7 @@ async function executeWebSearch(query: string): Promise<string> {
         search_depth: "basic",
       }),
     });
-
     if (!res.ok) return `Search failed (${res.status}). Try rephrasing.`;
-
     const data = await res.json();
     let out = "";
     if (data.answer) out += `Quick answer: ${data.answer}\n\n`;
@@ -128,8 +207,33 @@ function sseHeaders(): HeadersInit {
   };
 }
 
+function buildUserContent(
+  message: string,
+  attachments?: RequestAttachment[]
+): string | Anthropic.ContentBlockParam[] {
+  if (!attachments || attachments.length === 0) return message;
+
+  const content: Anthropic.ContentBlockParam[] = [];
+  for (const att of attachments) {
+    const base64 = extractBase64(att.data);
+    if (att.type.startsWith("image/")) {
+      content.push({
+        type: "image",
+        source: { type: "base64", media_type: att.type as ImageMediaType, data: base64 },
+      });
+    } else if (att.type === "application/pdf") {
+      content.push({
+        type: "document",
+        source: { type: "base64", media_type: "application/pdf", data: base64 },
+      } as unknown as Anthropic.ContentBlockParam);
+    }
+  }
+  content.push({ type: "text", text: message || "Review the attached file(s)." });
+  return content;
+}
+
 /* ------------------------------------------------------------------ */
-/*  Streaming tool-use helpers                                         */
+/*  Streaming turn helper                                              */
 /* ------------------------------------------------------------------ */
 
 interface ToolAccumulator {
@@ -192,13 +296,8 @@ async function streamOneTurn(
             (b): b is Anthropic.TextBlock => b.type === "text"
           );
           if (last) last.text += t;
-          controller.enqueue(
-            encoder.encode(`data: ${JSON.stringify({ t })}\n\n`)
-          );
-        } else if (
-          event.delta.type === "input_json_delta" &&
-          currentTool
-        ) {
+          controller.enqueue(encoder.encode(`data: ${JSON.stringify({ t })}\n\n`));
+        } else if (event.delta.type === "input_json_delta" && currentTool) {
           currentTool.jsonParts.push(event.delta.partial_json);
         }
         break;
@@ -208,7 +307,7 @@ async function streamOneTurn(
           let input: Record<string, unknown> = {};
           try {
             input = JSON.parse(currentTool.jsonParts.join(""));
-          } catch {}
+          } catch { /* empty input */ }
           contentBlocks.push({
             type: "tool_use",
             id: currentTool.id,
@@ -249,47 +348,46 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const { message, history, attachments } = (await request.json()) as {
+  const {
+    message,
+    history,
+    attachments,
+    bridgeConnected,
+    continuation,
+  } = (await request.json()) as {
     message: string;
     history?: HistoryMessage[];
     attachments?: RequestAttachment[];
+    bridgeConnected?: boolean;
+    continuation?: ContinuationData;
   };
 
   const anthropic = new Anthropic({ apiKey });
+  const tools = [...SERVER_TOOLS];
+  if (bridgeConnected) tools.push(...VAULT_TOOLS);
 
+  /* Build the Anthropic messages array */
   const messages: Anthropic.MessageParam[] = (history || []).map((m) => ({
     role: m.role === "al" ? ("assistant" as const) : ("user" as const),
     content: m.content,
   }));
 
-  if (attachments && attachments.length > 0) {
-    const content: Anthropic.ContentBlockParam[] = [];
-    for (const att of attachments) {
-      const base64 = extractBase64(att.data);
-      if (att.type.startsWith("image/")) {
-        content.push({
-          type: "image",
-          source: {
-            type: "base64",
-            media_type: att.type as ImageMediaType,
-            data: base64,
-          },
-        });
-      } else if (att.type === "application/pdf") {
-        content.push({
-          type: "document",
-          source: {
-            type: "base64",
-            media_type: "application/pdf",
-            data: base64,
-          },
-        } as unknown as Anthropic.ContentBlockParam);
-      }
-    }
-    content.push({ type: "text", text: message || "Review the attached file(s)." });
-    messages.push({ role: "user", content });
-  } else {
-    messages.push({ role: "user", content: message });
+  // Always add the user message (present in both normal and continuation requests)
+  if (message) {
+    messages.push({ role: "user", content: buildUserContent(message, attachments) });
+  }
+
+  // For continuation: append the assistant tool-use turn and tool results
+  if (continuation) {
+    messages.push({
+      role: "assistant",
+      content: continuation.assistantBlocks as Anthropic.ContentBlockParam[],
+    });
+    const allResults: Anthropic.ToolResultBlockParam[] = [
+      ...(continuation.precomputedResults || []),
+      ...continuation.toolResults,
+    ];
+    messages.push({ role: "user", content: allResults });
   }
 
   const encoder = new TextEncoder();
@@ -297,14 +395,14 @@ export async function POST(request: NextRequest) {
   const readable = new ReadableStream({
     async start(controller) {
       let fullResponse = "";
-      const conversationMessages: Anthropic.MessageParam[] = [...messages];
+      const convo: Anthropic.MessageParam[] = [...messages];
 
       try {
         for (let turn = 0; turn < 4; turn++) {
           const { stopReason, contentBlocks, textOutput } = await streamOneTurn(
             anthropic,
-            conversationMessages,
-            TOOLS,
+            convo,
+            tools,
             controller,
             encoder,
             turn > 0 && fullResponse.length > 0
@@ -317,44 +415,64 @@ export async function POST(request: NextRequest) {
           const toolBlocks = contentBlocks.filter(
             (b): b is Anthropic.ToolUseBlock => b.type === "tool_use"
           );
-
           if (toolBlocks.length === 0) break;
 
-          conversationMessages.push({
-            role: "assistant",
-            content: contentBlocks,
-          });
+          const vaultBlocks = toolBlocks.filter((b) => isVaultTool(b.name));
+          const serverBlocks = toolBlocks.filter((b) => !isVaultTool(b.name));
 
-          const toolResults: Anthropic.ToolResultBlockParam[] = [];
-
-          for (const tb of toolBlocks) {
+          /* Execute server-side tools (web search) */
+          const precomputed: Anthropic.ToolResultBlockParam[] = [];
+          for (const sb of serverBlocks) {
             const query =
-              (tb.input as Record<string, string>).query || String(tb.input);
-
+              (sb.input as Record<string, string>).query || String(sb.input);
             controller.enqueue(
               encoder.encode(
                 `data: ${JSON.stringify({ status: "searching", query })}\n\n`
               )
             );
-
             const result = await executeWebSearch(query);
-
-            toolResults.push({
+            precomputed.push({
               type: "tool_result",
-              tool_use_id: tb.id,
+              tool_use_id: sb.id,
               content: result,
             });
           }
 
-          conversationMessages.push({
-            role: "user",
-            content: toolResults,
-          });
+          /* Delegate vault tools to the client */
+          if (vaultBlocks.length > 0) {
+            controller.enqueue(
+              encoder.encode(
+                `data: ${JSON.stringify({
+                  vault_action: {
+                    requests: vaultBlocks.map((b) => ({
+                      id: b.id,
+                      name: b.name,
+                      input: b.input,
+                    })),
+                    assistantBlocks: contentBlocks,
+                    precomputedResults: precomputed,
+                  },
+                })}\n\n`
+              )
+            );
+            controller.enqueue(encoder.encode("data: [DONE]\n\n"));
+            controller.close();
+            logTrajectory(
+              message || "vault tool request",
+              fullResponse + " [awaiting vault tool execution]"
+            ).catch(() => {});
+            return;
+          }
+
+          /* All server tools — continue the loop */
+          convo.push({ role: "assistant", content: contentBlocks });
+          convo.push({ role: "user", content: precomputed });
         }
 
-        const actionSummary = attachments?.length
-          ? `[${attachments.map((a) => a.name).join(", ")}] ${message}`
-          : message;
+        const actionSummary =
+          attachments && attachments.length > 0
+            ? `[${attachments.map((a) => a.name).join(", ")}] ${message}`
+            : message;
         logTrajectory(actionSummary, fullResponse).catch(() => {});
 
         controller.enqueue(encoder.encode("data: [DONE]\n\n"));
