@@ -165,6 +165,14 @@ VAULT STRUCTURE:
 
 Each CEO has a CEO-Identity.md and training data in their section.
 
+PERSISTENT MEMORY:
+You have persistent memory that survives across sessions. Your memories are loaded into this prompt automatically.
+- Use memory_save to remember important facts, decisions, preferences, project updates, or anything Dez tells you to remember
+- Use memory_delete to remove outdated or incorrect memories
+- Proactively save important information without being asked — if Dez shares a decision, update, preference, or key fact, save it
+- Categories: preference, decision, fact, project, person, metric, or any short label
+- Keep memories concise and specific — they're loaded every session
+
 RESPONSE STYLE:
 - Lead with the most important information first
 - Use bullet points for lists and action items
@@ -210,6 +218,41 @@ const SERVER_TOOLS: Anthropic.Tool[] = [
         },
       },
       required: ["path", "content"],
+    },
+  },
+  {
+    name: "memory_save",
+    description:
+      "Save an important fact, decision, preference, or context to persistent memory. This survives across sessions. Use for: user preferences, key decisions, project status, things Dez tells you to remember, business metrics, and anything worth knowing next time.",
+    input_schema: {
+      type: "object" as const,
+      properties: {
+        category: {
+          type: "string",
+          description:
+            "Category for organization: 'preference', 'decision', 'fact', 'project', 'person', 'metric', or any short label",
+        },
+        content: {
+          type: "string",
+          description: "The information to remember. Be specific and concise.",
+        },
+      },
+      required: ["category", "content"],
+    },
+  },
+  {
+    name: "memory_delete",
+    description:
+      "Delete a memory entry by ID. Use when information is outdated or wrong. Reference the id from your PERSISTENT MEMORY section.",
+    input_schema: {
+      type: "object" as const,
+      properties: {
+        id: {
+          type: "number",
+          description: "The memory ID to delete (shown as id:N in your memory section)",
+        },
+      },
+      required: ["id"],
     },
   },
   {
@@ -438,6 +481,63 @@ async function executeWebSearch(query: string): Promise<string> {
   }
 }
 
+/* ------------------------------------------------------------------ */
+/*  Persistent Memory                                                   */
+/* ------------------------------------------------------------------ */
+
+async function loadMemories(): Promise<string> {
+  const supabase = getServiceClient();
+  if (!supabase) return "";
+  try {
+    const { data } = await supabase
+      .from("al_memories")
+      .select("id, category, content, updated_at")
+      .order("category")
+      .order("updated_at", { ascending: false });
+    if (!data || data.length === 0) return "";
+    const lines = data.map(
+      (m) => `[${m.category}] (id:${m.id}) ${m.content}`
+    );
+    return `\n\nPERSISTENT MEMORY (${data.length} entries):\n${lines.join("\n")}`;
+  } catch {
+    return "";
+  }
+}
+
+async function executeMemorySave(
+  category: string,
+  content: string
+): Promise<string> {
+  const supabase = getServiceClient();
+  if (!supabase) return "Memory save failed: no database connection.";
+  try {
+    const { data, error } = await supabase
+      .from("al_memories")
+      .insert({ category, content })
+      .select("id")
+      .single();
+    if (error) return `Memory save failed: ${error.message}`;
+    return `Saved to memory (id:${data.id}, category:${category})`;
+  } catch (err) {
+    return `Memory save error: ${err instanceof Error ? err.message : "unknown"}`;
+  }
+}
+
+async function executeMemoryDelete(id: number): Promise<string> {
+  const supabase = getServiceClient();
+  if (!supabase) return "Memory delete failed: no database connection.";
+  try {
+    const { error } = await supabase
+      .from("al_memories")
+      .delete()
+      .eq("id", id);
+    if (error) return `Memory delete failed: ${error.message}`;
+    return `Deleted memory id:${id}`;
+  } catch (err) {
+    return `Memory delete error: ${err instanceof Error ? err.message : "unknown"}`;
+  }
+}
+
 function sseHeaders(): HeadersInit {
   return {
     "Content-Type": "text/event-stream",
@@ -493,12 +593,13 @@ async function streamOneTurn(
   tools: Anthropic.Tool[],
   controller: ReadableStreamDefaultController,
   encoder: TextEncoder,
-  prependNewlines: boolean
+  prependNewlines: boolean,
+  systemPrompt: string = SYSTEM_PROMPT
 ): Promise<StreamTurnResult> {
   const stream = await anthropic.messages.create({
     model: "claude-sonnet-4-20250514",
     max_tokens: 4096,
-    system: SYSTEM_PROMPT,
+    system: systemPrompt,
     messages,
     tools,
     stream: true,
@@ -605,6 +706,9 @@ export async function POST(request: NextRequest) {
   const tools = [...SERVER_TOOLS];
   if (bridgeConnected) tools.push(...BRIDGE_TOOLS);
 
+  /* Load persistent memory into system prompt */
+  const memoryBlock = await loadMemories();
+
   /* Build the Anthropic messages array */
   const messages: Anthropic.MessageParam[] = (history || []).map((m) => ({
     role: m.role === "al" ? ("assistant" as const) : ("user" as const),
@@ -636,6 +740,8 @@ export async function POST(request: NextRequest) {
       let fullResponse = "";
       const convo: Anthropic.MessageParam[] = [...messages];
 
+      const fullSystemPrompt = SYSTEM_PROMPT + memoryBlock;
+
       try {
         for (let turn = 0; turn < 4; turn++) {
           const { stopReason, contentBlocks, textOutput } = await streamOneTurn(
@@ -644,7 +750,8 @@ export async function POST(request: NextRequest) {
             tools,
             controller,
             encoder,
-            turn > 0 && fullResponse.length > 0
+            turn > 0 && fullResponse.length > 0,
+            fullSystemPrompt
           );
 
           fullResponse += textOutput;
@@ -679,6 +786,12 @@ export async function POST(request: NextRequest) {
                 )
               );
               const result = await executeVaultPublish(inp.path, inp.content);
+              precomputed.push({ type: "tool_result", tool_use_id: sb.id, content: result });
+            } else if (sb.name === "memory_save") {
+              const result = await executeMemorySave(inp.category || "general", inp.content);
+              precomputed.push({ type: "tool_result", tool_use_id: sb.id, content: result });
+            } else if (sb.name === "memory_delete") {
+              const result = await executeMemoryDelete(Number(inp.id));
               precomputed.push({ type: "tool_result", tool_use_id: sb.id, content: result });
             } else if (sb.name === "delegate_to_ceo") {
               const ceoId = inp.ceo;
