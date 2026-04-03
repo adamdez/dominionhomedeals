@@ -1,4 +1,3 @@
-// middleware.ts
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
@@ -26,8 +25,6 @@ function shouldBlockByCountry(request: NextRequest): boolean {
   if (isAllowedBot(userAgent)) return false;
 
   const country = request.headers.get("x-vercel-ip-country")?.toUpperCase();
-
-  // Local dev and non-Vercel environments won't have the geolocation header.
   if (!country) return false;
 
   return !ALLOWED_COUNTRIES.has(country);
@@ -103,55 +100,11 @@ function blockedCountryResponse(request: NextRequest): NextResponse {
 }
 
 export function middleware(request: NextRequest) {
-  const hostname = request.headers.get("host") || "";
-  const isAlSubdomain = hostname.startsWith("al.");
-  const { pathname } = request.nextUrl;
-
-  // Debug: always set a header so we know middleware ran
-  const debugInfo = `host=${hostname}|al=${isAlSubdomain}|path=${pathname}`;
-
-  if (isAlSubdomain) {
-    // Rewrite all subdomain requests to the /al route group
-    const url = request.nextUrl.clone();
-    if (pathname === "/") {
-      url.pathname = "/al";
-    } else if (!pathname.startsWith("/al") && !pathname.startsWith("/api/al") && !pathname.startsWith("/_next")) {
-      // Prefix non-AL paths so subdomain routes resolve correctly
-      url.pathname = `/al${pathname}`;
-    }
-    const response = NextResponse.rewrite(url);
-    response.headers.set("X-DNS-Prefetch-Control", "on");
-    response.headers.set("Strict-Transport-Security", "max-age=63072000; includeSubDomains; preload");
-    response.headers.set("x-middleware-cache", "no-cache");
-    response.headers.set("x-debug-middleware", debugInfo);
-    return response;
-  }
-
-  if (pathname === "/al" || pathname.startsWith("/al/")) {
-    const target = new URL("https://al.dominionhomedeals.com/");
-    return NextResponse.redirect(target, 308);
-  }
-
   if (shouldBlockByCountry(request)) {
     return blockedCountryResponse(request);
   }
 
-  const response = NextResponse.next();
-  response.headers.set("X-DNS-Prefetch-Control", "on");
-  response.headers.set("Strict-Transport-Security", "max-age=63072000; includeSubDomains; preload");
-  response.headers.set("x-debug-middleware", debugInfo);
-
-  if (pathname.startsWith("/api/leads")) {
-    console.log(JSON.stringify({
-      type: "LEAD_API_ACCESS",
-      timestamp: new Date().toISOString(),
-      ip: request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown",
-      method: request.method,
-      path: pathname,
-    }));
-  }
-
-  return response;
+  return NextResponse.next();
 }
 
 export const config = {
