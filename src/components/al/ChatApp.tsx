@@ -17,6 +17,8 @@ import {
   Globe,
   FolderOpen,
   ShieldCheck,
+  BookUp,
+  Users,
 } from "lucide-react";
 import { AuthScreen } from "./AuthScreen";
 import { Sidebar } from "./Sidebar";
@@ -158,7 +160,16 @@ function bridgeHeaders(): Record<string, string> {
   return h;
 }
 
-async function executeBridgeAction(req: VaultToolRequest): Promise<string> {
+interface BridgeImageResult {
+  type: "image";
+  base64: string;
+  mimeType: string;
+  path: string;
+}
+
+type BridgeResult = string | BridgeImageResult;
+
+async function executeBridgeAction(req: VaultToolRequest): Promise<BridgeResult> {
   const { url } = getBridgeConfig();
   const headers = bridgeHeaders();
   try {
@@ -183,28 +194,22 @@ async function executeBridgeAction(req: VaultToolRequest): Promise<string> {
         if (!res.ok) return `Error: ${data.error}`;
         return data.content;
       }
-      case "vault_write": {
-        const res = await fetch(`${url}/write`, {
-          method: "POST",
-          headers,
-          body: JSON.stringify({ path: req.input.path, content: req.input.content }),
-        });
+      case "vault_read_image": {
+        const res = await fetch(
+          `${url}/read-image?path=${encodeURIComponent(req.input.path)}`,
+          { headers }
+        );
         const data = await res.json();
         if (!res.ok) return `Error: ${data.error}`;
-        return `File written successfully: ${req.input.path}`;
-      }
-      case "vault_mkdir": {
-        const res = await fetch(`${url}/mkdir`, {
-          method: "POST",
-          headers,
-          body: JSON.stringify({ path: req.input.path }),
-        });
-        const data = await res.json();
-        if (!res.ok) return `Error: ${data.error}`;
-        return `Folder created: ${req.input.path}`;
+        return {
+          type: "image",
+          base64: data.base64,
+          mimeType: data.mimeType,
+          path: data.path,
+        };
       }
       default:
-        return `Unknown vault tool: ${req.name}`;
+        return `Unknown bridge tool: ${req.name}`;
     }
   } catch (err) {
     return `Bridge connection failed: ${err instanceof Error ? err.message : "unknown error"}`;
@@ -226,6 +231,8 @@ export function ChatApp() {
   const [pendingFiles, setPendingFiles] = useState<Attachment[]>([]);
   const [dragActive, setDragActive] = useState(false);
   const [searchQuery, setSearchQuery] = useState<string | null>(null);
+  const [publishingPath, setPublishingPath] = useState<string | null>(null);
+  const [delegatingCeo, setDelegatingCeo] = useState<string | null>(null);
 
   /* ── Bridge state ── */
   const [bridgeConnected, setBridgeConnected] = useState(false);
@@ -387,10 +394,22 @@ export function ChatApp() {
             );
           } else if (parsed.status === "searching") {
             setSearchQuery(parsed.query || "the web");
+            setPublishingPath(null);
+            setDelegatingCeo(null);
+          } else if (parsed.status === "publishing") {
+            setPublishingPath(parsed.path || "vault");
+            setSearchQuery(null);
+            setDelegatingCeo(null);
+          } else if (parsed.status === "delegating") {
+            setDelegatingCeo(parsed.ceo || "a CEO");
+            setSearchQuery(null);
+            setPublishingPath(null);
           } else if (parsed.vault_action) {
             vaultAction = parsed.vault_action as VaultAction;
           } else if (parsed.t) {
             setSearchQuery(null);
+            setPublishingPath(null);
+            setDelegatingCeo(null);
             if (needsSeparator) {
               accumulated += "\n\n";
               needsSeparator = false;
@@ -483,6 +502,8 @@ export function ChatApp() {
         }
 
         setSearchQuery(null);
+        setPublishingPath(null);
+        setDelegatingCeo(null);
         setMessages((prev) =>
           prev.map((m) =>
             m.id === alId
@@ -524,7 +545,7 @@ export function ChatApp() {
     interface ToolResultItem {
       type: "tool_result";
       tool_use_id: string;
-      content: string;
+      content: string | unknown[];
       is_error?: boolean;
     }
 
@@ -535,7 +556,25 @@ export function ChatApp() {
       toolResults = [];
       for (const req of action.requests) {
         const result = await executeBridgeAction(req);
-        toolResults.push({ type: "tool_result", tool_use_id: req.id, content: result });
+        if (typeof result === "object" && result.type === "image") {
+          toolResults.push({
+            type: "tool_result",
+            tool_use_id: req.id,
+            content: [
+              {
+                type: "image",
+                source: {
+                  type: "base64",
+                  media_type: result.mimeType,
+                  data: result.base64,
+                },
+              },
+              { type: "text", text: `Image loaded: ${result.path}` },
+            ],
+          });
+        } else {
+          toolResults.push({ type: "tool_result", tool_use_id: req.id, content: result as string });
+        }
       }
       setExecutingVault(false);
     } else {
@@ -583,6 +622,8 @@ export function ChatApp() {
       }
 
       setSearchQuery(null);
+      setPublishingPath(null);
+      setDelegatingCeo(null);
       setMessages((prev) =>
         prev.map((m) =>
           m.id === alId
@@ -762,8 +803,12 @@ export function ChatApp() {
                 <MessageBubble key={msg.id} message={msg} />
               ))}
               {loading && searchQuery && <SearchingWeb query={searchQuery} />}
+              {loading && publishingPath && <PublishingToVault path={publishingPath} />}
+              {loading && delegatingCeo && <DelegatingToCeo ceo={delegatingCeo} />}
               {loading &&
                 !searchQuery &&
+                !publishingPath &&
+                !delegatingCeo &&
                 !pendingVaultAction &&
                 !messages.some((m) => m.typing && m.content) && <ThinkingDots />}
               {pendingVaultAction && (
@@ -1041,13 +1086,50 @@ function vaultActionLabel(name: string): string {
       return "List folder";
     case "vault_read":
       return "Read file";
-    case "vault_write":
-      return "Write file";
-    case "vault_mkdir":
-      return "Create folder";
+    case "vault_read_image":
+      return "View image";
     default:
       return name;
   }
+}
+
+function DelegatingToCeo({ ceo }: { ceo: string }) {
+  return (
+    <div className="flex justify-start animate-fade-up">
+      <div className="rounded-2xl border border-emerald-900/15 bg-[#141f1a] px-4 py-3">
+        <div className="mb-1.5 text-xs font-medium text-emerald-400/60">Al</div>
+        <div className="flex items-center gap-2">
+          <Users
+            className="h-3.5 w-3.5 animate-pulse text-emerald-400/60"
+          />
+          <span className="text-sm text-emerald-200/50">
+            Consulting {ceo}&hellip;
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function PublishingToVault({ path }: { path: string }) {
+  return (
+    <div className="flex justify-start animate-fade-up">
+      <div className="rounded-2xl border border-emerald-900/15 bg-[#141f1a] px-4 py-3">
+        <div className="mb-1.5 text-xs font-medium text-emerald-400/60">Al</div>
+        <div className="flex items-center gap-2">
+          <BookUp
+            className="h-3.5 w-3.5 animate-pulse text-emerald-400/60"
+          />
+          <span className="text-sm text-emerald-200/50">
+            Publishing to vault&hellip;
+          </span>
+        </div>
+        <p className="mt-1.5 max-w-xs truncate text-xs font-mono italic text-emerald-200/20">
+          {path}
+        </p>
+      </div>
+    </div>
+  );
 }
 
 function ToolApprovalCard({

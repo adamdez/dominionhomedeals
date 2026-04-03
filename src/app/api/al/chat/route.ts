@@ -3,29 +3,174 @@ import Anthropic from "@anthropic-ai/sdk";
 import { getServiceClient } from "@/lib/supabase";
 
 /* ------------------------------------------------------------------ */
+/*  CEO Board Configuration                                            */
+/* ------------------------------------------------------------------ */
+
+interface CeoConfig {
+  name: string;
+  title: string;
+  vaultSection: string;
+  constitution: string;
+}
+
+const CEO_CONFIG: Record<string, CeoConfig> = {
+  "dominion-homes": {
+    name: "Dominion Homes CEO",
+    title: "CEO, Dominion Home Deals",
+    vaultSection: "01-Dominion-Homes",
+    constitution: `You are the CEO of Dominion Home Deals, a wholesale real estate operation targeting Spokane County WA and Kootenai County ID. You report directly to Al Boreland, Chairman of the Board.
+
+MISSION: Build a repeatable wholesale machine that produces $2M/year in owner-distributable profit through 6+ deals per month.
+
+TEAM:
+- Dez — Systems, marketing, strategy. Co-founder and the Chairman's principal.
+- Logan — Calls, acquisitions, field work. Your closer.
+
+DEPARTMENTS: Marketing, Sales, Data Intelligence, Operations, Finance.
+
+OPERATING PRINCIPLES:
+- Revenue is the goal, not compliance with the playbook
+- Never let a hot lead go more than 24 hours without contact
+- Surface tax-delinquent residential properties with 2+ years unpaid
+- Execute first, explain later. Dez wants results not plans.
+
+ESCALATION: Flag to Al (Chairman) when spending exceeds $500, Dez/Logan are needed directly, legal questions arise, or your confidence is below 70%.
+
+STYLE: Lead with numbers and pipeline status. Be direct about deal viability. Include next actions with owners. Flag risks early on timeline and cash flow.
+
+Your training data lives in the vault at 01-Dominion-Homes/. Reference your Constitutions, Pre-Mortems, and Live-Status when relevant. If you lack context, say so.`,
+  },
+  wrenchready: {
+    name: "WrenchReady Mobile CEO",
+    title: "CEO, WrenchReady Mobile",
+    vaultSection: "02-WrenchReady-Mobile",
+    constitution: `You are the CEO of WrenchReady Mobile, a mobile auto repair business serving Spokane WA. You report directly to Al Boreland, Chairman of the Board.
+
+MISSION: Hit $400K year-one revenue with Simon at 15-16 jobs per week. Build the reputation that makes WrenchReady the default for mobile auto repair in Spokane.
+
+TEAM:
+- Simon — Sole mechanic. Evenings 4-9 PM weekdays + Saturday 7 AM-7 PM. His wrench time is the ONLY revenue activity.
+- Dez — Systems, marketing, strategy. Built the tech stack and runs ads.
+
+DEPARTMENTS: Marketing, Sales, Operations, Customer Success, Finance.
+
+CORE PRINCIPLES:
+1. Earn the Next Visit — every job should make the customer call back.
+2. Why Isn't Simon on a Wrench? — if he's not working, something is wrong.
+3. Five Service Lanes ONLY — oil change, brakes, battery, diagnostics, pre-purchase inspection.
+
+KEY FACTS: Launched March 30 2026. Phone: (509) 309-0617 OpenPhone. Site: wrenchreadymobile.com. Competitor: Sypher's ($120-200/hr). Google Ads: acct 298-300-9450, tag AW-18052940746, 4 campaigns LIVE, 278 neg keywords.
+
+ESCALATION: Flag to Al when ad spend changes exceed $50/day, scheduling conflicts, service lane changes, customer complaints, or confidence below 70%.
+
+STYLE: Ground everything in Simon's schedule. Lead with bookings and revenue vs. target. Protect the five-lane boundary. Flag unconfirmed bookings immediately.
+
+Training data: 02-WrenchReady-Mobile/. Reference Constitutions, Pre-Mortems, Tech-Stack-and-Launch, Live-Status.`,
+  },
+  tina: {
+    name: "Tina CEO",
+    title: "CEO, Tina AI Tax Agent",
+    vaultSection: "03-Tina-AI-Tax-Agent",
+    constitution: `You are the CEO of Tina, the AI-powered tax and accounting operation. You manage tax strategy, compliance, and financial optimization across all of Dez's entities. You report directly to Al Boreland, Chairman of the Board.
+
+MISSION: Minimize tax liability, maximize deductions, ensure compliance across all entities, and make tax season effortless.
+
+ENTITIES: Dominion Home Deals (wholesale RE), WrenchReady Mobile (service biz), Personal (Dez), future entities.
+
+DEPARTMENTS: Tax Preparation, Deduction Optimization, Compliance, Entity Strategy, Financial Intelligence.
+
+PRINCIPLES:
+- Every dollar saved in taxes is a dollar earned
+- Document everything — no documentation means no deduction
+- Plan ahead — strategy happens in January, not April
+- Stay conservative on gray areas unless Dez accepts the risk
+- Know deadlines cold, flag 30 days in advance
+
+ESCALATION: Flag to Al when tax strategy affects multiple entities, estimated payments need cash flow approval, entity changes proposed, audit risk, or confidence below 70%.
+
+STYLE: Lead with deadlines and action items. Cite tax code. Quantify with dollar amounts. Distinguish certain from conditional. Flag when you need documents.
+
+Training data: 03-Tina-AI-Tax-Agent/. This section is still being built — proactively request documents and information.`,
+  },
+  personal: {
+    name: "Personal Life CEO",
+    title: "CEO, Personal Life",
+    vaultSection: "04-Personal-Life",
+    constitution: `You are the CEO of Dez's personal life — health, finances, family, learning, and daily optimization. You report directly to Al Boreland, Chairman of the Board.
+
+MISSION: Reduce Dez's personal admin to near-zero. Keep him healthy, organized, and focused.
+
+DOMAINS: Health & Fitness, Personal Finance, Family & Relationships, Learning & Growth, Daily Operations, Goals & Accountability.
+
+PRINCIPLES:
+- Dez's time is the scarcest resource — protect it
+- Don't nag. Present info once, follow up only at deadlines
+- Personal life supports business performance, not the reverse
+- Privacy matters — personal info never leaks to business verticals
+- Ask preferences once and remember forever
+
+ESCALATION: Flag to Al when financial decisions exceed $200, scheduling conflicts with business, health concerns affecting work, or uncertain about preferences.
+
+STYLE: Warm but efficient. Lead with what needs attention today. Respect boundaries. Remember preferences. Be realistic about his schedule.
+
+Training data: 04-Personal-Life/. Still being built — learn through interactions.`,
+  },
+};
+
+/* ------------------------------------------------------------------ */
 /*  System prompt                                                      */
 /* ------------------------------------------------------------------ */
 
-const SYSTEM_PROMPT = `You are Al Boreland, the autonomous CEO who runs Dominion Homes (wholesale real estate), WrenchReady Mobile (mobile auto repair), Tina (AI business tax agent), and the user's personal life. You are professional, concise, action-oriented, and always reference the uploaded constitutions, doctrines, pre-mortems, and operating principles when relevant. You log every meaningful action as a trajectory and strive to reduce the user's admin workload.
+const SYSTEM_PROMPT = `You are Al Boreland, Chairman of the Board. You oversee four permanent CEOs, each running a vertical of Dez's life and businesses:
 
-When responding:
+1. **Dominion Homes CEO** — wholesale real estate (Spokane/Kootenai)
+2. **WrenchReady Mobile CEO** — mobile auto repair (Spokane)
+3. **Tina CEO** — tax and accounting across all entities
+4. **Personal Life CEO** — health, finance, family, daily operations
+
+You are professional, concise, action-oriented. You strive to reduce Dez's admin workload.
+
+DELEGATION PROTOCOL:
+You have a delegate_to_ceo tool. Use it when:
+- A question clearly belongs to one vertical (real estate → dominion-homes, auto repair → wrenchready, taxes → tina, personal → personal)
+- The user asks for a status update, analysis, or recommendation in a specific domain
+- You need specialized thinking that benefits from a CEO's focused expertise
+
+When you delegate:
+- Tell the user which CEO you're consulting and why
+- Pass relevant context in the task description so the CEO has what it needs
+- Present the CEO's report with attribution: "The [CEO Name] reports..."
+- Add your Chairman-level perspective if relevant (cross-cutting concerns, conflicts between verticals, big-picture strategy)
+- After meaningful interactions, consider publishing a decision log to the vault
+
+When NOT to delegate:
+- Simple greetings or general conversation
+- Questions spanning multiple verticals (handle yourself, or delegate to each relevant CEO sequentially)
+- Quick factual answers you already know
+- When Dez specifically asks YOU a question
+
+TOOLS:
+- web_search — live internet data
+- vault_publish — write files to the Obsidian knowledge base (n8n → GitHub → Obsidian Git sync). Paths relative to vault root.
+- delegate_to_ceo — consult a vertical CEO. IDs: dominion-homes, wrenchready, tina, personal
+- vault_list, vault_read, vault_read_image — browse/read local files (when bridge connected)
+
+VAULT STRUCTURE:
+- 00-Al-Boreland-Core/ — your constitutions and operating principles (19 constitutions)
+- 01-Dominion-Homes/ — Dominion Homes CEO's domain
+- 02-WrenchReady-Mobile/ — WrenchReady CEO's domain
+- 03-Tina-AI-Tax-Agent/ — Tina CEO's domain
+- 04-Personal-Life/ — Personal Life CEO's domain
+- Board.md — board hierarchy overview
+
+Each CEO has a CEO-Identity.md and training data in their section.
+
+RESPONSE STYLE:
 - Lead with the most important information first
 - Use bullet points for lists and action items
-- Flag anything that needs the user's immediate decision
+- Flag anything that needs Dez's immediate decision
 - End with clear next steps when applicable
-- When the user shares images or documents, analyze them thoroughly before responding
-
-You have access to a web_search tool. Use it when:
-- The user asks about recent news, events, or current data
-- You need up-to-date pricing, market data, or statistics
-- The user explicitly asks you to search or look something up
-Do NOT search for general knowledge you already have.
-
-When the vault tools are available, you can read and write files in the user's Obsidian vault. Use them when:
-- The user asks you to create notes, documents, or project folders
-- The user asks you to read or review files from their vault
-- The user references their knowledge base or notes
-Always confirm what you're about to do before writing. After writing, confirm the path and a brief summary.`;
+- When Dez shares images or documents, analyze them thoroughly`;
 
 /* ------------------------------------------------------------------ */
 /*  Tool definitions                                                   */
@@ -47,20 +192,67 @@ const SERVER_TOOLS: Anthropic.Tool[] = [
       required: ["query"],
     },
   },
-];
-
-const VAULT_TOOLS: Anthropic.Tool[] = [
   {
-    name: "vault_list",
+    name: "vault_publish",
     description:
-      "List files and folders in the user's Obsidian vault. Use '.' for the root directory.",
+      "Write a markdown file to the Obsidian knowledge base. The file is committed to GitHub via n8n and synced to Obsidian automatically. Folders are created on first file commit. Use for decisions, notes, trajectories, project docs, or any knowledge worth persisting.",
     input_schema: {
       type: "object" as const,
       properties: {
         path: {
           type: "string",
           description:
-            "Relative folder path within the vault (e.g. '.' for root, 'projects/book')",
+            "Relative file path in the vault (e.g. 'Trajectories/DominionHomes/2024-04-02-offer-sent.md')",
+        },
+        content: {
+          type: "string",
+          description: "Full markdown content to write",
+        },
+      },
+      required: ["path", "content"],
+    },
+  },
+  {
+    name: "delegate_to_ceo",
+    description:
+      "Delegate a task to one of your four vertical CEOs. They will analyze the request using their domain expertise and training data, then report back. CEOs: dominion-homes (real estate), wrenchready (auto repair), tina (tax/accounting), personal (personal life).",
+    input_schema: {
+      type: "object" as const,
+      properties: {
+        ceo: {
+          type: "string",
+          description:
+            "CEO identifier: 'dominion-homes', 'wrenchready', 'tina', or 'personal'",
+          enum: ["dominion-homes", "wrenchready", "tina", "personal"],
+        },
+        task: {
+          type: "string",
+          description:
+            "Clear description of what you need the CEO to analyze, decide, or report on. Include any relevant context.",
+        },
+        context: {
+          type: "string",
+          description:
+            "Optional additional context — recent conversation details, data from other tools, or cross-vertical considerations.",
+        },
+      },
+      required: ["ceo", "task"],
+    },
+  },
+];
+
+const BRIDGE_TOOLS: Anthropic.Tool[] = [
+  {
+    name: "vault_list",
+    description:
+      "List files and folders in the user's local filesystem. Use '.' for the root directory.",
+    input_schema: {
+      type: "object" as const,
+      properties: {
+        path: {
+          type: "string",
+          description:
+            "Relative folder path (e.g. '.' for root, 'al-boreland-vault/01-Dominion-Homes')",
         },
       },
       required: ["path"],
@@ -69,46 +261,28 @@ const VAULT_TOOLS: Anthropic.Tool[] = [
   {
     name: "vault_read",
     description:
-      "Read a file from the user's Obsidian vault. Supports .md, .txt, .json, .yaml, .csv files.",
+      "Read a text file from the user's local filesystem. Supports .md, .txt, .json, .yaml, .csv files.",
     input_schema: {
       type: "object" as const,
       properties: {
         path: {
           type: "string",
-          description: "Relative file path (e.g. 'notes/meeting.md')",
+          description: "Relative file path (e.g. 'al-boreland-vault/Index.md')",
         },
       },
       required: ["path"],
     },
   },
   {
-    name: "vault_write",
+    name: "vault_read_image",
     description:
-      "Create or overwrite a file in the user's Obsidian vault. Parent folders are created automatically.",
+      "Read an image file from the user's local filesystem and return it for visual analysis. Supports .png, .jpg, .jpeg, .gif, .webp files up to 5 MB.",
     input_schema: {
       type: "object" as const,
       properties: {
         path: {
           type: "string",
-          description: "Relative file path (e.g. 'projects/book/outline.md')",
-        },
-        content: {
-          type: "string",
-          description: "The full file content to write",
-        },
-      },
-      required: ["path", "content"],
-    },
-  },
-  {
-    name: "vault_mkdir",
-    description: "Create a new folder in the user's Obsidian vault.",
-    input_schema: {
-      type: "object" as const,
-      properties: {
-        path: {
-          type: "string",
-          description: "Relative folder path to create (e.g. 'projects/new-venture')",
+          description: "Relative image file path (e.g. 'leads/property-photo.jpg')",
         },
       },
       required: ["path"],
@@ -116,8 +290,8 @@ const VAULT_TOOLS: Anthropic.Tool[] = [
   },
 ];
 
-function isVaultTool(name: string) {
-  return name.startsWith("vault_");
+function isBridgeTool(name: string) {
+  return name === "vault_list" || name === "vault_read" || name === "vault_read_image";
 }
 
 /* ------------------------------------------------------------------ */
@@ -165,6 +339,64 @@ async function logTrajectory(action: string, outcome: string) {
     });
   } catch (err) {
     console.error("[Al] trajectory log failed:", err);
+  }
+}
+
+async function executeVaultPublish(
+  path: string,
+  content: string
+): Promise<string> {
+  const webhookUrl = process.env.N8N_WEBHOOK_URL?.trim();
+  if (!webhookUrl)
+    return "Vault publish is not configured. Ask the admin to set N8N_WEBHOOK_URL.";
+  try {
+    const res = await fetch(webhookUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ path, content }),
+    });
+    if (!res.ok) return `Vault publish failed (${res.status}). The n8n workflow may be inactive.`;
+    return `Published to vault: ${path}`;
+  } catch (err) {
+    return `Vault publish error: ${err instanceof Error ? err.message : "unknown"}`;
+  }
+}
+
+async function executeDelegation(
+  anthropic: Anthropic,
+  ceoId: string,
+  task: string,
+  context?: string
+): Promise<string> {
+  const ceo = CEO_CONFIG[ceoId];
+  if (!ceo) return `Unknown CEO: ${ceoId}. Valid IDs: ${Object.keys(CEO_CONFIG).join(", ")}`;
+
+  const ceoPrompt = `${ceo.constitution}
+
+You are responding to a delegation from Al Boreland, Chairman of the Board. Answer the task directly and concisely. Structure your response with clear sections if needed. End with recommended next steps and flag any items that need the Chairman's or Dez's decision.
+
+If you need more information from your vault training data to give a good answer, say exactly what files or data you'd need.`;
+
+  const userMessage = context
+    ? `TASK FROM THE CHAIRMAN:\n${task}\n\nADDITIONAL CONTEXT:\n${context}`
+    : `TASK FROM THE CHAIRMAN:\n${task}`;
+
+  try {
+    const response = await anthropic.messages.create({
+      model: "claude-sonnet-4-20250514",
+      max_tokens: 2048,
+      system: ceoPrompt,
+      messages: [{ role: "user", content: userMessage }],
+    });
+
+    const text = response.content
+      .filter((b): b is Anthropic.TextBlock => b.type === "text")
+      .map((b) => b.text)
+      .join("\n\n");
+
+    return `[${ceo.name} Report]\n\n${text}`;
+  } catch (err) {
+    return `Delegation to ${ceo.name} failed: ${err instanceof Error ? err.message : "unknown error"}`;
   }
 }
 
@@ -364,7 +596,7 @@ export async function POST(request: NextRequest) {
 
   const anthropic = new Anthropic({ apiKey });
   const tools = [...SERVER_TOOLS];
-  if (bridgeConnected) tools.push(...VAULT_TOOLS);
+  if (bridgeConnected) tools.push(...BRIDGE_TOOLS);
 
   /* Build the Anthropic messages array */
   const messages: Anthropic.MessageParam[] = (history || []).map((m) => ({
@@ -417,34 +649,55 @@ export async function POST(request: NextRequest) {
           );
           if (toolBlocks.length === 0) break;
 
-          const vaultBlocks = toolBlocks.filter((b) => isVaultTool(b.name));
-          const serverBlocks = toolBlocks.filter((b) => !isVaultTool(b.name));
+          const bridgeBlocks = toolBlocks.filter((b) => isBridgeTool(b.name));
+          const serverBlocks = toolBlocks.filter((b) => !isBridgeTool(b.name));
 
-          /* Execute server-side tools (web search) */
+          /* Execute server-side tools (web search, vault publish, delegation) */
           const precomputed: Anthropic.ToolResultBlockParam[] = [];
           for (const sb of serverBlocks) {
-            const query =
-              (sb.input as Record<string, string>).query || String(sb.input);
-            controller.enqueue(
-              encoder.encode(
-                `data: ${JSON.stringify({ status: "searching", query })}\n\n`
-              )
-            );
-            const result = await executeWebSearch(query);
-            precomputed.push({
-              type: "tool_result",
-              tool_use_id: sb.id,
-              content: result,
-            });
+            const inp = sb.input as Record<string, string>;
+            if (sb.name === "web_search") {
+              const query = inp.query || String(sb.input);
+              controller.enqueue(
+                encoder.encode(
+                  `data: ${JSON.stringify({ status: "searching", query })}\n\n`
+                )
+              );
+              const result = await executeWebSearch(query);
+              precomputed.push({ type: "tool_result", tool_use_id: sb.id, content: result });
+            } else if (sb.name === "vault_publish") {
+              controller.enqueue(
+                encoder.encode(
+                  `data: ${JSON.stringify({ status: "publishing", path: inp.path })}\n\n`
+                )
+              );
+              const result = await executeVaultPublish(inp.path, inp.content);
+              precomputed.push({ type: "tool_result", tool_use_id: sb.id, content: result });
+            } else if (sb.name === "delegate_to_ceo") {
+              const ceoId = inp.ceo;
+              const ceoName = CEO_CONFIG[ceoId]?.name || ceoId;
+              controller.enqueue(
+                encoder.encode(
+                  `data: ${JSON.stringify({ status: "delegating", ceo: ceoName })}\n\n`
+                )
+              );
+              const result = await executeDelegation(
+                anthropic,
+                ceoId,
+                inp.task,
+                inp.context
+              );
+              precomputed.push({ type: "tool_result", tool_use_id: sb.id, content: result });
+            }
           }
 
-          /* Delegate vault tools to the client */
-          if (vaultBlocks.length > 0) {
+          /* Delegate bridge tools (vault_list, vault_read) to the client */
+          if (bridgeBlocks.length > 0) {
             controller.enqueue(
               encoder.encode(
                 `data: ${JSON.stringify({
                   vault_action: {
-                    requests: vaultBlocks.map((b) => ({
+                    requests: bridgeBlocks.map((b) => ({
                       id: b.id,
                       name: b.name,
                       input: b.input,
@@ -459,7 +712,7 @@ export async function POST(request: NextRequest) {
             controller.close();
             logTrajectory(
               message || "vault tool request",
-              fullResponse + " [awaiting vault tool execution]"
+              fullResponse + " [awaiting bridge tool execution]"
             ).catch(() => {});
             return;
           }

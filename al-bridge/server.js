@@ -33,9 +33,25 @@ const ORIGINS = new Set([
   "http://localhost:3001",
 ]);
 
-const SAFE_EXT = new Set([
+const TEXT_EXT = new Set([
   ".md", ".txt", ".json", ".canvas", ".yaml", ".yml", ".css", ".csv",
 ]);
+
+const IMAGE_EXT = new Set([
+  ".png", ".jpg", ".jpeg", ".gif", ".webp",
+]);
+
+const SAFE_EXT = new Set([...TEXT_EXT, ...IMAGE_EXT]);
+
+const IMAGE_MIME = {
+  ".png": "image/png",
+  ".jpg": "image/jpeg",
+  ".jpeg": "image/jpeg",
+  ".gif": "image/gif",
+  ".webp": "image/webp",
+};
+
+const MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5 MB for images
 
 const MAX_SIZE = 1024 * 1024; // 1 MB
 
@@ -146,6 +162,27 @@ async function handleWrite(req, res, o) {
   json(res, 200, { ok: true, path: rel }, o);
 }
 
+async function handleReadImage(res, o, url) {
+  const rel = url.searchParams.get("path") || "";
+  const full = resolveSafe(rel);
+  if (!full) return json(res, 400, { error: "Invalid path" }, o);
+  const ext = path.extname(full).toLowerCase();
+  if (!IMAGE_EXT.has(ext))
+    return json(res, 403, { error: "Not an image file" }, o);
+
+  try {
+    const s = await fs.stat(full);
+    if (s.size > MAX_IMAGE_SIZE)
+      return json(res, 413, { error: "Image too large (>5 MB)" }, o);
+    const buf = await fs.readFile(full);
+    const base64 = buf.toString("base64");
+    const mimeType = IMAGE_MIME[ext] || "image/png";
+    json(res, 200, { path: rel, base64, mimeType, size: s.size }, o);
+  } catch {
+    json(res, 404, { error: "Image not found" }, o);
+  }
+}
+
 async function handleMkdir(req, res, o) {
   const { path: rel } = JSON.parse(await readBody(req));
   if (!rel) return json(res, 400, { error: "Missing path" }, o);
@@ -177,6 +214,8 @@ const server = http.createServer(async (req, res) => {
       return handleList(res, o, u);
     if (p === "/read" && req.method === "GET")
       return handleRead(res, o, u);
+    if (p === "/read-image" && req.method === "GET")
+      return handleReadImage(res, o, u);
     if (p === "/write" && req.method === "POST")
       return handleWrite(req, res, o);
     if (p === "/mkdir" && req.method === "POST")

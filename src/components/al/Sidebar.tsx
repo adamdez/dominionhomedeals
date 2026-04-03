@@ -11,6 +11,11 @@ import {
   Settings,
   X,
   Sparkles,
+  Users,
+  Building2,
+  Wrench,
+  Receipt,
+  Heart,
 } from "lucide-react";
 
 interface QuickAction {
@@ -76,6 +81,46 @@ const quickActions: QuickAction[] = [
       "Analyze our entire conversion funnel end-to-end. Evaluate landing page copy, hero sections, CTAs, form design, trust signals, social proof placement, and page speed. Give me specific, actionable changes ranked by expected impact on lead conversion rates with estimated lift percentages.",
     icon: <TrendingUp className="h-4 w-4" />,
     category: "UX Specialists",
+  },
+  {
+    id: "board-meeting",
+    label: "Board Meeting",
+    prompt:
+      "Run a board meeting. Consult each of my four CEOs — Dominion Homes, WrenchReady, Tina, and Personal Life — for a brief status update on their vertical. Summarize what each reports, flag cross-cutting issues, and tell me what needs my attention.",
+    icon: <Users className="h-4 w-4" />,
+    category: "Board",
+  },
+  {
+    id: "dominion-ceo",
+    label: "Dominion Homes CEO",
+    prompt:
+      "Consult the Dominion Homes CEO. I want a full status report on the real estate operation — pipeline health, active leads, recent decisions, and recommended next actions.",
+    icon: <Building2 className="h-4 w-4" />,
+    category: "Board",
+  },
+  {
+    id: "wrenchready-ceo",
+    label: "WrenchReady CEO",
+    prompt:
+      "Consult the WrenchReady Mobile CEO. I want a full status report — bookings this week, revenue vs target, Simon's schedule, ad performance, and what needs attention.",
+    icon: <Wrench className="h-4 w-4" />,
+    category: "Board",
+  },
+  {
+    id: "tina-ceo",
+    label: "Tina CEO",
+    prompt:
+      "Consult the Tina CEO. What's the current state of our tax and accounting across all entities? Any upcoming deadlines, open items, or recommendations?",
+    icon: <Receipt className="h-4 w-4" />,
+    category: "Board",
+  },
+  {
+    id: "personal-ceo",
+    label: "Personal Life CEO",
+    prompt:
+      "Consult my Personal Life CEO. What needs my attention on the personal side — health, finances, family, goals? What's slipping and what's on track?",
+    icon: <Heart className="h-4 w-4" />,
+    category: "Board",
   },
 ];
 
