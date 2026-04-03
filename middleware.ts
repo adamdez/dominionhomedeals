@@ -108,15 +108,18 @@ export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   if (isAlSubdomain) {
+    // Rewrite all subdomain requests to the /al route group
+    const url = request.nextUrl.clone();
     if (pathname === "/") {
-      const url = request.nextUrl.clone();
       url.pathname = "/al";
-      return NextResponse.rewrite(url);
+    } else if (!pathname.startsWith("/al") && !pathname.startsWith("/api/al") && !pathname.startsWith("/_next")) {
+      // Prefix non-AL paths so subdomain routes resolve correctly
+      url.pathname = `/al${pathname}`;
     }
-
-    const response = NextResponse.next();
+    const response = NextResponse.rewrite(url);
     response.headers.set("X-DNS-Prefetch-Control", "on");
     response.headers.set("Strict-Transport-Security", "max-age=63072000; includeSubDomains; preload");
+    response.headers.set("x-middleware-cache", "no-cache");
     return response;
   }
 
