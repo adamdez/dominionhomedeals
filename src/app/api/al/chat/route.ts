@@ -644,7 +644,7 @@ async function streamOneTurn(
 ): Promise<StreamTurnResult> {
   const stream = await (anthropic.messages.create as any)({
     model: "claude-sonnet-4-20250514",
-    max_tokens: 16000,
+    max_tokens: 32000,
     system: systemPrompt,
     messages,
     tools: [...NATIVE_TOOLS, ...tools],
@@ -812,6 +812,13 @@ export async function POST(request: NextRequest) {
           );
 
           fullResponse += textOutput;
+
+          /* If the model hit max_tokens mid-response, continue in a new turn */
+          if (stopReason === "max_tokens") {
+            convo.push({ role: "assistant", content: contentBlocks as any });
+            convo.push({ role: "user", content: "Continue your response from where you left off." });
+            continue;
+          }
 
           if (stopReason !== "tool_use") break;
 
