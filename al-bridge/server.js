@@ -6,6 +6,8 @@ const fs = require("fs").promises;
 const fsSync = require("fs");
 const path = require("path");
 const { URL } = require("url");
+const { spawn } = require("child_process");
+const crypto = require("crypto");
 
 /* ── Load .env ──────────────────────────────────────────────── */
 const envFile = path.join(__dirname, ".env");
@@ -25,6 +27,44 @@ if (fsSync.existsSync(envFile)) {
 const PORT = parseInt(process.env.BRIDGE_PORT || "3141", 10);
 const VAULT = (process.env.VAULT_PATH || "").replace(/[\\/]+$/, "");
 const TOKEN = (process.env.BRIDGE_TOKEN || "").trim();
+
+const homeDir = process.env.USERPROFILE || process.env.HOME || "";
+const CREW_ROOT_DEFAULT = homeDir
+  ? path.join(homeDir, "Desktop", "al boreland-crew")
+  : "";
+const CREW_ROOT_ENV = (process.env.CREW_PROJECT_ROOT || "").trim().replace(/^["']|["']$/g, "");
+const CREW_ROOT = CREW_ROOT_ENV ? path.resolve(CREW_ROOT_ENV) : CREW_ROOT_DEFAULT;
+
+const MAX_CONCURRENT_CREWS = 2;
+const CREW_TIMEOUT_MS = 15 * 60 * 1000;
+const MAX_CREW_OUTPUT = 500 * 1024;
+
+/** Maps *_crew.py filename → argv for `python main.py <argv>` */
+const CREW_FILE_TO_CMD = {
+  "tax_scout_crew.py": "tax-scout",
+  "wrenchready_audit_crew.py": "wrenchready",
+};
+
+function crewProjectOk() {
+  if (!CREW_ROOT || !fsSync.existsSync(CREW_ROOT)) return false;
+  return fsSync.existsSync(path.join(CREW_ROOT, "main.py"));
+}
+
+function discoverCrewFiles() {
+  const dir = path.join(CREW_ROOT, "crews");
+  if (!fsSync.existsSync(dir)) return [];
+  return fsSync
+    .readdirSync(dir)
+    .filter((f) => f.toLowerCase().endsWith("_crew.py"));
+}
+
+function fileToCrewId(file) {
+  if (CREW_FILE_TO_CMD[file]) return CREW_FILE_TO_CMD[file];
+  const base = file.replace(/_crew\.py$/i, "");
+  return base.replace(/_/g, "-");
+}
+
+const crewRuns = new Map();
 
 const ORIGINS = new Set([
   "https://dominionhomedeals.com",
@@ -99,7 +139,12 @@ function readBody(req) {
 
 /* ── Routes ─────────────────────────────────────────────────── */
 async function handleHealth(res, o) {
-  json(res, 200, { ok: true, vault: VAULT }, o);
+  json(res, 200, {
+    ok: true,
+    vault: VAULT,
+    crewProject: crewProjectOk(),
+    crewRoot: CREW_ROOT || null,
+  }, o);
 }
 
 async function handleList(res, o, url) {
@@ -195,6 +240,163 @@ async function handleMkdir(req, res, o) {
   json(res, 200, { ok: true, path: rel }, o);
 }
 
+function findPythonExe() {
+  const win = path.join(CREW_ROOT, ".venv", "Scripts", "python.exe");
+  const unix = path.join(CREW_ROOT, ".venv", "bin", "python");
+  if (fsSync.existsSync(win)) return win;
+  if (fsSync.existsSync(unix)) return unix;
+  return process.platform === "win32" ? "python" : "python3";
+}
+
+function listCrewsPayload() {
+  if (!crewProjectOk()) {
+    return {
+      crews: [],
+      activeRuns: [],
+      crewRoot: CREW_ROOT || null,
+      error: "CREW_PROJECT_ROOT missing or invalid (need main.py and crews/)",
+    };
+  }
+  const files = discoverCrewFiles();
+  const crews = files.map((file) => ({
+    id: fileToCrewId(file),
+    file,
+  }));
+  if (files.includes("tax_scout_crew.py") && files.includes("wrenchready_audit_crew.py")) {
+    crews.push({ id: "both", file: "(both)", synthetic: true });
+  }
+  const activeRuns = [];
+  for (const [id, r] of crewRuns) {
+    if (r.status === "running")
+      activeRuns.push({ id, crew: r.crew, startedAt: r.startedAt });
+  }
+  return { crews, activeRuns, crewRoot: CREW_ROOT };
+}
+
+async function handleCrewList(res, o) {
+  json(res, 200, listCrewsPayload(), o);
+}
+
+async function handleCrewRun(req, res, o) {
+  if (!crewProjectOk())
+    return json(res, 503, { error: "CrewAI project not configured on this machine" }, o);
+
+  let body;
+  try {
+    body = JSON.parse(await readBody(req));
+  } catch {
+    return json(res, 400, { error: "Invalid JSON" }, o);
+  }
+  const crewId = (body.crew || "").trim().toLowerCase();
+  if (!crewId) return json(res, 400, { error: "Missing crew" }, o);
+
+  const files = discoverCrewFiles();
+  const known = files.map((f) => fileToCrewId(f));
+  const allowBoth =
+    files.includes("tax_scout_crew.py") && files.includes("wrenchready_audit_crew.py");
+  const valid = allowBoth ? [...known, "both"] : known;
+  if (!valid.includes(crewId))
+    return json(res, 400, { error: `Unknown crew: ${crewId}. Valid: ${valid.join(", ") || "(none)"}` }, o);
+
+  let running = 0;
+  for (const r of crewRuns.values()) if (r.status === "running") running++;
+  if (running >= MAX_CONCURRENT_CREWS)
+    return json(res, 429, { error: "Too many concurrent crew runs (max 2)" }, o);
+
+  const id = crypto.randomUUID();
+  const run = {
+    id,
+    crew: crewId,
+    status: "running",
+    output: "",
+    error: "",
+    startedAt: Date.now(),
+    finishedAt: null,
+    exitCode: null,
+  };
+  crewRuns.set(id, run);
+
+  const py = findPythonExe();
+  const mainPy = path.join(CREW_ROOT, "main.py");
+  let outBuf = "";
+  let errBuf = "";
+
+  const child = spawn(py, [mainPy, crewId], {
+    cwd: CREW_ROOT,
+    windowsHide: true,
+    env: { ...process.env },
+  });
+
+  const appendOut = (chunk, isErr) => {
+    const s = chunk.toString();
+    if (isErr) errBuf += s;
+    else outBuf += s;
+    const total = outBuf.length + errBuf.length;
+    if (total > MAX_CREW_OUTPUT) {
+      try {
+        child.kill("SIGTERM");
+      } catch { /* ignore */ }
+    }
+  };
+
+  child.stdout.on("data", (d) => appendOut(d, false));
+  child.stderr.on("data", (d) => appendOut(d, true));
+
+  const timer = setTimeout(() => {
+    if (run.status !== "running") return;
+    try {
+      child.kill("SIGTERM");
+    } catch { /* ignore */ }
+    run.status = "timeout";
+    run.output = (outBuf + "\n" + errBuf).slice(0, MAX_CREW_OUTPUT);
+    run.error = "Timed out after 15 minutes";
+    run.finishedAt = Date.now();
+  }, CREW_TIMEOUT_MS);
+
+  child.on("error", (err) => {
+    clearTimeout(timer);
+    if (run.status !== "running") return;
+    run.status = "failed";
+    run.error = err.message || "spawn failed";
+    run.output = (outBuf + errBuf).slice(0, MAX_CREW_OUTPUT);
+    run.finishedAt = Date.now();
+  });
+
+  child.on("close", (code) => {
+    clearTimeout(timer);
+    if (run.status !== "running") return;
+    run.exitCode = code;
+    run.output = (outBuf + (errBuf ? "\n" + errBuf : "")).slice(0, MAX_CREW_OUTPUT);
+    run.status = code === 0 ? "completed" : "failed";
+    if (code !== 0) run.error = `Exit code ${code}`;
+    run.finishedAt = Date.now();
+  });
+
+  json(res, 200, { id, crew: crewId, status: "running" }, o);
+}
+
+async function handleCrewStatus(res, o, url) {
+  const id = url.searchParams.get("id") || "";
+  if (!id) return json(res, 400, { error: "Missing id" }, o);
+  const run = crewRuns.get(id);
+  if (!run) return json(res, 404, { error: "Run not found" }, o);
+  json(
+    res,
+    200,
+    {
+      id: run.id,
+      crew: run.crew,
+      status: run.status,
+      output: run.output,
+      error: run.error || null,
+      exitCode: run.exitCode,
+      startedAt: run.startedAt,
+      finishedAt: run.finishedAt,
+    },
+    o
+  );
+}
+
 /* ── Server ─────────────────────────────────────────────────── */
 const server = http.createServer(async (req, res) => {
   const o = req.headers.origin || "";
@@ -221,6 +423,12 @@ const server = http.createServer(async (req, res) => {
       return handleWrite(req, res, o);
     if (p === "/mkdir" && req.method === "POST")
       return handleMkdir(req, res, o);
+    if (p === "/crew/list" && req.method === "GET")
+      return handleCrewList(res, o);
+    if (p === "/crew/run" && req.method === "POST")
+      return handleCrewRun(req, res, o);
+    if (p === "/crew/status" && req.method === "GET")
+      return handleCrewStatus(res, o, u);
     json(res, 404, { error: "Not found" }, o);
   } catch (err) {
     json(res, 500, { error: err.message || "Internal error" }, o);
@@ -241,6 +449,9 @@ server.listen(PORT, "127.0.0.1", () => {
   console.log("  ========================");
   console.log(`  Port:  http://127.0.0.1:${PORT}`);
   console.log(`  Vault: ${VAULT}`);
+  console.log(
+    `  Crew:  ${crewProjectOk() ? CREW_ROOT : "not found — set CREW_PROJECT_ROOT"}`
+  );
   console.log(`  Auth:  ${TOKEN ? "token required" : "open (set BRIDGE_TOKEN to secure)"}`);
   console.log("  Ready.");
   console.log("");

@@ -154,6 +154,7 @@ TOOLS:
 - vault_publish — write files to the Obsidian knowledge base (n8n → GitHub → Obsidian Git sync). Paths relative to vault root.
 - delegate_to_ceo — consult a vertical CEO. IDs: dominion-homes, wrenchready, tina, personal
 - vault_list, vault_read, vault_read_image — browse/read local files (when bridge connected)
+- crew_list, crew_run, crew_status — list and run CrewAI crews on the local machine via the bridge (requires user approval; bridge must be running)
 
 VAULT STRUCTURE:
 - 00-Al-Boreland-Core/ — your constitutions and operating principles (19 constitutions)
@@ -331,10 +332,58 @@ const BRIDGE_TOOLS: Anthropic.Tool[] = [
       required: ["path"],
     },
   },
+  {
+    name: "crew_list",
+    description:
+      "List CrewAI crews available on the user's machine (discovered from the local project). Use before running a crew to get valid crew IDs.",
+    input_schema: {
+      type: "object" as const,
+      properties: {},
+      required: [],
+    },
+  },
+  {
+    name: "crew_run",
+    description:
+      "Start a CrewAI crew run on the user's machine (Python). The user must approve. Returns a run id; poll crew_status until completed or failed. Typical IDs: tax-scout, wrenchready, both.",
+    input_schema: {
+      type: "object" as const,
+      properties: {
+        crew: {
+          type: "string",
+          description:
+            "Crew id from crew_list (e.g. tax-scout, wrenchready). Use 'both' only if main.py supports it.",
+        },
+      },
+      required: ["crew"],
+    },
+  },
+  {
+    name: "crew_status",
+    description:
+      "Check status and output of a crew run started with crew_run. Pass the run id returned from crew_run.",
+    input_schema: {
+      type: "object" as const,
+      properties: {
+        run_id: {
+          type: "string",
+          description: "The run id returned when crew_run was approved",
+        },
+      },
+      required: ["run_id"],
+    },
+  },
 ];
 
 function isBridgeTool(name: string) {
-  return name === "vault_list" || name === "vault_read" || name === "vault_read_image";
+  return (
+    name === "vault_list" ||
+    name === "vault_read" ||
+    name === "vault_read_image" ||
+    name === "crew_list" ||
+    name === "crew_run" ||
+    name === "crew_status"
+  );
 }
 
 /* ------------------------------------------------------------------ */

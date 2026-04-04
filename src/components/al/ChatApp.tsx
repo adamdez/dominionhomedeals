@@ -19,6 +19,7 @@ import {
   ShieldCheck,
   BookUp,
   Users,
+  Bot,
 } from "lucide-react";
 import { AuthScreen } from "./AuthScreen";
 import { Sidebar } from "./Sidebar";
@@ -207,6 +208,41 @@ async function executeBridgeAction(req: VaultToolRequest): Promise<BridgeResult>
           mimeType: data.mimeType,
           path: data.path,
         };
+      }
+      case "crew_list": {
+        const res = await fetch(`${url}/crew/list`, { headers });
+        const data = await res.json();
+        if (!res.ok) return `Error: ${data.error || res.status}`;
+        let out = "";
+        if (data.error) out += `Setup: ${data.error}\n\n`;
+        const crews = data.crews as { id: string; file: string }[];
+        out += crews?.length
+          ? crews.map((c) => `- ${c.id} (${c.file})`).join("\n")
+          : "No crews discovered.";
+        const runs = data.activeRuns as { id: string; crew: string }[] | undefined;
+        if (runs?.length)
+          out += `\n\nActive runs:\n${runs.map((r) => `- ${r.crew} (${r.id})`).join("\n")}`;
+        if (data.crewRoot) out += `\n\nProject: ${data.crewRoot}`;
+        return out.trim();
+      }
+      case "crew_run": {
+        const res = await fetch(`${url}/crew/run`, {
+          method: "POST",
+          headers,
+          body: JSON.stringify({ crew: req.input.crew }),
+        });
+        const data = await res.json();
+        if (!res.ok) return `Error: ${data.error || res.status}`;
+        return JSON.stringify(data, null, 2);
+      }
+      case "crew_status": {
+        const res = await fetch(
+          `${url}/crew/status?id=${encodeURIComponent(req.input.run_id)}`,
+          { headers }
+        );
+        const data = await res.json();
+        if (!res.ok) return `Error: ${data.error || res.status}`;
+        return JSON.stringify(data, null, 2);
       }
       default:
         return `Unknown bridge tool: ${req.name}`;
@@ -805,6 +841,15 @@ export function ChatApp() {
               {loading && searchQuery && <SearchingWeb query={searchQuery} />}
               {loading && publishingPath && <PublishingToVault path={publishingPath} />}
               {loading && delegatingCeo && <DelegatingToCeo ceo={delegatingCeo} />}
+              {executingVault &&
+                pendingVaultAction?.requests.some((r) => r.name === "crew_run") && (
+                  <RunningCrew
+                    crew={
+                      pendingVaultAction.requests.find((r) => r.name === "crew_run")
+                        ?.input.crew ?? ""
+                    }
+                  />
+                )}
               {loading &&
                 !searchQuery &&
                 !publishingPath &&
@@ -1088,9 +1133,22 @@ function vaultActionLabel(name: string): string {
       return "Read file";
     case "vault_read_image":
       return "View image";
+    case "crew_list":
+      return "List CrewAI crews";
+    case "crew_run":
+      return "Run CrewAI crew";
+    case "crew_status":
+      return "Check crew run status";
     default:
       return name;
   }
+}
+
+function bridgeRequestDetail(req: VaultToolRequest): string {
+  if (req.name === "crew_run") return req.input.crew || "(crew)";
+  if (req.name === "crew_status") return req.input.run_id || "(run id)";
+  if (req.name === "crew_list") return "—";
+  return req.input.path || "";
 }
 
 function DelegatingToCeo({ ceo }: { ceo: string }) {
@@ -1132,6 +1190,22 @@ function PublishingToVault({ path }: { path: string }) {
   );
 }
 
+function RunningCrew({ crew }: { crew: string }) {
+  return (
+    <div className="flex justify-start animate-fade-up">
+      <div className="rounded-2xl border border-emerald-900/15 bg-[#141f1a] px-4 py-3">
+        <div className="mb-1.5 text-xs font-medium text-emerald-400/60">Al</div>
+        <div className="flex items-center gap-2">
+          <Bot className="h-3.5 w-3.5 animate-pulse text-emerald-400/60" />
+          <span className="text-sm text-emerald-200/50">
+            Starting crew{crew ? ` (${crew})` : ""}&hellip;
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function ToolApprovalCard({
   requests,
   onApprove,
@@ -1143,12 +1217,21 @@ function ToolApprovalCard({
   onDeny: () => void;
   executing: boolean;
 }) {
+  const hasCrew = requests.some((r) => r.name.startsWith("crew_"));
+  const hasVault = requests.some((r) => r.name.startsWith("vault_"));
+  const title =
+    hasCrew && hasVault
+      ? "Local bridge request"
+      : hasCrew
+        ? "CrewAI / bridge request"
+        : "File system access request";
+
   return (
     <div className="flex justify-start animate-fade-up">
       <div className="w-full max-w-md rounded-2xl border border-amber-500/20 bg-[#1a1810] p-4">
         <div className="mb-3 flex items-center gap-2 text-xs font-medium text-amber-400/70">
           <ShieldCheck className="h-3.5 w-3.5" />
-          File System Access Request
+          {title}
         </div>
 
         <div className="space-y-2">
@@ -1158,11 +1241,15 @@ function ToolApprovalCard({
               className="rounded-lg border border-amber-500/10 bg-black/20 p-3"
             >
               <div className="flex items-center gap-2 text-xs font-medium text-amber-200/60">
-                <FolderOpen className="h-3 w-3" />
+                {req.name.startsWith("crew_") ? (
+                  <Bot className="h-3 w-3" />
+                ) : (
+                  <FolderOpen className="h-3 w-3" />
+                )}
                 {vaultActionLabel(req.name)}
               </div>
-              <p className="mt-1 font-mono text-xs text-emerald-200/40">
-                {req.input.path}
+              <p className="mt-1 font-mono text-xs text-emerald-200/40 break-all">
+                {bridgeRequestDetail(req)}
               </p>
               {req.name === "vault_write" && req.input.content && (
                 <pre className="mt-2 max-h-32 overflow-auto rounded bg-black/30 p-2 text-[11px] leading-relaxed text-emerald-200/30 al-scrollbar">

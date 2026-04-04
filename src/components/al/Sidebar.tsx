@@ -16,6 +16,7 @@ import {
   Wrench,
   Receipt,
   Heart,
+  Bot,
 } from "lucide-react";
 
 interface QuickAction {
@@ -121,6 +122,22 @@ const quickActions: QuickAction[] = [
       "Consult my Personal Life CEO. What needs my attention on the personal side — health, finances, family, goals? What's slipping and what's on track?",
     icon: <Heart className="h-4 w-4" />,
     category: "Board",
+  },
+  {
+    id: "list-crews",
+    label: "Available Crews",
+    prompt:
+      "Call crew_list (I'll approve) and tell me which CrewAI crews are installed, what each one does, and when you'd run tax-scout vs wrenchready vs both.",
+    icon: <Bot className="h-4 w-4" />,
+    category: "Crews",
+  },
+  {
+    id: "run-tax-scout",
+    label: "Run Tax Scout crew",
+    prompt:
+      "I want to run the Tax Scout crew locally. Use crew_list if needed, then crew_run with crew tax-scout. After it starts, use crew_status until the run finishes and summarize the output for me.",
+    icon: <Bot className="h-4 w-4" />,
+    category: "Crews",
   },
 ];
 
