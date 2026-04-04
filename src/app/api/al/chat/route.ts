@@ -150,7 +150,8 @@ When NOT to delegate:
 - When Dez specifically asks YOU a question
 
 TOOLS:
-- web_search — live internet data
+- web_search — full internet search powered by Anthropic (not Tavily). Returns real, complete results.
+- web_fetch — fetch and read the FULL content of any URL. Use this after web_search to deep-dive into specific sources.
 - vault_publish — write files to the Obsidian knowledge base (n8n → GitHub → Obsidian Git sync). Paths relative to vault root.
 - delegate_to_ceo — consult a vertical CEO. IDs: dominion-homes, wrenchready, tina, personal
 - vault_list, vault_read, vault_read_image — browse/read local files (when bridge connected)
@@ -188,22 +189,13 @@ RESPONSE STYLE:
 /*  Tool definitions                                                   */
 /* ------------------------------------------------------------------ */
 
+/* Native Anthropic server-side tools — Claude handles search/fetch internally */
+const NATIVE_TOOLS: any[] = [
+  { type: "web_search_20250209", name: "web_search", max_uses: 10 },
+  { type: "web_fetch_20250209", name: "web_fetch", max_uses: 5 },
+];
+
 const SERVER_TOOLS: Anthropic.Tool[] = [
-  {
-    name: "web_search",
-    description:
-      "Search the internet for current, real-time information. Use for recent news, live prices, current events, company lookups, property data, market conditions, or anything requiring up-to-date knowledge.",
-    input_schema: {
-      type: "object" as const,
-      properties: {
-        query: {
-          type: "string",
-          description: "The search query to look up",
-        },
-      },
-      required: ["query"],
-    },
-  },
   {
     name: "vault_publish",
     description:
@@ -650,12 +642,12 @@ async function streamOneTurn(
   prependNewlines: boolean,
   systemPrompt: string = SYSTEM_PROMPT
 ): Promise<StreamTurnResult> {
-  const stream = await anthropic.messages.create({
+  const stream = await (anthropic.messages.create as any)({
     model: "claude-sonnet-4-20250514",
     max_tokens: 16000,
     system: systemPrompt,
     messages,
-    tools,
+    tools: [...NATIVE_TOOLS, ...tools],
     stream: true,
   });
 
@@ -668,11 +660,22 @@ async function streamOneTurn(
   for await (const event of stream) {
     switch (event.type) {
       case "content_block_start": {
-        const block = event.content_block;
+        const block = event.content_block as any;
         if (block.type === "text") {
           contentBlocks.push({ type: "text", text: "" } as Anthropic.TextBlock);
         } else if (block.type === "tool_use") {
           currentTool = { id: block.id, name: block.name, jsonParts: [] };
+        } else if (block.type === "server_tool_use") {
+          /* Native tool (web_search/web_fetch) — API handles execution. Stream a status to the client. */
+          controller.enqueue(
+            encoder.encode(
+              `data: ${JSON.stringify({ status: "searching", query: block.input?.query || block.name })}\n\n`
+            )
+          );
+          contentBlocks.push(block);
+        } else if (block.type === "web_search_tool_result") {
+          /* Search results returned by API — track in contentBlocks for conversation history */
+          contentBlocks.push(block);
         }
         break;
       }
@@ -824,16 +827,7 @@ export async function POST(request: NextRequest) {
           const precomputed: Anthropic.ToolResultBlockParam[] = [];
           for (const sb of serverBlocks) {
             const inp = sb.input as Record<string, string>;
-            if (sb.name === "web_search") {
-              const query = inp.query || String(sb.input);
-              controller.enqueue(
-                encoder.encode(
-                  `data: ${JSON.stringify({ status: "searching", query })}\n\n`
-                )
-              );
-              const result = await executeWebSearch(query);
-              precomputed.push({ type: "tool_result", tool_use_id: sb.id, content: result });
-            } else if (sb.name === "vault_publish") {
+            if (sb.name === "vault_publish") {
               controller.enqueue(
                 encoder.encode(
                   `data: ${JSON.stringify({ status: "publishing", path: inp.path })}\n\n`
