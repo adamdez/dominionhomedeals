@@ -2,6 +2,9 @@ import { NextRequest } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
 import { getServiceClient } from "@/lib/supabase";
 
+/* Allow up to 300s on Vercel Pro (default is 60s on Hobby) */
+export const maxDuration = 300;
+
 /* ------------------------------------------------------------------ */
 /*  CEO Board Configuration                                            */
 /* ------------------------------------------------------------------ */
