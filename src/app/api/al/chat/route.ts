@@ -156,13 +156,16 @@ TOOLS:
 - vault_list, vault_read, vault_read_image — browse/read local files (when bridge connected)
 - crew_list, crew_run, crew_status — list and run CrewAI crews on the local machine via the bridge (requires user approval; bridge must be running)
 
-VAULT STRUCTURE:
-- 00-Al-Boreland-Core/ — your constitutions and operating principles (19 constitutions)
-- 01-Dominion-Homes/ — Dominion Homes CEO's domain
-- 02-WrenchReady-Mobile/ — WrenchReady CEO's domain
-- 03-Tina-AI-Tax-Agent/ — Tina CEO's domain
-- 04-Personal-Life/ — Personal Life CEO's domain
-- Board.md — board hierarchy overview
+BRIDGE RELATIVE PATHS (critical):
+The local bridge roots at the folder set in al-bridge/.env as VAULT_PATH (often the user's Desktop), NOT at the Obsidian vault folder. Every path you pass to vault_list, vault_read, and vault_read_image must be relative to that root. The vault on disk is usually a subfolder named al-boreland-vault/. Example: to read the system handoff, use al-boreland-vault/00-Al-Boreland-Core/System-Handoff/Al-Command-Center-Handoff.md — NOT 00-Al-Boreland-Core/... without the al-boreland-vault/ prefix. If unsure, vault_list path "." first, then drill into al-boreland-vault/.
+
+VAULT STRUCTURE (inside al-boreland-vault/ on disk):
+- al-boreland-vault/00-Al-Boreland-Core/ — constitutions, System-Handoff/, operating principles
+- al-boreland-vault/01-Dominion-Homes/ — Dominion Homes CEO's domain
+- al-boreland-vault/02-WrenchReady-Mobile/ — WrenchReady CEO's domain
+- al-boreland-vault/03-Tina-AI-Tax-Agent/ — Tina CEO's domain
+- al-boreland-vault/04-Personal-Life/ — Personal Life CEO's domain
+- al-boreland-vault/Board.md — board hierarchy overview
 
 Each CEO has a CEO-Identity.md and training data in their section.
 
@@ -296,7 +299,7 @@ const BRIDGE_TOOLS: Anthropic.Tool[] = [
         path: {
           type: "string",
           description:
-            "Relative folder path (e.g. '.' for root, 'al-boreland-vault/01-Dominion-Homes')",
+            "Relative to bridge VAULT_PATH (often Desktop). Always include vault folder prefix, e.g. 'al-boreland-vault/00-Al-Boreland-Core' or '.' to list bridge root.",
         },
       },
       required: ["path"],
@@ -311,7 +314,8 @@ const BRIDGE_TOOLS: Anthropic.Tool[] = [
       properties: {
         path: {
           type: "string",
-          description: "Relative file path (e.g. 'al-boreland-vault/Index.md')",
+          description:
+            "Relative to bridge root. Full example: 'al-boreland-vault/00-Al-Boreland-Core/System-Handoff/Al-Command-Center-Handoff.md' — not 00-Al-Boreland-Core/... alone.",
         },
       },
       required: ["path"],
@@ -326,7 +330,8 @@ const BRIDGE_TOOLS: Anthropic.Tool[] = [
       properties: {
         path: {
           type: "string",
-          description: "Relative image file path (e.g. 'leads/property-photo.jpg')",
+          description:
+            "Relative to bridge root; include al-boreland-vault/ when file is in the vault (e.g. 'al-boreland-vault/.../photo.jpg').",
         },
       },
       required: ["path"],
