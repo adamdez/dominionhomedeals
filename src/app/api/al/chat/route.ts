@@ -481,7 +481,7 @@ If you need more information from your vault training data to give a good answer
   try {
     const response = await anthropic.messages.create({
       model: "claude-sonnet-4-20250514",
-      max_tokens: 2048,
+      max_tokens: 4096,
       system: ceoPrompt,
       messages: [{ role: "user", content: userMessage }],
     });
@@ -510,9 +510,9 @@ async function executeWebSearch(query: string): Promise<string> {
       body: JSON.stringify({
         query,
         topic: "general",
-        search_depth: "basic",
-        max_results: 5,
-        include_answer: "basic",
+        search_depth: "advanced",
+        max_results: 10,
+        include_answer: "advanced",
       }),
     });
     if (!res.ok) {
@@ -652,7 +652,7 @@ async function streamOneTurn(
 ): Promise<StreamTurnResult> {
   const stream = await anthropic.messages.create({
     model: "claude-sonnet-4-20250514",
-    max_tokens: 4096,
+    max_tokens: 16000,
     system: systemPrompt,
     messages,
     tools,
@@ -797,7 +797,7 @@ export async function POST(request: NextRequest) {
       const fullSystemPrompt = SYSTEM_PROMPT + memoryBlock;
 
       try {
-        for (let turn = 0; turn < 4; turn++) {
+        for (let turn = 0; turn < 10; turn++) {
           const { stopReason, contentBlocks, textOutput } = await streamOneTurn(
             anthropic,
             convo,
