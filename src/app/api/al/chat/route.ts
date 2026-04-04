@@ -472,7 +472,7 @@ If you need more information from your vault training data to give a good answer
 
   try {
     const response = await anthropic.messages.create({
-      model: "claude-sonnet-4-20250514",
+      model: "claude-sonnet-4-20250514-v2",
       max_tokens: 4096,
       system: ceoPrompt,
       messages: [{ role: "user", content: userMessage }],
@@ -643,7 +643,7 @@ async function streamOneTurn(
   systemPrompt: string = SYSTEM_PROMPT
 ): Promise<StreamTurnResult> {
   const stream = await (anthropic.messages.create as any)({
-    model: "claude-sonnet-4-20250514",
+    model: "claude-sonnet-4-20250514-v2",
     max_tokens: 16000,
     system: systemPrompt,
     messages,
