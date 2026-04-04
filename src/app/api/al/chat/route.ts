@@ -191,8 +191,8 @@ RESPONSE STYLE:
 
 /* Native Anthropic server-side tools — Claude handles search/fetch internally */
 const NATIVE_TOOLS: any[] = [
-  { type: "web_search_20260209", name: "web_search", max_uses: 10 },
-  { type: "web_fetch_20260209", name: "web_fetch", max_uses: 5 },
+  { type: "web_search_20260209", name: "web_search", max_uses: 10, allowed_callers: ["direct"] },
+  { type: "web_fetch_20260209", name: "web_fetch", max_uses: 5, allowed_callers: ["direct"] },
 ];
 
 const SERVER_TOOLS: Anthropic.Tool[] = [
