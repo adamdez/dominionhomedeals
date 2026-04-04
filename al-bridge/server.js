@@ -407,6 +407,26 @@ const server = http.createServer(async (req, res) => {
     return res.end();
   }
 
+  /* ── Research proxy — forwards to AL executor (localhost:3456) ── */
+  async function handleResearch(req, res, o) {
+    const body = JSON.parse(await readBody(req));
+    const task = (body.task || "").trim();
+    if (!task) return json(res, 400, { error: "Missing task" }, o);
+    try {
+      const execRes = await fetch("http://127.0.0.1:3456/ask", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ question: task }),
+        signal: AbortSignal.timeout(280000), // 280s to stay under Vercel's 300s
+      });
+      const data = await execRes.json();
+      if (!execRes.ok) return json(res, execRes.status, { error: data.error || "Executor error" }, o);
+      return json(res, 200, { result: data.answer || data.result || JSON.stringify(data) }, o);
+    } catch (err) {
+      return json(res, 502, { error: `Executor unreachable: ${err.message}` }, o);
+    }
+  }
+
   if (TOKEN && (req.headers.authorization || "") !== `Bearer ${TOKEN}`)
     return json(res, 401, { error: "Unauthorized" }, o);
 
@@ -429,6 +449,8 @@ const server = http.createServer(async (req, res) => {
       return handleCrewRun(req, res, o);
     if (p === "/crew/status" && req.method === "GET")
       return handleCrewStatus(res, o, u);
+    if (p === "/research" && req.method === "POST")
+      return handleResearch(req, res, o);
     json(res, 404, { error: "Not found" }, o);
   } catch (err) {
     json(res, 500, { error: err.message || "Internal error" }, o);

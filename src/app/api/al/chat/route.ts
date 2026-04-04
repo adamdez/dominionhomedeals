@@ -5,6 +5,28 @@ import { getServiceClient } from "@/lib/supabase";
 /* Allow up to 300s on Vercel Pro (default is 60s on Hobby) */
 export const maxDuration = 300;
 
+/* ── Smart model routing — save API costs ─────────────────── */
+const HAIKU_MODEL = "claude-haiku-3-5-20241022";
+const SONNET_MODEL = "claude-sonnet-4-20250514";
+
+const COMPLEX_SIGNALS = [
+  /research/i, /analyze/i, /deep.?dive/i, /compare/i, /strategy/i,
+  /write.*(copy|ad|content|plan|report|brief)/i, /audit/i,
+  /review.*(code|campaign|ads|site|performance)/i,
+  /build/i, /create.*(plan|strategy|campaign|system)/i,
+  /fix.*(bug|error|issue|code)/i, /debug/i,
+  /explain.*(how|why|what)/i, /pros?.and.cons/i,
+  /\bROI\b/i, /\bCPL\b/i, /\bCPA\b/i, /budget/i, /forecast/i,
+  /delegate/i, /google.?ads/i, /meta.?ads/i, /facebook.?ads/i,
+];
+
+function pickModel(message: string): string {
+  if (!message || message.length < 15) return HAIKU_MODEL;
+  if (COMPLEX_SIGNALS.some((r) => r.test(message))) return SONNET_MODEL;
+  if (message.length > 200) return SONNET_MODEL;
+  return HAIKU_MODEL;
+}
+
 /* ------------------------------------------------------------------ */
 /*  CEO Board Configuration                                            */
 /* ------------------------------------------------------------------ */
@@ -279,8 +301,9 @@ When NOT to delegate:
 - When Dez specifically asks YOU a question
 
 TOOLS:
-- web_search — full internet search powered by Anthropic (not Tavily). Returns real, complete results.
-- web_fetch — fetch and read the FULL content of any URL. Use this after web_search to deep-dive into specific sources.
+- web_search — quick internet search for facts, prices, news. Use for simple lookups.
+- web_fetch — fetch the full content of a URL.
+- deep_research — **PREFERRED for heavy work.** Routes the task to Claude Code on Dez's local machine (runs on his subscription, NOT API credits). Use for: multi-step research, long analysis, ad copy writing, code fixes, campaign audits, competitive analysis, or anything that would take many searches. This saves money and produces better results. When the bridge is connected, ALWAYS prefer deep_research over doing complex work yourself.
 - vault_publish — write files to the Obsidian knowledge base (n8n → GitHub → Obsidian Git sync). Paths relative to vault root.
 - delegate_to_ceo — consult a vertical CEO or Marketing Director. IDs: dominion-homes, wrenchready, tina, personal, dominion-marketing (Google/Meta ads for Dominion), wrenchready-marketing (Google/Meta ads for WrenchReady)
 - vault_list, vault_read, vault_read_image — browse/read local files (when bridge connected)
@@ -499,6 +522,22 @@ const BRIDGE_TOOLS: Anthropic.Tool[] = [
       required: ["run_id"],
     },
   },
+  {
+    name: "deep_research",
+    description:
+      "Route a complex research task to the local AI executor (Claude Code) which runs on Dez's subscription — NOT the API. Use this for: deep multi-step research, long analysis, code generation, bug fixes, ad copy writing, or any task that would consume many API tokens. The executor has full web search, file access, and code execution. Returns the complete result. PREFER this tool over doing heavy research yourself to save API costs.",
+    input_schema: {
+      type: "object" as const,
+      properties: {
+        task: {
+          type: "string",
+          description:
+            "Detailed description of the research or work to perform. Be specific — the executor works autonomously and returns a complete answer.",
+        },
+      },
+      required: ["task"],
+    },
+  },
 ];
 
 function isBridgeTool(name: string) {
@@ -508,7 +547,8 @@ function isBridgeTool(name: string) {
     name === "vault_read_image" ||
     name === "crew_list" ||
     name === "crew_run" ||
-    name === "crew_status"
+    name === "crew_status" ||
+    name === "deep_research"
   );
 }
 
@@ -769,11 +809,12 @@ async function streamOneTurn(
   controller: ReadableStreamDefaultController,
   encoder: TextEncoder,
   prependNewlines: boolean,
-  systemPrompt: string = SYSTEM_PROMPT
+  systemPrompt: string = SYSTEM_PROMPT,
+  model: string = SONNET_MODEL
 ): Promise<StreamTurnResult> {
   const stream = await (anthropic.messages.create as any)({
-    model: "claude-sonnet-4-20250514",
-    max_tokens: 32000,
+    model,
+    max_tokens: model === HAIKU_MODEL ? 4096 : 32000,
     system: systemPrompt,
     messages,
     tools: [...NATIVE_TOOLS, ...tools],
@@ -928,6 +969,9 @@ export async function POST(request: NextRequest) {
 
       const fullSystemPrompt = SYSTEM_PROMPT + memoryBlock;
 
+      /* Smart model routing — Haiku for casual, Sonnet for complex */
+      const selectedModel = continuation ? SONNET_MODEL : pickModel(message || "");
+
       try {
         for (let turn = 0; turn < 10; turn++) {
           const { stopReason, contentBlocks, textOutput } = await streamOneTurn(
@@ -937,7 +981,8 @@ export async function POST(request: NextRequest) {
             controller,
             encoder,
             turn > 0 && fullResponse.length > 0,
-            fullSystemPrompt
+            fullSystemPrompt,
+            turn === 0 ? selectedModel : SONNET_MODEL // first turn uses smart routing, tool followups use Sonnet
           );
 
           fullResponse += textOutput;

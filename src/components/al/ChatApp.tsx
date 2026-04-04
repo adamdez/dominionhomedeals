@@ -244,6 +244,16 @@ async function executeBridgeAction(req: VaultToolRequest): Promise<BridgeResult>
         if (!res.ok) return `Error: ${data.error || res.status}`;
         return JSON.stringify(data, null, 2);
       }
+      case "deep_research": {
+        const res = await fetch(`${url}/research`, {
+          method: "POST",
+          headers: { ...headers, "Content-Type": "application/json" },
+          body: JSON.stringify({ task: req.input.task }),
+        });
+        const data = await res.json();
+        if (!res.ok) return `Error: ${data.error || res.status}`;
+        return data.result || JSON.stringify(data);
+      }
       default:
         return `Unknown bridge tool: ${req.name}`;
     }
