@@ -532,7 +532,17 @@ export function ChatApp() {
           activeAlIdRef.current = alId;
           accumulatedRef.current = accumulated;
           originalRequestRef.current = body;
-          setPendingVaultAction(vaultAction);
+
+          // Auto-approve vault reads — only crew_run needs manual approval
+          const needsApproval = vaultAction.requests.some(
+            (r: VaultToolRequest) => r.name === "crew_run"
+          );
+          if (needsApproval) {
+            setPendingVaultAction(vaultAction);
+          } else {
+            // Execute immediately, no permission dialog
+            await autoExecuteVaultAction(vaultAction, alId);
+          }
           vaultActionReceived = true;
           return;
         }
@@ -569,6 +579,88 @@ export function ChatApp() {
     },
     [loading, bridgeConnected]
   );
+
+  /* ── Auto-execute vault actions (no approval needed for reads) ── */
+
+  async function autoExecuteVaultAction(action: VaultAction, alId: string) {
+    setExecutingVault(true);
+    const toolResults: { type: "tool_result"; tool_use_id: string; content: string | unknown[]; is_error?: boolean }[] = [];
+
+    for (const req of action.requests) {
+      const result = await executeBridgeAction(req);
+      if (typeof result === "object" && result.type === "image") {
+        toolResults.push({
+          type: "tool_result",
+          tool_use_id: req.id,
+          content: [
+            { type: "image", source: { type: "base64", media_type: result.mimeType, data: result.base64 } },
+            { type: "text", text: `Image loaded: ${result.path}` },
+          ],
+        });
+      } else {
+        toolResults.push({ type: "tool_result", tool_use_id: req.id, content: result as string });
+      }
+    }
+    setExecutingVault(false);
+
+    const contBody = {
+      ...originalRequestRef.current,
+      continuation: {
+        assistantBlocks: action.assistantBlocks,
+        precomputedResults: action.precomputedResults || [],
+        toolResults,
+      },
+    };
+
+    abortRef.current = new AbortController();
+
+    try {
+      const res = await fetch("/api/al/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(contBody),
+        signal: abortRef.current.signal,
+      });
+
+      if (!res.ok || !res.body) throw new Error(`Server error ${res.status}`);
+
+      const { accumulated, vaultAction: nextVaultAction } = await processStream(res, alId, accumulatedRef.current);
+
+      if (nextVaultAction) {
+        accumulatedRef.current = accumulated;
+        const needsApproval = nextVaultAction.requests.some((r: VaultToolRequest) => r.name === "crew_run");
+        if (needsApproval) {
+          setPendingVaultAction(nextVaultAction);
+        } else {
+          await autoExecuteVaultAction(nextVaultAction, alId);
+        }
+        return;
+      }
+
+      setSearchQuery(null);
+      setPublishingPath(null);
+      setDelegatingCeo(null);
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.id === alId ? { ...m, content: accumulated || "No response.", typing: false } : m
+        )
+      );
+    } catch (err: unknown) {
+      const isAbort = err instanceof Error && err.name === "AbortError";
+      if (!isAbort) {
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === alId
+              ? { ...m, content: accumulatedRef.current + "\n\nFailed to continue after vault action.", typing: false }
+              : m
+          )
+        );
+      }
+    } finally {
+      abortRef.current = null;
+      setLoading(false);
+    }
+  }
 
   /* ── Vault action approval / denial ── */
 
@@ -653,7 +745,14 @@ export function ChatApp() {
 
       if (vaultAction) {
         accumulatedRef.current = accumulated;
-        setPendingVaultAction(vaultAction);
+        const needsApproval = vaultAction.requests.some(
+          (r: VaultToolRequest) => r.name === "crew_run"
+        );
+        if (needsApproval) {
+          setPendingVaultAction(vaultAction);
+        } else {
+          await autoExecuteVaultAction(vaultAction, alId);
+        }
         return;
       }
 
