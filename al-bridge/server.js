@@ -29,6 +29,7 @@ const TOKEN = (process.env.BRIDGE_TOKEN || "").trim();
 const ORIGINS = new Set([
   "https://dominionhomedeals.com",
   "https://www.dominionhomedeals.com",
+  "https://al.dominionhomedeals.com",
   "http://localhost:3000",
   "http://localhost:3001",
 ]);
