@@ -279,6 +279,7 @@ export function ChatApp() {
   const [searchQuery, setSearchQuery] = useState<string | null>(null);
   const [publishingPath, setPublishingPath] = useState<string | null>(null);
   const [delegatingCeo, setDelegatingCeo] = useState<string | null>(null);
+  const [activeJobs, setActiveJobs] = useState<{ job_id: number; ceo_name: string }[]>([]);
 
   /* ── Bridge state ── */
   const [bridgeConnected, setBridgeConnected] = useState(false);
@@ -450,6 +451,11 @@ export function ChatApp() {
             setDelegatingCeo(parsed.ceo || "a CEO");
             setSearchQuery(null);
             setPublishingPath(null);
+          } else if (parsed.job_dispatched) {
+            // Async job fired — add persistent badge, clear the transient delegating indicator
+            const { job_id, ceo_name } = parsed.job_dispatched;
+            setActiveJobs((prev) => [...prev.filter((j) => j.job_id !== job_id), { job_id, ceo_name }]);
+            setDelegatingCeo(null);
           } else if (parsed.vault_action) {
             vaultAction = parsed.vault_action as VaultAction;
           } else if (parsed.t) {
@@ -461,6 +467,18 @@ export function ChatApp() {
               needsSeparator = false;
             }
             accumulated += parsed.t;
+            // Clear job badges when Al streams back a job result (job_status response)
+            const jobResultMatch = accumulated.match(/job\s+#(\d+)/gi);
+            if (jobResultMatch) {
+              const doneIds = jobResultMatch
+                .map((s) => parseInt(s.replace(/\D/g, ""), 10))
+                .filter((n) => !isNaN(n));
+              if (doneIds.length > 0) {
+                setActiveJobs((prev) =>
+                  prev.filter((j) => !doneIds.includes(j.job_id))
+                );
+              }
+            }
             setMessages((p) =>
               p.map((m) => (m.id === alId ? { ...m, content: accumulated } : m))
             );
@@ -950,6 +968,16 @@ export function ChatApp() {
               {loading && searchQuery && <SearchingWeb query={searchQuery} />}
               {loading && publishingPath && <PublishingToVault path={publishingPath} />}
               {loading && delegatingCeo && <DelegatingToCeo ceo={delegatingCeo} />}
+              {activeJobs.map((job) => (
+                <JobBadge
+                  key={job.job_id}
+                  job_id={job.job_id}
+                  ceo_name={job.ceo_name}
+                  onDismiss={() =>
+                    setActiveJobs((prev) => prev.filter((j) => j.job_id !== job.job_id))
+                  }
+                />
+              ))}
               {executingVault &&
                 pendingVaultAction?.requests.some((r) => r.name === "crew_run") && (
                   <RunningCrew
@@ -1309,6 +1337,37 @@ function RunningCrew({ crew }: { crew: string }) {
           <span className="text-sm text-emerald-200/50">
             Starting crew{crew ? ` (${crew})` : ""}&hellip;
           </span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function JobBadge({
+  job_id,
+  ceo_name,
+  onDismiss,
+}: {
+  job_id: number;
+  ceo_name: string;
+  onDismiss: () => void;
+}) {
+  return (
+    <div className="flex justify-start animate-fade-up">
+      <div className="rounded-2xl border border-emerald-900/15 bg-[#141f1a] px-4 py-3">
+        <div className="mb-1.5 text-xs font-medium text-emerald-400/60">Al</div>
+        <div className="flex items-center gap-2">
+          <Users className="h-3.5 w-3.5 animate-pulse text-emerald-400/60" />
+          <span className="text-sm text-emerald-200/50">
+            Job #{job_id} &mdash; {ceo_name} running in background
+          </span>
+          <button
+            onClick={onDismiss}
+            className="ml-1 flex h-4 w-4 items-center justify-center rounded-full text-emerald-200/20 transition-colors hover:text-emerald-200/50"
+            aria-label="Dismiss"
+          >
+            <X className="h-3 w-3" />
+          </button>
         </div>
       </div>
     </div>

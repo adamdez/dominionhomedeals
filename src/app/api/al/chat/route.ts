@@ -1292,6 +1292,15 @@ export async function POST(request: NextRequest) {
                 inp.task,
                 inp.context
               );
+              // Extract job ID from result and emit a persistent badge event to the UI
+              const jobMatch = result.match(/job #(\d+)/i);
+              if (jobMatch) {
+                controller.enqueue(
+                  encoder.encode(
+                    `data: ${JSON.stringify({ job_dispatched: { job_id: parseInt(jobMatch[1]), ceo_name: ceoName } })}\n\n`
+                  )
+                );
+              }
               precomputed.push({ type: "tool_result", tool_use_id: sb.id, content: result });
             } else if (sb.name === "job_status") {
               const jobId = inp.job_id ? Number(inp.job_id) : undefined;
