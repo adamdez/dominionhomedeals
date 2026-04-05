@@ -6,8 +6,8 @@ import { getServiceClient } from "@/lib/supabase";
 export const maxDuration = 300;
 
 /* ── Smart model routing — save API costs ─────────────────── */
-const HAIKU_MODEL = "claude-haiku-3-5-20241022";
-const SONNET_MODEL = "claude-sonnet-4-20250514";
+const HAIKU_MODEL = "claude-haiku-4-5-20251001";
+const SONNET_MODEL = "claude-sonnet-4-6";
 
 const COMPLEX_SIGNALS = [
   /research/i, /analyze/i, /deep.?dive/i, /compare/i, /strategy/i,
