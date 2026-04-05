@@ -288,17 +288,28 @@ You have a delegate_to_ceo tool. Use it when:
 - You need specialized thinking that benefits from a CEO's focused expertise
 
 When you delegate:
-- Tell the user which CEO you're consulting and why
-- Pass relevant context in the task description so the CEO has what it needs
-- Present the CEO's report with attribution: "The [CEO Name] reports..."
-- Add your Chairman-level perspective if relevant (cross-cutting concerns, conflicts between verticals, big-picture strategy)
-- After meaningful interactions, consider publishing a decision log to the vault
+- Tell Dez which CEO you're dispatching and why — then immediately move on. Do NOT wait or say "let me check back."
+- Delegation is now ASYNC — the CEO runs in the background. You get a job ID back instantly.
+- After delegating, you are FREE to answer other questions, delegate to other CEOs, or do other work.
+- When Dez asks for the result, use the job_status tool with the job ID to fetch it.
+- You can delegate to MULTIPLE CEOs simultaneously in the same turn — each gets its own job.
 
 When NOT to delegate:
 - Simple greetings or general conversation
-- Questions spanning multiple verticals (handle yourself, or delegate to each relevant CEO sequentially)
 - Quick factual answers you already know
-- When Dez specifically asks YOU a question
+- When Dez specifically asks YOU a question directly
+
+ASYNC DELEGATION PROTOCOL:
+1. Call delegate_to_ceo → get job #N back in under 1 second
+2. Tell Dez: "Dispatched to [CEO Name] — job #N running in background. What else do you need?"
+3. Keep working. Never block waiting for a CEO.
+4. When Dez asks "what did [CEO] say?" → call job_status with the job ID.
+5. If the job is still running, say so and offer to check again.
+
+job_status tool:
+- job_status() — lists last 10 jobs with status
+- job_status(job_id: N) — fetches specific job result
+- Use this proactively when Dez circles back on a delegation.
 
 TOOLS:
 - web_search — quick internet search for facts, prices, news. Use for simple lookups.
@@ -664,6 +675,21 @@ const BRIDGE_TOOLS: Anthropic.Tool[] = [
       required: ["task"],
     },
   },
+  {
+    name: "job_status",
+    description:
+      "Check the status of one or more async delegations or background jobs. Use this when Dez asks 'what happened with that delegation?' or 'is the CEO done yet?'. Returns status (pending/running/done/error) and the result if complete. Omit job_id to list all recent jobs.",
+    input_schema: {
+      type: "object" as const,
+      properties: {
+        job_id: {
+          type: "number",
+          description: "Specific job ID to check. Omit to list the 10 most recent jobs.",
+        },
+      },
+      required: [],
+    },
+  },
 ];
 
 function isBridgeTool(name: string) {
@@ -675,6 +701,7 @@ function isBridgeTool(name: string) {
     name === "crew_run" ||
     name === "crew_status" ||
     name === "deep_research"
+    // job_status and delegate_to_ceo are server-side — NOT bridge tools
   );
 }
 
@@ -756,8 +783,9 @@ async function executeVaultPublish(
   return `Published to vault: ${path}`;
 }
 
+/* ── Async delegation — fire and forget via Edge Function ──────────────────── */
 async function executeDelegation(
-  anthropic: Anthropic,
+  _anthropic: Anthropic,
   ceoId: string,
   task: string,
   context?: string
@@ -765,32 +793,103 @@ async function executeDelegation(
   const ceo = CEO_CONFIG[ceoId];
   if (!ceo) return `Unknown CEO: ${ceoId}. Valid IDs: ${Object.keys(CEO_CONFIG).join(", ")}`;
 
-  const ceoPrompt = `${ceo.constitution}
+  const supabase = getServiceClient();
+  if (!supabase) return `Delegation failed: no database connection.`;
 
-You are responding to a delegation from Al Boreland, Chairman of the Board. Answer the task directly and concisely. Structure your response with clear sections if needed. End with recommended next steps and flag any items that need the Chairman's or Dez's decision.
+  // 1. Create the job row immediately — returns a job_id
+  const { data: job, error: insertErr } = await supabase
+    .from("al_jobs")
+    .insert({
+      job_type: "delegate_to_ceo",
+      ceo_id: ceoId,
+      ceo_name: ceo.name,
+      task,
+      context: context ?? null,
+      status: "pending",
+      triggered_by: "al_chat",
+    })
+    .select("id")
+    .single();
 
-If you need more information from your vault training data to give a good answer, say exactly what files or data you'd need.`;
+  if (insertErr || !job) {
+    return `Delegation failed: could not create job — ${insertErr?.message ?? "unknown error"}`;
+  }
 
-  const userMessage = context
-    ? `TASK FROM THE CHAIRMAN:\n${task}\n\nADDITIONAL CONTEXT:\n${context}`
-    : `TASK FROM THE CHAIRMAN:\n${task}`;
+  const jobId = job.id;
+
+  // 2. Fire the Edge Function without awaiting it
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim() ?? "";
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim() ?? "";
+  const edgeFnUrl = `${supabaseUrl}/functions/v1/al-delegate`;
+
+  // Non-blocking — intentionally not awaited
+  fetch(edgeFnUrl, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${serviceKey}`,
+    },
+    body: JSON.stringify({ job_id: jobId, ceo_id: ceoId, task, context }),
+  }).catch((err) => {
+    console.error(`[Al] Edge Function fire failed for job ${jobId}:`, err);
+  });
+
+  // 3. Return immediately — Al is unblocked
+  return `✓ Delegated to ${ceo.name} (job #${jobId}). Working in background — ask me "job status ${jobId}" anytime to check progress, or just ask your next question now.`;
+}
+
+/* ── Job status query ──────────────────────────────────────────────────────── */
+async function executeJobStatus(jobId?: number): Promise<string> {
+  const supabase = getServiceClient();
+  if (!supabase) return "Job status unavailable: no database connection.";
 
   try {
-    const response = await anthropic.messages.create({
-      model: "claude-sonnet-4-20250514",
-      max_tokens: 4096,
-      system: ceoPrompt,
-      messages: [{ role: "user", content: userMessage }],
-    });
+    if (jobId !== undefined) {
+      // Single job lookup
+      const { data, error } = await supabase
+        .from("al_jobs")
+        .select("id, job_type, ceo_name, task, status, result, error_msg, created_at, started_at, completed_at")
+        .eq("id", jobId)
+        .single();
 
-    const text = response.content
-      .filter((b): b is Anthropic.TextBlock => b.type === "text")
-      .map((b) => b.text)
-      .join("\n\n");
+      if (error || !data) return `Job #${jobId} not found.`;
 
-    return `[${ceo.name} Report]\n\n${text}`;
+      const duration = data.completed_at && data.started_at
+        ? `${Math.round((new Date(data.completed_at).getTime() - new Date(data.started_at).getTime()) / 1000)}s`
+        : null;
+
+      let out = `**Job #${data.id}** — ${data.ceo_name ?? data.job_type}\n`;
+      out += `Status: **${data.status.toUpperCase()}**\n`;
+      out += `Task: ${data.task.slice(0, 200)}\n`;
+      if (duration) out += `Completed in: ${duration}\n`;
+      if (data.status === "done" && data.result) out += `\n${data.result}`;
+      if (data.status === "error") out += `\nError: ${data.error_msg}`;
+      if (data.status === "pending" || data.status === "running") {
+        const elapsed = Math.round((Date.now() - new Date(data.created_at).getTime()) / 1000);
+        out += `\nElapsed: ${elapsed}s — still working.`;
+      }
+      return out;
+    } else {
+      // List 10 most recent jobs
+      const { data, error } = await supabase
+        .from("al_jobs")
+        .select("id, job_type, ceo_name, status, task, created_at, completed_at")
+        .order("created_at", { ascending: false })
+        .limit(10);
+
+      if (error || !data || data.length === 0) return "No jobs found.";
+
+      const lines = data.map((j) => {
+        const age = Math.round((Date.now() - new Date(j.created_at).getTime()) / 1000);
+        const ageStr = age < 60 ? `${age}s ago` : `${Math.round(age / 60)}m ago`;
+        const statusIcon = ({ pending: "⏳", running: "🔄", done: "✅", error: "❌" } as Record<string, string>)[j.status] ?? "?";
+        return `${statusIcon} #${j.id} [${j.ceo_name ?? j.job_type}] ${j.status} — ${j.task.slice(0, 80)} (${ageStr})`;
+      });
+
+      return `**Recent Jobs (last 10):**\n${lines.join("\n")}`;
+    }
   } catch (err) {
-    return `Delegation to ${ceo.name} failed: ${err instanceof Error ? err.message : "unknown error"}`;
+    return `Job status error: ${err instanceof Error ? err.message : "unknown"}`;
   }
 }
 
@@ -1186,12 +1285,17 @@ export async function POST(request: NextRequest) {
                   `data: ${JSON.stringify({ status: "delegating", ceo: ceoName })}\n\n`
                 )
               );
+              // Fire-and-forget: returns instantly with job ID, does NOT block
               const result = await executeDelegation(
                 anthropic,
                 ceoId,
                 inp.task,
                 inp.context
               );
+              precomputed.push({ type: "tool_result", tool_use_id: sb.id, content: result });
+            } else if (sb.name === "job_status") {
+              const jobId = inp.job_id ? Number(inp.job_id) : undefined;
+              const result = await executeJobStatus(jobId);
               precomputed.push({ type: "tool_result", tool_use_id: sb.id, content: result });
             }
           }
