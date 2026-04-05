@@ -999,41 +999,48 @@ async function executeCursorAgent(
 ): Promise<string> {
   const apiKey = process.env.CURSOR_AGENTS_API_KEY?.trim();
   if (!apiKey) {
-    return "Cursor agent unavailable: CURSOR_AGENTS_API_KEY not set. Dez needs to add this to Vercel environment variables (Settings → Environment Variables). Get the key from cursor.com/settings → Integrations → API Keys.";
+    return "Cursor agent unavailable: CURSOR_AGENTS_API_KEY not set. Dez needs to add this to Vercel environment variables (Settings → Environment Variables). Get the key from cursor.com/dashboard/cloud-agents → User API Keys.";
   }
 
-  const targetRepo = repo || process.env.CURSOR_DEFAULT_REPO || "adamd-dominion/dominionhomedeals";
-  const targetModel = model || "composer-2";
+  // Accept "owner/repo" shorthand or full URL — normalize to full GitHub URL
+  const repoRaw = repo || process.env.CURSOR_DEFAULT_REPO || "adamdez/dominionhomedeals";
+  const repositoryUrl = repoRaw.startsWith("https://")
+    ? repoRaw
+    : `https://github.com/${repoRaw}`;
 
-  // Cursor Background Agent API uses Basic Auth: base64(apiKey + ":")
+  // "default" uses the model configured in Cursor dashboard (currently gpt-5.4)
+  const targetModel = model || "default";
+
+  // Cursor Cloud Agents API v0 — Basic Auth: base64(apiKey + ":")
   const authToken = Buffer.from(`${apiKey}:`).toString("base64");
 
   try {
-    const res = await fetch("https://api.cursor.com/v1/agents", {
+    const res = await fetch("https://api.cursor.com/v0/agents", {
       method: "POST",
       headers: {
         Authorization: `Basic ${authToken}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        repository: targetRepo,
-        prompt: task,
+        prompt: { text: task },
         model: targetModel,
+        source: { repository: repositoryUrl },
+        target: { autoCreatePr: true },
       }),
     });
 
     if (!res.ok) {
       const errText = await res.text().catch(() => res.status.toString());
       if (res.status === 401) return "Cursor agent error: API key rejected. Check CURSOR_AGENTS_API_KEY in Vercel env vars.";
-      if (res.status === 402) return "Cursor agent error: Account requires a paid Cursor plan to use the Background Agent API.";
+      if (res.status === 402) return "Cursor agent error: Account requires a paid Cursor plan to use the Cloud Agents API.";
       return `Cursor agent error ${res.status}: ${errText}`;
     }
 
-    const data = await res.json() as { id?: string; agent_id?: string; status?: string; url?: string };
-    const agentId = data.id || data.agent_id || "unknown";
-    const agentUrl = data.url || `https://cursor.com/agents/${agentId}`;
+    const data = await res.json() as { id?: string; status?: string; target?: { url?: string; prUrl?: string } };
+    const agentId = data.id || "unknown";
+    const agentUrl = data.target?.url || `https://cursor.com/agents?id=${agentId}`;
 
-    return `✓ Cursor agent dispatched (ID: ${agentId})\nModel: ${targetModel} | Repo: ${targetRepo}\nTask: ${task.slice(0, 200)}\nMonitor: ${agentUrl}\n\nComposer 2 is now working autonomously. When it's done it will open a PR for Dez to review.`;
+    return `✓ Cursor agent dispatched (ID: ${agentId})\nModel: ${targetModel} | Repo: ${repositoryUrl}\nTask: ${task.slice(0, 200)}\nMonitor: ${agentUrl}\n\nThe agent is running autonomously. It will open a PR on ${repositoryUrl} when done — Dez reviews and merges.`;
   } catch (err) {
     return `Cursor agent failed: ${err instanceof Error ? err.message : "network error"}`;
   }
