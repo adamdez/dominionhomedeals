@@ -148,7 +148,7 @@ async function sendEmailNotification(lead: Record<string, unknown>) {
       },
       body: JSON.stringify({
         from: 'Dominion Homes Leads <leads@dominionhomedeals.com>',
-        to: ['adam@dominionhomedeals.com', 'logan@dominionhomedeals.com'],
+        to: ['adam@dominionhomedeals.com', 'logan@dominionhomedeals.com', 'leads@dominionhomedeals.com'],
         subject: `${priorityLabel} New Lead: ${lead.firstName} ${lead.lastName} — ${lead.address}, ${lead.city}`,
         html: htmlBody,
       }),
