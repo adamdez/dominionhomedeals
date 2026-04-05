@@ -416,7 +416,7 @@ const server = http.createServer(async (req, res) => {
       const execRes = await fetch("http://127.0.0.1:3456/ask", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ question: task }),
+        body: JSON.stringify({ question: task, secret: process.env.EXECUTOR_SECRET || 'sentinel-ceo-2026' }),
         signal: AbortSignal.timeout(280000), // 280s to stay under Vercel's 300s
       });
       const data = await execRes.json();
