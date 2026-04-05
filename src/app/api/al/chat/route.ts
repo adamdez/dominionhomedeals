@@ -319,6 +319,7 @@ TOOLS:
 - delegate_to_ceo — consult a vertical CEO or Marketing Director. IDs: dominion-homes, wrenchready, tina, personal, dominion-marketing (Google/Meta ads for Dominion), wrenchready-marketing (Google/Meta ads for WrenchReady)
 - vault_list, vault_read, vault_read_image — browse/read local files (when bridge connected)
 - crew_list, crew_run, crew_status — list and run CrewAI crews on the local machine via the bridge (requires user approval; bridge must be running)
+- cursor_agent — dispatch a coding task to Cursor's Composer 2 Cloud Agent. The agent runs autonomously on the GitHub repo and opens a PR when done. Use for: property listing pages, UX/front-end work, React/Next.js/Tailwind changes, multi-file refactors. Always give it clear acceptance criteria. Runs even when Dez is away — fire and forget.
 
 BRIDGE RELATIVE PATHS (critical):
 The local bridge roots at the folder set in al-bridge/.env as VAULT_PATH (often the user's Desktop), NOT at the Obsidian vault folder. Every path you pass to vault_list, vault_read, and vault_read_image must be relative to that root. The vault on disk is usually a subfolder named al-boreland-vault/. Example: to read the system handoff, use al-boreland-vault/00-Al-Boreland-Core/System-Handoff/Al-Command-Center-Handoff.md — NOT 00-Al-Boreland-Core/... without the al-boreland-vault/ prefix. If unsure, vault_list path "." first, then drill into al-boreland-vault/.
@@ -373,30 +374,34 @@ MEMORY CATEGORIES (use exactly these):
 
 Keep memories short and specific — they're all loaded every session. A memory that says "Dez prefers short responses" is loaded forever. A memory that says "CPL was $47 on 2026-04-04" is a data point you'll use in future comparisons.
 
-TASK ROUTING — WHEN TO USE CLAUDE CODE (COWORK):
-You must classify every task Dez gives you into one of two categories before responding:
+TASK ROUTING — YOU CAN NOW DISPATCH TASKS DIRECTLY:
 
-CATEGORY A — Handle in chat UI (you can do this here):
+You have a cowork_task tool. Use it when Dez asks you to DO something that requires real execution.
+You no longer need to tell him "go open Cowork." You dispatch it yourself.
+
+CATEGORY A — Handle directly in chat:
 - Strategy, analysis, recommendations, brainstorming
 - Answering questions from memory or web search
 - Writing copy, emails, templates, plans (text output only)
 - Saving memories, publishing vault notes
 - Delegating to a CEO verbally
 
-CATEGORY B — Route to Claude Code (requires execution):
-- Anything involving a FILE (create, read, edit, move)
-- Anything involving a SCRIPT or COMMAND (run node, python, bash)
-- Anything involving CODE (add a page, fix a bug, build a feature)
-- Anything involving a DEPLOYMENT (push to Vercel, update live site)
-- Anything involving a DATABASE QUERY (check Sentinel, count leads, pull a report)
-- Anything involving SCHEDULED TASKS or automation setup
-- Anything where you'd say "let me check that" but need to actually READ something
-- Any task where you'd have to make up the answer if you can't execute it
+CATEGORY B — Call cowork_task (you execute it directly):
+- Building, editing, or creating files or pages
+- Running scripts or bash commands
+- Fixing bugs or adding features to any codebase
+- Git operations (commit, push, branch)
+- Deploying to Vercel
+- Any task requiring real file access or code execution
 
-ROUTING RULE:
-If the task is Category B, do NOT attempt it, do NOT describe what you would do, do NOT make up results.
-Instead say exactly this (adapt to context):
-"This needs execution — ask me this in Claude Code and I'll do it directly. [One sentence on what I'll do when you do.]"
+ROUTING RULE FOR CATEGORY B:
+1. Call cowork_task with a precise task description and domain
+2. Wait for the result (it runs real Claude Agent SDK — not reasoning, actual execution)
+3. Report what was done and any results to Dez
+4. Do NOT say "go open Cowork" — you dispatch it yourself now
+
+If bridge is offline, report: "Bridge is offline — start al-bridge on your machine."
+If executor fails, report the one-line error and what needs fixing.
 
 FAILURE REPORTING RULES:
 When something can't be done or fails, Dez needs to know — but as a one-line redirect, not a technical post-mortem.
@@ -435,13 +440,13 @@ Right: "This needs execution — ask me in Claude Code and I'll query Sentinel d
 
 Dez: "Add a listings page to the website"
 Wrong: "Here's how you could add a page..."
-Right: "This needs execution — ask me in Claude Code. I'll create the file, commit it, and push to Vercel. Live in 60 seconds."
-[save memory: "Website changes → always Claude Code. Requires file write + git push."]
+Right: [call cowork_task with "Create the listings page at src/app/listings/page.tsx, commit and push to Vercel"] → report: "Done — listings page is live."
+[save memory: "Website changes → cowork_task. Requires file write + git push."]
 
 Dez: "Did the PID fetch run this morning?"
 Wrong: "The scheduled task should have run at 7am..."
-Right: "This needs execution — ask me in Claude Code. I'll read pids.log and tell you exactly what ran and when."
-[save memory: "Log file checks → always Claude Code. Can't read local files from chat UI."]
+Right: [call cowork_task with "Read the pids.log file and report what ran"] → report: "Ran at 7:02am, 163K parcels fetched."
+[save memory: "Log file checks → cowork_task. Can read local files via executor."]
 
 Dez: "What's our ad spend this week?"
 Right: Handle this here — web_search or ask Dez for the Google Ads data. This is analysis, not execution.
@@ -454,18 +459,21 @@ Tools that are ALWAYS available here:
 - vault_publish — write to the vault via n8n
 - memory_save, memory_delete — persistent memory
 - delegate_to_ceo — consult a CEO verbally (reason through their thinking, do NOT claim to call them as a live system)
-- deep_research — only available when the local bridge is running
+- cowork_task — dispatch real execution tasks to Claude Agent SDK running locally (bridge must be on)
 
 Tools that require the LOCAL BRIDGE (al-bridge server on Dez's machine):
 - vault_read, vault_list, vault_read_image — read local vault files
 - crew_list, crew_run, crew_status — run CrewAI crews
+- deep_research — run research via executor
+- cowork_task — execute code tasks via executor (needs bridge + executor both running)
 
 CRITICAL RULES:
 1. NEVER pretend bridge tools worked when they failed or weren't called. If vault_read returns an error or you didn't actually call it, say so plainly.
-2. If the bridge is not running, tell Dez: "The local bridge isn't connected right now — I can't read vault files from here. Either start the bridge, or paste the content here, or ask me this from Claude Code instead."
-3. NEVER fabricate vault file contents. If you can't read a file, say you can't read it.
-4. For heavy execution tasks (build a page, run a script, deploy code, query Sentinel directly): tell Dez to ask you this via Claude Code (the Cowork app), where you have full tool access. Say: "This needs Claude Code — ask me there and I'll execute it directly."
-5. delegate_to_ceo is verbal reasoning only in this surface — it does NOT give the CEO any tools or file access. Don't imply otherwise.
+2. If the bridge is not running, tell Dez: "The local bridge isn't connected right now — start al-bridge on your machine."
+3. NEVER fabricate vault file contents or code execution results. If you can't execute, say so.
+4. cowork_task runs REAL code — not reasoning. It has Read, Write, Edit, Bash, Glob, Grep and can git commit/push. Use it whenever Dez asks you to build, fix, or change something.
+5. delegate_to_ceo is verbal reasoning only — it does NOT give the CEO any tools or file access. Don't imply otherwise.
+6. Do NOT say "go open Cowork" — use cowork_task and do it yourself.
 
 RESPONSE STYLE:
 - Lead with the most important information first
@@ -565,6 +573,28 @@ const SERVER_TOOLS: Anthropic.Tool[] = [
         },
       },
       required: ["ceo", "task"],
+    },
+  },
+  {
+    name: "cowork_task",
+    description:
+      "Execute a real code or file task using Claude Agent SDK running locally on Dez's machine. Has full access to Read, Write, Edit, Bash, Glob, Grep tools and can git commit/push. Use for: building pages, editing code, fixing bugs, writing files, git operations, running scripts. Domains: 'dominionhomedeals' (default), 'wrench-ready', 'sentinel'. This runs a real Claude Code agent — not reasoning, actual execution. Bridge must be connected.",
+    input_schema: {
+      type: "object" as const,
+      properties: {
+        task: {
+          type: "string",
+          description:
+            "Precise description of what to build, fix, or execute. Include file paths, requirements, and expected outcome. The more specific, the better the result.",
+        },
+        domain: {
+          type: "string",
+          description:
+            "Which repo to work in. Defaults to 'dominionhomedeals'. Options: 'dominionhomedeals', 'wrench-ready', 'sentinel'.",
+          enum: ["dominionhomedeals", "wrench-ready", "sentinel"],
+        },
+      },
+      required: ["task"],
     },
   },
 ];
@@ -688,6 +718,29 @@ const BRIDGE_TOOLS: Anthropic.Tool[] = [
         },
       },
       required: [],
+    },
+  },
+  {
+    name: "cursor_agent",
+    description:
+      "Send a coding task to Cursor's Cloud Agent (Composer 2) to execute autonomously on the dominionhomedeals repository. Use this for: building or improving property listing pages, UX/front-end work, React/Next.js/Tailwind changes, multi-file refactors, or any code task that requires the full IDE context. The agent runs in the background on the GitHub repo and opens a PR when done. Returns a job ID you can use to check status.",
+    input_schema: {
+      type: "object" as const,
+      properties: {
+        task: {
+          type: "string",
+          description: "Clear, specific coding task description. Include: what to build/change, which files or routes are affected, any design constraints, and acceptance criteria.",
+        },
+        repo: {
+          type: "string",
+          description: "GitHub repository in owner/repo format. Default: the dominionhomedeals repo.",
+        },
+        model: {
+          type: "string",
+          description: "Model to use. Default: composer-2. Options: composer-2, claude-sonnet-4-5.",
+        },
+      },
+      required: ["task"],
     },
   },
 ];
@@ -890,6 +943,90 @@ async function executeJobStatus(jobId?: number): Promise<string> {
     }
   } catch (err) {
     return `Job status error: ${err instanceof Error ? err.message : "unknown"}`;
+  }
+}
+
+/* ── Cowork Task — local Claude Agent SDK via bridge → executor ─────────────── */
+async function executeCoworkTask(task: string, domain?: string): Promise<string> {
+  const bridgeUrl = process.env.AL_BRIDGE_URL || "http://127.0.0.1:3141";
+  const bridgeToken = process.env.AL_BRIDGE_TOKEN || "";
+
+  try {
+    const res = await fetch(`${bridgeUrl}/cowork`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...(bridgeToken ? { Authorization: `Bearer ${bridgeToken}` } : {}),
+      },
+      body: JSON.stringify({ task, domain: domain || "dominionhomedeals", authority_zone: 1 }),
+      signal: AbortSignal.timeout(280000),
+    });
+
+    const data = await res.json() as Record<string, unknown>;
+
+    if (!res.ok) {
+      const errMsg = typeof data.error === "string" ? data.error : "Executor error";
+      return `Cowork failed: ${errMsg}`;
+    }
+
+    const result = typeof data.result === "string" ? data.result : JSON.stringify(data);
+    const elapsed = data.elapsed ? ` (${data.elapsed}s)` : "";
+    const session = data.session_id ? ` · session ${data.session_id}` : "";
+    return `✓ Done${elapsed}${session}\n\n${result}`;
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : "unknown error";
+    if (msg.includes("fetch failed") || msg.includes("ECONNREFUSED")) {
+      return "Bridge offline — start al-bridge on Dez's machine (run start-al-bridge.bat or node al-bridge/server.js).";
+    }
+    return `Cowork error: ${msg}`;
+  }
+}
+
+/* ── Cursor Cloud Agent ─────────────────────────────────────────────────────── */
+async function executeCursorAgent(
+  task: string,
+  repo?: string,
+  model?: string
+): Promise<string> {
+  const apiKey = process.env.CURSOR_AGENTS_API_KEY?.trim();
+  if (!apiKey) {
+    return "Cursor agent unavailable: CURSOR_AGENTS_API_KEY not set. Dez needs to add this to Vercel environment variables (Settings → Environment Variables). Get the key from cursor.com/settings → Integrations → API Keys.";
+  }
+
+  const targetRepo = repo || process.env.CURSOR_DEFAULT_REPO || "adamd-dominion/dominionhomedeals";
+  const targetModel = model || "composer-2";
+
+  // Cursor Background Agent API uses Basic Auth: base64(apiKey + ":")
+  const authToken = Buffer.from(`${apiKey}:`).toString("base64");
+
+  try {
+    const res = await fetch("https://api.cursor.com/v1/agents", {
+      method: "POST",
+      headers: {
+        Authorization: `Basic ${authToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        repository: targetRepo,
+        prompt: task,
+        model: targetModel,
+      }),
+    });
+
+    if (!res.ok) {
+      const errText = await res.text().catch(() => res.status.toString());
+      if (res.status === 401) return "Cursor agent error: API key rejected. Check CURSOR_AGENTS_API_KEY in Vercel env vars.";
+      if (res.status === 402) return "Cursor agent error: Account requires a paid Cursor plan to use the Background Agent API.";
+      return `Cursor agent error ${res.status}: ${errText}`;
+    }
+
+    const data = await res.json() as { id?: string; agent_id?: string; status?: string; url?: string };
+    const agentId = data.id || data.agent_id || "unknown";
+    const agentUrl = data.url || `https://cursor.com/agents/${agentId}`;
+
+    return `✓ Cursor agent dispatched (ID: ${agentId})\nModel: ${targetModel} | Repo: ${targetRepo}\nTask: ${task.slice(0, 200)}\nMonitor: ${agentUrl}\n\nComposer 2 is now working autonomously. When it's done it will open a PR for Dez to review.`;
+  } catch (err) {
+    return `Cursor agent failed: ${err instanceof Error ? err.message : "network error"}`;
   }
 }
 
@@ -1305,6 +1442,30 @@ export async function POST(request: NextRequest) {
             } else if (sb.name === "job_status") {
               const jobId = inp.job_id ? Number(inp.job_id) : undefined;
               const result = await executeJobStatus(jobId);
+              precomputed.push({ type: "tool_result", tool_use_id: sb.id, content: result });
+            } else if (sb.name === "cursor_agent") {
+              // Emit a status indicator so Dez sees something is happening
+              controller.enqueue(
+                encoder.encode(
+                  `data: ${JSON.stringify({ status: "delegating", ceo: "Cursor Composer 2" })}\n\n`
+                )
+              );
+              const result = await executeCursorAgent(
+                inp.task as string,
+                inp.repo as string | undefined,
+                inp.model as string | undefined
+              );
+              precomputed.push({ type: "tool_result", tool_use_id: sb.id, content: result });
+            } else if (sb.name === "cowork_task") {
+              controller.enqueue(
+                encoder.encode(
+                  `data: ${JSON.stringify({ status: "delegating", ceo: "Claude Code (local)" })}\n\n`
+                )
+              );
+              const result = await executeCoworkTask(
+                inp.task as string,
+                inp.domain as string | undefined
+              );
               precomputed.push({ type: "tool_result", tool_use_id: sb.id, content: result });
             }
           }

@@ -407,7 +407,7 @@ const server = http.createServer(async (req, res) => {
     return res.end();
   }
 
-  /* ── Research proxy — forwards to AL executor (localhost:3456) ── */
+  /* ── Research proxy — forwards to AL executor /ask (Anthropic SDK + web search) ── */
   async function handleResearch(req, res, o) {
     const body = JSON.parse(await readBody(req));
     const task = (body.task || "").trim();
@@ -417,11 +417,43 @@ const server = http.createServer(async (req, res) => {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ question: task, secret: process.env.EXECUTOR_SECRET || 'sentinel-ceo-2026' }),
-        signal: AbortSignal.timeout(280000), // 280s to stay under Vercel's 300s
+        signal: AbortSignal.timeout(280000),
       });
       const data = await execRes.json();
       if (!execRes.ok) return json(res, execRes.status, { error: data.error || "Executor error" }, o);
       return json(res, 200, { result: data.answer || data.result || JSON.stringify(data) }, o);
+    } catch (err) {
+      return json(res, 502, { error: `Executor unreachable: ${err.message}` }, o);
+    }
+  }
+
+  /* ── Cowork proxy — forwards to AL executor /execute (Claude Agent SDK, full tools) ── */
+  async function handleCowork(req, res, o) {
+    const body = JSON.parse(await readBody(req));
+    const task = (body.task || "").trim();
+    const domain = (body.domain || "dominionhomedeals").trim();
+    const zone = body.authority_zone ?? 1;
+    if (!task) return json(res, 400, { error: "Missing task" }, o);
+    try {
+      const execRes = await fetch("http://127.0.0.1:3456/execute", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          task,
+          domain,
+          authority_zone: zone,
+          secret: process.env.EXECUTOR_SECRET || "sentinel-ceo-2026",
+        }),
+        signal: AbortSignal.timeout(280000),
+      });
+      const data = await execRes.json();
+      if (!execRes.ok) return json(res, execRes.status, { error: data.error || "Executor error" }, o);
+      return json(res, 200, {
+        result: data.output || data.result || JSON.stringify(data),
+        session_id: data.session_id || null,
+        elapsed: data.elapsed_seconds || null,
+        domain: data.domain || domain,
+      }, o);
     } catch (err) {
       return json(res, 502, { error: `Executor unreachable: ${err.message}` }, o);
     }
@@ -451,6 +483,8 @@ const server = http.createServer(async (req, res) => {
       return handleCrewStatus(res, o, u);
     if (p === "/research" && req.method === "POST")
       return handleResearch(req, res, o);
+    if (p === "/cowork" && req.method === "POST")
+      return handleCowork(req, res, o);
     json(res, 404, { error: "Not found" }, o);
   } catch (err) {
     json(res, 500, { error: err.message || "Internal error" }, o);
