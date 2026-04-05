@@ -402,7 +402,13 @@ ROUTING RULE FOR CATEGORY B:
 3. Report what was done and any results to Dez
 4. Do NOT say "go open Cowork" — you dispatch it yourself now
 
-If bridge is offline, report: "Bridge is offline — start al-bridge on your machine."
+CRITICAL: NEVER pre-reason about whether a tool will work. NEVER say things like:
+- "the bridge may not recognize this yet"
+- "give it a few minutes to register"
+- "this might need another deploy cycle"
+Just CALL the tool. If it fails, the error will tell you exactly what's wrong. Report that, not speculation.
+
+If bridge is offline, the tool will return an error — report that error as one line.
 If executor fails, report the one-line error and what needs fixing.
 
 FAILURE REPORTING RULES:
