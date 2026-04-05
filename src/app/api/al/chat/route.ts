@@ -755,7 +755,8 @@ function isBridgeTool(name: string) {
     name === "crew_list" ||
     name === "crew_run" ||
     name === "crew_status" ||
-    name === "deep_research"
+    name === "deep_research" ||
+    name === "cowork_task"
     // job_status and delegate_to_ceo are server-side — NOT bridge tools
   );
 }

@@ -254,6 +254,22 @@ async function executeBridgeAction(req: VaultToolRequest): Promise<BridgeResult>
         if (!res.ok) return `Error: ${data.error || res.status}`;
         return data.result || JSON.stringify(data);
       }
+      case "cowork_task": {
+        const res = await fetch(`${url}/cowork`, {
+          method: "POST",
+          headers: { ...headers, "Content-Type": "application/json" },
+          body: JSON.stringify({
+            task: req.input.task,
+            domain: req.input.domain || "dominionhomedeals",
+            authority_zone: 1,
+          }),
+        });
+        const data = await res.json();
+        if (!res.ok) return `Error: ${data.error || res.status}`;
+        const elapsed = data.elapsed ? ` (${data.elapsed}s)` : "";
+        const session = data.session_id ? ` · session ${data.session_id}` : "";
+        return `✓ Done${elapsed}${session}\n\n${data.result || JSON.stringify(data)}`;
+      }
       default:
         return `Unknown bridge tool: ${req.name}`;
     }
@@ -615,7 +631,13 @@ export function ChatApp() {
     const toolResults: { type: "tool_result"; tool_use_id: string; content: string | unknown[]; is_error?: boolean }[] = [];
 
     for (const req of action.requests) {
+      if (req.name === "cowork_task") {
+        setDelegatingCeo("Claude Code (running task…)");
+      }
       const result = await executeBridgeAction(req);
+      if (req.name === "cowork_task") {
+        setDelegatingCeo(null);
+      }
       if (typeof result === "object" && result.type === "image") {
         toolResults.push({
           type: "tool_result",
