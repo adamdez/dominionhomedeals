@@ -1444,4 +1444,73 @@ export async function POST(request: NextRequest) {
               precomputed.push({ type: "tool_result", tool_use_id: sb.id, content: result });
             } else if (sb.name === "job_status") {
               const jobId = inp.job_id ? Number(inp.job_id) : undefined;
-     
+              const result = await executeJobStatus(jobId);
+              precomputed.push({ type: "tool_result", tool_use_id: sb.id, content: result });
+            } else if (sb.name === "cursor_agent") {
+              controller.enqueue(
+                encoder.encode(
+                  `data: ${JSON.stringify({ status: "delegating", ceo: "Cursor Composer 2" })}\n\n`
+                )
+              );
+              const result = await executeCursorAgent(
+                inp.task as string,
+                inp.repo as string | undefined,
+                inp.model as string | undefined
+              );
+              precomputed.push({ type: "tool_result", tool_use_id: sb.id, content: result });
+            }
+          }
+
+          /* Delegate bridge tools (vault_list, vault_read, cowork_task) to the client */
+          if (bridgeBlocks.length > 0) {
+            controller.enqueue(
+              encoder.encode(
+                `data: ${JSON.stringify({
+                  vault_action: {
+                    requests: bridgeBlocks.map((b) => ({
+                      id: b.id,
+                      name: b.name,
+                      input: b.input,
+                    })),
+                    assistantBlocks: contentBlocks,
+                    precomputedResults: precomputed,
+                  },
+                })}\n\n`
+              )
+            );
+            controller.enqueue(encoder.encode("data: [DONE]\n\n"));
+            controller.close();
+            logTrajectory(
+              message || "vault tool request",
+              fullResponse + " [awaiting bridge tool execution]"
+            ).catch(() => {});
+            return;
+          }
+
+          /* All server tools — continue the loop */
+          convo.push({ role: "assistant", content: contentBlocks });
+          convo.push({ role: "user", content: precomputed });
+        }
+
+        const actionSummary =
+          attachments && attachments.length > 0
+            ? `[${attachments.map((a) => a.name).join(", ")}] ${message}`
+            : message;
+        logTrajectory(actionSummary, fullResponse).catch(() => {});
+
+        controller.enqueue(encoder.encode("data: [DONE]\n\n"));
+        controller.close();
+      } catch (err: unknown) {
+        const msg =
+          err instanceof Error ? err.message : "Unknown error calling Claude";
+        controller.enqueue(
+          encoder.encode(`data: ${JSON.stringify({ error: msg })}\n\n`)
+        );
+        controller.enqueue(encoder.encode("data: [DONE]\n\n"));
+        controller.close();
+      }
+    },
+  });
+
+  return new Response(readable, { headers: sseHeaders() });
+}
