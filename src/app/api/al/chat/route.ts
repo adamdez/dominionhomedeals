@@ -322,13 +322,45 @@ VAULT STRUCTURE (inside al-boreland-vault/ on disk):
 
 Each CEO has a CEO-Identity.md and training data in their section.
 
-PERSISTENT MEMORY:
-You have persistent memory that survives across sessions. Your memories are loaded into this prompt automatically.
-- Use memory_save to remember important facts, decisions, preferences, project updates, or anything Dez tells you to remember
-- Use memory_delete to remove outdated or incorrect memories
-- Proactively save important information without being asked — if Dez shares a decision, update, preference, or key fact, save it
-- Categories: preference, decision, fact, project, person, metric, or any short label
-- Keep memories concise and specific — they're loaded every session
+PERSISTENT MEMORY AND CONTINUOUS LEARNING:
+Your memories are loaded into every session automatically. Memory is how you get smarter over time — it is not optional.
+
+MANDATORY SAVE TRIGGERS — save immediately when any of these occur:
+- Dez states a preference, constraint, or opinion about anything → save it
+- A task completes with a clear outcome (deal closed, script ran, page deployed, lead lost) → save what happened and why
+- You make a routing decision (sent task to Claude Code) → save the task type and why
+- You observe a pattern (3rd time Dez asked about ad spend → he checks this weekly) → save the pattern
+- Dez corrects you ("no, not that") → save what you got wrong and the right approach
+- A CEO constitution, rule, or principle gets applied → save if the outcome was good or bad
+- Business metrics are mentioned (CPL, bookings, deals, revenue) → save the number and date
+- A system breaks or a blocker is hit → save what broke and how it was resolved
+
+SELF-REMINDER PROTOCOL — at the end of every session that matters:
+Use vault_publish to write a brief note to yourself in:
+- 00-Al-Boreland-Core/Health-Checks/YYYY-MM-DD-[topic].md
+Include: what was done, what was learned, what to check next session, any open questions.
+This is how your board accumulates institutional knowledge. Every session that does meaningful work leaves a record.
+
+LEARNING FROM OUTCOMES — not just from instructions:
+- If a strategy worked → remember it worked and why
+- If a strategy failed → remember it failed, remove the memory that said it would work, save what actually happened
+- If Dez didn't like your response → that is a learning. Save it.
+- If Dez said "yes exactly" or accepted your approach without pushback → that is also a learning. Save it.
+- Your job is to need less guidance from Dez over time, not more. Every interaction where you save a learning is one less time Dez has to repeat himself.
+
+MEMORY CATEGORIES (use exactly these):
+- routing — task types that go to Claude Code vs chat UI
+- preference — Dez's preferences, style, constraints
+- decision — business decisions made, with outcomes
+- metric — numbers with dates (CPL, revenue, bookings, leads)
+- pattern — recurring behaviors or situations you've observed
+- outcome — what happened when a strategy or task was executed
+- person — facts about Logan, Simon, vendors, buyers, sellers
+- project — current state of active projects
+- blocker — things that are broken or stuck and why
+- constitution — a rule or principle that was validated or invalidated by real outcomes
+
+Keep memories short and specific — they're all loaded every session. A memory that says "Dez prefers short responses" is loaded forever. A memory that says "CPL was $47 on 2026-04-04" is a data point you'll use in future comparisons.
 
 TASK ROUTING — WHEN TO USE CLAUDE CODE (COWORK):
 You must classify every task Dez gives you into one of two categories before responding:
@@ -794,6 +826,26 @@ async function executeWebSearch(query: string): Promise<string> {
 /*  Persistent Memory                                                   */
 /* ------------------------------------------------------------------ */
 
+async function loadVaultDocs(): Promise<string> {
+  const supabase = getServiceClient();
+  if (!supabase) return "";
+  try {
+    // Load core identity docs every session — constitutions, CEO identities, live status, health checks
+    const { data } = await supabase
+      .from("vault_documents")
+      .select("path, section, content")
+      .in("section", ["00-Al-Boreland-Core", "01-Dominion-Homes", "02-WrenchReady-Mobile", "03-Tina-AI-Tax-Agent", "04-Personal-Life"])
+      .not("path", "like", "%/.gitkeep%")
+      .order("section")
+      .order("path");
+    if (!data || data.length === 0) return "";
+    const entries = data.map(d => `--- ${d.path} ---\n${d.content}`).join("\n\n");
+    return `\n\nVAULT CONTEXT (${data.length} documents loaded from knowledge base):\n${entries}`;
+  } catch {
+    return "";
+  }
+}
+
 async function loadMemories(): Promise<string> {
   const supabase = getServiceClient();
   if (!supabase) return "";
@@ -1027,8 +1079,8 @@ export async function POST(request: NextRequest) {
   const tools = [...SERVER_TOOLS];
   if (bridgeConnected) tools.push(...BRIDGE_TOOLS);
 
-  /* Load persistent memory into system prompt */
-  const memoryBlock = await loadMemories();
+  /* Load persistent memory and vault docs into system prompt */
+  const [memoryBlock, vaultBlock] = await Promise.all([loadMemories(), loadVaultDocs()]);
 
   /* Build the Anthropic messages array */
   const messages: Anthropic.MessageParam[] = (history || []).map((m) => ({
@@ -1061,7 +1113,7 @@ export async function POST(request: NextRequest) {
       let fullResponse = "";
       const convo: Anthropic.MessageParam[] = [...messages];
 
-      const fullSystemPrompt = SYSTEM_PROMPT + memoryBlock;
+      const fullSystemPrompt = SYSTEM_PROMPT + vaultBlock + memoryBlock;
 
       /* Smart model routing — Haiku for casual, Sonnet for complex */
       const selectedModel = continuation ? SONNET_MODEL : pickModel(message || "");
