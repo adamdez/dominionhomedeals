@@ -326,6 +326,8 @@ The local bridge roots at the folder set in al-bridge/.env as VAULT_PATH (often 
 
 VAULT STRUCTURE (inside al-boreland-vault/ on disk):
 - al-boreland-vault/00-Al-Boreland-Core/ — constitutions, System-Handoff/, operating principles
+- al-boreland-vault/00-Al-Boreland-Core/Cursor-OS.md — IMPORTANT: read this for full Cursor/cursor_agent documentation
+- al-boreland-vault/00-Al-Boreland-Core/Al-Briefing-Cursor-And-Disposition-Page.md — IMPORTANT: action items from 2026-04-04 session including disposition page task
 - al-boreland-vault/01-Dominion-Homes/ — Dominion Homes CEO's domain
 - al-boreland-vault/02-WrenchReady-Mobile/ — WrenchReady CEO's domain
 - al-boreland-vault/03-Tina-AI-Tax-Agent/ — Tina CEO's domain
@@ -1441,85 +1443,4 @@ export async function POST(request: NextRequest) {
               precomputed.push({ type: "tool_result", tool_use_id: sb.id, content: result });
             } else if (sb.name === "job_status") {
               const jobId = inp.job_id ? Number(inp.job_id) : undefined;
-              const result = await executeJobStatus(jobId);
-              precomputed.push({ type: "tool_result", tool_use_id: sb.id, content: result });
-            } else if (sb.name === "cursor_agent") {
-              // Emit a status indicator so Dez sees something is happening
-              controller.enqueue(
-                encoder.encode(
-                  `data: ${JSON.stringify({ status: "delegating", ceo: "Cursor Composer 2" })}\n\n`
-                )
-              );
-              const result = await executeCursorAgent(
-                inp.task as string,
-                inp.repo as string | undefined,
-                inp.model as string | undefined
-              );
-              precomputed.push({ type: "tool_result", tool_use_id: sb.id, content: result });
-            } else if (sb.name === "cowork_task") {
-              controller.enqueue(
-                encoder.encode(
-                  `data: ${JSON.stringify({ status: "delegating", ceo: "Claude Code (local)" })}\n\n`
-                )
-              );
-              const result = await executeCoworkTask(
-                inp.task as string,
-                inp.domain as string | undefined
-              );
-              precomputed.push({ type: "tool_result", tool_use_id: sb.id, content: result });
-            }
-          }
-
-          /* Delegate bridge tools (vault_list, vault_read) to the client */
-          if (bridgeBlocks.length > 0) {
-            controller.enqueue(
-              encoder.encode(
-                `data: ${JSON.stringify({
-                  vault_action: {
-                    requests: bridgeBlocks.map((b) => ({
-                      id: b.id,
-                      name: b.name,
-                      input: b.input,
-                    })),
-                    assistantBlocks: contentBlocks,
-                    precomputedResults: precomputed,
-                  },
-                })}\n\n`
-              )
-            );
-            controller.enqueue(encoder.encode("data: [DONE]\n\n"));
-            controller.close();
-            logTrajectory(
-              message || "vault tool request",
-              fullResponse + " [awaiting bridge tool execution]"
-            ).catch(() => {});
-            return;
-          }
-
-          /* All server tools — continue the loop */
-          convo.push({ role: "assistant", content: contentBlocks });
-          convo.push({ role: "user", content: precomputed });
-        }
-
-        const actionSummary =
-          attachments && attachments.length > 0
-            ? `[${attachments.map((a) => a.name).join(", ")}] ${message}`
-            : message;
-        logTrajectory(actionSummary, fullResponse).catch(() => {});
-
-        controller.enqueue(encoder.encode("data: [DONE]\n\n"));
-        controller.close();
-      } catch (err: unknown) {
-        const msg =
-          err instanceof Error ? err.message : "Unknown error calling Claude";
-        controller.enqueue(
-          encoder.encode(`data: ${JSON.stringify({ error: msg })}\n\n`)
-        );
-        controller.enqueue(encoder.encode("data: [DONE]\n\n"));
-        controller.close();
-      }
-    },
-  });
-
-  return new Response(readable, { headers: sseHeaders() });
-}
+     
