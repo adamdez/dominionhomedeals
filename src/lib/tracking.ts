@@ -28,6 +28,10 @@ const GADS_FORM_SEND_TO =
   process.env.NEXT_PUBLIC_GADS_FORM_SEND_TO ||
   'AW-18000301728/LJHYCOnlx4QcEKCdm4dD';
 
+const GADS_FORM_SEND_TO_PRIMARY =
+  process.env.NEXT_PUBLIC_GADS_FORM_SEND_TO_PRIMARY ||
+  'AW-17989282213/KWB_CIaVnYgcEKXT-oFD';
+
 const GADS_CALL_LABEL = process.env.NEXT_PUBLIC_GADS_CALL_LABEL || '10-DCJvTz4UcEKCdm4dD';
 
 // ── gtag helper ────────────────────────────────────────────────
@@ -77,6 +81,14 @@ export function trackLeadFormSubmission(data: LeadTrackingData): void {
   if (GADS_FORM_SEND_TO) {
     gtag('event', 'conversion', {
       send_to: GADS_FORM_SEND_TO,
+      value: 1.0,
+      currency: 'USD',
+    });
+  }
+
+  if (GADS_FORM_SEND_TO_PRIMARY) {
+    gtag('event', 'conversion', {
+      send_to: GADS_FORM_SEND_TO_PRIMARY,
       value: 1.0,
       currency: 'USD',
     });
