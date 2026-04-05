@@ -733,17 +733,27 @@ async function executeVaultPublish(
   const webhookUrl = process.env.N8N_WEBHOOK_URL?.trim();
   if (!webhookUrl)
     return "Vault publish is not configured. Ask the admin to set N8N_WEBHOOK_URL.";
-  try {
-    const res = await fetch(webhookUrl, {
+
+  // Push to GitHub via n8n and upsert to vault_documents in parallel
+  const section = path.split("/")[0] || "misc";
+  const supabase = getServiceClient();
+
+  const [res] = await Promise.all([
+    fetch(webhookUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ path, content }),
-    });
-    if (!res.ok) return `Vault publish failed (${res.status}). The n8n workflow may be inactive.`;
-    return `Published to vault: ${path}`;
-  } catch (err) {
-    return `Vault publish error: ${err instanceof Error ? err.message : "unknown"}`;
-  }
+    }),
+    supabase
+      ? supabase.from("vault_documents").upsert(
+          { path, section, content, updated_at: new Date().toISOString() },
+          { onConflict: "path" }
+        )
+      : Promise.resolve(null),
+  ]);
+
+  if (!res.ok) return `Vault publish failed (${res.status}). The n8n workflow may be inactive.`;
+  return `Published to vault: ${path}`;
 }
 
 async function executeDelegation(
