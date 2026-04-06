@@ -3,6 +3,7 @@ import type { Metadata } from 'next'
 import Image from 'next/image'
 import Link from 'next/link'
 import { SITE } from '@/lib/constants'
+import torrensTrail472Photos from '@/data/torrens-trail-472-photos.json'
 import { InterestForm } from './InterestForm'
 
 /* ------------------------------------------------------------------ */
@@ -17,7 +18,7 @@ export const metadata: Metadata = {
     description:
       'Move-in ready 2bd/2ba on 5 acres built 2016. 1,952 sq ft. Asking $460K with some finishing work needed.',
     url: `${SITE.url}/deals/torrens-trail-472`,
-    images: [{ url: '/images/torrens-trail/exterior-front.svg', width: 800, height: 600 }],
+    images: [{ url: torrensTrail472Photos[0]?.src ?? '/images/torrens-trail/exterior-front.svg', width: 1200, height: 800 }],
   },
   alternates: { canonical: `${SITE.url}/deals/torrens-trail-472` },
 }
@@ -25,20 +26,10 @@ export const metadata: Metadata = {
 /* ------------------------------------------------------------------ */
 /* Property photos                                                      */
 /* ------------------------------------------------------------------ */
-const PHOTOS = [
-  { src: '/images/torrens-trail/exterior-front.svg',   alt: 'Exterior front view of 472 Torrens Trail',      span: 'col-span-2 row-span-2' },
-  { src: '/images/torrens-trail/aerial.svg',            alt: '5-acre aerial view of the property',            span: 'col-span-1 row-span-1' },
-  { src: '/images/torrens-trail/property-view.svg',     alt: 'Property and tree line',                        span: 'col-span-1 row-span-1' },
-  { src: '/images/torrens-trail/living-room.svg',       alt: 'Open living room',                              span: 'col-span-1 row-span-1' },
-  { src: '/images/torrens-trail/kitchen.svg',           alt: 'Kitchen',                                       span: 'col-span-1 row-span-1' },
-  { src: '/images/torrens-trail/primary-bedroom.svg',   alt: 'Primary bedroom',                               span: 'col-span-1 row-span-1' },
-  { src: '/images/torrens-trail/primary-bath.svg',      alt: 'Primary bathroom',                              span: 'col-span-1 row-span-1' },
-  { src: '/images/torrens-trail/second-bedroom.svg',    alt: 'Second bedroom',                                span: 'col-span-1 row-span-1' },
-  { src: '/images/torrens-trail/second-bath.svg',       alt: 'Second bathroom',                               span: 'col-span-1 row-span-1' },
-  { src: '/images/torrens-trail/garage.svg',            alt: 'Garage',                                        span: 'col-span-1 row-span-1' },
-  { src: '/images/torrens-trail/driveway.svg',          alt: 'Driveway approach',                             span: 'col-span-1 row-span-1' },
-  { src: '/images/torrens-trail/exterior-back.svg',     alt: 'Back of property',                              span: 'col-span-1 row-span-1' },
-]
+const PHOTOS = torrensTrail472Photos.map((p, i) => ({
+  ...p,
+  span: i === 0 ? ('col-span-2 row-span-2' as const) : ('col-span-1 row-span-1' as const),
+}))
 
 /* ------------------------------------------------------------------ */
 /* Structured data                                                      */
@@ -51,7 +42,7 @@ function JsonLd() {
     description:
       'Move-in ready 2-bedroom, 2-bathroom home on 5 private acres in Spirit Lake, Idaho. Built 2016, 1,952 sq ft. Asking $460,000.',
     url: `${SITE.url}/deals/torrens-trail-472`,
-    image: `${SITE.url}/images/torrens-trail/exterior-front.svg`,
+    image: `${SITE.url}${torrensTrail472Photos[0]?.src ?? '/images/torrens-trail/exterior-front.svg'}`,
     offers: {
       '@type': 'Offer',
       price: '460000',

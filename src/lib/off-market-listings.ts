@@ -1,5 +1,6 @@
-// src/lib/off-market-listings.ts
+﻿// src/lib/off-market-listings.ts
 import { SITE } from '@/lib/constants'
+import torrensTrail472Photos from '@/data/torrens-trail-472-photos.json'
 
 export type OffMarketPhoto = { src: string; alt: string }
 
@@ -87,20 +88,7 @@ const listings: Record<string, OffMarketListing> = {
       ['Asking price', '$460,000'],
       ['Property type', 'Single-family residential'],
     ],
-    photos: [
-      { src: '/images/torrens-trail/exterior-front.svg', alt: 'Exterior front — 472 Torrens Trail' },
-      { src: '/images/torrens-trail/aerial.svg', alt: 'Aerial view of the five-acre parcel' },
-      { src: '/images/torrens-trail/property-view.svg', alt: 'Property and tree line' },
-      { src: '/images/torrens-trail/living-room.svg', alt: 'Living room' },
-      { src: '/images/torrens-trail/kitchen.svg', alt: 'Kitchen' },
-      { src: '/images/torrens-trail/primary-bedroom.svg', alt: 'Primary bedroom' },
-      { src: '/images/torrens-trail/primary-bath.svg', alt: 'Primary bathroom' },
-      { src: '/images/torrens-trail/second-bedroom.svg', alt: 'Second bedroom' },
-      { src: '/images/torrens-trail/second-bath.svg', alt: 'Second bathroom' },
-      { src: '/images/torrens-trail/garage.svg', alt: 'Garage' },
-      { src: '/images/torrens-trail/driveway.svg', alt: 'Driveway approach' },
-      { src: '/images/torrens-trail/exterior-back.svg', alt: 'Rear exterior' },
-    ],
+    photos: torrensTrail472Photos as OffMarketPhoto[],
     neighborhoodTitle: 'Spirit Lake, Idaho',
     neighborhoodBody:
       "Spirit Lake sits in the heart of Kootenai County — about 35 miles north of Coeur d'Alene and under an hour from Spokane. Demand for acreage and newer construction remains strong as buyers seek space without giving up regional access.",
@@ -114,7 +102,7 @@ const listings: Record<string, OffMarketListing> = {
     leadSource: 'off-market-torrens-trail-472',
     lat: 47.9232,
     lng: -116.8685,
-    cardImageSrc: '/images/torrens-trail/exterior-front.svg',
+    cardImageSrc: torrensTrail472Photos[0]?.src ?? '/images/torrens-trail/exterior-front.svg',
   },
 }
 
