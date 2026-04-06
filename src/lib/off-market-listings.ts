@@ -1,4 +1,4 @@
-﻿// src/lib/off-market-listings.ts
+// src/lib/off-market-listings.ts
 import { SITE } from '@/lib/constants'
 
 export type OffMarketPhoto = { src: string; alt: string }
@@ -88,18 +88,18 @@ const listings: Record<string, OffMarketListing> = {
       ['Property type', 'Single-family residential'],
     ],
     photos: [
-      { src: '/images/torrens-trail/exterior-front.jpg', alt: 'Exterior front — 472 Torrens Trail' },
-      { src: '/images/torrens-trail/aerial.jpg', alt: 'Aerial view of the five-acre parcel' },
-      { src: '/images/torrens-trail/property-view.jpg', alt: 'Property and tree line' },
-      { src: '/images/torrens-trail/living-room.jpg', alt: 'Living room' },
-      { src: '/images/torrens-trail/kitchen.jpg', alt: 'Kitchen' },
-      { src: '/images/torrens-trail/primary-bedroom.jpg', alt: 'Primary bedroom' },
-      { src: '/images/torrens-trail/primary-bath.jpg', alt: 'Primary bathroom' },
-      { src: '/images/torrens-trail/second-bedroom.jpg', alt: 'Second bedroom' },
-      { src: '/images/torrens-trail/second-bath.jpg', alt: 'Second bathroom' },
-      { src: '/images/torrens-trail/garage.jpg', alt: 'Garage' },
-      { src: '/images/torrens-trail/driveway.jpg', alt: 'Driveway approach' },
-      { src: '/images/torrens-trail/exterior-back.jpg', alt: 'Rear exterior' },
+      { src: '/images/torrens-trail/exterior-front.svg', alt: 'Exterior front — 472 Torrens Trail' },
+      { src: '/images/torrens-trail/aerial.svg', alt: 'Aerial view of the five-acre parcel' },
+      { src: '/images/torrens-trail/property-view.svg', alt: 'Property and tree line' },
+      { src: '/images/torrens-trail/living-room.svg', alt: 'Living room' },
+      { src: '/images/torrens-trail/kitchen.svg', alt: 'Kitchen' },
+      { src: '/images/torrens-trail/primary-bedroom.svg', alt: 'Primary bedroom' },
+      { src: '/images/torrens-trail/primary-bath.svg', alt: 'Primary bathroom' },
+      { src: '/images/torrens-trail/second-bedroom.svg', alt: 'Second bedroom' },
+      { src: '/images/torrens-trail/second-bath.svg', alt: 'Second bathroom' },
+      { src: '/images/torrens-trail/garage.svg', alt: 'Garage' },
+      { src: '/images/torrens-trail/driveway.svg', alt: 'Driveway approach' },
+      { src: '/images/torrens-trail/exterior-back.svg', alt: 'Rear exterior' },
     ],
     neighborhoodTitle: 'Spirit Lake, Idaho',
     neighborhoodBody:
@@ -114,7 +114,7 @@ const listings: Record<string, OffMarketListing> = {
     leadSource: 'off-market-torrens-trail-472',
     lat: 47.9232,
     lng: -116.8685,
-    cardImageSrc: '/images/torrens-trail/exterior-front.jpg',
+    cardImageSrc: '/images/torrens-trail/exterior-front.svg',
   },
 }
 
