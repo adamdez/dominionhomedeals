@@ -9,3 +9,7 @@ npm-debug.log*
 .vercel
 *.tsbuildinfo
 next-env.d.ts
+
+# iPhone HEIC bulk imports (use JPG/WebP in repo for web)
+public/images/torrens-trail/472 torrens trl spirit lake-*
+
