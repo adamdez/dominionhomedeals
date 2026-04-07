@@ -26,6 +26,7 @@ const RUNWAY_API_VERSION = (process.env.RUNWAY_API_VERSION || "2024-11-06").trim
 const RUNWAY_VIDEO_MODEL = (process.env.RUNWAY_MODEL_VIDEO || "gen4_turbo").trim();
 const RUNWAY_VIDEO_DURATION = Number(process.env.RUNWAY_VIDEO_DURATION_SECONDS || 10);
 const RUNWAY_VIDEO_RATIO = (process.env.RUNWAY_VIDEO_RATIO || "1280:720").trim();
+const FFMPEG_PATH_ENV = String(process.env.FFMPEG_PATH || "").trim().replace(/^["']|["']$/g, "");
 
 const IMAGE_EXTENSIONS = new Set([
   ".jpg",
@@ -61,13 +62,49 @@ function safeSegment(value) {
 }
 
 function hasFfmpeg() {
-  const command = process.platform === "win32" ? "ffmpeg.exe" : "ffmpeg";
+  const command = resolveFfmpegBinary();
+  if (!command) return false;
   const result = spawnSync(command, ["-version"], {
     encoding: "utf8",
-    shell: process.platform === "win32",
+    shell: false,
     timeout: 5000,
   });
   return result.status === 0;
+}
+
+function resolveFfmpegBinary() {
+  if (FFMPEG_PATH_ENV && fs.existsSync(FFMPEG_PATH_ENV)) {
+    return FFMPEG_PATH_ENV;
+  }
+
+  if (process.platform === "win32") {
+    const localAppData = process.env.LOCALAPPDATA || "";
+    if (localAppData) {
+      const wingetRoot = path.join(localAppData, "Microsoft", "WinGet", "Packages");
+      if (fs.existsSync(wingetRoot)) {
+        try {
+          const packageDirs = fs.readdirSync(wingetRoot);
+          for (const dir of packageDirs) {
+            if (!dir.toLowerCase().includes("ffmpeg")) continue;
+            const candidate = path.join(wingetRoot, dir);
+            const children = fs.readdirSync(candidate);
+            for (const child of children) {
+              const exe = path.join(candidate, child, "bin", "ffmpeg.exe");
+              if (fs.existsSync(exe)) return exe;
+            }
+            const directExe = path.join(candidate, "ffmpeg.exe");
+            if (fs.existsSync(directExe)) return directExe;
+          }
+        } catch {
+          // Ignore and fall through to PATH lookup.
+        }
+      }
+    }
+
+    return "ffmpeg.exe";
+  }
+
+  return "ffmpeg";
 }
 
 function listImages(sourceDir) {
@@ -342,17 +379,16 @@ async function downloadFile(url, destinationPath) {
 }
 
 function exportGif(videoPath, gifPath) {
-  if (!hasFfmpeg()) {
+  const command = resolveFfmpegBinary();
+  if (!command) {
     return { ok: false, reason: "ffmpeg_not_available" };
   }
-
-  const command = process.platform === "win32" ? "ffmpeg.exe" : "ffmpeg";
   const result = spawnSync(
     command,
     ["-y", "-i", videoPath, "-vf", "fps=10,scale=960:-1:flags=lanczos", "-loop", "0", gifPath],
     {
       encoding: "utf8",
-      shell: process.platform === "win32",
+      shell: false,
       timeout: 120_000,
     },
   );
