@@ -32,7 +32,7 @@ export async function POST(
   }
 
   const job = await fetchAlJob(jobId);
-  if (!job || job.job_type !== "browser_commerce_design") {
+  if (!job) {
     return NextResponse.json({ error: "Board Room presentation not found." }, { status: 404 });
   }
 
@@ -56,6 +56,18 @@ export async function POST(
   }
 
   const contextValue = parseJobContext(job.context);
+  const isBrowserCommercePresentation =
+    job.job_type === "browser_commerce_design" &&
+    Boolean(contextValue.review_surface && typeof contextValue.review_surface === "object");
+  const hasGenericPresentation =
+    (typeof contextValue.presentation_title === "string" && contextValue.presentation_title.trim()) ||
+    (typeof contextValue.presentation_body === "string" && contextValue.presentation_body.trim()) ||
+    (typeof job.result === "string" && job.result.trim());
+
+  if (!isBrowserCommercePresentation && !hasGenericPresentation) {
+    return NextResponse.json({ error: "Board Room presentation not found." }, { status: 404 });
+  }
+
   const currentHistory = Array.isArray(contextValue.review_decisions)
     ? contextValue.review_decisions.filter(
         (entry): entry is Record<string, unknown> =>
@@ -67,13 +79,20 @@ export async function POST(
   const selectedAlternative =
     typeof body.selectedAlternative === "string" ? body.selectedAlternative.trim().slice(0, 300) : "";
   const timestamp = new Date().toISOString();
-  const nextAction =
-    nextState === "approved_for_checkout"
+  const nextAction = isBrowserCommercePresentation
+    ? nextState === "approved_for_checkout"
       ? "The recommendation is approved for checkout readiness. Resume the live vendor cart only when you are ready to inspect it before any manual checkout."
       : nextState === "changes_requested"
         ? "Changes were requested. Update the recommendation package, then return to Board Room with the revised presentation."
         : nextState === "resume_local_session_required"
           ? "Resume the local execution session on Dez's machine to inspect or recover the live vendor cart before any further review."
+          : "The execution path is blocked and needs repair before this presentation can move forward."
+    : nextState === "approved_for_checkout"
+      ? "The recommendation is approved. AL can continue the chosen execution path and return with the next review checkpoint."
+      : nextState === "changes_requested"
+        ? "Changes were requested. Update the presentation, keep the recommendation tight, and return to Board Room with the revised package."
+        : nextState === "resume_local_session_required"
+          ? "Resume the active execution lane before this presentation can move forward."
           : "The execution path is blocked and needs repair before this presentation can move forward.";
 
   const updatedContext = {
