@@ -1,11 +1,13 @@
 "use client";
 
 import {
+  Fragment,
   useState,
   useEffect,
   useRef,
   useCallback,
   type FormEvent,
+  type ReactNode,
 } from "react";
 import {
   Send,
@@ -48,13 +50,38 @@ interface Message {
 interface VaultToolRequest {
   id: string;
   name: string;
-  input: Record<string, string>;
+  input: Record<string, unknown>;
+  accountabilityJobId?: number;
 }
 
 interface VaultAction {
+  provider?: "openai" | "anthropic";
+  previousResponseId?: string;
   requests: VaultToolRequest[];
   assistantBlocks: unknown[];
   precomputedResults: unknown[];
+}
+
+interface BridgeCapabilities {
+  executor_online?: boolean;
+  deep_research?: boolean;
+  cowork_execution?: boolean;
+  browser_automation?: boolean;
+  vendor_site_access?: boolean;
+  design_mockup?: boolean;
+  screenshot_capture?: boolean;
+  cart_preparation?: boolean;
+  review_checkpoint?: boolean;
+}
+
+interface BridgeHealthResponse {
+  ok?: boolean;
+  capabilities?: BridgeCapabilities;
+  executor?: {
+    online?: boolean;
+    status?: string;
+    version?: string | null;
+  };
 }
 
 /* ------------------------------------------------------------------ */
@@ -66,6 +93,10 @@ const MAX_HISTORY = 30;
 const MAX_FILES = 5;
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
 const MAX_IMAGE_DIM = 1600;
+const MAX_BRIDGE_IMAGE_DIM = 1280;
+const MAX_CONTINUATION_BODY_BYTES = 900_000;
+const MAX_TOOL_RESULT_TEXT_CHARS = 40_000;
+const CONTINUATION_RETRY_DELAY_MS = 500;
 const ACCEPTED_TYPES = [
   "image/jpeg",
   "image/png",
@@ -135,6 +166,169 @@ async function processFile(file: File): Promise<Attachment | null> {
   return { id: crypto.randomUUID(), name: file.name, type: mime, size: blob.size, data };
 }
 
+function byteLengthOfJson(value: unknown): number {
+  return new TextEncoder().encode(JSON.stringify(value)).length;
+}
+
+async function optimizeBridgeImageResult(result: BridgeImageResult): Promise<BridgeImageResult> {
+  if (
+    !result.base64 ||
+    !result.mimeType.startsWith("image/") ||
+    result.mimeType === "image/gif"
+  ) {
+    return result;
+  }
+
+  // Keep already-small payloads untouched.
+  if (result.base64.length < 220_000) {
+    return result;
+  }
+
+  try {
+    const sourceDataUri = `data:${result.mimeType};base64,${result.base64}`;
+    const blob = await fetch(sourceDataUri).then((r) => r.blob());
+    const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+      const image = new Image();
+      const objectUrl = URL.createObjectURL(blob);
+      image.onload = () => {
+        URL.revokeObjectURL(objectUrl);
+        resolve(image);
+      };
+      image.onerror = () => {
+        URL.revokeObjectURL(objectUrl);
+        reject(new Error("Image decode failed"));
+      };
+      image.src = objectUrl;
+    });
+
+    const ratio = Math.min(
+      MAX_BRIDGE_IMAGE_DIM / img.width,
+      MAX_BRIDGE_IMAGE_DIM / img.height,
+      1,
+    );
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.max(1, Math.round(img.width * ratio));
+    canvas.height = Math.max(1, Math.round(img.height * ratio));
+    const ctx = canvas.getContext("2d");
+    if (!ctx) {
+      return result;
+    }
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+    const optimizedBlob = await new Promise<Blob | null>((resolve) => {
+      canvas.toBlob((b) => resolve(b), "image/jpeg", 0.82);
+    });
+    if (!optimizedBlob) {
+      return result;
+    }
+
+    const optimizedDataUri = await readBlobAsDataUri(optimizedBlob);
+    const optimizedBase64 = optimizedDataUri.split(",", 2)[1];
+    if (!optimizedBase64 || optimizedBase64.length >= result.base64.length) {
+      return result;
+    }
+
+    return {
+      ...result,
+      base64: optimizedBase64,
+      mimeType: "image/jpeg",
+    };
+  } catch {
+    return result;
+  }
+}
+
+function compactContinuationToolResults(
+  provider: "openai" | "anthropic" | undefined,
+  toolResults: unknown[],
+): unknown[] {
+  return toolResults.map((result) => {
+    if (!result || typeof result !== "object") {
+      return result;
+    }
+
+    if (provider === "openai") {
+      const typed = result as { type?: string; output?: unknown };
+      if (typed.type !== "function_call_output" || typeof typed.output !== "string") {
+        return result;
+      }
+      try {
+        const parsed = JSON.parse(typed.output) as {
+          type?: string;
+          path?: string;
+          mimeType?: string;
+          base64?: string;
+        };
+        if (parsed.type !== "image" || !parsed.base64) {
+          return result;
+        }
+        return {
+          ...(result as Record<string, unknown>),
+          output: `Image loaded: ${parsed.path || "bridge image"} (${parsed.mimeType || "image"}). Payload compacted to keep chat continuation stable.`,
+        };
+      } catch {
+        return result;
+      }
+    }
+
+    const typed = result as { type?: string; content?: unknown };
+    if (typed.type !== "tool_result" || !Array.isArray(typed.content)) {
+      return result;
+    }
+
+    const content = typed.content as Array<{ type?: string; text?: string }>;
+    const hasImage = content.some((item) => item?.type === "image");
+    if (!hasImage) {
+      return result;
+    }
+
+    const textSnippet =
+      content.find((item) => item?.type === "text" && typeof item.text === "string")?.text ||
+      "Bridge image loaded.";
+    return {
+      ...(result as Record<string, unknown>),
+      content: `${textSnippet} Payload compacted to keep chat continuation stable.`,
+    };
+  });
+}
+
+async function extractChatResponseError(res: Response): Promise<string> {
+  let raw = "";
+  try {
+    raw = await res.text();
+  } catch {
+    return `Server error ${res.status}`;
+  }
+
+  if (!raw) {
+    return `Server error ${res.status}`;
+  }
+
+  const errorMatch = raw.match(/"error"\s*:\s*"([^"]+)"/i);
+  if (errorMatch?.[1]) {
+    return `Server error ${res.status}: ${errorMatch[1]}`;
+  }
+
+  const textMatch = raw.match(/"t"\s*:\s*"([^"]+)"/i);
+  if (textMatch?.[1]) {
+    return `Server error ${res.status}: ${textMatch[1]}`;
+  }
+
+  return `Server error ${res.status}: ${raw.slice(0, 220)}`;
+}
+
+function truncateContinuationText(value: string, reqName: string): string {
+  if (value.length <= MAX_TOOL_RESULT_TEXT_CHARS) {
+    return value;
+  }
+
+  return (
+    `${value.slice(0, MAX_TOOL_RESULT_TEXT_CHARS)}\n\n` +
+    `[${reqName}] result truncated to keep continuation payload stable. ` +
+    `Original length: ${value.length} characters.`
+  );
+}
+
 function getGreeting(): string {
   const h = new Date().getHours();
   if (h < 12) return "Good morning";
@@ -170,6 +364,205 @@ interface BridgeImageResult {
 
 type BridgeResult = string | BridgeImageResult;
 
+function inputString(value: unknown): string {
+  return typeof value === "string" ? value : "";
+}
+
+const URL_PATTERN = /(https?:\/\/[^\s]+)/g;
+const MARKDOWN_LINK_PATTERN = /\[([^\]\n]+)\]\((https?:\/\/[^\s)]+)\)/g;
+
+function renderAutoLinkedTextSegment(text: string, keyPrefix: string): ReactNode[] {
+  return text.split(URL_PATTERN).map((part, index) => {
+    if (!/^https?:\/\/[^\s]+$/i.test(part)) {
+      return <Fragment key={`${keyPrefix}-text-${index}`}>{part}</Fragment>;
+    }
+
+    return (
+      <a
+        key={`${keyPrefix}-link-${index}`}
+        href={part}
+        target="_blank"
+        rel="noreferrer"
+        className="underline decoration-emerald-400/40 underline-offset-4 transition-colors hover:text-emerald-300"
+      >
+        {part}
+      </a>
+    );
+  });
+}
+
+function renderLinkedText(text: string) {
+  const nodes: ReactNode[] = [];
+  let lastIndex = 0;
+  let matchIndex = 0;
+  MARKDOWN_LINK_PATTERN.lastIndex = 0;
+
+  for (let match = MARKDOWN_LINK_PATTERN.exec(text); match; match = MARKDOWN_LINK_PATTERN.exec(text)) {
+    const [fullMatch, label, url] = match;
+    const before = text.slice(lastIndex, match.index);
+    if (before) {
+      nodes.push(...renderAutoLinkedTextSegment(before, `plain-${matchIndex}`));
+    }
+    nodes.push(
+      <a
+        key={`md-${matchIndex}`}
+        href={url}
+        target="_blank"
+        rel="noreferrer"
+        className="underline decoration-emerald-400/40 underline-offset-4 transition-colors hover:text-emerald-300"
+      >
+        {label}
+      </a>,
+    );
+    lastIndex = match.index + fullMatch.length;
+    matchIndex += 1;
+  }
+
+  const tail = text.slice(lastIndex);
+  if (tail) {
+    nodes.push(...renderAutoLinkedTextSegment(tail, `tail-${matchIndex}`));
+  }
+
+  return nodes;
+}
+
+function parseBridgeJsonResult(result: BridgeResult): Record<string, unknown> | null {
+  if (typeof result !== "string") return null;
+  try {
+    const parsed = JSON.parse(result);
+    return parsed && typeof parsed === "object" && !Array.isArray(parsed)
+      ? (parsed as Record<string, unknown>)
+      : null;
+  } catch {
+    return null;
+  }
+}
+
+function fileNameFromBridgePath(value: unknown): string | null {
+  if (typeof value !== "string" || !value.trim()) return null;
+  const normalized = value.replace(/\\/g, "/");
+  const fileName = normalized.split("/").pop() || "";
+  return fileName || null;
+}
+
+function buildHostedReviewPath(jobId: number): string {
+  if (typeof window !== "undefined" && window.location.hostname === "al.dominionhomedeals.com") {
+    return `/reviews/${jobId}`;
+  }
+  return `/al/reviews/${jobId}`;
+}
+
+function bridgeArtifactUrl(reviewPageUrl: string, fileName: string): string {
+  const url = new URL(reviewPageUrl);
+  url.pathname = url.pathname.replace(/\/review$/, `/artifact/${encodeURIComponent(fileName)}`);
+  return url.toString();
+}
+
+async function fetchBridgeArtifactUpload(reviewPageUrl: string, fileName: string) {
+  const response = await fetch(bridgeArtifactUrl(reviewPageUrl, fileName));
+  if (!response.ok) {
+    throw new Error(`Could not load bridge artifact ${fileName} (${response.status}).`);
+  }
+  const blob = await response.blob();
+  return {
+    dataUrl: await readBlobAsDataUri(blob),
+    contentType: blob.type || "image/png",
+    fileName,
+  };
+}
+
+async function maybePromoteBrowserVendorReviewResult(
+  req: VaultToolRequest,
+  result: BridgeResult,
+): Promise<BridgeResult> {
+  if (req.name !== "browser_vendor_cart_review" || typeof req.accountabilityJobId !== "number") {
+    return result;
+  }
+
+  const parsed = parseBridgeJsonResult(result);
+  if (!parsed || parsed.ok !== true) {
+    return result;
+  }
+
+  const localReviewPageUrl = inputString(parsed.review_page_url);
+  if (!localReviewPageUrl) {
+    return result;
+  }
+
+  const chosenDesign =
+    parsed.chosen_design && typeof parsed.chosen_design === "object"
+      ? (parsed.chosen_design as Record<string, unknown>)
+      : {};
+  const artifacts =
+    parsed.artifacts && typeof parsed.artifacts === "object"
+      ? (parsed.artifacts as Record<string, unknown>)
+      : {};
+
+  const artifactDefinitions = [
+    {
+      key: "chosen_design_preview",
+      fileName: fileNameFromBridgePath(chosenDesign.preview_path),
+    },
+    {
+      key: "design_review_image",
+      fileName: fileNameFromBridgePath(artifacts.design_review),
+    },
+    {
+      key: "cart_review_image",
+      fileName: fileNameFromBridgePath(artifacts.cart_review),
+    },
+  ].filter((entry): entry is { key: string; fileName: string } => Boolean(entry.fileName));
+
+  const hostedArtifacts: Record<
+    string,
+    { dataUrl: string; contentType: string; fileName: string }
+  > = {};
+  for (const entry of artifactDefinitions) {
+    try {
+      hostedArtifacts[entry.key] = await fetchBridgeArtifactUpload(localReviewPageUrl, entry.fileName);
+    } catch {
+      // Keep the bridge-local artifact as a fallback when one fetch fails.
+    }
+  }
+
+  try {
+    const syncResponse = await fetch(`/api/al/reviews/${req.accountabilityJobId}/sync`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        bridgeResult: parsed,
+        artifacts: hostedArtifacts,
+      }),
+    });
+    const payload = (await syncResponse.json().catch(() => null)) as
+      | {
+          ok?: boolean;
+          reviewPageUrl?: string;
+          reviewState?: string;
+          reviewSurface?: Record<string, unknown>;
+          nextAction?: string;
+        }
+      | null;
+
+    if (!syncResponse.ok || !payload?.ok) {
+      return result;
+    }
+
+    parsed.review_page_url =
+      payload.reviewPageUrl || `${window.location.origin}${buildHostedReviewPath(req.accountabilityJobId)}`;
+    parsed.review_state = payload.reviewState || "cart_ready_for_review";
+    if (payload.reviewSurface) {
+      parsed.review_surface = payload.reviewSurface;
+    }
+    if (payload.nextAction) {
+      parsed.next_action = payload.nextAction;
+    }
+    return JSON.stringify(parsed);
+  } catch {
+    return result;
+  }
+}
+
 async function executeBridgeAction(req: VaultToolRequest): Promise<BridgeResult> {
   const { url } = getBridgeConfig();
   const headers = bridgeHeaders();
@@ -177,7 +570,7 @@ async function executeBridgeAction(req: VaultToolRequest): Promise<BridgeResult>
     switch (req.name) {
       case "vault_list": {
         const res = await fetch(
-          `${url}/list?path=${encodeURIComponent(req.input.path)}`,
+          `${url}/list?path=${encodeURIComponent(inputString(req.input.path))}`,
           { headers }
         );
         const data = await res.json();
@@ -188,7 +581,7 @@ async function executeBridgeAction(req: VaultToolRequest): Promise<BridgeResult>
       }
       case "vault_read": {
         const res = await fetch(
-          `${url}/read?path=${encodeURIComponent(req.input.path)}`,
+          `${url}/read?path=${encodeURIComponent(inputString(req.input.path))}`,
           { headers }
         );
         const data = await res.json();
@@ -197,17 +590,18 @@ async function executeBridgeAction(req: VaultToolRequest): Promise<BridgeResult>
       }
       case "vault_read_image": {
         const res = await fetch(
-          `${url}/read-image?path=${encodeURIComponent(req.input.path)}`,
+          `${url}/read-image?path=${encodeURIComponent(inputString(req.input.path))}`,
           { headers }
         );
         const data = await res.json();
         if (!res.ok) return `Error: ${data.error}`;
-        return {
+        const rawResult: BridgeImageResult = {
           type: "image",
           base64: data.base64,
-          mimeType: data.mimeType,
-          path: data.path,
+          mimeType: data.mimeType || "image/png",
+          path: data.path || inputString(req.input.path),
         };
+        return optimizeBridgeImageResult(rawResult);
       }
       case "crew_list": {
         const res = await fetch(`${url}/crew/list`, { headers });
@@ -229,7 +623,7 @@ async function executeBridgeAction(req: VaultToolRequest): Promise<BridgeResult>
         const res = await fetch(`${url}/crew/run`, {
           method: "POST",
           headers,
-          body: JSON.stringify({ crew: req.input.crew }),
+          body: JSON.stringify({ crew: inputString(req.input.crew) }),
         });
         const data = await res.json();
         if (!res.ok) return `Error: ${data.error || res.status}`;
@@ -237,7 +631,7 @@ async function executeBridgeAction(req: VaultToolRequest): Promise<BridgeResult>
       }
       case "crew_status": {
         const res = await fetch(
-          `${url}/crew/status?id=${encodeURIComponent(req.input.run_id)}`,
+          `${url}/crew/status?id=${encodeURIComponent(inputString(req.input.run_id))}`,
           { headers }
         );
         const data = await res.json();
@@ -248,7 +642,7 @@ async function executeBridgeAction(req: VaultToolRequest): Promise<BridgeResult>
         const res = await fetch(`${url}/research`, {
           method: "POST",
           headers: { ...headers, "Content-Type": "application/json" },
-          body: JSON.stringify({ task: req.input.task }),
+          body: JSON.stringify({ task: inputString(req.input.task) }),
         });
         const data = await res.json();
         if (!res.ok) return `Error: ${data.error || res.status}`;
@@ -259,8 +653,8 @@ async function executeBridgeAction(req: VaultToolRequest): Promise<BridgeResult>
           method: "POST",
           headers: { ...headers, "Content-Type": "application/json" },
           body: JSON.stringify({
-            task: req.input.task,
-            domain: req.input.domain || "dominionhomedeals",
+            task: inputString(req.input.task),
+            domain: inputString(req.input.domain) || "dominionhomedeals",
             authority_zone: 1,
           }),
         });
@@ -270,12 +664,97 @@ async function executeBridgeAction(req: VaultToolRequest): Promise<BridgeResult>
         const session = data.session_id ? ` · session ${data.session_id}` : "";
         return `✓ Done${elapsed}${session}\n\n${data.result || JSON.stringify(data)}`;
       }
+      case "browser_vendor_cart_review": {
+        const res = await fetch(`${url}/browser/vendor-cart-review`, {
+          method: "POST",
+          headers: { ...headers, "Content-Type": "application/json" },
+          body: JSON.stringify(req.input || {}),
+        });
+        const data = await res.json().catch(() => null);
+        return JSON.stringify(
+          data || {
+            ok: false,
+            status: "bridge_request_failed",
+            operator_message: `Vendor/design lane failed with HTTP ${res.status}.`,
+            next_action:
+              "Verify the local browser/vendor bridge worker and retry the cart review flow.",
+          }
+        );
+      }
       default:
         return `Unknown bridge tool: ${req.name}`;
     }
   } catch (err) {
     return `Bridge connection failed: ${err instanceof Error ? err.message : "unknown error"}`;
   }
+}
+
+function toContinuationToolResult(
+  provider: "openai" | "anthropic" | undefined,
+  req: VaultToolRequest,
+  result: BridgeResult,
+  denied = false,
+) {
+  const textResult =
+    typeof result === "string" ? truncateContinuationText(result, req.name) : result;
+
+  if (provider === "openai") {
+    if (denied) {
+      return {
+        type: "function_call_output" as const,
+        call_id: req.id,
+        output: "User denied this file system action.",
+      };
+    }
+
+    if (typeof result === "object" && result.type === "image") {
+      return {
+        type: "function_call_output" as const,
+        call_id: req.id,
+        output: JSON.stringify({
+          type: "image",
+          path: result.path,
+          mimeType: result.mimeType,
+          base64: result.base64,
+        }),
+      };
+    }
+
+    return {
+      type: "function_call_output" as const,
+      call_id: req.id,
+      output: textResult as string,
+    };
+  }
+
+  if (denied) {
+    return {
+      type: "tool_result" as const,
+      tool_use_id: req.id,
+      content: "User denied this file system action.",
+      is_error: true,
+    };
+  }
+
+  if (typeof result === "object" && result.type === "image") {
+    return {
+      type: "tool_result" as const,
+      tool_use_id: req.id,
+      content: [
+        {
+          type: "image",
+          source: { type: "base64", media_type: result.mimeType, data: result.base64 },
+        },
+        { type: "text", text: `Image loaded: ${result.path}` },
+      ],
+    };
+  }
+
+  return {
+    type: "tool_result" as const,
+    tool_use_id: req.id,
+    content: textResult as string,
+  };
 }
 
 /* ------------------------------------------------------------------ */
@@ -299,6 +778,7 @@ export function ChatApp() {
 
   /* ── Bridge state ── */
   const [bridgeConnected, setBridgeConnected] = useState(false);
+  const [bridgeHealth, setBridgeHealth] = useState<BridgeHealthResponse | null>(null);
   const [pendingVaultAction, setPendingVaultAction] = useState<VaultAction | null>(null);
   const [executingVault, setExecutingVault] = useState(false);
 
@@ -367,8 +847,14 @@ export function ChatApp() {
     if (token) headers["Authorization"] = `Bearer ${token}`;
     fetch(`${url}/health`, { headers })
       .then((r) => (r.ok ? r.json() : null))
-      .then((d) => setBridgeConnected(!!d?.ok))
-      .catch(() => setBridgeConnected(false));
+      .then((d: BridgeHealthResponse | null) => {
+        setBridgeHealth(d);
+        setBridgeConnected(!!d?.ok);
+      })
+      .catch(() => {
+        setBridgeHealth(null);
+        setBridgeConnected(false);
+      });
   }
 
   /* ── File handling ── */
@@ -547,6 +1033,7 @@ export function ChatApp() {
         message: text.trim(),
         history: history.slice(0, -1),
         bridgeConnected,
+        bridgeCapabilities: bridgeHealth?.capabilities || null,
       };
 
       if (files.length > 0) {
@@ -572,10 +1059,15 @@ export function ChatApp() {
 
         const { accumulated, vaultAction } = await processStream(res, alId, "");
 
-        if (vaultAction) {
-          activeAlIdRef.current = alId;
-          accumulatedRef.current = accumulated;
-          originalRequestRef.current = body;
+          if (vaultAction) {
+            activeAlIdRef.current = alId;
+            accumulatedRef.current = accumulated;
+            originalRequestRef.current = {
+              message: body.message,
+              history: body.history,
+              bridgeConnected: body.bridgeConnected,
+              bridgeCapabilities: body.bridgeCapabilities,
+            };
 
           // Auto-approve vault reads — only crew_run needs manual approval
           const needsApproval = vaultAction.requests.some(
@@ -621,60 +1113,120 @@ export function ChatApp() {
         if (!vaultActionReceived) setLoading(false);
       }
     },
-    [loading, bridgeConnected]
+    [loading, bridgeConnected, bridgeHealth]
   );
 
   /* ── Auto-execute vault actions (no approval needed for reads) ── */
 
   async function autoExecuteVaultAction(action: VaultAction, alId: string) {
     setExecutingVault(true);
-    const toolResults: { type: "tool_result"; tool_use_id: string; content: string | unknown[]; is_error?: boolean }[] = [];
+    const toolResults: unknown[] = [];
 
     for (const req of action.requests) {
       if (req.name === "cowork_task") {
         setDelegatingCeo("Claude Code (running task…)");
       }
-      const result = await executeBridgeAction(req);
+      let result = await executeBridgeAction(req);
+      result = await maybePromoteBrowserVendorReviewResult(req, result);
       if (req.name === "cowork_task") {
         setDelegatingCeo(null);
       }
-      if (typeof result === "object" && result.type === "image") {
-        toolResults.push({
-          type: "tool_result",
-          tool_use_id: req.id,
-          content: [
-            { type: "image", source: { type: "base64", media_type: result.mimeType, data: result.base64 } },
-            { type: "text", text: `Image loaded: ${result.path}` },
-          ],
-        });
-      } else {
-        toolResults.push({ type: "tool_result", tool_use_id: req.id, content: result as string });
-      }
+      toolResults.push(toContinuationToolResult(action.provider, req, result));
     }
     setExecutingVault(false);
 
-    const contBody = {
+    const continuationBase = {
+      provider: action.provider,
+      previousResponseId: action.previousResponseId,
+      assistantBlocks: action.assistantBlocks,
+      precomputedResults: action.precomputedResults || [],
+      toolResults,
+      bridgeJobs: action.requests
+        .filter((req) => typeof req.accountabilityJobId === "number")
+        .map((req) => ({
+          toolUseId: req.id,
+          name: req.name,
+          jobId: req.accountabilityJobId as number,
+        })),
+    };
+
+    let continuation = continuationBase;
+    let continuationBody = {
       ...originalRequestRef.current,
-      continuation: {
-        assistantBlocks: action.assistantBlocks,
-        precomputedResults: action.precomputedResults || [],
-        toolResults,
-      },
+      continuation,
+    };
+
+    if (byteLengthOfJson(continuationBody) > MAX_CONTINUATION_BODY_BYTES) {
+      continuation = {
+        ...continuationBase,
+        toolResults: compactContinuationToolResults(
+          action.provider,
+          continuationBase.toolResults,
+        ),
+      };
+      continuationBody = {
+        ...originalRequestRef.current,
+        continuation,
+      };
+    }
+
+    const attemptContinuation = async (body: Record<string, unknown>) => {
+      const res = await fetch("/api/al/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+        signal: abortRef.current?.signal,
+      });
+
+      if (!res.ok || !res.body) {
+        throw new Error(await extractChatResponseError(res));
+      }
+
+      return processStream(res, alId, accumulatedRef.current);
     };
 
     abortRef.current = new AbortController();
 
     try {
-      const res = await fetch("/api/al/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(contBody),
-        signal: abortRef.current.signal,
-      });
+      let continuationResult: Awaited<ReturnType<typeof processStream>>;
+      try {
+        continuationResult = await attemptContinuation(continuationBody);
+      } catch (firstError) {
+        const isAbort =
+          firstError instanceof Error && firstError.name === "AbortError";
+        if (isAbort) {
+          throw firstError;
+        }
 
-      if (!res.ok || !res.body) throw new Error(`Server error ${res.status}`);
+        const retryContinuation = {
+          ...continuationBase,
+          toolResults: compactContinuationToolResults(
+            action.provider,
+            continuationBase.toolResults,
+          ),
+        };
+        const retryBody = {
+          ...originalRequestRef.current,
+          continuation: retryContinuation,
+        };
 
-      const { accumulated, vaultAction: nextVaultAction } = await processStream(res, alId, accumulatedRef.current);
+        const shouldRetry =
+          byteLengthOfJson(retryBody) < byteLengthOfJson(continuationBody) ||
+          /payload|too large|413|entity|body/i.test(
+            firstError instanceof Error ? firstError.message : "",
+          );
+
+        if (!shouldRetry) {
+          throw firstError;
+        }
+
+        await new Promise((resolve) =>
+          setTimeout(resolve, CONTINUATION_RETRY_DELAY_MS),
+        );
+        continuationResult = await attemptContinuation(retryBody);
+      }
+
+      const { accumulated, vaultAction: nextVaultAction } = continuationResult;
 
       if (nextVaultAction) {
         accumulatedRef.current = accumulated;
@@ -687,6 +1239,7 @@ export function ChatApp() {
         return;
       }
 
+      accumulatedRef.current = accumulated;
       setSearchQuery(null);
       setPublishingPath(null);
       setDelegatingCeo(null);
@@ -698,10 +1251,19 @@ export function ChatApp() {
     } catch (err: unknown) {
       const isAbort = err instanceof Error && err.name === "AbortError";
       if (!isAbort) {
+        const detail = err instanceof Error ? err.message : "Unknown continuation error.";
         setMessages((prev) =>
           prev.map((m) =>
             m.id === alId
-              ? { ...m, content: accumulatedRef.current + "\n\nFailed to continue after vault action.", typing: false }
+              ? {
+                  ...m,
+                  content:
+                    (accumulatedRef.current
+                      ? `${accumulatedRef.current}\n\n`
+                      : "") +
+                    `Vault action completed, but continuation failed: ${detail}`,
+                  typing: false,
+                }
               : m
           )
         );
@@ -720,78 +1282,117 @@ export function ChatApp() {
 
     const alId = activeAlIdRef.current;
 
-    interface ToolResultItem {
-      type: "tool_result";
-      tool_use_id: string;
-      content: string | unknown[];
-      is_error?: boolean;
-    }
-
-    let toolResults: ToolResultItem[];
+    let toolResults: unknown[];
 
     if (approved) {
       setExecutingVault(true);
       toolResults = [];
       for (const req of action.requests) {
-        const result = await executeBridgeAction(req);
-        if (typeof result === "object" && result.type === "image") {
-          toolResults.push({
-            type: "tool_result",
-            tool_use_id: req.id,
-            content: [
-              {
-                type: "image",
-                source: {
-                  type: "base64",
-                  media_type: result.mimeType,
-                  data: result.base64,
-                },
-              },
-              { type: "text", text: `Image loaded: ${result.path}` },
-            ],
-          });
-        } else {
-          toolResults.push({ type: "tool_result", tool_use_id: req.id, content: result as string });
-        }
+        let result = await executeBridgeAction(req);
+        result = await maybePromoteBrowserVendorReviewResult(req, result);
+        toolResults.push(toContinuationToolResult(action.provider, req, result));
       }
       setExecutingVault(false);
     } else {
-      toolResults = action.requests.map((r) => ({
-        type: "tool_result" as const,
-        tool_use_id: r.id,
-        content: "User denied this file system action.",
-        is_error: true,
-      }));
+      toolResults = action.requests.map((r) =>
+        toContinuationToolResult(action.provider, r, "User denied this file system action.", true),
+      );
     }
 
     setPendingVaultAction(null);
 
-    const contBody = {
+    const continuationBase = {
+      provider: action.provider,
+      previousResponseId: action.previousResponseId,
+      assistantBlocks: action.assistantBlocks,
+      precomputedResults: action.precomputedResults || [],
+      toolResults,
+      bridgeJobs: action.requests
+        .filter((req) => typeof req.accountabilityJobId === "number")
+        .map((req) => ({
+          toolUseId: req.id,
+          name: req.name,
+          jobId: req.accountabilityJobId as number,
+        })),
+    };
+
+    let continuation = continuationBase;
+    let continuationBody = {
       ...originalRequestRef.current,
-      continuation: {
-        assistantBlocks: action.assistantBlocks,
-        precomputedResults: action.precomputedResults || [],
-        toolResults,
-      },
+      continuation,
+    };
+
+    if (byteLengthOfJson(continuationBody) > MAX_CONTINUATION_BODY_BYTES) {
+      continuation = {
+        ...continuationBase,
+        toolResults: compactContinuationToolResults(
+          action.provider,
+          continuationBase.toolResults,
+        ),
+      };
+      continuationBody = {
+        ...originalRequestRef.current,
+        continuation,
+      };
+    }
+
+    const attemptContinuation = async (body: Record<string, unknown>) => {
+      const res = await fetch("/api/al/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+        signal: abortRef.current?.signal,
+      });
+
+      if (!res.ok || !res.body) {
+        throw new Error(await extractChatResponseError(res));
+      }
+
+      return processStream(res, alId, accumulatedRef.current);
     };
 
     abortRef.current = new AbortController();
 
     try {
-      const res = await fetch("/api/al/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(contBody),
-        signal: abortRef.current.signal,
-      });
+      let continuationResult: Awaited<ReturnType<typeof processStream>>;
+      try {
+        continuationResult = await attemptContinuation(continuationBody);
+      } catch (firstError) {
+        const isAbort =
+          firstError instanceof Error && firstError.name === "AbortError";
+        if (isAbort) {
+          throw firstError;
+        }
 
-      if (!res.ok || !res.body) throw new Error(`Server error ${res.status}`);
+        const retryContinuation = {
+          ...continuationBase,
+          toolResults: compactContinuationToolResults(
+            action.provider,
+            continuationBase.toolResults,
+          ),
+        };
+        const retryBody = {
+          ...originalRequestRef.current,
+          continuation: retryContinuation,
+        };
 
-      const { accumulated, vaultAction } = await processStream(
-        res,
-        alId,
-        accumulatedRef.current
-      );
+        const shouldRetry =
+          byteLengthOfJson(retryBody) < byteLengthOfJson(continuationBody) ||
+          /payload|too large|413|entity|body/i.test(
+            firstError instanceof Error ? firstError.message : "",
+          );
+
+        if (!shouldRetry) {
+          throw firstError;
+        }
+
+        await new Promise((resolve) =>
+          setTimeout(resolve, CONTINUATION_RETRY_DELAY_MS),
+        );
+        continuationResult = await attemptContinuation(retryBody);
+      }
+
+      const { accumulated, vaultAction } = continuationResult;
 
       if (vaultAction) {
         accumulatedRef.current = accumulated;
@@ -806,6 +1407,7 @@ export function ChatApp() {
         return;
       }
 
+      accumulatedRef.current = accumulated;
       setSearchQuery(null);
       setPublishingPath(null);
       setDelegatingCeo(null);
@@ -819,14 +1421,17 @@ export function ChatApp() {
     } catch (err: unknown) {
       const isAbort = err instanceof Error && err.name === "AbortError";
       if (!isAbort) {
+        const detail = err instanceof Error ? err.message : "Unknown continuation error.";
         setMessages((prev) =>
           prev.map((m) =>
             m.id === alId
               ? {
                   ...m,
                   content:
-                    accumulatedRef.current +
-                    "\n\nFailed to continue after vault action.",
+                    (accumulatedRef.current
+                      ? `${accumulatedRef.current}\n\n`
+                      : "") +
+                    `Vault action completed, but continuation failed: ${detail}`,
                   typing: false,
                 }
               : m
@@ -835,7 +1440,7 @@ export function ChatApp() {
       }
     } finally {
       abortRef.current = null;
-      if (!pendingVaultAction) setLoading(false);
+      setLoading(false);
     }
   }
 
@@ -1004,8 +1609,9 @@ export function ChatApp() {
                 pendingVaultAction?.requests.some((r) => r.name === "crew_run") && (
                   <RunningCrew
                     crew={
-                      pendingVaultAction.requests.find((r) => r.name === "crew_run")
-                        ?.input.crew ?? ""
+                      inputString(
+                        pendingVaultAction.requests.find((r) => r.name === "crew_run")?.input.crew
+                      )
                     }
                   />
                 )}
@@ -1210,7 +1816,7 @@ function MessageBubble({ message }: { message: Message }) {
         )}
 
         {message.content && (
-          <div className="whitespace-pre-wrap break-words">{message.content}</div>
+          <div className="whitespace-pre-wrap break-words">{renderLinkedText(message.content)}</div>
         )}
 
         <div
@@ -1304,10 +1910,10 @@ function vaultActionLabel(name: string): string {
 }
 
 function bridgeRequestDetail(req: VaultToolRequest): string {
-  if (req.name === "crew_run") return req.input.crew || "(crew)";
-  if (req.name === "crew_status") return req.input.run_id || "(run id)";
+  if (req.name === "crew_run") return inputString(req.input.crew) || "(crew)";
+  if (req.name === "crew_status") return inputString(req.input.run_id) || "(run id)";
   if (req.name === "crew_list") return "—";
-  return req.input.path || "";
+  return inputString(req.input.path) || "";
 }
 
 function DelegatingToCeo({ ceo }: { ceo: string }) {
@@ -1441,10 +2047,10 @@ function ToolApprovalCard({
               <p className="mt-1 font-mono text-xs text-emerald-200/40 break-all">
                 {bridgeRequestDetail(req)}
               </p>
-              {req.name === "vault_write" && req.input.content && (
+              {req.name === "vault_write" && inputString(req.input.content) && (
                 <pre className="mt-2 max-h-32 overflow-auto rounded bg-black/30 p-2 text-[11px] leading-relaxed text-emerald-200/30 al-scrollbar">
-                  {req.input.content.slice(0, 500)}
-                  {req.input.content.length > 500 && "\n..."}
+                  {inputString(req.input.content).slice(0, 500)}
+                  {inputString(req.input.content).length > 500 && "\n..."}
                 </pre>
               )}
             </div>
