@@ -3269,6 +3269,78 @@ function buildOpenAIConversationInput(input: {
   return items;
 }
 
+function extractAnthropicAssistantText(blocks: unknown[]): string {
+  return blocks
+    .map((block) => {
+      if (!block || typeof block !== "object") return "";
+      const typed = block as { type?: string; text?: string };
+      if (typed.type === "text" && typeof typed.text === "string") {
+        return typed.text.trim();
+      }
+      return "";
+    })
+    .filter(Boolean)
+    .join("\n\n")
+    .trim();
+}
+
+function extractContinuationResultText(entries: unknown[]): string {
+  return entries
+    .map((entry) => extractToolResultText(entry))
+    .map((value) => value.trim())
+    .filter(Boolean)
+    .join("\n\n")
+    .trim();
+}
+
+function buildRecoveredOpenAIContinuationInput(input: {
+  systemPrompt: string;
+  history?: HistoryMessage[];
+  message: string;
+  attachments?: RequestAttachment[];
+  continuation?: ContinuationData;
+}): OpenAIInputItem[] {
+  const base = buildOpenAIConversationInput({
+    systemPrompt: input.systemPrompt,
+    history: input.history,
+    message: input.message,
+    attachments: input.attachments,
+  });
+
+  const assistantText = extractAnthropicAssistantText(input.continuation?.assistantBlocks || []);
+  const precomputedText = extractContinuationResultText(input.continuation?.precomputedResults || []);
+  const toolResultText = extractContinuationResultText(input.continuation?.toolResults || []);
+
+  if (assistantText) {
+    base.push({
+      role: "assistant",
+      content: [{ type: "output_text", text: assistantText }],
+    });
+  }
+
+  const recoveredParts = [
+    precomputedText ? `Server tool results already completed:\n${precomputedText}` : "",
+    toolResultText ? `Bridge tool results already completed:\n${toolResultText}` : "",
+  ].filter(Boolean);
+
+  if (recoveredParts.length > 0) {
+    base.push({
+      role: "user",
+      content: [
+        {
+          type: "input_text",
+          text:
+            "Continuation recovery context:\n" +
+            recoveredParts.join("\n\n") +
+            "\n\nContinue from these completed actions without asking the operator to restart.",
+        },
+      ],
+    });
+  }
+
+  return base;
+}
+
 function toOpenAIFunctionTools(
   tools: Array<{ name: string; description: string; input_schema: Record<string, unknown> }>,
 ) {
@@ -3435,12 +3507,23 @@ async function runOpenAIChat(input: {
     async start(controller) {
       let fullResponse = "";
       let previousResponseId = input.continuation?.previousResponseId;
+      const recoveredContinuation =
+        input.continuation && !previousResponseId
+          ? buildRecoveredOpenAIContinuationInput({
+              systemPrompt: fullSystemPrompt,
+              history: input.history,
+              message: input.message,
+              attachments: input.attachments,
+              continuation: input.continuation,
+            })
+          : null;
       let nextInput: OpenAIInputItem[] = previousResponseId
         ? [
             ...((input.continuation?.precomputedResults || []) as OpenAIInputItem[]),
             ...((input.continuation?.toolResults || []) as OpenAIInputItem[]),
           ]
-        : buildOpenAIConversationInput({
+        : recoveredContinuation ||
+          buildOpenAIConversationInput({
             systemPrompt: fullSystemPrompt,
             history: input.history,
             message: input.message,
@@ -4568,7 +4651,9 @@ export async function POST(request: NextRequest) {
   const openAIKey = readEnvSecret("OPENAI_API_KEY");
   const requestedProvider = continuation?.provider;
   const canUseOpenAIContinuation =
-    !continuation || continuation.provider === "openai";
+    !continuation ||
+    continuation.provider === "openai" ||
+    (continuation.provider === "anthropic" && Boolean(openAIKey));
   const shouldUseOpenAI =
     Boolean(openAIKey) &&
     canUseOpenAIContinuation &&
