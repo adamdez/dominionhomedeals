@@ -156,19 +156,42 @@ async function toDataUrl(fullPath, ext) {
   return `data:${mime};base64,${raw.toString("base64")}`;
 }
 
-function buildPromptPack() {
+function clampVariationCount(value) {
+  const num = Number(value);
+  if (!Number.isFinite(num)) return 3;
+  return Math.max(2, Math.min(4, Math.round(num)));
+}
+
+function buildPromptPack(input = {}) {
+  const assetGoal = truncate(input.assetGoal || "", 220);
+  const creativeDirection = truncate(input.creativeDirection || "", 140);
+  const styleGuardrails = truncate(input.styleGuardrails || "", 220);
+  const variationCount = clampVariationCount(input.variationCount);
+
+  const directionHint = creativeDirection
+    ? `Creative direction: ${creativeDirection}.`
+    : "Creative direction: bold, trustworthy, conversion-focused automotive service brand.";
+  const goalHint = assetGoal ? `Asset goal: ${assetGoal}.` : "";
+  const styleHint = styleGuardrails
+    ? `Style guardrails: ${styleGuardrails}.`
+    : "Style guardrails: realistic human likeness, brand-safe styling, and no deceptive fabrication.";
+  const sharedHints = [goalHint, directionHint, styleHint].filter(Boolean).join(" ");
+
+  const stillPromptPool = [
+    `Photoreal website hero portrait of the same adult male mechanic from the source image, clean garage backdrop, strong side lighting, authentic expression. ${sharedHints}`,
+    `Action-styled still image of the same adult male mechanic working near an engine bay, motion energy, sharp focus on face, mobile service context. ${sharedHints}`,
+    `Website section portrait of the same adult male mechanic with a service van softly blurred in the background, premium and trustworthy look. ${sharedHints}`,
+    `Editorial-style lifestyle still of the same adult male mechanic preparing tools beside the service vehicle, cinematic but realistic. ${sharedHints}`,
+  ];
+
   return {
-    still_prompts: [
-      "Photoreal website hero portrait of the same adult male mechanic from the source image, clean garage backdrop, strong side lighting, brand-safe, trustworthy tone.",
-      "Action shot style still image of the same adult male mechanic checking an engine bay, natural expression, mobile service context, no text overlay.",
-      "Website section portrait of the same adult male mechanic with a service van in soft focus background, crisp detail, authentic expression.",
-    ],
+    still_prompts: stillPromptPool.slice(0, variationCount),
     motion_prompt:
-      "Create a 10-second realistic motion clip from the source portrait: subtle head turn, confident expression, gentle camera push-in, automotive service environment, no text overlays.",
+      `Create a 10-second realistic motion clip from the source portrait: subtle head turn, confident expression, gentle camera push-in, automotive service environment. ${sharedHints}`,
     usage_notes: [
-      "Keep likeness faithful to source photo. Do not fabricate a different person.",
+      "Keep likeness faithful to source photo while exploring distinct creative directions.",
       "Use for WrenchReady website hero and about sections.",
-      "Checkout remains human-gated in AL workflows.",
+      "Checkout and publishing remain human-gated in AL workflows.",
     ],
   };
 }
@@ -453,7 +476,13 @@ function buildReviewHtml(input) {
 async function runBrandMediaProduction(input = {}) {
   const sourceDir = String(input.source_dir || DEFAULT_SOURCE_DIR || "").replace(/^["']|["']$/g, "");
   const stack = inspectBrandMediaStack({ sourceDir });
-  const promptPack = buildPromptPack();
+  const creativeInput = {
+    assetGoal: String(input.asset_goal || "").trim(),
+    creativeDirection: String(input.creative_direction || "").trim(),
+    styleGuardrails: String(input.style_guardrails || "").trim(),
+    variationCount: input.variation_count,
+  };
+  const promptPack = buildPromptPack(creativeInput);
   const jobId = `brand-media-${Date.now()}-${safeSegment(crypto.randomBytes(3).toString("hex"))}`;
   const jobDir = path.join(OUTPUT_ROOT, jobId);
   await fsp.mkdir(jobDir, { recursive: true });
@@ -465,6 +494,7 @@ async function runBrandMediaProduction(input = {}) {
     created_at: new Date().toISOString(),
     source_dir: sourceDir,
     source_images: sourceImages,
+    creative_input: creativeInput,
     prompt_pack: promptPack,
     runway: {
       api_base: RUNWAY_API_BASE,

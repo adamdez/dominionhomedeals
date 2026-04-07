@@ -1934,7 +1934,13 @@ function vaultActionLabel(name: string): string {
 function bridgeRequestDetail(req: VaultToolRequest): string {
   if (req.name === "crew_run") return inputString(req.input.crew) || "(crew)";
   if (req.name === "crew_status") return inputString(req.input.run_id) || "(run id)";
-  if (req.name === "media_production") return inputString(req.input.source_dir) || "(default source dir)";
+  if (req.name === "media_production") {
+    return (
+      inputString(req.input.asset_goal) ||
+      inputString(req.input.source_dir) ||
+      "(default source dir)"
+    );
+  }
   if (req.name === "crew_list") return "—";
   return inputString(req.input.path) || "";
 }

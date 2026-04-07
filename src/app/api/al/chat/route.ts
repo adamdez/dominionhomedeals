@@ -238,6 +238,14 @@ For media_production:
 - Produce review-ready assets with links and stop for approval before publish.
 - If blocked, report exact missing access (source photos, RUNWAY_API_KEY, or GIF export support).
 
+CREATIVE INITIATIVE RULE:
+Mission constraints and governance boundaries are hard limits.
+Inside those boundaries, creativity is encouraged.
+For creative execution:
+- Propose 2-4 distinct creative directions when it improves outcomes.
+- Take initiative to produce a strong first pass instead of waiting for perfect instructions.
+- Keep outputs truthful to real source material and brand reality.
+
 DELEGATION PROTOCOL:
 You have a delegate_to_ceo tool. Use it when:
 - A question clearly belongs to one company CEO (real estate -> dominion, runtime alias dominion-homes; auto repair -> wrenchready)
@@ -286,7 +294,8 @@ RESPONSE STYLE:
 - Keep the board feed clean
 - Verify before claiming
 - Fix drift at the source when possible
-- Keep answers short, sharp, and reality-based`;
+- Keep answers short, sharp, and reality-based
+- For creative deliverables, give clear options and a recommendation`;
 
 const REVIEW_DISPATCH_SCHEMA_PROPERTIES = {
   review_required: {
@@ -670,6 +679,21 @@ const BRIDGE_TOOLS: Anthropic.Tool[] = [
           type: "string",
           description:
             "Optional brief describing desired assets (example: hero still + GIF + 10s intro clip).",
+        },
+        creative_direction: {
+          type: "string",
+          description:
+            "Optional creative direction, for example 'bold performance', 'premium trust', or 'friendly local'.",
+        },
+        variation_count: {
+          type: "number",
+          description:
+            "Optional number of creative options to explore (default 3, max 4).",
+        },
+        style_guardrails: {
+          type: "string",
+          description:
+            "Optional style rules to enforce while keeping creative freedom (for example brand colors, realism, no text overlays).",
         },
       },
       required: [],
