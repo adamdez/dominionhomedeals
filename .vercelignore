@@ -1,2 +1,10 @@
 dominionhomedeals/
 dominionhomedeals-1/
+.tmp/
+tmp-*
+.tmp-*
+.next-dev-*.log
+.next-dev-*.err.log
+al-bridge/output/
+al-bridge/.bridge*.log
+al-bridge/watchdog.log

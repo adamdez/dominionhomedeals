@@ -9,7 +9,8 @@
     "lint": "next lint",
     "photos:torrens": "node scripts/convert-torrens-heic.cjs",
     "al:bench": "node scripts/al-benchmark-runner.cjs run",
-    "al:bench:compare": "node scripts/al-benchmark-runner.cjs compare"
+    "al:bench:compare": "node scripts/al-benchmark-runner.cjs compare",
+    "al:smoke": "node scripts/al-smoke-check.cjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.82.0",

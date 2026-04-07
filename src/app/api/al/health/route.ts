@@ -1,10 +1,12 @@
 import { NextResponse } from "next/server";
 import { getServiceClient } from "@/lib/supabase";
+import { buildHostedRuntimeTruth } from "@/lib/al-runtime-truth";
 
 export const runtime = "nodejs";
 
 export async function GET() {
   const results: Record<string, { ok: boolean; detail: string }> = {};
+  const runtimeTruth = await buildHostedRuntimeTruth();
 
   // 1. Supabase — al_memories
   try {
@@ -44,5 +46,12 @@ export async function GET() {
 
   const allOk = Object.values(results).every((r) => r.ok);
 
-  return NextResponse.json({ ok: allOk, checks: results }, { status: allOk ? 200 : 207 });
+  return NextResponse.json(
+    {
+      ok: allOk,
+      checks: results,
+      runtimeTruth,
+    },
+    { status: allOk ? 200 : 207 },
+  );
 }

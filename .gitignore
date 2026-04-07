@@ -9,6 +9,18 @@ npm-debug.log*
 .vercel
 *.tsbuildinfo
 next-env.d.ts
+.tmp/
+tmp-*
+.tmp-*
+.next-dev-*.log
+.next-dev-*.err.log
+*.tmp
+*.log
+!SENTINEL-DIALER-TEST-RESULTS-2026-03-17.md
+al-bridge/.env
+al-bridge/.bridge*.log
+al-bridge/watchdog.log
+al-bridge/output/
 
 # iPhone HEIC bulk imports (use JPG/WebP in repo for web)
 public/images/torrens-trail/472 torrens trl spirit lake-*

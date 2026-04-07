@@ -87,6 +87,39 @@ interface BridgeHealthResponse {
   };
 }
 
+interface RuntimeLaneTruth {
+  id: string;
+  label: string;
+  status: "live" | "degraded" | "blocked";
+  primaryMode: "hosted" | "local-bridge" | "mixed";
+  fallbackMode: "hosted" | "local-bridge" | "mixed" | null;
+  detail: string;
+  nextAction: string;
+  outcome: string;
+}
+
+interface HostedRuntimeTruth {
+  generatedAt: string;
+  deployment: {
+    environment: string;
+    deploymentId: string | null;
+    gitCommitSha: string | null;
+    gitCommitRef: string | null;
+  };
+  summary: {
+    live: number;
+    degraded: number;
+    blocked: number;
+  };
+  lanes: RuntimeLaneTruth[];
+}
+
+interface HostedHealthResponse {
+  ok?: boolean;
+  checks?: Record<string, { ok: boolean; detail: string }>;
+  runtimeTruth?: HostedRuntimeTruth;
+}
+
 /* ------------------------------------------------------------------ */
 /*  Constants                                                          */
 /* ------------------------------------------------------------------ */
@@ -799,6 +832,7 @@ export function ChatApp() {
   /* ── Bridge state ── */
   const [bridgeConnected, setBridgeConnected] = useState(false);
   const [bridgeHealth, setBridgeHealth] = useState<BridgeHealthResponse | null>(null);
+  const [hostedHealth, setHostedHealth] = useState<HostedHealthResponse | null>(null);
   const [pendingVaultAction, setPendingVaultAction] = useState<VaultAction | null>(null);
   const [executingVault, setExecutingVault] = useState(false);
 
@@ -859,6 +893,7 @@ export function ChatApp() {
   /* ── Bridge health check ── */
   useEffect(() => {
     checkBridge();
+    checkHostedHealth();
   }, []);
 
   function checkBridge() {
@@ -874,6 +909,17 @@ export function ChatApp() {
       .catch(() => {
         setBridgeHealth(null);
         setBridgeConnected(false);
+      });
+  }
+
+  function checkHostedHealth() {
+    fetch("/api/al/health")
+      .then((r) => (r.ok || r.status === 207 ? r.json() : null))
+      .then((d: HostedHealthResponse | null) => {
+        setHostedHealth(d);
+      })
+      .catch(() => {
+        setHostedHealth(null);
       });
   }
 
@@ -1529,6 +1575,9 @@ export function ChatApp() {
           setSidebarOpen(false);
           setSettingsOpen(true);
         }}
+        hostedRuntimeTruth={hostedHealth?.runtimeTruth || null}
+        bridgeConnected={bridgeConnected}
+        bridgeHealth={bridgeHealth}
       />
 
       <div

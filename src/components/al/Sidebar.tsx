@@ -130,6 +130,26 @@ interface SidebarProps {
   onClose: () => void;
   onQuickAction: (prompt: string) => void;
   onOpenSettings: () => void;
+  hostedRuntimeTruth: {
+    generatedAt: string;
+    summary: { live: number; degraded: number; blocked: number };
+    lanes: Array<{
+      id: string;
+      label: string;
+      status: "live" | "degraded" | "blocked";
+      primaryMode: "hosted" | "local-bridge" | "mixed";
+      fallbackMode: "hosted" | "local-bridge" | "mixed" | null;
+      detail: string;
+    }>;
+  } | null;
+  bridgeConnected: boolean;
+  bridgeHealth: {
+    capabilities?: {
+      media_generation?: boolean;
+      browser_automation?: boolean;
+      cowork_execution?: boolean;
+    };
+  } | null;
 }
 
 export function Sidebar({
@@ -137,8 +157,50 @@ export function Sidebar({
   onClose,
   onQuickAction,
   onOpenSettings,
+  hostedRuntimeTruth,
+  bridgeConnected,
+  bridgeHealth,
 }: SidebarProps) {
   const categories = [...new Set(quickActions.map((a) => a.category))];
+  const localLaneRows = [
+    {
+      label: "Local bridge",
+      status: bridgeConnected ? "live" : "blocked",
+      detail: bridgeConnected ? "Connected for vault and local execution." : "Offline from this operator session.",
+    },
+    {
+      label: "Media lane",
+      status:
+        bridgeConnected && bridgeHealth?.capabilities?.media_generation
+          ? "live"
+          : "blocked",
+      detail:
+        bridgeConnected && bridgeHealth?.capabilities?.media_generation
+          ? "Local media generation available."
+          : "Needs connected bridge with media_generation capability.",
+    },
+    {
+      label: "Local browser fallback",
+      status:
+        bridgeConnected && bridgeHealth?.capabilities?.browser_automation
+          ? "live"
+          : "blocked",
+      detail:
+        bridgeConnected && bridgeHealth?.capabilities?.browser_automation
+          ? "Fallback browser automation available."
+          : "Fallback browser lane unavailable from this session.",
+    },
+  ];
+
+  function statusClasses(status: "live" | "degraded" | "blocked") {
+    if (status === "live") {
+      return "border-emerald-500/20 bg-emerald-500/10 text-emerald-200/70";
+    }
+    if (status === "degraded") {
+      return "border-amber-500/20 bg-amber-500/10 text-amber-200/70";
+    }
+    return "border-red-500/20 bg-red-500/10 text-red-200/70";
+  }
 
   return (
     <>
@@ -184,6 +246,70 @@ export function Sidebar({
         </div>
 
         <nav className="flex-1 overflow-y-auto px-3 py-4 al-scrollbar">
+          <div className="mb-5">
+            <h3 className="mb-2 px-2 text-[11px] font-semibold uppercase tracking-wider text-emerald-200/25">
+              Runtime
+            </h3>
+            <div className="space-y-2 px-2">
+              {hostedRuntimeTruth && (
+                <div className="rounded-xl border border-emerald-900/20 bg-[#111916] p-3">
+                  <div className="mb-2 flex items-center justify-between">
+                    <span className="text-xs font-semibold text-[#e2ede8]">Hosted AL</span>
+                    <span className="text-[10px] text-emerald-200/35">
+                      {hostedRuntimeTruth.summary.live} live / {hostedRuntimeTruth.summary.degraded} degraded / {hostedRuntimeTruth.summary.blocked} blocked
+                    </span>
+                  </div>
+                  <div className="space-y-2">
+                    {hostedRuntimeTruth.lanes.map((lane) => (
+                      <div
+                        key={lane.id}
+                        className={`rounded-lg border p-2 ${statusClasses(lane.status)}`}
+                      >
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="text-[11px] font-semibold">{lane.label}</span>
+                          <span className="text-[10px] uppercase tracking-wide opacity-75">
+                            {lane.status}
+                          </span>
+                        </div>
+                        <p className="mt-1 text-[10px] leading-relaxed opacity-80">
+                          {lane.primaryMode}
+                          {lane.fallbackMode ? ` -> ${lane.fallbackMode}` : ""}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div className="rounded-xl border border-emerald-900/20 bg-[#111916] p-3">
+                <div className="mb-2 flex items-center justify-between">
+                  <span className="text-xs font-semibold text-[#e2ede8]">Local session</span>
+                  <span className="text-[10px] text-emerald-200/35">
+                    {bridgeConnected ? "bridge connected" : "bridge offline"}
+                  </span>
+                </div>
+                <div className="space-y-2">
+                  {localLaneRows.map((lane) => (
+                    <div
+                      key={lane.label}
+                      className={`rounded-lg border p-2 ${statusClasses(lane.status as "live" | "degraded" | "blocked")}`}
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-[11px] font-semibold">{lane.label}</span>
+                        <span className="text-[10px] uppercase tracking-wide opacity-75">
+                          {lane.status}
+                        </span>
+                      </div>
+                      <p className="mt-1 text-[10px] leading-relaxed opacity-80">
+                        {lane.detail}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+
           {categories.map((category) => (
             <div key={category} className="mb-5">
               <h3 className="mb-2 px-2 text-[11px] font-semibold uppercase tracking-wider text-emerald-200/25">
