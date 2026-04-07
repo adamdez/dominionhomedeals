@@ -45,7 +45,7 @@ export interface BoardroomPresentationRecord {
   task: string;
   summary: string;
   title: string;
-  state: ReviewState;
+  state: string;
   updatedAt: string | null;
   boardroomPath: string;
 }
@@ -168,8 +168,11 @@ export async function fetchBoardroomPresentations(
       const hasReviewSurface =
         context.review_surface && typeof context.review_surface === "object" && !Array.isArray(context.review_surface);
       const hasBoardroomLink = typeof context.review_page_url === "string" || typeof context.hosted_review_page_url === "string";
+      const hasPresentationShell =
+        (typeof context.presentation_title === "string" && context.presentation_title.trim().length > 0) ||
+        (typeof context.presentation_body === "string" && context.presentation_body.trim().length > 0);
 
-      if (!hasReviewSurface && !hasBoardroomLink) {
+      if (!hasReviewSurface && !hasBoardroomLink && !hasPresentationShell) {
         return null;
       }
 
@@ -193,7 +196,9 @@ export async function fetchBoardroomPresentations(
         task: row.task as string,
         summary,
         title,
-        state: normalizeReviewState(context.review_state),
+        state:
+          (typeof context.presentation_status_label === "string" && context.presentation_status_label.trim()) ||
+          normalizeReviewState(context.review_state),
         updatedAt:
           (typeof row.completed_at === "string" ? row.completed_at : null) ||
           (typeof row.started_at === "string" ? row.started_at : null),

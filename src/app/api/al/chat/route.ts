@@ -105,6 +105,7 @@ RULES:
 - More leads without economics is false progress.
 - Disposition weakness can invalidate acquisition logic.
 - Verify source quality, underwriting assumptions, and exit path directly.
+- When a brief or recommendation is ready for Dez, publish it as a clean Board Room presentation instead of leaving it as raw analysis.
 
 ESCALATE TO AL WHEN:
 - spend above approved bounds is proposed
@@ -150,6 +151,7 @@ RULES:
 - Booking volume without profitable days is false progress.
 - Protect wrench time first.
 - Verify schedule, route shape, service fit, and trust risk directly.
+- When work is ready for Dez to review, publish it as a clean Board Room presentation instead of leaving it as raw execution detail.
 
 ESCALATE TO AL WHEN:
 - a service-lane boundary is being pressured
@@ -245,6 +247,20 @@ For website_brand_media_production:
 - Use the live WrenchReady repo target (adamdez/wrenchreadymobile-com; local executor alias wrench-ready).
 - If blocked, name the exact missing component: media lane access, repo execution access, or browser review access.
 - Do not claim the website update is complete without a reviewable browser surface.
+
+BOARD ROOM RULE:
+Board Room is the operator-facing presentation surface for AL, Tom, and Jerry.
+When consequential work becomes review-worthy, publish it into Board Room instead of leaving it buried in chat or raw job rows.
+Board Room presentations should show:
+- title
+- business
+- recommendation
+- short summary
+- current state
+- updated time
+- supporting links or artifacts
+- exact next action needed from Dez
+Use Board Room for CEO briefs, review-safe browser work, and review-worthy media or website execution packages.
 
 CREATIVE INITIATIVE RULE:
 Mission constraints and governance boundaries are hard limits.
@@ -1679,6 +1695,279 @@ async function createAccountabilityJob(input: {
   return { jobId: data.id as number };
 }
 
+async function fetchAccountabilityJobSnapshot(jobId: number): Promise<{
+  job_type: string;
+  task: string;
+  context: unknown;
+} | null> {
+  const supabase = getServiceClient();
+  if (!supabase) return null;
+
+  const { data, error } = await supabase
+    .from("al_jobs")
+    .select("job_type, task, context")
+    .eq("id", jobId)
+    .single();
+
+  if (error || !data) {
+    return null;
+  }
+
+  return {
+    job_type: String(data.job_type || ""),
+    task: String(data.task || ""),
+    context: data.context,
+  };
+}
+
+function parseStoredAccountabilityContext(raw: unknown): Record<string, unknown> {
+  if (!raw) return {};
+  if (typeof raw === "string") {
+    try {
+      const parsed = JSON.parse(raw);
+      return parsed && typeof parsed === "object" && !Array.isArray(parsed)
+        ? (parsed as Record<string, unknown>)
+        : {};
+    } catch {
+      return {};
+    }
+  }
+  return raw && typeof raw === "object" && !Array.isArray(raw)
+    ? (raw as Record<string, unknown>)
+    : {};
+}
+
+function businessNameFromId(value: unknown): string | null {
+  if (value === "wrenchready") return "WrenchReady";
+  if (value === "dominion") return "Dominion Home Deals";
+  return null;
+}
+
+function presentationOwnerFromContext(context: Record<string, unknown>): string {
+  return (
+    asBriefString(context.owner) ||
+    asBriefString(asRecord(context.dispatch_metadata).owner) ||
+    "AL team"
+  );
+}
+
+function paragraphBlocks(value: string): string[] {
+  return value
+    .split(/\n\s*\n/)
+    .map((entry) => entry.trim())
+    .filter(Boolean);
+}
+
+function stripMarkdown(value: string): string {
+  return value
+    .replace(/^#+\s*/gm, "")
+    .replace(/\*\*(.*?)\*\*/g, "$1")
+    .replace(/`([^`]+)`/g, "$1")
+    .replace(/^\s*[-*]\s+/gm, "")
+    .trim();
+}
+
+function firstMeaningfulParagraph(value: string): string | null {
+  for (const block of paragraphBlocks(value)) {
+    const cleaned = stripMarkdown(block);
+    if (cleaned && !/ceo report$/i.test(cleaned)) {
+      return cleaned;
+    }
+  }
+  return null;
+}
+
+function markdownHighlights(value: string, limit = 5): string[] {
+  const lines = value
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean);
+
+  const highlights: string[] = [];
+  for (const line of lines) {
+    const bullet = line.match(/^[-*]\s+(.+)$/);
+    const numbered = line.match(/^\d+\.\s+(.+)$/);
+    const heading = line.match(/^\*\*(.+?)\*\*$/);
+    const candidate = bullet?.[1] || numbered?.[1] || heading?.[1] || null;
+    if (!candidate) continue;
+    highlights.push(stripMarkdown(candidate));
+    if (highlights.length >= limit) break;
+  }
+
+  return uniqueStrings(highlights);
+}
+
+function urlFromText(value: string): string | null {
+  const match = value.match(/https?:\/\/[^\s)]+/i);
+  return match?.[0] || null;
+}
+
+function extractCursorMonitorUrl(value: string): string | null {
+  const match = value.match(/Monitor:\s*(https?:\/\/[^\s]+)/i);
+  return match?.[1] || urlFromText(value);
+}
+
+function buildBoardroomPromotionContext(input: {
+  jobType: string;
+  task: string;
+  result: string;
+  isError: boolean;
+  context: Record<string, unknown>;
+}): Record<string, unknown> | null {
+  const context = input.context;
+  const dispatchMetadata = asRecord(context.dispatch_metadata);
+  const owner = presentationOwnerFromContext(context);
+  const businessName =
+    businessNameFromId(dispatchMetadata.business_id) ||
+    businessNameFromId(context.business_id) ||
+    (owner === "Tom"
+      ? "WrenchReady"
+      : owner === "Jerry"
+        ? "Dominion Home Deals"
+        : null);
+  const cleanResult = input.result.trim();
+
+  if (input.jobType === "delegate_to_ceo" && cleanResult) {
+    const reportSummary =
+      firstMeaningfulParagraph(cleanResult) ||
+      "A CEO brief is ready for review.";
+    const highlights = markdownHighlights(cleanResult, 6);
+    return {
+      ...context,
+      owner,
+      business_name: businessName,
+      presentation_type: "executive_brief",
+      presentation_title: `${owner} CEO Brief`,
+      presentation_status_label: input.isError ? "blocked" : "ready for review",
+      presentation_recommendation:
+        reportSummary.length > 160 ? `${reportSummary.slice(0, 157)}...` : reportSummary,
+      summary: reportSummary,
+      presentation_body: cleanResult,
+      presentation_highlights: highlights,
+      result_snapshot: cleanResult,
+      next_action:
+        asBriefString(context.next_action) ||
+        "Review the CEO brief, decide what should be approved now, and hand back only the next operating move.",
+    };
+  }
+
+  if (input.jobType === "cursor_agent") {
+    const monitorUrl = extractCursorMonitorUrl(cleanResult);
+    const repoUrl = asBriefString(context.repo);
+    const summary = input.isError
+      ? firstMeaningfulParagraph(cleanResult) || "Cursor execution is blocked."
+      : "Cursor execution was launched and is waiting on the agent to complete the website work and return a review-ready result.";
+    return {
+      ...context,
+      owner,
+      business_name: businessName,
+      presentation_type: "execution_update",
+      presentation_title:
+        businessName ? `${businessName} Execution Update` : "Execution Update",
+      presentation_status_label: input.isError ? "blocked" : "execution launched",
+      presentation_recommendation: summary,
+      summary,
+      presentation_body: cleanResult,
+      presentation_highlights: uniqueStrings(
+        [
+          repoUrl ? `Repo: ${repoUrl}` : "",
+          monitorUrl ? "Cursor monitor link is attached." : "",
+          input.task ? `Task: ${shortText(input.task, 140)}` : "",
+        ].filter(Boolean),
+      ),
+      operator_links: [
+        ...(monitorUrl
+          ? [{ label: "Open Cursor monitor", url: monitorUrl, priority: "primary" }]
+          : []),
+        ...(repoUrl ? [{ label: "Open repo", url: repoUrl, priority: "secondary" }] : []),
+      ],
+      result_snapshot: cleanResult,
+      next_action:
+        asBriefString(context.next_action) ||
+        "Wait for the Cursor agent to finish, then publish the actual design/code review package into Board Room.",
+    };
+  }
+
+  if (input.jobType === "cowork_task") {
+    const blocked =
+      input.isError ||
+      /"success":false/i.test(cleanResult) ||
+      /credit balance is too low/i.test(cleanResult);
+    const summary =
+      firstMeaningfulParagraph(cleanResult) ||
+      (blocked ? "Cowork execution is blocked." : "Cowork execution finished.");
+    return {
+      ...context,
+      owner,
+      business_name: businessName,
+      presentation_type: "execution_update",
+      presentation_title:
+        businessName ? `${businessName} Local Execution Update` : "Local Execution Update",
+      presentation_status_label: blocked ? "blocked" : "ready for review",
+      presentation_recommendation: summary,
+      summary,
+      presentation_body: cleanResult,
+      presentation_highlights: markdownHighlights(cleanResult, 4),
+      result_snapshot: cleanResult,
+      next_action:
+        blocked
+          ? "Repair the blocked local execution lane or reroute the work before asking for review."
+          : asBriefString(context.next_action) ||
+            "Inspect the local execution outcome and decide whether it is ready for a broader review package.",
+    };
+  }
+
+  if (
+    (input.jobType === "media_production" || input.jobType === "website_brand_media_production") &&
+    (asBriefString(context.review_page_url) ||
+      asBriefString(context.media_review_page_url) ||
+      cleanResult)
+  ) {
+    const reviewPageUrl =
+      asBriefString(context.review_page_url) || asBriefString(context.media_review_page_url);
+    const summary =
+      asBriefString(context.summary) ||
+      firstMeaningfulParagraph(cleanResult) ||
+      "A media or website package is ready for review.";
+    const operatorLinks = Array.isArray(context.operator_links)
+      ? context.operator_links
+      : [
+          ...(reviewPageUrl
+            ? [{ label: "Open presentation", url: reviewPageUrl, priority: "primary" }]
+            : []),
+        ];
+    return {
+      ...context,
+      owner,
+      business_name: businessName,
+      presentation_type: "execution_package",
+      presentation_title:
+        businessName ? `${businessName} Review Package` : "Review Package",
+      presentation_status_label:
+        input.isError || /partial/i.test(asBriefString(context.media_status) || "")
+          ? "review with blocker"
+          : "ready for review",
+      presentation_recommendation: summary,
+      summary,
+      presentation_body: cleanResult || summary,
+      presentation_highlights: uniqueStrings(
+        [
+          asBriefString(context.media_status) || "",
+          asBriefString(context.selected_execution_path) || "",
+          asBriefString(context.repo_target) || "",
+        ].filter(Boolean),
+      ),
+      operator_links: operatorLinks,
+      result_snapshot: cleanResult,
+      next_action:
+        asBriefString(context.next_action) ||
+        "Open the attached presentation and decide whether to approve, request changes, or resolve the blocker first.",
+    };
+  }
+
+  return null;
+}
+
 async function completeAccountabilityJob(input: {
   jobId: number;
   result: string;
@@ -1687,6 +1976,22 @@ async function completeAccountabilityJob(input: {
 }): Promise<void> {
   const supabase = getServiceClient();
   if (!supabase) return;
+
+  const existingJob = await fetchAccountabilityJobSnapshot(input.jobId);
+  const existingContext = existingJob ? parseStoredAccountabilityContext(existingJob.context) : {};
+  const mergedContext = input.context
+    ? { ...existingContext, ...input.context }
+    : existingContext;
+  const boardroomContext = existingJob
+    ? buildBoardroomPromotionContext({
+        jobType: existingJob.job_type,
+        task: existingJob.task,
+        result: input.result,
+        isError: input.isError,
+        context: mergedContext,
+      })
+    : null;
+  const finalContext = boardroomContext ? { ...mergedContext, ...boardroomContext } : mergedContext;
 
   const payload = input.isError
     ? {
@@ -1700,9 +2005,9 @@ async function completeAccountabilityJob(input: {
         completed_at: new Date().toISOString(),
       };
 
-  if (input.context) {
+  if (Object.keys(finalContext).length > 0) {
     Object.assign(payload, {
-      context: JSON.stringify(input.context),
+      context: JSON.stringify(finalContext),
     });
   }
 
