@@ -72,6 +72,9 @@ interface BridgeCapabilities {
   screenshot_capture?: boolean;
   cart_preparation?: boolean;
   review_checkpoint?: boolean;
+  media_generation?: boolean;
+  media_runway?: boolean;
+  media_gif_export?: boolean;
 }
 
 interface BridgeHealthResponse {
@@ -679,6 +682,23 @@ async function executeBridgeAction(req: VaultToolRequest): Promise<BridgeResult>
             next_action:
               "Verify the local browser/vendor bridge worker and retry the cart review flow.",
           }
+        );
+      }
+      case "media_production": {
+        const res = await fetch(`${url}/media/brand-assets`, {
+          method: "POST",
+          headers: { ...headers, "Content-Type": "application/json" },
+          body: JSON.stringify(req.input || {}),
+        });
+        const data = await res.json().catch(() => null);
+        return JSON.stringify(
+          data || {
+            ok: false,
+            status: "media_bridge_request_failed",
+            operator_message: `Media production lane failed with HTTP ${res.status}.`,
+            next_action:
+              "Verify local bridge media worker, source photo path, and RUNWAY_API_KEY, then retry.",
+          },
         );
       }
       default:
@@ -1904,6 +1924,8 @@ function vaultActionLabel(name: string): string {
       return "Run CrewAI crew";
     case "crew_status":
       return "Check crew run status";
+    case "media_production":
+      return "Generate brand media";
     default:
       return name;
   }
@@ -1912,6 +1934,7 @@ function vaultActionLabel(name: string): string {
 function bridgeRequestDetail(req: VaultToolRequest): string {
   if (req.name === "crew_run") return inputString(req.input.crew) || "(crew)";
   if (req.name === "crew_status") return inputString(req.input.run_id) || "(run id)";
+  if (req.name === "media_production") return inputString(req.input.source_dir) || "(default source dir)";
   if (req.name === "crew_list") return "—";
   return inputString(req.input.path) || "";
 }

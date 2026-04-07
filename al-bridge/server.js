@@ -8,6 +8,19 @@ const path = require("path");
 const { URL } = require("url");
 const { spawn } = require("child_process");
 const crypto = require("crypto");
+const {
+  resolveBrowserVendorReviewFile,
+  resolveBrowserVendorReviewJobDir,
+  readBrowserVendorReviewManifest,
+  inspectBrowserVendorCartReviewStack,
+  resumeBrowserVendorCartReview,
+  runBrowserVendorCartReview,
+} = require("./browser-vendor-cart-review");
+const {
+  inspectBrandMediaStack,
+  runBrandMediaProduction,
+  resolveBrandMediaArtifact,
+} = require("./media-brand-assets");
 
 /* ── Load .env ──────────────────────────────────────────────── */
 const envFile = path.join(__dirname, ".env");
@@ -112,17 +125,25 @@ function hasSafeExt(p) {
 
 /* ── HTTP helpers ───────────────────────────────────────────── */
 function cors(origin) {
+  const allowed = ORIGINS.has(origin);
   return {
-    "Access-Control-Allow-Origin": ORIGINS.has(origin) ? origin : "",
+    "Access-Control-Allow-Origin": allowed ? origin : "",
     "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
     "Access-Control-Allow-Headers": "Content-Type, Authorization",
     "Access-Control-Max-Age": "86400",
+    "Access-Control-Allow-Private-Network": allowed ? "true" : "false",
+    Vary: "Origin, Access-Control-Request-Private-Network",
   };
 }
 
 function json(res, code, data, origin) {
   res.writeHead(code, { ...cors(origin), "Content-Type": "application/json" });
   res.end(JSON.stringify(data));
+}
+
+function html(res, code, markup, origin) {
+  res.writeHead(code, { ...cors(origin), "Content-Type": "text/html; charset=utf-8" });
+  res.end(markup);
 }
 
 function readBody(req) {
@@ -138,12 +159,78 @@ function readBody(req) {
 }
 
 /* ── Routes ─────────────────────────────────────────────────── */
+async function readExecutorHealth() {
+  try {
+    const response = await fetch("http://127.0.0.1:3456/health", {
+      signal: AbortSignal.timeout(2500),
+    });
+
+    if (!response.ok) {
+      return {
+        online: false,
+        status: `HTTP ${response.status}`,
+        version: null,
+        endpoints: {},
+      };
+    }
+
+    const data = await response.json();
+    return {
+      online: true,
+      status: typeof data.status === "string" ? data.status : "online",
+      version: typeof data.version === "string" ? data.version : null,
+      endpoints:
+        data && typeof data.endpoints === "object" && data.endpoints
+          ? data.endpoints
+          : {},
+    };
+  } catch (err) {
+    return {
+      online: false,
+      status: err instanceof Error ? err.message : "executor unreachable",
+      version: null,
+      endpoints: {},
+    };
+  }
+}
+
 async function handleHealth(res, o) {
+  const executor = await readExecutorHealth();
+  const hasAsk = Boolean(executor.endpoints["POST /ask"]);
+  const hasExecute = Boolean(executor.endpoints["POST /execute"]);
+  const browserVendorStack = inspectBrowserVendorCartReviewStack();
+  const brandMediaStack = inspectBrandMediaStack();
+
   json(res, 200, {
     ok: true,
     vault: VAULT,
     crewProject: crewProjectOk(),
     crewRoot: CREW_ROOT || null,
+    executor,
+    capabilities: {
+      executor_online: executor.online,
+      deep_research: executor.online && hasAsk,
+      cowork_execution: executor.online && hasExecute,
+      browser_automation: browserVendorStack.details.browser_automation,
+      vendor_site_access: browserVendorStack.details.vendor_site_access,
+      design_mockup: browserVendorStack.details.design_mockup,
+      screenshot_capture: browserVendorStack.details.screenshot_capture,
+      cart_preparation: browserVendorStack.details.cart_preparation,
+      review_checkpoint: browserVendorStack.details.review_checkpoint,
+      media_generation: brandMediaStack.live,
+      media_runway: brandMediaStack.details.runway_api_key,
+      media_gif_export: brandMediaStack.details.ffmpeg_available,
+    },
+    browserVendorCartReview: {
+      live: browserVendorStack.live,
+      missingAccess: browserVendorStack.missingAccess,
+      details: browserVendorStack.details,
+    },
+    brandMediaProduction: {
+      live: brandMediaStack.live,
+      missingAccess: brandMediaStack.missingAccess,
+      details: brandMediaStack.details,
+    },
   }, o);
 }
 
@@ -407,7 +494,7 @@ const server = http.createServer(async (req, res) => {
     return res.end();
   }
 
-  /* ── Research proxy — forwards to AL executor /ask (Anthropic SDK + web search) ── */
+  /* ── Research proxy — forwards to AL executor /ask (OpenAI-first reasoning + web search) ── */
   async function handleResearch(req, res, o) {
     const body = JSON.parse(await readBody(req));
     const task = (body.task || "").trim();
@@ -459,11 +546,205 @@ const server = http.createServer(async (req, res) => {
     }
   }
 
-  if (TOKEN && (req.headers.authorization || "") !== `Bearer ${TOKEN}`)
+  async function handleBrowserVendorCartReview(req, res, o) {
+    let body = {};
+    try {
+      body = JSON.parse(await readBody(req));
+    } catch {
+      return json(res, 400, { error: "Invalid JSON body." }, o);
+    }
+
+    try {
+      const result = await runBrowserVendorCartReview(body);
+      return json(res, result.ok ? 200 : 503, result, o);
+    } catch (err) {
+      return json(
+        res,
+        500,
+        {
+          ok: false,
+          status: "failed_bridge_execution",
+          lane_id: "wrenchready-branding-commerce",
+          preferred_execution_path: "bridge:browser_vendor_cart_review",
+          missing_access: [],
+          error: err instanceof Error ? err.message : "Unknown browser vendor cart review error.",
+          operator_message:
+            err instanceof Error
+              ? `Vendor/design lane failed during browser execution: ${err.message}`
+              : "Vendor/design lane failed during browser execution.",
+          next_action:
+            "Inspect the local browser bridge worker, retry the vendor review flow, and confirm the browser/session stack before claiming this lane is live.",
+        },
+        o,
+      );
+    }
+  }
+
+  async function handleBrowserVendorReviewPage(res, o, jobId) {
+    const reviewFile = resolveBrowserVendorReviewFile(jobId, "review.html");
+    if (!reviewFile || !fsSync.existsSync(reviewFile)) {
+      return html(
+        res,
+        404,
+        "<!doctype html><title>Review page missing</title><p>Review page not found for this browser vendor job.</p>",
+        o,
+      );
+    }
+
+    const markup = await fs.readFile(reviewFile, "utf8");
+    return html(res, 200, markup, o);
+  }
+
+  async function handleBrowserVendorReviewArtifact(res, o, jobId, fileName) {
+    const full = resolveBrowserVendorReviewFile(jobId, fileName);
+    if (!full || !fsSync.existsSync(full)) {
+      return json(res, 404, { error: "Artifact not found" }, o);
+    }
+
+    const ext = path.extname(full).toLowerCase();
+    const contentType =
+      ext === ".html"
+        ? "text/html; charset=utf-8"
+        : ext === ".json"
+          ? "application/json; charset=utf-8"
+          : IMAGE_MIME[ext] || "application/octet-stream";
+    const body = await fs.readFile(full);
+    res.writeHead(200, { ...cors(o), "Content-Type": contentType });
+    return res.end(body);
+  }
+
+  async function handleBrowserVendorReviewResume(res, o, jobId, target) {
+    try {
+      const launch = await resumeBrowserVendorCartReview(jobId, target);
+      const manifest = await readBrowserVendorReviewManifest(jobId).catch(() => null);
+      return html(
+        res,
+        200,
+        `<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Cart Session Opened</title>
+    <style>
+      body { margin: 0; min-height: 100vh; display: grid; place-items: center; background: #eef6fb; color: #10243b; font-family: Arial, Helvetica, sans-serif; }
+      main { width: min(640px, calc(100vw - 32px)); background: #fff; border: 1px solid #d7e4ee; border-radius: 22px; padding: 28px; box-shadow: 0 18px 50px rgba(16, 36, 59, 0.08); }
+      h1 { margin: 0 0 12px; font-size: 32px; }
+      p { margin: 0 0 12px; line-height: 1.6; color: #55748f; }
+      a { color: #1262a7; font-weight: 700; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>${target === "proof" ? "Proof Opened" : "Cart Session Opened"}</h1>
+      <p>${launch.note}</p>
+      <p>The browser opened at <strong>${launch.launched_url}</strong>.</p>
+      ${
+        manifest?.public_links?.review_page_url
+          ? `<p><a href="${manifest.public_links.review_page_url}">Return to review page</a></p>`
+          : ""
+      }
+    </main>
+  </body>
+</html>`,
+        o,
+      );
+    } catch (err) {
+      return html(
+        res,
+        500,
+        `<!doctype html><title>Resume failed</title><p>${err instanceof Error ? err.message : "Could not resume the browser vendor review session."}</p>`,
+        o,
+      );
+    }
+  }
+
+  async function handleBrandMediaProduction(req, res, o) {
+    let body = {};
+    try {
+      body = JSON.parse(await readBody(req));
+    } catch {
+      return json(res, 400, { error: "Invalid JSON body." }, o);
+    }
+
+    try {
+      const result = await runBrandMediaProduction(body);
+      return json(res, result.ok ? 200 : 503, result, o);
+    } catch (err) {
+      return json(
+        res,
+        500,
+        {
+          ok: false,
+          status: "failed_media_bridge_execution",
+          lane_id: "wrenchready-brand-media",
+          preferred_execution_path: "bridge:media_production",
+          missing_access: [],
+          error: err instanceof Error ? err.message : "Unknown media bridge error.",
+          operator_message:
+            err instanceof Error
+              ? `Media production lane failed: ${err.message}`
+              : "Media production lane failed.",
+          next_action:
+            "Inspect local bridge media worker, confirm RUNWAY_API_KEY + source photo path, then rerun media_production.",
+        },
+        o,
+      );
+    }
+  }
+
+  async function handleBrandMediaReviewPage(res, o, jobId) {
+    const full = resolveBrandMediaArtifact(jobId, "review.html");
+    if (!full || !fsSync.existsSync(full)) {
+      return html(
+        res,
+        404,
+        "<!doctype html><title>Review page missing</title><p>Brand media review page not found for this job.</p>",
+        o,
+      );
+    }
+
+    const markup = await fs.readFile(full, "utf8");
+    return html(res, 200, markup, o);
+  }
+
+  async function handleBrandMediaArtifact(res, o, jobId, fileName) {
+    const full = resolveBrandMediaArtifact(jobId, fileName);
+    if (!full || !fsSync.existsSync(full)) {
+      return json(res, 404, { error: "Artifact not found" }, o);
+    }
+
+    const ext = path.extname(full).toLowerCase();
+    const contentType =
+      ext === ".html"
+        ? "text/html; charset=utf-8"
+        : ext === ".json"
+          ? "application/json; charset=utf-8"
+          : ext === ".gif"
+            ? "image/gif"
+            : ext === ".mp4"
+              ? "video/mp4"
+              : ext === ".png"
+                ? "image/png"
+                : ext === ".jpg" || ext === ".jpeg"
+                  ? "image/jpeg"
+                  : "application/octet-stream";
+    const body = await fs.readFile(full);
+    res.writeHead(200, { ...cors(o), "Content-Type": contentType });
+    return res.end(body);
+  }
+
+  const providedToken = ((req.headers.authorization || "").match(/^Bearer\s+(.+)$/i)?.[1] || u.searchParams.get("token") || "").trim();
+  if (TOKEN && providedToken !== TOKEN)
     return json(res, 401, { error: "Unauthorized" }, o);
 
   try {
     const p = u.pathname;
+    const reviewPageMatch = p.match(/^\/browser\/vendor-cart-review\/job\/([^/]+)\/review$/);
+    const reviewArtifactMatch = p.match(/^\/browser\/vendor-cart-review\/job\/([^/]+)\/artifact\/([^/]+)$/);
+    const reviewResumeMatch = p.match(/^\/browser\/vendor-cart-review\/job\/([^/]+)\/resume\/([^/]+)$/);
+    const brandMediaReviewPageMatch = p.match(/^\/media\/brand-assets\/job\/([^/]+)\/review$/);
+    const brandMediaArtifactMatch = p.match(/^\/media\/brand-assets\/job\/([^/]+)\/artifact\/([^/]+)$/);
     if (p === "/health" && req.method === "GET") return handleHealth(res, o);
     if (p === "/list" && req.method === "GET")
       return handleList(res, o, u);
@@ -485,6 +766,35 @@ const server = http.createServer(async (req, res) => {
       return handleResearch(req, res, o);
     if (p === "/cowork" && req.method === "POST")
       return handleCowork(req, res, o);
+    if (p === "/browser/vendor-cart-review" && req.method === "POST")
+      return handleBrowserVendorCartReview(req, res, o);
+    if (p === "/media/brand-assets" && req.method === "POST")
+      return handleBrandMediaProduction(req, res, o);
+    if (reviewPageMatch && req.method === "GET")
+      return handleBrowserVendorReviewPage(res, o, decodeURIComponent(reviewPageMatch[1]));
+    if (reviewArtifactMatch && req.method === "GET")
+      return handleBrowserVendorReviewArtifact(
+        res,
+        o,
+        decodeURIComponent(reviewArtifactMatch[1]),
+        decodeURIComponent(reviewArtifactMatch[2]),
+      );
+    if (reviewResumeMatch && req.method === "GET")
+      return handleBrowserVendorReviewResume(
+        res,
+        o,
+        decodeURIComponent(reviewResumeMatch[1]),
+        decodeURIComponent(reviewResumeMatch[2]),
+      );
+    if (brandMediaReviewPageMatch && req.method === "GET")
+      return handleBrandMediaReviewPage(res, o, decodeURIComponent(brandMediaReviewPageMatch[1]));
+    if (brandMediaArtifactMatch && req.method === "GET")
+      return handleBrandMediaArtifact(
+        res,
+        o,
+        decodeURIComponent(brandMediaArtifactMatch[1]),
+        decodeURIComponent(brandMediaArtifactMatch[2]),
+      );
     json(res, 404, { error: "Not found" }, o);
   } catch (err) {
     json(res, 500, { error: err.message || "Internal error" }, o);

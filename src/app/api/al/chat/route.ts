@@ -231,6 +231,13 @@ For browser_commerce_design:
 - Stop at cart review before checkout or purchase submission.
 - If browser/vendor/cart access is missing, explain the exact missing access instead of surfacing a generic model or billing error.
 
+MEDIA PRODUCTION TASK RULE:
+If the user asks to create brand images, GIFs, or short videos from local source photos, prefer the media_production bridge lane.
+For media_production:
+- Use the user-provided local source photo path when available.
+- Produce review-ready assets with links and stop for approval before publish.
+- If blocked, report exact missing access (source photos, RUNWAY_API_KEY, or GIF export support).
+
 DELEGATION PROTOCOL:
 You have a delegate_to_ceo tool. Use it when:
 - A question clearly belongs to one company CEO (real estate -> dominion, runtime alias dominion-homes; auto repair -> wrenchready)
@@ -252,6 +259,7 @@ TOOLS:
 - vault_list, vault_read, vault_read_image - browse local files when the bridge is connected.
 - crew_list, crew_run, crew_status - run local crews through the bridge.
 - cursor_agent - dispatch a coding task to Cursor's cloud agent when that is the best execution surface.
+- media_production - generate review-ready brand images/GIFs/short video from local source photos.
 
 BRIDGE RELATIVE PATHS:
 The local bridge roots at the folder set in al-bridge/.env as VAULT_PATH. Use al-boreland-vault/ as the first path segment when reading vault files through the bridge.
@@ -641,6 +649,32 @@ const BRIDGE_TOOLS: Anthropic.Tool[] = [
       required: ["task"],
     },
   },
+  {
+    name: "media_production",
+    description:
+      "Run local brand media production from source photos. Generates review-ready assets for website use (including short video/GIF when configured) and returns a review page link. Default source folder: C:\\Users\\adamd\\Desktop\\Simon\\simon.",
+    input_schema: {
+      type: "object" as const,
+      properties: {
+        source_dir: {
+          type: "string",
+          description:
+            "Absolute local path to source photos. Defaults to C:\\Users\\adamd\\Desktop\\Simon\\simon if omitted.",
+        },
+        business_id: {
+          type: "string",
+          description: "Business context for this media package.",
+          enum: ["wrenchready", "dominion"],
+        },
+        asset_goal: {
+          type: "string",
+          description:
+            "Optional brief describing desired assets (example: hero still + GIF + 10s intro clip).",
+        },
+      },
+      required: [],
+    },
+  },
 ];
 
 function isBridgeTool(name: string) {
@@ -652,7 +686,8 @@ function isBridgeTool(name: string) {
     name === "crew_run" ||
     name === "crew_status" ||
     name === "deep_research" ||
-    name === "cowork_task"
+    name === "cowork_task" ||
+    name === "media_production"
     // job_status and delegate_to_ceo are server-side — NOT bridge tools
   );
 }
@@ -702,6 +737,9 @@ interface BridgeCapabilities {
   screenshot_capture?: boolean;
   cart_preparation?: boolean;
   review_checkpoint?: boolean;
+  media_generation?: boolean;
+  media_runway?: boolean;
+  media_gif_export?: boolean;
 }
 
 type ChatTaskClass = "browser_commerce_design";
@@ -981,6 +1019,9 @@ function buildBridgeCapabilityPrompt(
     screenshot_capture: capabilities?.screenshot_capture === true,
     cart_preparation: capabilities?.cart_preparation === true,
     review_checkpoint: capabilities?.review_checkpoint === true,
+    media_generation: capabilities?.media_generation === true,
+    media_runway: capabilities?.media_runway === true,
+    media_gif_export: capabilities?.media_gif_export === true,
     hosted_browser_available: hostedBrowser.available,
   };
 
@@ -995,6 +1036,9 @@ function buildBridgeCapabilityPrompt(
 - screenshot_capture: ${values.screenshot_capture ? "yes" : "no"}
 - cart_preparation: ${values.cart_preparation ? "yes" : "no"}
 - review_checkpoint: ${values.review_checkpoint ? "yes" : "no"}
+- media_generation: ${values.media_generation ? "yes" : "no"}
+- media_runway: ${values.media_runway ? "yes" : "no"}
+- media_gif_export: ${values.media_gif_export ? "yes" : "no"}
 - hosted_browser_available: ${values.hosted_browser_available ? "yes" : "no"}
 - hosted_browser_missing: ${hostedBrowser.missingAccess.join(", ") || "none"}
 
