@@ -7,7 +7,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "photos:torrens": "node scripts/convert-torrens-heic.cjs"
+    "photos:torrens": "node scripts/convert-torrens-heic.cjs",
+    "al:bench": "node scripts/al-benchmark-runner.cjs run",
+    "al:bench:compare": "node scripts/al-benchmark-runner.cjs compare"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.82.0",

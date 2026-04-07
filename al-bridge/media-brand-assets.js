@@ -206,6 +206,29 @@ function buildArtifactUrl(jobId, fileName) {
   return buildPublicJobUrl(jobId, `/artifact/${encodeURIComponent(fileName)}`);
 }
 
+async function copySelectedSourceArtifacts(jobId, jobDir, sourceImages) {
+  const copied = [];
+
+  for (let index = 0; index < sourceImages.length; index += 1) {
+    const source = sourceImages[index];
+    if (!source?.path || !fs.existsSync(source.path)) continue;
+
+    const ext = source.ext || path.extname(source.name || source.path).toLowerCase() || ".jpg";
+    const fileName = `source-${String(index + 1).padStart(2, "0")}${ext}`;
+    const destinationPath = path.join(jobDir, fileName);
+    await fsp.copyFile(source.path, destinationPath);
+    copied.push({
+      label: `Open source photo ${index + 1}`,
+      url: buildArtifactUrl(jobId, fileName),
+      file_name: fileName,
+      original_name: source.name,
+      original_path: source.path,
+    });
+  }
+
+  return copied;
+}
+
 function resolveJobDir(jobId) {
   if (!jobId || !/^[a-z0-9._-]+$/i.test(jobId)) return null;
   return path.join(OUTPUT_ROOT, jobId);
@@ -428,7 +451,16 @@ function exportGif(videoPath, gifPath) {
 
 function buildReviewHtml(input) {
   const sourceList = input.sourceImages
-    .map((item) => `<li><code>${item.path}</code></li>`)
+    .map((item) => {
+      const supportsInlinePreview = [".jpg", ".jpeg", ".png", ".webp", ".gif"].includes(
+        String(item.ext || "").toLowerCase(),
+      );
+      const preview = item.url && supportsInlinePreview
+        ? `<div><a href="${item.url}"><img src="${item.url}" alt="${item.name || "Source photo"}" style="max-width:220px;border-radius:12px;border:1px solid #d9e7f3;" /></a></div>`
+        : "";
+      const link = item.url ? `<div><a href="${item.url}">Open source photo</a></div>` : "";
+      return `<li>${preview}${link}<code>${item.path}</code></li>`;
+    })
     .join("");
   const mediaList = input.generatedAssets
     .map((asset) => `<li><a href="${asset.url}">${asset.label}</a></li>`)
@@ -506,6 +538,17 @@ async function runBrandMediaProduction(input = {}) {
     generated_assets: {},
   };
 
+  const sourcePreviewAssets = await copySelectedSourceArtifacts(jobId, jobDir, sourceImages);
+  manifest.generated_assets.source_previews = sourcePreviewAssets.map((asset) => ({
+    file_name: asset.file_name,
+    original_name: asset.original_name,
+    original_path: asset.original_path,
+  }));
+  const reviewSourceImages = sourceImages.map((source, index) => ({
+    ...source,
+    url: sourcePreviewAssets[index]?.url || null,
+  }));
+
   if (!stack.live) {
     const result = {
       ok: false,
@@ -518,9 +561,12 @@ async function runBrandMediaProduction(input = {}) {
       next_action:
         "Set RUNWAY_API_KEY in al-bridge/.env and keep SIMON_MEDIA_SOURCE_DIR pointed at C:\\Users\\adamd\\Desktop\\Simon\\simon, then rerun media_production.",
       prompt_pack: promptPack,
-      source_images: sourceImages,
+      source_images: reviewSourceImages,
       review_page_url: buildPublicJobUrl(jobId, "/review"),
-      artifacts: {},
+      artifacts: {
+        source_preview_urls: sourcePreviewAssets.map((asset) => asset.url),
+        poster_url: sourcePreviewAssets[0]?.url || null,
+      },
       operator_message:
         `Media production blocked. Missing: ${stack.missingAccess.join(", ") || "unknown"}. ` +
         "This lane needs source photos and RUNWAY_API_KEY for 10-second hosted generation.",
@@ -530,10 +576,10 @@ async function runBrandMediaProduction(input = {}) {
       ok: false,
       statusLabel: "Blocked - configuration missing",
       summary: result.operator_message,
-      sourceImages,
-      generatedAssets,
-      nextAction: result.next_action,
-    });
+        sourceImages: reviewSourceImages,
+        generatedAssets,
+        nextAction: result.next_action,
+      });
 
     await fsp.writeFile(path.join(jobDir, "review.html"), reviewHtml, "utf8");
     await fsp.writeFile(path.join(jobDir, "review-manifest.json"), JSON.stringify({ ...manifest, result }, null, 2), "utf8");
@@ -554,9 +600,12 @@ async function runBrandMediaProduction(input = {}) {
       next_action:
         "Add at least one .jpg/.jpeg/.png/.webp portrait of Simon in C:\\Users\\adamd\\Desktop\\Simon\\simon and rerun media_production.",
       prompt_pack: promptPack,
-      source_images: sourceImages,
+      source_images: reviewSourceImages,
       review_page_url: buildPublicJobUrl(jobId, "/review"),
-      artifacts: {},
+      artifacts: {
+        source_preview_urls: sourcePreviewAssets.map((asset) => asset.url),
+        poster_url: sourcePreviewAssets[0]?.url || null,
+      },
       operator_message: "Media production blocked: source photos were not usable for generation.",
     };
     await fsp.writeFile(path.join(jobDir, "review-manifest.json"), JSON.stringify({ ...manifest, result }, null, 2), "utf8");
@@ -623,11 +672,13 @@ async function runBrandMediaProduction(input = {}) {
           ? "Open the review page, approve the clip/GIF or request style changes, then apply approved assets to wrenchreadymobile.com."
           : "Open the review page, approve the clip or request style changes. Install ffmpeg if you want local GIF export from the generated clip.",
       prompt_pack: promptPack,
-      source_images: sourceImages,
+      source_images: reviewSourceImages,
       review_page_url: buildPublicJobUrl(jobId, "/review"),
       artifacts: {
         video_url: buildArtifactUrl(jobId, videoFileName),
         gif_url: gifExport.ok ? buildArtifactUrl(jobId, gifFileName) : null,
+        source_preview_urls: sourcePreviewAssets.map((asset) => asset.url),
+        poster_url: sourcePreviewAssets[0]?.url || null,
       },
       operator_message:
         gifReady
@@ -639,42 +690,50 @@ async function runBrandMediaProduction(input = {}) {
       ok: true,
       statusLabel: "Ready for review",
       summary: result.summary,
-      sourceImages,
-      generatedAssets,
-      nextAction: result.next_action,
-    });
+        sourceImages: reviewSourceImages,
+        generatedAssets,
+        nextAction: result.next_action,
+      });
 
     await fsp.writeFile(path.join(jobDir, "review.html"), reviewHtml, "utf8");
     await fsp.writeFile(path.join(jobDir, "review-manifest.json"), JSON.stringify({ ...manifest, result }, null, 2), "utf8");
     return result;
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown media generation error.";
-    const result = {
-      ok: false,
-      status: "runway_generation_failed",
-      lane_id: "wrenchready-brand-media",
-      preferred_execution_path: "bridge:media_production",
-      selected_execution_path: "bridge:media_production",
-      missing_access: [],
-      summary:
-        "Media lane reached Runway but generation failed before review assets were finalized.",
-      next_action:
-        "Check RUNWAY_API_KEY permissions/quota and RUNWAY_MODEL_VIDEO in al-bridge/.env, then rerun media_production.",
-      prompt_pack: promptPack,
-      source_images: sourceImages,
-      review_page_url: buildPublicJobUrl(jobId, "/review"),
-      artifacts: {},
-      operator_message: `Runway generation failed: ${message}`,
-    };
+      const result = {
+        ok: true,
+        status: "media_partial_ready_for_review",
+        lane_id: "wrenchready-brand-media",
+        preferred_execution_path: "bridge:media_production",
+        selected_execution_path: "bridge:media_production",
+        missing_access: [],
+        summary:
+          "Runway rendering failed, but a source-photo fallback review package is ready so website work can continue with real Simon imagery while AI rendering is retried.",
+        next_action:
+          "Open the review page, choose whether to proceed with the source-photo fallback for the website now, and separately retry Runway after checking quota, permissions, or model settings.",
+        prompt_pack: promptPack,
+        source_images: reviewSourceImages,
+        review_page_url: buildPublicJobUrl(jobId, "/review"),
+        artifacts: {
+          source_preview_urls: sourcePreviewAssets.map((asset) => asset.url),
+          poster_url: sourcePreviewAssets[0]?.url || null,
+          video_url: null,
+          gif_url: null,
+        },
+        generation_error: message,
+        operator_message:
+          `Runway generation failed: ${message}. ` +
+          "Fallback ready: selected Simon source photos are packaged for review and can be used for website work now.",
+      };
 
-    const reviewHtml = buildReviewHtml({
-      ok: false,
-      statusLabel: "Runway generation failed",
-      summary: result.operator_message,
-      sourceImages,
-      generatedAssets,
-      nextAction: result.next_action,
-    });
+      const reviewHtml = buildReviewHtml({
+        ok: true,
+        statusLabel: "Partial review package ready",
+        summary: result.operator_message,
+        sourceImages: reviewSourceImages,
+        generatedAssets,
+        nextAction: result.next_action,
+      });
 
     await fsp.writeFile(path.join(jobDir, "review.html"), reviewHtml, "utf8");
     await fsp.writeFile(path.join(jobDir, "review-manifest.json"), JSON.stringify({ ...manifest, result }, null, 2), "utf8");

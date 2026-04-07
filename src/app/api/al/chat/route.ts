@@ -238,6 +238,14 @@ For media_production:
 - Produce review-ready assets with links and stop for approval before publish.
 - If blocked, report exact missing access (source photos, RUNWAY_API_KEY, or GIF export support).
 
+WEBSITE PRODUCTION TASK RULE:
+If the user asks for WrenchReady website production that depends on brand/media assets, route first to media_production and then to code execution on the real WrenchReady website repo.
+For website_brand_media_production:
+- Prefer media generation plus code execution over generic reasoning.
+- Use the live WrenchReady repo target (adamdez/wrenchreadymobile-com; local executor alias wrench-ready).
+- If blocked, name the exact missing component: media lane access, repo execution access, or browser review access.
+- Do not claim the website update is complete without a reviewable browser surface.
+
 CREATIVE INITIATIVE RULE:
 Mission constraints and governance boundaries are hard limits.
 Inside those boundaries, creativity is encouraged.
@@ -490,7 +498,7 @@ const SERVER_TOOLS: Anthropic.Tool[] = [
   {
     name: "cowork_task",
     description:
-      "Execute a real code or file task using Claude Agent SDK running locally on Dez's machine. Has full access to Read, Write, Edit, Bash, Glob, Grep tools and can git commit/push. Use for: building pages, editing code, fixing bugs, writing files, git operations, running scripts. Domains: 'dominionhomedeals' (default), 'wrench-ready', 'sentinel'. This runs a real Claude Code agent — not reasoning, actual execution. Bridge must be connected. This is not a browser/vendor/cart automation lane unless the live bridge capability block says browser_automation is available.",
+      "Execute a real code or file task using Claude Agent SDK running locally on Dez's machine. Has full access to Read, Write, Edit, Bash, Glob, Grep tools and can git commit/push. Use for: building pages, editing code, fixing bugs, writing files, git operations, running scripts. Domains: 'dominionhomedeals' (default), canonical WrenchReady website target 'wrenchreadymobile-com' with legacy executor alias 'wrench-ready', and 'sentinel'. This runs a real Claude Code agent — not reasoning, actual execution. Bridge must be connected. This is not a browser/vendor/cart automation lane unless the live bridge capability block says browser_automation is available.",
     input_schema: {
       type: "object" as const,
       properties: {
@@ -502,8 +510,8 @@ const SERVER_TOOLS: Anthropic.Tool[] = [
         domain: {
           type: "string",
           description:
-            "Which repo to work in. Defaults to 'dominionhomedeals'. Options: 'dominionhomedeals', 'wrench-ready', 'sentinel'.",
-          enum: ["dominionhomedeals", "wrench-ready", "sentinel"],
+            "Which repo to work in. Defaults to 'dominionhomedeals'. Use 'wrenchreadymobile-com' for the live WrenchReady website repo; runtime preserves the legacy executor alias 'wrench-ready' for compatibility. Options: 'dominionhomedeals', 'wrenchreadymobile-com', 'wrench-ready', 'sentinel'.",
+          enum: ["dominionhomedeals", "wrenchreadymobile-com", "wrench-ready", "sentinel"],
         },
         ...REVIEW_DISPATCH_SCHEMA_PROPERTIES,
       },
@@ -637,7 +645,7 @@ const BRIDGE_TOOLS: Anthropic.Tool[] = [
   {
     name: "cursor_agent",
     description:
-      "Send a coding task to Cursor's Cloud Agent (Composer 2) to execute autonomously on the dominionhomedeals repository. Use this for: building or improving property listing pages, UX/front-end work, React/Next.js/Tailwind changes, multi-file refactors, or any code task that requires the full IDE context. The agent runs in the background on the GitHub repo and opens a PR when done. Returns a job ID you can use to check status.",
+      "Send a coding task to Cursor's Cloud Agent (Composer 2) to execute autonomously on the appropriate GitHub repository. Defaults to dominionhomedeals, but WrenchReady website work should route to adamdez/wrenchreadymobile-com. Use this for: building or improving pages, UX/front-end work, React/Next.js/Tailwind changes, multi-file refactors, or any code task that requires the full IDE context. The agent runs in the background on the GitHub repo and opens a PR when done. Returns a job ID you can use to check status.",
     input_schema: {
       type: "object" as const,
       properties: {
@@ -647,7 +655,7 @@ const BRIDGE_TOOLS: Anthropic.Tool[] = [
         },
         repo: {
           type: "string",
-          description: "GitHub repository in owner/repo format. Default: the dominionhomedeals repo.",
+          description: "GitHub repository in owner/repo format. Defaults to adamdez/dominionhomedeals unless the task is clearly WrenchReady website work, in which case adamdez/wrenchreadymobile-com is used.",
         },
         model: {
           type: "string",
@@ -747,6 +755,7 @@ type DispatchSourceTool =
   | "delegate_to_ceo"
   | "cursor_agent"
   | "cowork_task"
+  | "media_production"
   | "crew_run"
   | "browser_commerce_design";
 type DispatchBusinessId = "dominion" | "wrenchready";
@@ -766,7 +775,9 @@ interface BridgeCapabilities {
   media_gif_export?: boolean;
 }
 
-type ChatTaskClass = "browser_commerce_design";
+type ChatTaskClass =
+  | "browser_commerce_design"
+  | "website_brand_media_production";
 
 interface TaskClassification {
   taskClass: ChatTaskClass;
@@ -776,6 +787,30 @@ interface TaskClassification {
   preferredExecutionPath: string;
   summary: string;
   reviewCheckpointRequired: boolean;
+}
+
+interface WebsiteProductionAssessment {
+  executable: boolean;
+  selectedExecutionPath: string;
+  fallbackExecutionPath: string | null;
+  missingAccess: string[];
+  operatorMessage: string;
+  mediaProduction: {
+    available: boolean;
+    missingAccess: string[];
+    sourceDir: string;
+  };
+  repoExecution: {
+    available: boolean;
+    selectedTool: "bridge:cowork_task" | "cursor_agent" | null;
+    repo: string;
+    missingAccess: string[];
+  };
+  browserReview: {
+    available: boolean;
+    selectedPath: string | null;
+    missingAccess: string[];
+  };
 }
 
 interface TaskPathAssessment {
@@ -824,6 +859,25 @@ interface BrowserCommerceBridgeResult {
   error?: string;
 }
 
+interface MediaProductionBridgeResult {
+  ok?: boolean;
+  status?: string;
+  lane_id?: string;
+  preferred_execution_path?: string;
+  selected_execution_path?: string;
+  summary?: string;
+  next_action?: string;
+  review_page_url?: string | null;
+  operator_message?: string;
+  artifacts?: Record<string, unknown> | null;
+  source_images?: Array<Record<string, unknown>>;
+  prompt_pack?: Record<string, unknown> | null;
+  generated_assets?: Record<string, unknown> | null;
+  missing_access?: string[];
+  error?: string;
+  generation_error?: string;
+}
+
 interface DispatchMetadata {
   review_required: boolean;
   business_id: DispatchBusinessId | null;
@@ -860,6 +914,10 @@ const BROWSER_COMMERCE_DESIGN_PATTERN =
   /\b(sign(?:age|s)?|van wrap|vehicle wrap|vinyl|decal|sticker|magnet|advertising sign|mockup|design .*cart|add to cart|cart|checkout|vendor|proof|preview|pricing|price|dimensions?|fit)\b/i;
 const WRENCHREADY_BRANDING_PATTERN =
   /\b(wrenchready|astro van|2001 astro|service van|vehicle branding|wrap the van|magnet sign)\b/i;
+const WEBSITE_PRODUCTION_PATTERN =
+  /\b(website|site update|homepage|landing page|hero section|service page|web design|site refresh|page refresh|website refresh)\b/i;
+const BRAND_MEDIA_PATTERN =
+  /\b(photo|photos|portrait|headshot|face|image|images|gif|gifs|video|videos|short video|brand asset|assets|logo)\b/i;
 const ANTHROPIC_BILLING_ERROR_PATTERN =
   /\b(credit balance|insufficient credits|billing|payment required|402|quota|rate limit exceeded for billing)\b/i;
 type BrowserRuntimePreference =
@@ -894,6 +952,22 @@ function classifyTaskForRouting(message: string): TaskClassification | null {
   }
 
   if (
+    WEBSITE_PRODUCTION_PATTERN.test(normalized) &&
+    BRAND_MEDIA_PATTERN.test(normalized) &&
+    /\b(wrenchready|simon)\b/i.test(normalized)
+  ) {
+    return {
+      taskClass: "website_brand_media_production",
+      businessId: "wrenchready",
+      owner: "Tom",
+      laneId: "wrenchready-website-production",
+      preferredExecutionPath: `${WEBSITE_MEDIA_EXECUTION_PATH} -> ${WEBSITE_COWORK_EXECUTION_PATH}`,
+      summary: normalizeConsequentialChange(normalized, 180),
+      reviewCheckpointRequired: true,
+    };
+  }
+
+  if (
     BROWSER_COMMERCE_DESIGN_PATTERN.test(normalized) &&
     WRENCHREADY_BRANDING_PATTERN.test(normalized)
   ) {
@@ -909,6 +983,117 @@ function classifyTaskForRouting(message: string): TaskClassification | null {
   }
 
   return null;
+}
+
+function assessWebsiteProductionPath(
+  bridgeConnected: boolean,
+  capabilities?: BridgeCapabilities | null,
+): WebsiteProductionAssessment {
+  const mediaMissingAccess: string[] = [];
+  if (!bridgeConnected) {
+    mediaMissingAccess.push("local bridge connection");
+  }
+  if (!capabilities?.media_generation) {
+    mediaMissingAccess.push("media generation lane");
+  }
+  if (!capabilities?.media_runway) {
+    mediaMissingAccess.push("Runway rendering access");
+  }
+
+  const repoExecutionMissingAccess: string[] = [];
+  const localCoworkAvailable = bridgeConnected && capabilities?.cowork_execution === true;
+  const cursorAvailable = Boolean(process.env.CURSOR_AGENTS_API_KEY?.trim());
+  const selectedRepoTool = localCoworkAvailable
+    ? WEBSITE_COWORK_EXECUTION_PATH
+    : cursorAvailable
+      ? WEBSITE_CURSOR_EXECUTION_PATH
+      : null;
+
+  if (!selectedRepoTool) {
+    repoExecutionMissingAccess.push(
+      `repo execution access for ${WRENCHREADY_CURSOR_REPO}`,
+    );
+  }
+
+  const hostedBrowser = inspectHostedBrowserVendorCartReviewStack();
+  const localBrowserReviewAvailable =
+    bridgeConnected &&
+    capabilities?.browser_automation === true &&
+    capabilities?.screenshot_capture === true;
+  const browserReviewMissingAccess: string[] = [];
+  const selectedBrowserReviewPath = hostedBrowser.available
+    ? WEBSITE_BROWSER_REVIEW_HOSTED_PATH
+    : localBrowserReviewAvailable
+      ? WEBSITE_BROWSER_REVIEW_LOCAL_PATH
+      : null;
+
+  if (!selectedBrowserReviewPath) {
+    browserReviewMissingAccess.push("browser review access");
+  }
+
+  const missingAccess = [
+    ...mediaMissingAccess.map((item) => `media lane: ${item}`),
+    ...repoExecutionMissingAccess,
+    ...browserReviewMissingAccess,
+  ];
+
+  const executable = missingAccess.length === 0;
+  const selectedExecutionPath =
+    selectedRepoTool
+      ? `${WEBSITE_MEDIA_EXECUTION_PATH} -> ${selectedRepoTool}`
+      : `${WEBSITE_MEDIA_EXECUTION_PATH} -> blocked:repo_execution`;
+  const fallbackExecutionPath =
+    selectedRepoTool === WEBSITE_COWORK_EXECUTION_PATH && cursorAvailable
+      ? `${WEBSITE_MEDIA_EXECUTION_PATH} -> ${WEBSITE_CURSOR_EXECUTION_PATH}`
+      : null;
+
+  const blockerParts: string[] = [];
+  if (mediaMissingAccess.length > 0) {
+    blockerParts.push(`missing media lane access (${mediaMissingAccess.join(", ")})`);
+  }
+  if (repoExecutionMissingAccess.length > 0) {
+    blockerParts.push(
+      `missing repo execution access for ${WRENCHREADY_CURSOR_REPO}`,
+    );
+  }
+  if (browserReviewMissingAccess.length > 0) {
+    blockerParts.push(
+      "missing browser review access (hosted browser or local screenshot-capable browser lane)",
+    );
+  }
+
+  const operatorMessage = executable
+    ? `Website production lane ready: route media generation through ${WEBSITE_MEDIA_EXECUTION_PATH}, then apply the approved package to ${WRENCHREADY_CURSOR_REPO} through ${selectedRepoTool}.`
+    : `Website production lane blocked: ${blockerParts.join("; ")}. This task class requires media generation, repo execution for ${WRENCHREADY_CURSOR_REPO}, and browser review before AL can call it complete.`;
+
+  return {
+    executable,
+    selectedExecutionPath,
+    fallbackExecutionPath,
+    missingAccess,
+    operatorMessage,
+    mediaProduction: {
+      available: mediaMissingAccess.length === 0,
+      missingAccess: mediaMissingAccess,
+      sourceDir: DEFAULT_SIMON_SOURCE_DIR,
+    },
+    repoExecution: {
+      available: Boolean(selectedRepoTool),
+      selectedTool:
+        selectedRepoTool === WEBSITE_COWORK_EXECUTION_PATH
+          ? WEBSITE_COWORK_EXECUTION_PATH
+          : selectedRepoTool === WEBSITE_CURSOR_EXECUTION_PATH
+            ? WEBSITE_CURSOR_EXECUTION_PATH
+            : null,
+      repo: WRENCHREADY_CURSOR_REPO,
+      missingAccess: repoExecutionMissingAccess,
+    },
+    browserReview: {
+      available: Boolean(selectedBrowserReviewPath),
+      selectedPath: selectedBrowserReviewPath,
+      missingAccess: browserReviewMissingAccess,
+    },
+  };
 }
 
 function assessBrowserCommercePath(
@@ -1140,6 +1325,104 @@ function inferBusinessIdFromDomain(domain: string | undefined): DispatchBusiness
   if (domain.toLowerCase().includes("wrench")) return "wrenchready";
   if (domain.toLowerCase().includes("dominion")) return "dominion";
   return null;
+}
+
+const DEFAULT_CURSOR_REPO = "adamdez/dominionhomedeals";
+const WRENCHREADY_CURSOR_REPO = "adamdez/wrenchreadymobile-com";
+const DEFAULT_COWORK_DOMAIN = "dominionhomedeals";
+const WRENCHREADY_COWORK_DOMAIN = "wrench-ready";
+const DEFAULT_SIMON_SOURCE_DIR = "C:\\Users\\adamd\\Desktop\\Simon\\simon";
+const WEBSITE_MEDIA_EXECUTION_PATH = "bridge:media_production";
+const WEBSITE_COWORK_EXECUTION_PATH = "bridge:cowork_task";
+const WEBSITE_CURSOR_EXECUTION_PATH = "cursor_agent";
+const WEBSITE_BROWSER_REVIEW_HOSTED_PATH = HOSTED_BROWSER_EXECUTION_PATH;
+const WEBSITE_BROWSER_REVIEW_LOCAL_PATH = "bridge:browser_review";
+
+function normalizeCoworkDomain(domain: string | undefined): string | undefined {
+  const normalized = domain?.trim().toLowerCase();
+  if (!normalized) return undefined;
+
+  if (
+    normalized === "wrenchready" ||
+    normalized === "wrench-ready" ||
+    normalized === "wrenchreadymobile-com" ||
+    normalized === "wrenchreadymobile.com" ||
+    normalized === "wrenchreadymobile"
+  ) {
+    return WRENCHREADY_COWORK_DOMAIN;
+  }
+
+  if (
+    normalized === "dominion" ||
+    normalized === "dominionhomedeals" ||
+    normalized === "dominionhomedeals.com"
+  ) {
+    return DEFAULT_COWORK_DOMAIN;
+  }
+
+  return domain?.trim();
+}
+
+function resolveCoworkDomain(
+  domain: string | undefined,
+  task: string | undefined,
+): string {
+  const normalized = normalizeCoworkDomain(domain);
+  if (normalized) {
+    return normalized;
+  }
+
+  if (inferBusinessIdFromDomain(task) === "wrenchready") {
+    return WRENCHREADY_COWORK_DOMAIN;
+  }
+
+  return DEFAULT_COWORK_DOMAIN;
+}
+
+function normalizeCursorRepository(repo: string | undefined): string | undefined {
+  const normalized = repo?.trim();
+  if (!normalized) return undefined;
+
+  const lower = normalized
+    .toLowerCase()
+    .replace(/^https:\/\/github\.com\//, "")
+    .replace(/\.git$/, "");
+
+  if (
+    lower === "adamdez/wrench-ready" ||
+    lower === "wrench-ready" ||
+    lower === "adamdez/wrenchreadymobile-com" ||
+    lower === "wrenchreadymobile-com" ||
+    lower === "adamdez/wrenchreadymobile.com" ||
+    lower === "wrenchreadymobile.com"
+  ) {
+    return WRENCHREADY_CURSOR_REPO;
+  }
+
+  if (
+    lower === "adamdez/dominionhomedeals" ||
+    lower === "dominionhomedeals"
+  ) {
+    return DEFAULT_CURSOR_REPO;
+  }
+
+  return normalized;
+}
+
+function resolveCursorRepository(
+  repo: string | undefined,
+  task: string | undefined,
+): string {
+  const normalized = normalizeCursorRepository(repo);
+  if (normalized) {
+    return normalized;
+  }
+
+  if (inferBusinessIdFromDomain(task) === "wrenchready") {
+    return WRENCHREADY_CURSOR_REPO;
+  }
+
+  return process.env.CURSOR_DEFAULT_REPO || DEFAULT_CURSOR_REPO;
 }
 
 function inferBusinessIdFromRepo(repo: string | undefined): DispatchBusinessId | null {
@@ -1528,6 +1811,150 @@ function buildBrowserCommerceExecutionContext(input: {
       input.classification,
     ),
   };
+}
+
+async function recordWebsiteProductionRoutingOutcome(input: {
+  task: string;
+  classification: TaskClassification;
+  assessment: WebsiteProductionAssessment;
+}): Promise<void> {
+  const accountability = await createAccountabilityJob({
+    jobType: "website_brand_media_production",
+    task: input.task,
+    context: buildWebsiteProductionExecutionContext({
+      task: input.task,
+      classification: input.classification,
+      assessment: input.assessment,
+    }),
+    status: "running",
+  });
+
+  if ("error" in accountability) {
+    return;
+  }
+
+  await completeAccountabilityJob({
+    jobId: accountability.jobId,
+    result: input.assessment.operatorMessage,
+    isError: !input.assessment.executable,
+  });
+}
+
+function buildWebsiteProductionDispatchMetadata(
+  task: string,
+  classification: TaskClassification,
+  sourceTool: "media_production" | "cowork_task" | "cursor_agent",
+): DispatchMetadata {
+  return {
+    review_required: true,
+    business_id: classification.businessId,
+    owner: classification.owner,
+    change_under_review: classification.summary,
+    intended_business_outcome:
+      "Improve WrenchReady website conversion and trust with approved Simon-led brand media and a reviewable site refresh.",
+    primary_metric: "qualified_booking_rate_from_website",
+    expected_direction: "increase",
+    minimum_meaningful_delta: 0.05,
+    source_type: "run",
+    source_tool: sourceTool,
+    runtime_ref_hint: `${classification.taskClass}:${normalizeConsequentialChange(task, 80)}`,
+    comparison_window: "14d after website refresh goes live",
+    risk_trust_compliance_notes:
+      "Use real Simon source media, stop at review, and do not present the site update as complete without a browser review surface.",
+    actor: "Al Boreland",
+    lane_id: classification.laneId,
+    authority_level: "recommend",
+    board_feed_impact: "Website refresh stays review-gated until media and site changes are approved.",
+  };
+}
+
+function buildWebsiteProductionExecutionContext(input: {
+  task: string;
+  classification: TaskClassification;
+  assessment: WebsiteProductionAssessment;
+  mediaResult?: MediaProductionBridgeResult | null;
+}): Record<string, unknown> {
+  return {
+    task_class: input.classification.taskClass,
+    business_id: input.classification.businessId,
+    owner: input.classification.owner,
+    lane_id: input.classification.laneId,
+    preferred_execution_path: input.classification.preferredExecutionPath,
+    selected_execution_path: input.assessment.selectedExecutionPath,
+    fallback_execution_path: input.assessment.fallbackExecutionPath,
+    missing_access: input.assessment.missingAccess,
+    media_lane_available: input.assessment.mediaProduction.available,
+    media_lane_missing_access: input.assessment.mediaProduction.missingAccess,
+    media_source_dir: input.assessment.mediaProduction.sourceDir,
+    repo_execution_available: input.assessment.repoExecution.available,
+    repo_execution_tool: input.assessment.repoExecution.selectedTool,
+    repo_target: input.assessment.repoExecution.repo,
+    repo_execution_missing_access: input.assessment.repoExecution.missingAccess,
+    browser_review_available: input.assessment.browserReview.available,
+    browser_review_path: input.assessment.browserReview.selectedPath,
+    browser_review_missing_access: input.assessment.browserReview.missingAccess,
+    review_checkpoint_required: input.classification.reviewCheckpointRequired,
+    media_review_page_url: input.mediaResult?.review_page_url || null,
+    media_artifacts: input.mediaResult?.artifacts || null,
+    media_status: input.mediaResult?.status || null,
+  };
+}
+
+function parseMediaProductionBridgeResult(raw: string): MediaProductionBridgeResult | null {
+  if (!raw) {
+    return null;
+  }
+
+  try {
+    const parsed = JSON.parse(raw) as MediaProductionBridgeResult;
+    return parsed && typeof parsed === "object" ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
+function buildWebsiteCodeExecutionTask(input: {
+  originalTask: string;
+  mediaResult: MediaProductionBridgeResult;
+}): string {
+  const mediaStatus = asBriefString(input.mediaResult.status);
+  const mediaSummary = asBriefString(input.mediaResult.summary);
+  const generationError = asBriefString(input.mediaResult.generation_error);
+  const reviewPageUrl = asBriefString(input.mediaResult.review_page_url);
+  const artifacts = asRecord(input.mediaResult.artifacts);
+  const videoUrl = asBriefString(artifacts.video_url);
+  const gifUrl = asBriefString(artifacts.gif_url);
+  const posterUrl = asBriefString(artifacts.poster_url);
+  const sourceImages = Array.isArray(input.mediaResult.source_images)
+    ? input.mediaResult.source_images
+    : [];
+  const primarySource = sourceImages
+    .map((entry) => asRecord(entry))
+    .map((entry) => asBriefString(entry.path))
+    .find(Boolean);
+
+  return [
+    `Work in the live WrenchReady website repo (${WRENCHREADY_CURSOR_REPO}; local cowork domain ${WRENCHREADY_COWORK_DOMAIN}).`,
+    `Use the approved Simon media package to execute this request: ${input.originalTask.trim() || "Update the WrenchReady site with the new Simon-led brand assets."}`,
+    "Goals:",
+    "- make the site feel incredible and trustworthy",
+    "- integrate the approved Simon-led hero media into the homepage or the strongest fitting section",
+    "- preserve truthful branding and do not invent fake source imagery beyond the generated package",
+    "- leave the site in a reviewable state and summarize exactly what changed",
+    mediaStatus ? `Media package status: ${mediaStatus}` : null,
+    mediaSummary ? `Media package summary: ${mediaSummary}` : null,
+    reviewPageUrl ? `Media review page: ${reviewPageUrl}` : "Media review page: not returned",
+    videoUrl ? `Primary video asset: ${videoUrl}` : null,
+    gifUrl ? `GIF preview asset: ${gifUrl}` : null,
+    posterUrl ? `Fallback poster/source asset: ${posterUrl}` : null,
+    primarySource ? `Primary source photo: ${primarySource}` : null,
+    generationError
+      ? `AI rendering issue: ${generationError}. Proceed with the real-photo fallback package unless/until media rendering is retried successfully.`
+      : null,
+    "If browser review tools are available in your lane, run a quick visual QA on the updated site before you finish. If they are not available, say that explicitly in your result.",
+  ]
+    .filter(Boolean)
+    .join("\n");
 }
 
 function parseBrowserCommerceBridgeResult(raw: string): BrowserCommerceBridgeResult | null {
@@ -2239,6 +2666,7 @@ async function executeJobStatus(jobId?: number): Promise<string> {
 async function executeCoworkTask(task: string, domain?: string): Promise<string> {
   const bridgeUrl = process.env.AL_BRIDGE_URL || "http://127.0.0.1:3141";
   const bridgeToken = process.env.AL_BRIDGE_TOKEN || "";
+  const resolvedDomain = resolveCoworkDomain(domain, task);
 
   try {
     const res = await fetch(`${bridgeUrl}/cowork`, {
@@ -2247,7 +2675,7 @@ async function executeCoworkTask(task: string, domain?: string): Promise<string>
         "Content-Type": "application/json",
         ...(bridgeToken ? { Authorization: `Bearer ${bridgeToken}` } : {}),
       },
-      body: JSON.stringify({ task, domain: domain || "dominionhomedeals", authority_zone: 1 }),
+      body: JSON.stringify({ task, domain: resolvedDomain, authority_zone: 1 }),
       signal: AbortSignal.timeout(280000),
     });
 
@@ -2283,7 +2711,7 @@ async function executeCursorAgent(
   }
 
   // Accept "owner/repo" shorthand or full URL — normalize to full GitHub URL
-  const repoRaw = repo || process.env.CURSOR_DEFAULT_REPO || "adamdez/dominionhomedeals";
+  const repoRaw = resolveCursorRepository(repo, task);
   const repositoryUrl = repoRaw.startsWith("https://")
     ? repoRaw
     : `https://github.com/${repoRaw}`;
@@ -2663,6 +3091,7 @@ async function runOpenAIChat(input: {
   continuation?: ContinuationData;
   taskClassification: TaskClassification | null;
   browserCommerceAssessment: TaskPathAssessment | null;
+  websiteProductionAssessment: WebsiteProductionAssessment | null;
 }): Promise<Response> {
   const apiKey = readEnvSecret("OPENAI_API_KEY");
   if (!apiKey) {
@@ -2871,13 +3300,17 @@ async function runOpenAIChat(input: {
             }
 
             if (call.name === "cursor_agent") {
+              const resolvedRepo = resolveCursorRepository(
+                asNonEmptyString(parsedInput.repo),
+                asNonEmptyString(parsedInput.task),
+              );
               let dispatchMetadata: DispatchMetadata;
               try {
                 dispatchMetadata = buildDispatchMetadata({
                   sourceTool: "cursor_agent",
-                  toolInput: parsedInput,
+                  toolInput: { ...parsedInput, repo: resolvedRepo },
                   defaultBusinessId:
-                    inferBusinessIdFromRepo(asNonEmptyString(parsedInput.repo)) ||
+                    inferBusinessIdFromRepo(resolvedRepo) ||
                     inferBusinessIdFromDomain(asNonEmptyString(parsedInput.task)) ||
                     "dominion",
                   runtimeRefHint: `tool_use:${call.id}`,
@@ -2912,10 +3345,7 @@ async function runOpenAIChat(input: {
                 jobType: "cursor_agent",
                 task: asNonEmptyString(parsedInput.task) || "",
                 context: {
-                  repo:
-                    asNonEmptyString(parsedInput.repo) ||
-                    process.env.CURSOR_DEFAULT_REPO ||
-                    "adamdez/dominionhomedeals",
+                  repo: resolvedRepo,
                   model: asNonEmptyString(parsedInput.model) || "default",
                   tool_use_id: call.id,
                   dispatch_metadata: dispatchMetadata,
@@ -2933,7 +3363,7 @@ async function runOpenAIChat(input: {
               }
               const result = await executeCursorAgent(
                 asNonEmptyString(parsedInput.task) || "",
-                asNonEmptyString(parsedInput.repo),
+                resolvedRepo,
                 asNonEmptyString(parsedInput.model),
               );
               await completeAccountabilityJob({
@@ -2964,11 +3394,21 @@ async function runOpenAIChat(input: {
               continue;
             }
 
+            const bridgeInput =
+              call.name === "cowork_task"
+                ? {
+                    ...parsedInput,
+                    domain: resolveCoworkDomain(
+                      asNonEmptyString(parsedInput.domain),
+                      asNonEmptyString(parsedInput.task),
+                    ),
+                  }
+                : parsedInput;
             const sourceTool = call.name === "crew_run" ? "crew_run" : "cowork_task";
             const defaultBusinessId =
               call.name === "crew_run"
                 ? inferBusinessIdFromCrew(asNonEmptyString(parsedInput.crew))
-                : inferBusinessIdFromDomain(asNonEmptyString(parsedInput.domain)) ||
+                : inferBusinessIdFromDomain(asNonEmptyString(bridgeInput.domain)) ||
                   inferBusinessIdFromDomain(asNonEmptyString(parsedInput.task)) ||
                   "dominion";
             let dispatchMetadata: DispatchMetadata;
@@ -2976,7 +3416,7 @@ async function runOpenAIChat(input: {
             try {
               dispatchMetadata = buildDispatchMetadata({
                 sourceTool,
-                toolInput: parsedInput,
+                toolInput: bridgeInput,
                 defaultBusinessId,
                 runtimeRefHint: `tool_use:${call.id}`,
                 fallbackChangeUnderReview:
@@ -2988,7 +3428,7 @@ async function runOpenAIChat(input: {
                     ? [asNonEmptyString(parsedInput.crew)].filter(Boolean).join(" ")
                     : [
                         asNonEmptyString(parsedInput.task),
-                        asNonEmptyString(parsedInput.domain),
+                        asNonEmptyString(bridgeInput.domain),
                       ]
                         .filter(Boolean)
                         .join(" "),
@@ -3015,7 +3455,7 @@ async function runOpenAIChat(input: {
               context: {
                 domain:
                   call.name === "cowork_task"
-                    ? asNonEmptyString(parsedInput.domain) || "dominionhomedeals"
+                    ? asNonEmptyString(bridgeInput.domain) || DEFAULT_COWORK_DOMAIN
                     : undefined,
                 crew: call.name === "crew_run" ? asNonEmptyString(parsedInput.crew) || null : undefined,
                 tool_use_id: call.id,
@@ -3037,7 +3477,7 @@ async function runOpenAIChat(input: {
             bridgeRequests.push({
               id: call.callId,
               name: call.name,
-              input: parsedInput,
+              input: bridgeInput,
               accountabilityJobId: accountability.jobId,
             });
           }
@@ -3084,6 +3524,17 @@ async function runOpenAIChat(input: {
           const usefulMessage = input.browserCommerceAssessment
             ? input.browserCommerceAssessment.operatorMessage
             : `Vendor/design routing failed before the browser lane could run. ${msg}`;
+          controller.enqueue(
+            encoder.encode(`data: ${JSON.stringify({ t: usefulMessage })}\n\n`),
+          );
+          controller.enqueue(encoder.encode("data: [DONE]\n\n"));
+          controller.close();
+          return;
+        }
+        if (input.taskClassification?.taskClass === "website_brand_media_production") {
+          const usefulMessage =
+            input.websiteProductionAssessment?.operatorMessage ||
+            `Website production routing failed before media or code execution could run. ${msg}`;
           controller.enqueue(
             encoder.encode(`data: ${JSON.stringify({ t: usefulMessage })}\n\n`),
           );
@@ -3248,9 +3699,197 @@ export async function POST(request: NextRequest) {
     taskClassification?.taskClass === "browser_commerce_design"
       ? assessBrowserCommercePath(Boolean(bridgeConnected), bridgeCapabilities)
       : null;
+  const websiteProductionAssessment =
+    taskClassification?.taskClass === "website_brand_media_production"
+      ? assessWebsiteProductionPath(Boolean(bridgeConnected), bridgeCapabilities)
+      : null;
   const continuationBrowserClassification = continuation
     ? classifyTaskForRouting(message || "")
     : null;
+  const continuationWebsiteClassification =
+    continuationBrowserClassification?.taskClass === "website_brand_media_production"
+      ? continuationBrowserClassification
+      : null;
+
+  const mediaBridgeJob = continuation?.bridgeJobs?.find(
+    (job) => job.name === "media_production",
+  );
+
+  if (mediaBridgeJob && continuationWebsiteClassification) {
+    const mediaBridgeResult = (continuation?.toolResults || []).find((result) => {
+      if (!result || typeof result !== "object") {
+        return false;
+      }
+
+      if (
+        "tool_use_id" in result &&
+        String((result as { tool_use_id?: string }).tool_use_id || "") ===
+          mediaBridgeJob.toolUseId
+      ) {
+        return true;
+      }
+
+      if (
+        "call_id" in result &&
+        String((result as { call_id?: string }).call_id || "") === mediaBridgeJob.toolUseId
+      ) {
+        return true;
+      }
+
+      return false;
+    });
+
+    const rawMediaText =
+      extractToolResultText(
+        mediaBridgeResult && typeof mediaBridgeResult === "object"
+          ? "content" in mediaBridgeResult
+            ? (mediaBridgeResult as { content?: unknown }).content
+            : "output" in mediaBridgeResult
+              ? mediaBridgeResult
+              : undefined
+          : mediaBridgeResult,
+      ) || "Media production lane returned no usable bridge result.";
+    const parsedMediaResult = parseMediaProductionBridgeResult(rawMediaText);
+    const websiteAssessment =
+      websiteProductionAssessment ||
+      assessWebsiteProductionPath(Boolean(bridgeConnected), bridgeCapabilities);
+
+    if (!parsedMediaResult || parsedMediaResult.ok === false) {
+      const failureMessage =
+        parsedMediaResult?.operator_message ||
+        parsedMediaResult?.error ||
+        rawMediaText;
+      await completeAccountabilityJob({
+        jobId: mediaBridgeJob.jobId,
+        result: failureMessage,
+        isError: true,
+        context: buildWebsiteProductionExecutionContext({
+          task: message || "",
+          classification: continuationWebsiteClassification,
+          assessment: websiteAssessment,
+          mediaResult: parsedMediaResult,
+        }),
+      });
+      return streamingTextResponse(
+        parsedMediaResult?.operator_message ||
+          `Website production lane blocked after media routing: ${failureMessage}`,
+      );
+    }
+
+    await completeAccountabilityJob({
+      jobId: mediaBridgeJob.jobId,
+      result:
+        parsedMediaResult.summary ||
+        parsedMediaResult.operator_message ||
+        "Media package prepared for website integration review.",
+      isError: false,
+      context: buildWebsiteProductionExecutionContext({
+        task: message || "",
+        classification: continuationWebsiteClassification,
+        assessment: websiteAssessment,
+        mediaResult: parsedMediaResult,
+      }),
+    });
+
+    if (
+      !websiteAssessment.repoExecution.available ||
+      !websiteAssessment.browserReview.available
+    ) {
+      return streamingTextResponse(websiteAssessment.operatorMessage);
+    }
+
+    const selectedRepoTool =
+      websiteAssessment.repoExecution.selectedTool || WEBSITE_COWORK_EXECUTION_PATH;
+    const codeTask = buildWebsiteCodeExecutionTask({
+      originalTask: message || "",
+      mediaResult: parsedMediaResult,
+    });
+    const codeDispatchMetadata = buildWebsiteProductionDispatchMetadata(
+      message || "",
+      continuationWebsiteClassification,
+      selectedRepoTool === WEBSITE_CURSOR_EXECUTION_PATH
+        ? "cursor_agent"
+        : "cowork_task",
+    );
+    const codeAccountability = await createAccountabilityJob({
+      jobType:
+        selectedRepoTool === WEBSITE_CURSOR_EXECUTION_PATH
+          ? "cursor_agent"
+          : "cowork_task",
+      task: codeTask,
+      context: {
+        website_task_class: continuationWebsiteClassification.taskClass,
+        media_review_page_url: parsedMediaResult.review_page_url || null,
+        media_artifacts: parsedMediaResult.artifacts || null,
+        repo: WRENCHREADY_CURSOR_REPO,
+        domain:
+          selectedRepoTool === WEBSITE_COWORK_EXECUTION_PATH
+            ? WRENCHREADY_COWORK_DOMAIN
+            : undefined,
+        dispatch_metadata: codeDispatchMetadata,
+      },
+      status: "running",
+    });
+
+    if ("error" in codeAccountability) {
+      return streamingTextResponse(
+        `Website production lane blocked after media generation: could not create code execution accountability (${codeAccountability.error}).`,
+      );
+    }
+
+    return new Response(
+      `data: ${JSON.stringify({
+        vault_action: {
+          requests: [
+            selectedRepoTool === WEBSITE_CURSOR_EXECUTION_PATH
+              ? {
+                  id: crypto.randomUUID(),
+                  name: "cursor_agent",
+                  input: {
+                    task: codeTask,
+                    repo: WRENCHREADY_CURSOR_REPO,
+                    review_required: true,
+                    business_id: continuationWebsiteClassification.businessId,
+                    owner: continuationWebsiteClassification.owner,
+                    change_under_review: continuationWebsiteClassification.summary,
+                    intended_business_outcome:
+                      codeDispatchMetadata.intended_business_outcome,
+                    primary_metric: codeDispatchMetadata.primary_metric,
+                    expected_direction: codeDispatchMetadata.expected_direction,
+                    minimum_meaningful_delta:
+                      codeDispatchMetadata.minimum_meaningful_delta,
+                    lane_id: continuationWebsiteClassification.laneId,
+                  },
+                  accountabilityJobId: codeAccountability.jobId,
+                }
+              : {
+                  id: crypto.randomUUID(),
+                  name: "cowork_task",
+                  input: {
+                    task: codeTask,
+                    domain: "wrenchreadymobile-com",
+                    review_required: true,
+                    business_id: continuationWebsiteClassification.businessId,
+                    owner: continuationWebsiteClassification.owner,
+                    change_under_review: continuationWebsiteClassification.summary,
+                    intended_business_outcome:
+                      codeDispatchMetadata.intended_business_outcome,
+                    primary_metric: codeDispatchMetadata.primary_metric,
+                    expected_direction: codeDispatchMetadata.expected_direction,
+                    minimum_meaningful_delta:
+                      codeDispatchMetadata.minimum_meaningful_delta,
+                    lane_id: continuationWebsiteClassification.laneId,
+                  },
+                  accountabilityJobId: codeAccountability.jobId,
+                },
+          ],
+          assistantBlocks: [],
+          precomputedResults: [],
+        },
+      })}\n\n`,
+      { headers: sseHeaders() },
+    );
+  }
 
   const browserBridgeJob = continuation?.bridgeJobs?.find(
     (job) => job.name === "browser_vendor_cart_review",
@@ -3384,6 +4023,20 @@ export async function POST(request: NextRequest) {
       bridgeCapabilities,
     });
     return streamingTextResponse(browserCommerceAssessment.operatorMessage);
+  }
+
+  if (
+    taskClassification &&
+    taskClassification.taskClass === "website_brand_media_production" &&
+    websiteProductionAssessment &&
+    !websiteProductionAssessment.executable
+  ) {
+    await recordWebsiteProductionRoutingOutcome({
+      task: message || "",
+      classification: taskClassification,
+      assessment: websiteProductionAssessment,
+    });
+    return streamingTextResponse(websiteProductionAssessment.operatorMessage);
   }
 
   if (taskClassification && browserCommerceAssessment && browserCommerceAssessment.executable) {
@@ -3537,6 +4190,76 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  if (
+    taskClassification &&
+    taskClassification.taskClass === "website_brand_media_production" &&
+    websiteProductionAssessment &&
+    websiteProductionAssessment.executable
+  ) {
+    const dispatchMetadata = buildWebsiteProductionDispatchMetadata(
+      message || "",
+      taskClassification,
+      "media_production",
+    );
+    const accountability = await createAccountabilityJob({
+      jobType: "media_production",
+      task: message || "",
+      context: {
+        ...buildWebsiteProductionExecutionContext({
+          task: message || "",
+          classification: taskClassification,
+          assessment: websiteProductionAssessment,
+        }),
+        dispatch_metadata: dispatchMetadata,
+      },
+      status: "running",
+    });
+
+    if ("error" in accountability) {
+      return streamingTextResponse(
+        `Website production lane blocked: could not create accountability for media generation (${accountability.error}).`,
+      );
+    }
+
+    return new Response(
+      `data: ${JSON.stringify({
+        vault_action: {
+          requests: [
+            {
+              id: crypto.randomUUID(),
+              name: "media_production",
+              input: {
+                source_dir: DEFAULT_SIMON_SOURCE_DIR,
+                business_id: taskClassification.businessId,
+                owner: taskClassification.owner,
+                lane_id: taskClassification.laneId,
+                asset_goal:
+                  "Prepare review-ready Simon-led hero media for a WrenchReady website refresh: stills, GIF, and short video where supported.",
+                creative_direction:
+                  "Trust-first, premium local mechanic, real Simon source photography, bold homepage-ready visuals.",
+                variation_count: 3,
+                style_guardrails:
+                  "Stay truthful to Simon's real appearance, keep branding clean, no deceptive scenarios, no fake service claims.",
+                review_required: true,
+                change_under_review: taskClassification.summary,
+                intended_business_outcome:
+                  dispatchMetadata.intended_business_outcome,
+                primary_metric: dispatchMetadata.primary_metric,
+                expected_direction: dispatchMetadata.expected_direction,
+                minimum_meaningful_delta:
+                  dispatchMetadata.minimum_meaningful_delta,
+              },
+              accountabilityJobId: accountability.jobId,
+            },
+          ],
+          assistantBlocks: [],
+          precomputedResults: [],
+        },
+      })}\n\n`,
+      { headers: sseHeaders() },
+    );
+  }
+
   const openAIKey = readEnvSecret("OPENAI_API_KEY");
   const requestedProvider = continuation?.provider;
   const canUseOpenAIContinuation =
@@ -3563,6 +4286,7 @@ export async function POST(request: NextRequest) {
       continuation,
       taskClassification,
       browserCommerceAssessment,
+      websiteProductionAssessment,
     });
   }
 
@@ -3748,13 +4472,17 @@ export async function POST(request: NextRequest) {
               const result = await executeJobStatus(jobId);
               precomputed.push({ type: "tool_result", tool_use_id: sb.id, content: result });
             } else if (sb.name === "cursor_agent") {
+              const resolvedRepo = resolveCursorRepository(
+                asNonEmptyString(inp.repo),
+                asNonEmptyString(inp.task),
+              );
               let dispatchMetadata: DispatchMetadata;
               try {
                 dispatchMetadata = buildDispatchMetadata({
                   sourceTool: "cursor_agent",
-                  toolInput: inp,
+                  toolInput: { ...inp, repo: resolvedRepo },
                   defaultBusinessId:
-                    inferBusinessIdFromRepo(asNonEmptyString(inp.repo)) ||
+                    inferBusinessIdFromRepo(resolvedRepo) ||
                     inferBusinessIdFromDomain(asNonEmptyString(inp.task)) ||
                     "dominion",
                   runtimeRefHint: `tool_use:${sb.id}`,
@@ -3790,10 +4518,7 @@ export async function POST(request: NextRequest) {
                 jobType: "cursor_agent",
                 task: asNonEmptyString(inp.task) || "",
                 context: {
-                  repo:
-                    asNonEmptyString(inp.repo) ||
-                    process.env.CURSOR_DEFAULT_REPO ||
-                    "adamdez/dominionhomedeals",
+                  repo: resolvedRepo,
                   model: asNonEmptyString(inp.model) || "default",
                   tool_use_id: sb.id,
                   dispatch_metadata: dispatchMetadata,
@@ -3811,7 +4536,7 @@ export async function POST(request: NextRequest) {
               }
               const result = await executeCursorAgent(
                 asNonEmptyString(inp.task) || "",
-                asNonEmptyString(inp.repo),
+                resolvedRepo,
                 asNonEmptyString(inp.model),
               );
               await completeAccountabilityJob({
@@ -3842,7 +4567,17 @@ export async function POST(request: NextRequest) {
                 continue;
               }
 
-              const bridgeInput = block.input as Record<string, unknown>;
+              const rawBridgeInput = block.input as Record<string, unknown>;
+              const bridgeInput =
+                block.name === "cowork_task"
+                  ? {
+                      ...rawBridgeInput,
+                      domain: resolveCoworkDomain(
+                        asNonEmptyString(rawBridgeInput.domain),
+                        asNonEmptyString(rawBridgeInput.task),
+                      ),
+                    }
+                  : rawBridgeInput;
               const sourceTool =
                 block.name === "crew_run" ? "crew_run" : "cowork_task";
               const defaultBusinessId =
@@ -3898,7 +4633,7 @@ export async function POST(request: NextRequest) {
                 context: {
                   domain:
                     block.name === "cowork_task"
-                      ? asNonEmptyString(bridgeInput.domain) || "dominionhomedeals"
+                      ? asNonEmptyString(bridgeInput.domain) || DEFAULT_COWORK_DOMAIN
                       : undefined,
                   crew:
                     block.name === "crew_run"
@@ -3989,6 +4724,17 @@ export async function POST(request: NextRequest) {
             looksLikeAnthropicBillingError(msg) && browserCommerceAssessment
               ? browserCommerceAssessment.operatorMessage
               : `Vendor/design routing failed before the browser lane could run. ${msg}`;
+          controller.enqueue(
+            encoder.encode(`data: ${JSON.stringify({ t: usefulMessage })}\n\n`)
+          );
+          controller.enqueue(encoder.encode("data: [DONE]\n\n"));
+          controller.close();
+          return;
+        }
+        if (taskClassification?.taskClass === "website_brand_media_production") {
+          const usefulMessage =
+            websiteProductionAssessment?.operatorMessage ||
+            `Website production routing failed before media or code execution could run. ${msg}`;
           controller.enqueue(
             encoder.encode(`data: ${JSON.stringify({ t: usefulMessage })}\n\n`)
           );

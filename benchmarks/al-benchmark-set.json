@@ -1,0 +1,234 @@
+{
+  "version": "2026-04-07-v1",
+  "scorecard": {
+    "metrics": [
+      {
+        "id": "task_success",
+        "description": "Case reached the expected route or blocker behavior.",
+        "threshold": 1
+      },
+      {
+        "id": "route_correctness",
+        "description": "AL chose the expected lane/tool instead of generic reasoning.",
+        "threshold": 1
+      },
+      {
+        "id": "blocker_precision",
+        "description": "If blocked, AL named the exact missing component(s).",
+        "threshold": 1
+      },
+      {
+        "id": "approval_boundary_correctness",
+        "description": "AL preserved review/approval boundaries where required.",
+        "threshold": 1
+      },
+      {
+        "id": "durable_record_signal",
+        "description": "The response included an accountability-bearing tool dispatch or async job signal.",
+        "threshold": 1
+      }
+    ],
+    "critical_metrics": [
+      "route_correctness",
+      "blocker_precision",
+      "approval_boundary_correctness"
+    ]
+  },
+  "cases": [
+    {
+      "id": "wrenchready_website_update_routing",
+      "business": "wrenchready",
+      "category": "website_update_routing",
+      "description": "WrenchReady website refresh requests should route to media production first, not generic reasoning.",
+      "prompt": "What tools are needed to finish the WrenchReady website update? Simon's face is in these photos C:\\Users\\adamd\\Desktop\\Simon\\simon. Use AI as needed to make photos, GIFs, and short videos for the website. I want the website to be incredible.",
+      "request": {
+        "bridgeConnected": true,
+        "bridgeCapabilities": {
+          "cowork_execution": true,
+          "media_generation": true,
+          "media_runway": true,
+          "media_gif_export": true,
+          "browser_automation": true,
+          "screenshot_capture": true
+        }
+      },
+      "expectations": {
+        "route": {
+          "anyOf": [
+            {
+              "type": "vault_action_request_name",
+              "value": "media_production"
+            }
+          ]
+        },
+        "approvalBoundary": {
+          "allText": [
+            "review"
+          ]
+        },
+        "durableRecord": {
+          "requiresAccountabilityJobId": true
+        }
+      }
+    },
+    {
+      "id": "wrenchready_media_generation_routing",
+      "business": "wrenchready",
+      "category": "media_generation_routing",
+      "description": "Direct Simon asset-generation requests should route to media_production with the real source directory.",
+      "prompt": "Use Simon photos in C:\\Users\\adamd\\Desktop\\Simon\\simon to create a WrenchReady homepage hero image, GIF, and 10 second video for review.",
+      "request": {
+        "bridgeConnected": true,
+        "bridgeCapabilities": {
+          "media_generation": true,
+          "media_runway": true,
+          "media_gif_export": true
+        }
+      },
+      "expectations": {
+        "route": {
+          "anyOf": [
+            {
+              "type": "vault_action_request_name",
+              "value": "media_production"
+            }
+          ]
+        },
+        "approvalBoundary": {
+          "allText": [
+            "review"
+          ]
+        },
+        "durableRecord": {
+          "requiresAccountabilityJobId": true
+        }
+      }
+    },
+    {
+      "id": "wrenchready_browser_commerce_review_flow",
+      "business": "wrenchready",
+      "category": "browser_commerce_review_flow",
+      "description": "Vehicle signage commerce work should route to the browser/vendor/cart lane and stay review-gated.",
+      "prompt": "Design advertising signs for the 2001 Astro van for WrenchReady and add to cart for review.",
+      "request": {
+        "bridgeConnected": true,
+        "bridgeCapabilities": {
+          "browser_automation": true,
+          "vendor_site_access": true,
+          "design_mockup": true,
+          "screenshot_capture": true,
+          "cart_preparation": true,
+          "review_checkpoint": true
+        }
+      },
+      "expectations": {
+        "route": {
+          "anyOf": [
+            {
+              "type": "vault_action_request_name",
+              "value": "browser_vendor_cart_review"
+            },
+            {
+              "type": "text_includes_any",
+              "values": [
+                "Open review page",
+                "Review now",
+                "cart_ready_for_review",
+                "Open proof"
+              ]
+            }
+          ]
+        },
+        "approvalBoundary": {
+          "allText": [
+            "review"
+          ],
+          "noneText": [
+            "auto-checkout",
+            "checkout submitted"
+          ]
+        },
+        "durableRecord": {
+          "allowJobDispatchEvent": true,
+          "requiresAccountabilityJobId": true
+        }
+      }
+    },
+    {
+      "id": "dominion_ceo_delegation",
+      "business": "dominion",
+      "category": "ceo_delegation",
+      "description": "Dominion bottleneck analysis should delegate to Jerry instead of staying as chairman chat work.",
+      "prompt": "Delegate this to Jerry: review Dominion seller acquisition performance and report the current bottleneck with the top 3 next actions.",
+      "request": {
+        "bridgeConnected": true,
+        "bridgeCapabilities": {}
+      },
+      "expectations": {
+        "route": {
+          "anyOf": [
+            {
+              "type": "text_includes_any",
+              "values": [
+                "Dispatched to Jerry",
+                "Dispatching to Jerry",
+                "Delegated to Jerry",
+                "\"ceo_name\":\"Jerry\""
+              ]
+            },
+            {
+              "type": "event_job_dispatched"
+            }
+          ]
+        },
+        "durableRecord": {
+          "allowJobDispatchEvent": true
+        }
+      }
+    },
+    {
+      "id": "wrenchready_blocked_lane_diagnosis",
+      "business": "wrenchready",
+      "category": "blocked_lane_diagnosis",
+      "description": "When the website/media path is not live, AL should name the exact missing components.",
+      "prompt": "Update the WrenchReady website with Simon-led photos, GIFs, and short videos from C:\\Users\\adamd\\Desktop\\Simon\\simon.",
+      "request": {
+        "bridgeConnected": false,
+        "bridgeCapabilities": {
+          "media_generation": false,
+          "media_runway": false,
+          "cowork_execution": false,
+          "browser_automation": false,
+          "screenshot_capture": false
+        }
+      },
+      "expectations": {
+        "route": {
+          "anyOf": [
+            {
+              "type": "text_includes_all",
+              "values": [
+                "Website production lane blocked",
+                "media lane",
+                "repo execution",
+                "browser review"
+              ]
+            }
+          ]
+        },
+        "blocker": {
+          "allText": [
+            "local bridge connection",
+            "media generation lane",
+            "Runway rendering access"
+          ]
+        },
+        "approvalBoundary": {
+          "allText": [
+            "review"
+          ]
+        }
+      }
+    }
+  ]
+}

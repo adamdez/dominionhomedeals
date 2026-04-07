@@ -1,0 +1,21 @@
+{
+  "champion": {
+    "id": "champion",
+    "label": "current-default",
+    "description": "Current default AL runtime behavior."
+  },
+  "challenger": {
+    "id": "challenger",
+    "label": "candidate-change",
+    "description": "Single-lever challenger under test."
+  },
+  "promotion": {
+    "critical_metrics": [
+      "route_correctness",
+      "blocker_precision",
+      "approval_boundary_correctness"
+    ],
+    "minimum_score_delta": 1,
+    "auto_reject_on_case_regression": true
+  }
+}

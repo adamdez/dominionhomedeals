@@ -87,40 +87,24 @@ const quickActions: QuickAction[] = [
     id: "board-meeting",
     label: "Board Meeting",
     prompt:
-      "Run a board meeting. Consult each of my four CEOs — Dominion Homes, WrenchReady, Tina, and Personal Life — for a brief status update on their vertical. Summarize what each reports, flag cross-cutting issues, and tell me what needs my attention.",
+      "Run a board meeting. Consult Jerry and Tom for a brief status update on their business. Summarize what each reports, flag cross-business issues, and tell me what needs my attention.",
     icon: <Users className="h-4 w-4" />,
     category: "Board",
   },
   {
     id: "dominion-ceo",
-    label: "Dominion Homes CEO",
+    label: "Jerry",
     prompt:
-      "Consult the Dominion Homes CEO. I want a full status report on the real estate operation — pipeline health, active leads, recent decisions, and recommended next actions.",
+      "Consult Jerry. I want a full status report on the real estate operation - pipeline health, active leads, recent decisions, economic risks, and recommended next actions.",
     icon: <Building2 className="h-4 w-4" />,
     category: "Board",
   },
   {
     id: "wrenchready-ceo",
-    label: "WrenchReady CEO",
+    label: "Tom",
     prompt:
-      "Consult the WrenchReady Mobile CEO. I want a full status report — bookings this week, revenue vs target, Simon's schedule, ad performance, and what needs attention.",
+      "Consult Tom. I want a full status report - bookings this week, profit per service day, Simon's schedule, route quality, and what needs attention.",
     icon: <Wrench className="h-4 w-4" />,
-    category: "Board",
-  },
-  {
-    id: "tina-ceo",
-    label: "Tina CEO",
-    prompt:
-      "Consult the Tina CEO. What's the current state of our tax and accounting across all entities? Any upcoming deadlines, open items, or recommendations?",
-    icon: <Receipt className="h-4 w-4" />,
-    category: "Board",
-  },
-  {
-    id: "personal-ceo",
-    label: "Personal Life CEO",
-    prompt:
-      "Consult my Personal Life CEO. What needs my attention on the personal side — health, finances, family, goals? What's slipping and what's on track?",
-    icon: <Heart className="h-4 w-4" />,
     category: "Board",
   },
   {
