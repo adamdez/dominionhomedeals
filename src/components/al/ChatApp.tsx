@@ -483,9 +483,9 @@ function fileNameFromBridgePath(value: unknown): string | null {
 
 function buildHostedReviewPath(jobId: number): string {
   if (typeof window !== "undefined" && window.location.hostname === "al.dominionhomedeals.com") {
-    return `/reviews/${jobId}`;
+    return `/boardroom/${jobId}`;
   }
-  return `/al/reviews/${jobId}`;
+  return `/al/boardroom/${jobId}`;
 }
 
 function bridgeArtifactUrl(reviewPageUrl: string, fileName: string): string {

@@ -28,12 +28,12 @@ export async function POST(
   const { jobId: rawJobId } = await context.params;
   const jobId = Number(rawJobId);
   if (!Number.isInteger(jobId) || jobId <= 0) {
-    return NextResponse.json({ error: "Invalid review job id." }, { status: 400 });
+    return NextResponse.json({ error: "Invalid Board Room presentation id." }, { status: 400 });
   }
 
   const job = await fetchAlJob(jobId);
   if (!job || job.job_type !== "browser_commerce_design") {
-    return NextResponse.json({ error: "Review job not found." }, { status: 404 });
+    return NextResponse.json({ error: "Board Room presentation not found." }, { status: 404 });
   }
 
   let body: {
@@ -69,12 +69,12 @@ export async function POST(
   const timestamp = new Date().toISOString();
   const nextAction =
     nextState === "approved_for_checkout"
-      ? "The design is approved for checkout readiness. Resume the local cart session when you are ready to inspect the live vendor cart before any manual checkout."
+      ? "The recommendation is approved for checkout readiness. Resume the live vendor cart only when you are ready to inspect it before any manual checkout."
       : nextState === "changes_requested"
-        ? "Review changes were requested. Re-run the browser/vendor flow after updating the preferred design or vendor direction."
+        ? "Changes were requested. Update the recommendation package, then return to Board Room with the revised presentation."
         : nextState === "resume_local_session_required"
-          ? "Resume the local cart session on Dez's machine to inspect or recover the vendor cart before any further review."
-          : "Vendor session is blocked and needs repair before this browser-commerce job can move forward.";
+          ? "Resume the local execution session on Dez's machine to inspect or recover the live vendor cart before any further review."
+          : "The execution path is blocked and needs repair before this presentation can move forward.";
 
   const updatedContext = {
     ...contextValue,

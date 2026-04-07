@@ -67,10 +67,10 @@ export function ReviewDecisionPanel({
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.24em] text-emerald-300/45">
-            Review Decision
+            Board Room Decision
           </p>
           <h2 className="mt-2 text-2xl font-semibold text-[#eaf4ef]">
-            Approve, request changes, or flag the local session
+            Approve the recommendation, request changes, or flag the execution path
           </h2>
         </div>
         <div className="rounded-full border border-emerald-500/20 bg-emerald-500/10 px-4 py-2 text-sm font-semibold text-emerald-200">
@@ -98,7 +98,7 @@ export function ReviewDecisionPanel({
           disabled={saving}
           className="rounded-2xl bg-emerald-500 px-4 py-3 text-sm font-semibold text-[#05110b] transition hover:bg-emerald-400 disabled:cursor-not-allowed disabled:opacity-60"
         >
-          Approve for checkout readiness
+          Approve current recommendation
         </button>
         <button
           type="button"
@@ -114,7 +114,7 @@ export function ReviewDecisionPanel({
           disabled={saving}
           className="rounded-2xl border border-emerald-800/40 bg-[#0b110e] px-4 py-3 text-sm font-semibold text-emerald-100 transition hover:border-emerald-500/45 disabled:cursor-not-allowed disabled:opacity-60"
         >
-          Resume local session required
+          Resume execution locally
         </button>
         <button
           type="button"
@@ -128,7 +128,7 @@ export function ReviewDecisionPanel({
 
       {alternatives.length > 0 ? (
         <div className="mt-6 rounded-2xl border border-emerald-900/20 bg-[#0b110e] p-4">
-          <p className="text-sm font-semibold text-emerald-100">Choose alternate option</p>
+          <p className="text-sm font-semibold text-emerald-100">Choose alternate recommendation</p>
           <div className="mt-3 flex flex-wrap gap-3">
             <select
               value={selectedAlternative}
@@ -147,7 +147,7 @@ export function ReviewDecisionPanel({
               disabled={saving || !selectedAlternative}
               className="rounded-xl border border-emerald-800/40 bg-[#111916] px-4 py-2 text-sm font-semibold text-emerald-100 transition hover:border-emerald-500/45 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              Record alternate choice
+              Record alternate decision
             </button>
           </div>
         </div>

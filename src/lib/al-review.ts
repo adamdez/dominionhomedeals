@@ -39,6 +39,17 @@ export interface BrowserCommerceReviewSyncResult {
   updatedContext: JsonRecord;
 }
 
+export interface BoardroomPresentationRecord {
+  id: number;
+  jobType: string;
+  task: string;
+  summary: string;
+  title: string;
+  state: ReviewState;
+  updatedAt: string | null;
+  boardroomPath: string;
+}
+
 type JsonRecord = Record<string, unknown>;
 
 let bucketReady: Promise<void> | null = null;
@@ -81,8 +92,15 @@ export function normalizeReviewState(value: unknown): ReviewState {
 export function buildHostedReviewPath(host: string | null | undefined, jobId: number): string {
   const normalizedHost = String(host || "").toLowerCase();
   return normalizedHost.startsWith("al.dominionhomedeals.com")
-    ? `/reviews/${jobId}`
-    : `/al/reviews/${jobId}`;
+    ? `/boardroom/${jobId}`
+    : `/al/boardroom/${jobId}`;
+}
+
+export function buildHostedBoardroomHomePath(host: string | null | undefined): string {
+  const normalizedHost = String(host || "").toLowerCase();
+  return normalizedHost.startsWith("al.dominionhomedeals.com")
+    ? "/boardroom"
+    : "/al/boardroom";
 }
 
 export function buildHostedReviewUrl(
@@ -117,6 +135,74 @@ export async function fetchAlJob(jobId: number) {
     started_at: string | null;
     completed_at: string | null;
   };
+}
+
+function titleCaseStatus(value: string): string {
+  return value
+    .split(/[_-]+/)
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
+}
+
+export async function fetchBoardroomPresentations(
+  host: string | null | undefined,
+  limit = 12,
+): Promise<BoardroomPresentationRecord[]> {
+  const supabase = getServiceClient();
+  if (!supabase) return [];
+
+  const { data, error } = await supabase
+    .from("al_jobs")
+    .select("id, job_type, task, context, started_at, completed_at")
+    .order("id", { ascending: false })
+    .limit(Math.max(limit * 3, limit));
+
+  if (error || !data) {
+    return [];
+  }
+
+  const presentations = data
+    .map((row) => {
+      const context = parseJobContext(row.context);
+      const hasReviewSurface =
+        context.review_surface && typeof context.review_surface === "object" && !Array.isArray(context.review_surface);
+      const hasBoardroomLink = typeof context.review_page_url === "string" || typeof context.hosted_review_page_url === "string";
+
+      if (!hasReviewSurface && !hasBoardroomLink) {
+        return null;
+      }
+
+      const title =
+        typeof context.presentation_title === "string" && context.presentation_title.trim()
+          ? context.presentation_title.trim()
+          : typeof context.business_name === "string" && context.business_name.trim()
+            ? `${context.business_name.trim()} Presentation`
+            : row.job_type === "browser_commerce_design"
+              ? "Browser Commerce Presentation"
+              : titleCaseStatus(row.job_type);
+
+      const summary =
+        typeof context.summary === "string" && context.summary.trim()
+          ? context.summary.trim()
+          : row.task;
+
+      return {
+        id: row.id as number,
+        jobType: row.job_type as string,
+        task: row.task as string,
+        summary,
+        title,
+        state: normalizeReviewState(context.review_state),
+        updatedAt:
+          (typeof row.completed_at === "string" ? row.completed_at : null) ||
+          (typeof row.started_at === "string" ? row.started_at : null),
+        boardroomPath: buildHostedReviewPath(host, row.id as number),
+      } satisfies BoardroomPresentationRecord;
+    })
+    .filter((entry): entry is BoardroomPresentationRecord => Boolean(entry));
+
+  return presentations.slice(0, limit);
 }
 
 export async function updateAlJobContext(jobId: number, context: JsonRecord): Promise<void> {

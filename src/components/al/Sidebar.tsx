@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import {
   Sun,
   Activity,
@@ -246,6 +247,16 @@ export function Sidebar({
         </div>
 
         <nav className="flex-1 overflow-y-auto px-3 py-4 al-scrollbar">
+          <div className="mb-5 px-2">
+            <Link
+              href="/al/boardroom"
+              className="flex items-center justify-between rounded-xl border border-emerald-900/20 bg-[#111916] px-3 py-3 text-sm font-semibold text-[#e2ede8] transition hover:border-emerald-500/35 hover:bg-emerald-500/10"
+            >
+              <span>Board Room</span>
+              <span className="text-xs uppercase tracking-[0.18em] text-emerald-300/45">Open</span>
+            </Link>
+          </div>
+
           <div className="mb-5">
             <h3 className="mb-2 px-2 text-[11px] font-semibold uppercase tracking-wider text-emerald-200/25">
               Runtime

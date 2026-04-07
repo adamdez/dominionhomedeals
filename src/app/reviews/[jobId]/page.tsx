@@ -1,6 +1,6 @@
 import { BoardroomPresentationPage } from "@/components/al/BoardroomPresentationPage";
 
-export default async function LegacyAlReviewRoute(
+export default async function LegacyHostedReviewRoute(
   props: { params: Promise<{ jobId: string }> },
 ) {
   const { jobId: rawJobId } = await props.params;
