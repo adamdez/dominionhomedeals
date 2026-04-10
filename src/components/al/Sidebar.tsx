@@ -20,6 +20,7 @@ import {
   Bot,
   ChevronDown,
   ChevronRight,
+  CalendarDays,
 } from "lucide-react";
 import { useState } from "react";
 
@@ -252,13 +253,25 @@ export function Sidebar({
 
         <nav className="flex-1 overflow-y-auto px-3 py-4 al-scrollbar">
           <div className="mb-5 px-2">
-            <Link
-              href="/al/boardroom"
-              className="flex items-center justify-between rounded-xl border border-emerald-900/20 bg-[#111916] px-3 py-3 text-sm font-semibold text-[#e2ede8] transition hover:border-emerald-500/35 hover:bg-emerald-500/10"
-            >
-              <span>Board Room</span>
-              <span className="text-xs uppercase tracking-[0.18em] text-emerald-300/45">Open</span>
-            </Link>
+            <div className="space-y-2">
+              <Link
+                href="/al/boardroom"
+                className="flex items-center justify-between rounded-xl border border-emerald-900/20 bg-[#111916] px-3 py-3 text-sm font-semibold text-[#e2ede8] transition hover:border-emerald-500/35 hover:bg-emerald-500/10"
+              >
+                <span>Board Room</span>
+                <span className="text-xs uppercase tracking-[0.18em] text-emerald-300/45">Open</span>
+              </Link>
+              <Link
+                href="/al/planner"
+                className="flex items-center justify-between rounded-xl border border-emerald-900/20 bg-[#111916] px-3 py-3 text-sm font-semibold text-[#e2ede8] transition hover:border-emerald-500/35 hover:bg-emerald-500/10"
+              >
+                <span className="flex items-center gap-2">
+                  <CalendarDays className="h-4 w-4 text-emerald-400/65" />
+                  Planner
+                </span>
+                <span className="text-xs uppercase tracking-[0.18em] text-emerald-300/45">Open</span>
+              </Link>
+            </div>
           </div>
 
           <div className="mb-5">
