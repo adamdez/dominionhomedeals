@@ -48,6 +48,7 @@ export interface BoardroomPresentationRecord {
   summary: string;
   title: string;
   state: string;
+  bucket: "review_now" | "needs_attention" | "local_only";
   updatedAt: string | null;
   boardroomPath: string;
 }
@@ -148,6 +149,33 @@ function titleCaseStatus(value: string): string {
     .join(" ");
 }
 
+function isLocalOnlyUrl(value: unknown): boolean {
+  if (typeof value !== "string" || !value.trim()) return false;
+  try {
+    const parsed = new URL(value);
+    return parsed.hostname === "127.0.0.1" || parsed.hostname === "localhost";
+  } catch {
+    return false;
+  }
+}
+
+function extractEmbeddedErrorText(value: string): string | null {
+  const trimmed = value.trim();
+  const start = trimmed.indexOf("{");
+  const end = trimmed.lastIndexOf("}");
+  if (start === -1 || end === -1 || end <= start) return null;
+  try {
+    const parsed = JSON.parse(trimmed.slice(start, end + 1));
+    if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+      const error = (parsed as Record<string, unknown>).error;
+      return typeof error === "string" && error.trim() ? error.trim() : null;
+    }
+  } catch {
+    return null;
+  }
+  return null;
+}
+
 export async function fetchBoardroomPresentations(
   host: string | null | undefined,
   limit = 12,
@@ -171,6 +199,26 @@ export async function fetchBoardroomPresentations(
       const hasReviewSurface =
         context.review_surface && typeof context.review_surface === "object" && !Array.isArray(context.review_surface);
       const hasBoardroomLink = typeof context.review_page_url === "string" || typeof context.hosted_review_page_url === "string";
+      const operatorLinks = Array.isArray(context.operator_links)
+        ? context.operator_links.filter(
+            (entry): entry is Record<string, unknown> =>
+              Boolean(entry) && typeof entry === "object" && !Array.isArray(entry),
+          )
+        : [];
+      const hasHostedOperatorLink = operatorLinks.some(
+        (entry) => typeof entry.url === "string" && !isLocalOnlyUrl(entry.url),
+      );
+      const hasLocalOnlyOperatorLink = operatorLinks.some(
+        (entry) => typeof entry.url === "string" && isLocalOnlyUrl(entry.url),
+      );
+      const hasHostedReviewLink =
+        (typeof context.hosted_review_page_url === "string" && !isLocalOnlyUrl(context.hosted_review_page_url)) ||
+        (typeof context.review_page_url === "string" && !isLocalOnlyUrl(context.review_page_url)) ||
+        hasHostedOperatorLink;
+      const hasLocalOnlyLink =
+        isLocalOnlyUrl(context.review_page_url) ||
+        isLocalOnlyUrl(context.hosted_review_page_url) ||
+        hasLocalOnlyOperatorLink;
       const hasPresentationShell =
         (typeof context.presentation_title === "string" && context.presentation_title.trim().length > 0) ||
         (typeof context.presentation_body === "string" && context.presentation_body.trim().length > 0);
@@ -192,10 +240,53 @@ export async function fetchBoardroomPresentations(
               ? "Browser Commerce Presentation"
               : titleCaseStatus(row.job_type);
 
-      const summary =
+      const rawSummary =
         typeof context.summary === "string" && context.summary.trim()
           ? context.summary.trim()
-          : row.task;
+          : "";
+      const recommendation =
+        typeof context.presentation_recommendation === "string" && context.presentation_recommendation.trim()
+          ? context.presentation_recommendation.trim()
+          : "";
+      const bodyText =
+        typeof context.presentation_body === "string" && context.presentation_body.trim()
+          ? context.presentation_body.trim()
+          : typeof context.result_snapshot === "string" && context.result_snapshot.trim()
+            ? context.result_snapshot.trim()
+            : "";
+      const summary =
+        rawSummary &&
+        rawSummary !== "✓ Done" &&
+        !/^\[[^\]]+\]$/.test(rawSummary)
+          ? rawSummary
+          : recommendation &&
+              recommendation !== "✓ Done" &&
+              !/^\[[^\]]+\]$/.test(recommendation)
+            ? recommendation
+            : extractEmbeddedErrorText(bodyText) || row.task;
+      const stateLabel =
+        (typeof context.presentation_status_label === "string" && context.presentation_status_label.trim()) ||
+        normalizeReviewState(context.review_state);
+      const loweredState = stateLabel.toLowerCase();
+      const loweredSummary = summary.toLowerCase();
+      const loweredJobType = String(row.job_type || "").toLowerCase();
+      const isThinExecutiveBrief =
+        loweredJobType === "delegate_to_ceo" &&
+        /^\[[^\]]+\]$/.test(rawSummary) &&
+        bodyText.length < 120;
+      const bucket: BoardroomPresentationRecord["bucket"] =
+        hasLocalOnlyLink && !hasHostedReviewLink
+          ? "local_only"
+          : loweredState.includes("blocked") ||
+              loweredState.includes("execution launched") ||
+              isThinExecutiveBrief ||
+              loweredSummary.includes("error") ||
+              loweredSummary.includes("blocked") ||
+              loweredSummary.includes("credit balance is too low") ||
+              (loweredJobType === "cursor_agent" && !hasHostedReviewLink && !hasReviewSurface) ||
+              (loweredJobType === "cowork_task" && !hasHostedReviewLink && !hasReviewSurface)
+            ? "needs_attention"
+            : "review_now";
 
       return {
         id: row.id as number,
@@ -203,9 +294,8 @@ export async function fetchBoardroomPresentations(
         task: row.task as string,
         summary,
         title,
-        state:
-          (typeof context.presentation_status_label === "string" && context.presentation_status_label.trim()) ||
-          normalizeReviewState(context.review_state),
+        state: stateLabel,
+        bucket,
         updatedAt:
           (typeof row.completed_at === "string" ? row.completed_at : null) ||
           (typeof row.started_at === "string" ? row.started_at : null),

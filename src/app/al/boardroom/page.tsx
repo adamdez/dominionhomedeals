@@ -28,7 +28,51 @@ export default async function AlBoardroomIndexPage() {
 
   const host = (await headers()).get("host");
   const presentations = await fetchBoardroomPresentations(host, 12);
+  const reviewNow = presentations.filter((presentation) => presentation.bucket === "review_now");
+  const needsAttention = presentations.filter((presentation) => presentation.bucket === "needs_attention");
+  const localOnly = presentations.filter((presentation) => presentation.bucket === "local_only");
   const homePath = buildHostedBoardroomHomePath(host);
+
+  function renderPresentationCards(items: typeof presentations) {
+    return (
+      <div className="mt-6 grid gap-4 lg:grid-cols-2">
+        {items.map((presentation) => (
+          <article
+            key={presentation.id}
+            className="rounded-2xl border border-emerald-900/20 bg-[#0b110e] p-5"
+          >
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-300/45">
+                  {presentation.jobType.replace(/_/g, " ")}
+                </p>
+                <h3 className="mt-2 text-xl font-semibold text-[#f3faf6]">
+                  {presentation.title}
+                </h3>
+              </div>
+              <span className="rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.15em] text-emerald-200">
+                {presentation.state}
+              </span>
+            </div>
+            <p className="mt-4 text-sm leading-6 text-emerald-100/70">
+              {presentation.summary}
+            </p>
+            <div className="mt-5 flex flex-wrap items-center justify-between gap-3">
+              <p className="text-xs uppercase tracking-[0.18em] text-emerald-300/35">
+                Updated {relativeTimeLabel(presentation.updatedAt)}
+              </p>
+              <Link
+                href={presentation.boardroomPath}
+                className="rounded-2xl bg-emerald-500 px-4 py-3 text-sm font-semibold text-[#05110b] transition hover:bg-emerald-400"
+              >
+                Open presentation
+              </Link>
+            </div>
+          </article>
+        ))}
+      </div>
+    );
+  }
 
   return (
     <main className="h-full w-full overflow-y-auto bg-[#07100b] px-4 py-6 text-[#eaf4ef] sm:px-6 lg:px-8">
@@ -75,41 +119,68 @@ export default async function AlBoardroomIndexPage() {
               will appear here.
             </div>
           ) : (
-            <div className="mt-6 grid gap-4 lg:grid-cols-2">
-              {presentations.map((presentation) => (
-                <article
-                  key={presentation.id}
-                  className="rounded-2xl border border-emerald-900/20 bg-[#0b110e] p-5"
-                >
+            <div className="mt-6 space-y-8">
+              <div>
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-300/45">
+                      Review now
+                    </p>
+                    <h3 className="mt-2 text-xl font-semibold text-[#f3faf6]">
+                      Ready for a fast decision
+                    </h3>
+                  </div>
+                  <span className="rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.15em] text-emerald-200">
+                    {reviewNow.length}
+                  </span>
+                </div>
+                {reviewNow.length > 0 ? renderPresentationCards(reviewNow) : (
+                  <div className="mt-4 rounded-2xl border border-emerald-900/20 bg-[#0b110e] p-5 text-sm leading-6 text-emerald-100/70">
+                    Nothing is fully review-ready right now.
+                  </div>
+                )}
+              </div>
+
+              {needsAttention.length > 0 ? (
+                <div>
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <div>
-                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-300/45">
-                        {presentation.jobType.replace(/_/g, " ")}
+                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-amber-300/55">
+                        Needs attention
                       </p>
                       <h3 className="mt-2 text-xl font-semibold text-[#f3faf6]">
-                        {presentation.title}
+                        Execution items that still need repair
                       </h3>
                     </div>
-                    <span className="rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.15em] text-emerald-200">
-                      {presentation.state}
+                    <span className="rounded-full border border-amber-500/20 bg-amber-500/10 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.15em] text-amber-100">
+                      {needsAttention.length}
                     </span>
                   </div>
-                  <p className="mt-4 text-sm leading-6 text-emerald-100/70">
-                    {presentation.summary}
-                  </p>
-                  <div className="mt-5 flex flex-wrap items-center justify-between gap-3">
-                    <p className="text-xs uppercase tracking-[0.18em] text-emerald-300/35">
-                      Updated {relativeTimeLabel(presentation.updatedAt)}
-                    </p>
-                    <Link
-                      href={presentation.boardroomPath}
-                      className="rounded-2xl bg-emerald-500 px-4 py-3 text-sm font-semibold text-[#05110b] transition hover:bg-emerald-400"
-                    >
-                      Open presentation
-                    </Link>
+                  {renderPresentationCards(needsAttention)}
+                </div>
+              ) : null}
+
+              {localOnly.length > 0 ? (
+                <div>
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-sky-300/55">
+                        Local-only
+                      </p>
+                      <h3 className="mt-2 text-xl font-semibold text-[#f3faf6]">
+                        Review packages that still depend on Dez&apos;s machine
+                      </h3>
+                    </div>
+                    <span className="rounded-full border border-sky-500/20 bg-sky-500/10 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.15em] text-sky-100">
+                      {localOnly.length}
+                    </span>
                   </div>
-                </article>
-              ))}
+                  <div className="mt-4 rounded-2xl border border-sky-900/20 bg-[#0b110e] p-5 text-sm leading-6 text-emerald-100/70">
+                    These packages are real, but their primary review links still point to local bridge output instead of a fully hosted review surface.
+                  </div>
+                  {renderPresentationCards(localOnly)}
+                </div>
+              ) : null}
             </div>
           )}
         </section>

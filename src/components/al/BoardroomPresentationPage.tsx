@@ -20,6 +20,21 @@ const asStringArray = (v: unknown) =>
     ? v.filter((entry): entry is string => typeof entry === "string" && entry.trim().length > 0)
     : [];
 
+function humanizeHighlight(value: string) {
+  const trimmed = value.trim();
+  if (!trimmed) return "";
+  if (trimmed === "media_partial_ready_for_review") {
+    return "AI render hit a blocker, but the fallback media package is ready.";
+  }
+  if (trimmed.startsWith("bridge:media_production")) {
+    return "Media work ran through the local bridge execution lane.";
+  }
+  if (trimmed === "adamdez/wrenchreadymobile-com") {
+    return "Prepared for the WrenchReady website repo.";
+  }
+  return trimmed;
+}
+
 function buildPresentationTitle(context: Record<string, unknown>, task: string) {
   if (typeof context.presentation_title === "string" && context.presentation_title.trim()) {
     return context.presentation_title.trim();
@@ -81,11 +96,45 @@ function normalizeAlternatives(context: Record<string, unknown>) {
     .filter((entry): entry is { title: string; note: string } => Boolean(entry));
 }
 
+function isLocalOnlyUrl(value: string | undefined) {
+  if (!value) return false;
+  try {
+    const parsed = new URL(value);
+    return parsed.hostname === "127.0.0.1" || parsed.hostname === "localhost";
+  } catch {
+    return false;
+  }
+}
+
 function paragraphize(text: string) {
   return text
     .split(/\n\s*\n/)
     .map((entry) => entry.replace(/\n+/g, " ").trim())
     .filter(Boolean);
+}
+
+function extractEmbeddedJsonObject(text: string) {
+  const trimmed = text.trim();
+  const start = trimmed.indexOf("{");
+  const end = trimmed.lastIndexOf("}");
+  if (start === -1 || end === -1 || end <= start) return null;
+  try {
+    const parsed = JSON.parse(trimmed.slice(start, end + 1));
+    return parsed && typeof parsed === "object" && !Array.isArray(parsed)
+      ? (parsed as Record<string, unknown>)
+      : null;
+  } catch {
+    return null;
+  }
+}
+
+function firstSubstantiveParagraph(paragraphs: string[]) {
+  return (
+    paragraphs.find((entry) => {
+      const trimmed = entry.trim();
+      return Boolean(trimmed) && !/^\[[^\]]+\]$/.test(trimmed) && trimmed !== "Chairman";
+    }) || ""
+  );
 }
 
 function GenericPresentation({
@@ -100,18 +149,33 @@ function GenericPresentation({
   boardroomHomePath: string;
 }) {
   const title = buildPresentationTitle(context, task);
-  const summary = asDisplayString(context.summary, "Here is the latest recommendation from AL's team, laid out cleanly so you can decide what should happen next.");
-  const recommendation = asDisplayString(context.presentation_recommendation, "Review the brief, check the supporting links, and make the next call.");
-  const highlights = asStringArray(context.presentation_highlights).slice(0, 6);
+  const body = asDisplayString(context.presentation_body, asDisplayString(context.result_snapshot, "No presentation body was captured."));
+  const bodyParagraphs = paragraphize(body);
+  const embeddedBodyObject = extractEmbeddedJsonObject(body);
+  const derivedCoworkError =
+    typeof embeddedBodyObject?.error === "string" && embeddedBodyObject.error.trim()
+      ? embeddedBodyObject.error.trim()
+      : "";
+  const substantiveParagraph = firstSubstantiveParagraph(bodyParagraphs);
+  const rawSummary = asDisplayString(context.summary, "");
+  const rawRecommendation = asDisplayString(context.presentation_recommendation, "");
+  const summary =
+    rawSummary && rawSummary !== "✓ Done" && !/^\[[^\]]+\]$/.test(rawSummary)
+      ? rawSummary
+      : derivedCoworkError || substantiveParagraph || "Here is the latest recommendation from AL's team, laid out cleanly so you can decide what should happen next.";
+  const recommendation =
+    rawRecommendation && rawRecommendation !== "✓ Done" && !/^\[[^\]]+\]$/.test(rawRecommendation)
+      ? rawRecommendation
+      : derivedCoworkError || substantiveParagraph || "Review the brief, check the supporting links, and make the next call.";
+  const highlights = asStringArray(context.presentation_highlights).map(humanizeHighlight).filter(Boolean).slice(0, 6);
   const whySelected = asDisplayString(
     context.presentation_why_selected ?? context.why_selected ?? context.rationale,
     highlights[0] || "AL believes this is the strongest current path based on the latest evidence, with the rough edges sanded off.",
   );
   const nextAction = asDisplayString(context.next_action, "Decide whether to approve it, ask for changes, or hold until the package is ready.");
-  const body = asDisplayString(context.presentation_body, asDisplayString(context.result_snapshot, "No presentation body was captured."));
-  const bodyParagraphs = paragraphize(body);
   const links = normalizeOperatorLinks(context);
-  const primaryLinks = links.filter((link) => link.priority === "primary");
+  const primaryLinks = links.filter((link) => link.priority === "primary" && !isLocalOnlyUrl(link.url));
+  const localOnlyPrimaryLinks = links.filter((link) => link.priority === "primary" && isLocalOnlyUrl(link.url));
   const secondaryLinks = links.filter((link) => link.priority === "secondary");
   const alternatives = normalizeAlternatives(context).slice(0, 4);
   const rawState = asDisplayString(context.review_state, "ready for review");
@@ -127,6 +191,7 @@ function GenericPresentation({
   const isBlockedPresentation =
     rawState === "blocked_vendor_session" ||
     (primaryLinks.length === 0 &&
+      localOnlyPrimaryLinks.length === 0 &&
       alternatives.length === 0 &&
       (blockedSignals.includes("error:") ||
         blockedSignals.includes("blocked") ||
@@ -193,6 +258,17 @@ function GenericPresentation({
                   {primaryLinks.map((link) => (
                     <a key={`${link.label}-${link.url}`} href={link.url} target="_blank" rel="noreferrer" className="rounded-2xl bg-emerald-500 px-4 py-3 text-sm font-semibold text-[#05110b] transition hover:bg-emerald-400">{link.label}</a>
                   ))}
+                </div>
+              ) : localOnlyPrimaryLinks.length > 0 && !isBlockedPresentation ? (
+                <div className="mt-3 space-y-3">
+                  <p className="text-sm leading-6 text-emerald-100/65">
+                    This package is real, but its review link still depends on Dez&apos;s local bridge machine.
+                  </p>
+                  <div className="grid gap-3 sm:flex sm:flex-wrap">
+                    {localOnlyPrimaryLinks.map((link) => (
+                      <a key={`${link.label}-${link.url}`} href={link.url} target="_blank" rel="noreferrer" className="rounded-2xl border border-sky-500/25 bg-sky-500/10 px-4 py-3 text-sm font-semibold text-sky-100 transition hover:bg-sky-500/15">{link.label}</a>
+                    ))}
+                  </div>
                 </div>
               ) : (
                 <p className="mt-3 text-sm leading-6 text-emerald-100/65">

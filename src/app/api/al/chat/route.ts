@@ -24,10 +24,9 @@ const HAIKU_MODEL = "claude-haiku-4-5-20251001";
 const SONNET_MODEL = "claude-sonnet-4-6";
 const OPENAI_FAST_MODEL = process.env.AL_OPENAI_MODEL_FAST?.trim() || "gpt-5-mini";
 const OPENAI_HEAVY_MODEL = process.env.AL_OPENAI_MODEL_HEAVY?.trim() || "gpt-5.4";
-const PRIMARY_REASONING_PROVIDER =
-  process.env.AL_REASONING_PROVIDER?.trim().toLowerCase() === "anthropic"
-    ? "anthropic"
-    : "openai";
+// Chairman reasoning is intentionally OpenAI-only. Legacy Anthropic code remains
+// only so older in-flight continuations can be recovered onto the OpenAI path.
+const PRIMARY_REASONING_PROVIDER = "openai";
 
 function readEnvSecret(key: string): string {
   const value = process.env[key]?.trim() || "";
@@ -253,6 +252,13 @@ For website_brand_media_production:
 - If blocked, name the exact missing component: media lane access, repo execution access, or browser review access.
 - Do not claim the website update is complete without a reviewable browser surface.
 
+LOCAL PDF TASK RULE:
+If the user asks to merge, combine, or assemble existing local PDF files into one printable packet, prefer the local_pdf_merge bridge lane first.
+For local_pdf_merge:
+- Keep the job local on Dez's machine.
+- Do not route a plain PDF merge to the legacy cowork/Claude executor.
+- If a source file is Markdown, DOCX, or another non-PDF format, say that exact limitation instead of pretending the merge can succeed.
+
 BOARD ROOM RULE:
 Board Room is the operator-facing presentation surface for AL, Tom, and Jerry.
 When consequential work becomes review-worthy, publish it into Board Room instead of leaving it buried in chat or raw job rows.
@@ -314,6 +320,7 @@ TOOLS:
 - planner_task - create, update, or list shared Planner tasks for Dez and AL.
 - cursor_agent - dispatch a coding task to Cursor's cloud agent when that is the best execution surface.
 - media_production - generate review-ready brand images/GIFs/short video from local source photos.
+- local_pdf_merge - merge existing local PDF files into one printable packet without external model credits.
 
 BRIDGE RELATIVE PATHS:
 The local bridge roots at the folder set in al-bridge/.env as VAULT_PATH. Use al-boreland-vault/ as the first path segment when reading vault files through the bridge.
@@ -1873,6 +1880,91 @@ function extractCursorMonitorUrl(value: string): string | null {
   return match?.[1] || urlFromText(value);
 }
 
+function extractEmbeddedJsonObject(value: string): Record<string, unknown> | null {
+  const trimmed = value.trim();
+  const start = trimmed.indexOf("{");
+  const end = trimmed.lastIndexOf("}");
+  if (start === -1 || end === -1 || end <= start) {
+    return null;
+  }
+
+  try {
+    const parsed = JSON.parse(trimmed.slice(start, end + 1));
+    return parsed && typeof parsed === "object" && !Array.isArray(parsed)
+      ? (parsed as Record<string, unknown>)
+      : null;
+  } catch {
+    return null;
+  }
+}
+
+function summarizeCoworkExecution(cleanResult: string, task: string): {
+  blocked: boolean;
+  summary: string;
+  highlights: string[];
+  nextAction: string;
+} {
+  const embedded = extractEmbeddedJsonObject(cleanResult);
+  const embeddedError = asBriefString(embedded?.error);
+  const embeddedSuccess = embedded?.success;
+  const isLowCredit =
+    /credit balance is too low/i.test(cleanResult) ||
+    /credit balance is too low/i.test(embeddedError || "");
+  const isRepoMiss =
+    /don't know a repo called/i.test(cleanResult) ||
+    /do not know a repo called/i.test(cleanResult) ||
+    /don't know a repo called/i.test(embeddedError || "") ||
+    /do not know a repo called/i.test(embeddedError || "");
+  const blocked =
+    embeddedSuccess === false ||
+    Boolean(embeddedError) ||
+    /cowork (failed|error)/i.test(cleanResult) ||
+    isLowCredit ||
+    isRepoMiss;
+
+  if (blocked) {
+    const summary =
+      embeddedError ||
+      firstMeaningfulParagraph(cleanResult) ||
+      "Local execution is blocked and needs repair before it should land in Board Room.";
+    return {
+      blocked: true,
+      summary,
+      highlights: uniqueStrings(
+        [
+          isLowCredit
+            ? "Local Claude execution lane ran out of paid credit."
+            : "",
+          isRepoMiss
+            ? "WrenchReady local executor did not receive the correct repo alias."
+            : "",
+          task ? `Task: ${shortText(task, 120)}` : "",
+        ].filter(Boolean),
+      ),
+      nextAction: isLowCredit
+        ? "Restore paid access for the local Claude execution lane or reroute this coding task through Cursor before asking for review."
+        : isRepoMiss
+          ? "Repair the WrenchReady local executor alias and rerun the task before asking for review."
+          : "Repair the blocked local execution lane or reroute the work before asking for review.",
+    };
+  }
+
+  return {
+    blocked: false,
+    summary:
+      firstMeaningfulParagraph(cleanResult) ||
+      "Local execution finished and is ready to be turned into a real review package.",
+    highlights: uniqueStrings(
+      [
+        task ? `Task: ${shortText(task, 120)}` : "",
+        ...markdownHighlights(cleanResult, 3),
+      ].filter(Boolean),
+    ),
+    nextAction:
+      "Inspect the local execution outcome and decide whether it is ready for a broader review package.",
+  };
+}
+
 function buildBoardroomPromotionContext(input: {
   jobType: string;
   task: string;
@@ -1955,13 +2047,7 @@ function buildBoardroomPromotionContext(input: {
   }
 
   if (input.jobType === "cowork_task") {
-    const blocked =
-      input.isError ||
-      /"success":false/i.test(cleanResult) ||
-      /credit balance is too low/i.test(cleanResult);
-    const summary =
-      firstMeaningfulParagraph(cleanResult) ||
-      (blocked ? "Cowork execution is blocked." : "Cowork execution finished.");
+    const coworkSummary = summarizeCoworkExecution(cleanResult, input.task);
     return {
       ...context,
       owner,
@@ -1969,17 +2055,15 @@ function buildBoardroomPromotionContext(input: {
       presentation_type: "execution_update",
       presentation_title:
         businessName ? `${businessName} Local Execution Update` : "Local Execution Update",
-      presentation_status_label: blocked ? "blocked" : "ready for review",
-      presentation_recommendation: summary,
-      summary,
+      presentation_status_label: coworkSummary.blocked ? "blocked" : "ready for review",
+      presentation_recommendation: coworkSummary.summary,
+      summary: coworkSummary.summary,
       presentation_body: cleanResult,
-      presentation_highlights: markdownHighlights(cleanResult, 4),
+      presentation_highlights: coworkSummary.highlights,
       result_snapshot: cleanResult,
       next_action:
-        blocked
-          ? "Repair the blocked local execution lane or reroute the work before asking for review."
-          : asBriefString(context.next_action) ||
-            "Inspect the local execution outcome and decide whether it is ready for a broader review package.",
+        asBriefString(context.next_action) ||
+        coworkSummary.nextAction,
     };
   }
 
@@ -2018,9 +2102,15 @@ function buildBoardroomPromotionContext(input: {
       presentation_body: cleanResult || summary,
       presentation_highlights: uniqueStrings(
         [
-          asBriefString(context.media_status) || "",
-          asBriefString(context.selected_execution_path) || "",
-          asBriefString(context.repo_target) || "",
+          /partial/i.test(asBriefString(context.media_status) || "")
+            ? "AI render hit a blocker, but a fallback package is ready for review."
+            : "Media package is ready for review.",
+          asBriefString(context.selected_execution_path)?.includes("bridge:media_production")
+            ? "Media lane ran through the local bridge."
+            : "",
+          asBriefString(context.repo_target)?.includes("wrenchreadymobile-com")
+            ? "Prepared for the WrenchReady website repo."
+            : "",
         ].filter(Boolean),
       ),
       operator_links: operatorLinks,
@@ -4411,7 +4501,7 @@ export async function POST(request: NextRequest) {
                   name: "cowork_task",
                   input: {
                     task: codeTask,
-                    domain: "wrenchreadymobile-com",
+                    domain: WRENCHREADY_COWORK_DOMAIN,
                     review_required: true,
                     business_id: continuationWebsiteClassification.businessId,
                     owner: continuationWebsiteClassification.owner,
