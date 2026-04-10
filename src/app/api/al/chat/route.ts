@@ -1,6 +1,11 @@
 import { NextRequest } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
 import OpenAI from "openai";
+import {
+  createPlannerTask,
+  listPlannerTasks,
+  updatePlannerTask,
+} from "@/lib/al-planner";
 import { getServiceClient } from "@/lib/supabase";
 import { syncBrowserCommerceReviewJob } from "@/lib/al-review";
 import {
@@ -262,6 +267,13 @@ Board Room presentations should show:
 - exact next action needed from Dez
 Use Board Room for CEO briefs, review-safe browser work, and review-worthy media or website execution packages.
 
+PLANNER RULE:
+Planner is the shared task and due-date surface for Dez and AL.
+Use Planner for concrete next actions instead of leaving them only in chat.
+Board Room = presentations and approvals.
+Planner = tasks, due dates, assignee, and completion state.
+When a task should be tracked, use the planner_task tool to create, update, or list planner items.
+
 CREATIVE INITIATIVE RULE:
 Mission constraints and governance boundaries are hard limits.
 Inside those boundaries, creativity is encouraged.
@@ -290,6 +302,7 @@ TOOLS:
 - delegate_to_ceo - consult a company CEO. Canonical IDs: dominion, wrenchready. Runtime alias preserved: dominion-homes
 - vault_list, vault_read, vault_read_image - browse local files when the bridge is connected.
 - crew_list, crew_run, crew_status - run local crews through the bridge.
+- planner_task - create, update, or list shared Planner tasks for Dez and AL.
 - cursor_agent - dispatch a coding task to Cursor's cloud agent when that is the best execution surface.
 - media_production - generate review-ready brand images/GIFs/short video from local source photos.
 
@@ -446,6 +459,48 @@ const SERVER_TOOLS: Anthropic.Tool[] = [
         },
       },
       required: ["path", "content"],
+    },
+  },
+  {
+    name: "planner_task",
+    description:
+      "Create, update, or list shared Planner tasks for Dez and AL. Use this when a concrete next action, due date, or handoff should be tracked durably outside the chat stream.",
+    input_schema: {
+      type: "object" as const,
+      properties: {
+        action: {
+          type: "string",
+          description: "Planner action to take.",
+          enum: ["create", "update", "list"],
+        },
+        task_id: {
+          type: "number",
+          description: "Required for update. The planner task ID.",
+        },
+        title: {
+          type: "string",
+          description: "Short task title for create or update.",
+        },
+        details: {
+          type: "string",
+          description: "Optional concise supporting note.",
+        },
+        due_date: {
+          type: "string",
+          description: "Optional due date in YYYY-MM-DD format.",
+        },
+        assigned_to: {
+          type: "string",
+          description: "Task owner.",
+          enum: ["dez", "al"],
+        },
+        status: {
+          type: "string",
+          description: "Task status for update or list filtering.",
+          enum: ["open", "done", "cancelled"],
+        },
+      },
+      required: ["action"],
     },
   },
   {
@@ -3159,6 +3214,90 @@ async function executeMemorySave(
   }
 }
 
+function isPlannerAssignee(value: string | null | undefined): value is "dez" | "al" {
+  return value === "dez" || value === "al";
+}
+
+function isPlannerStatus(
+  value: string | null | undefined,
+): value is "open" | "done" | "cancelled" {
+  return value === "open" || value === "done" || value === "cancelled";
+}
+
+async function executePlannerTask(input: Record<string, unknown>): Promise<string> {
+  const action = asNonEmptyString(input.action)?.toLowerCase();
+
+  try {
+    if (action === "create") {
+      const title = asNonEmptyString(input.title);
+      if (!title) return "Planner create failed: title is required.";
+
+      const assignedToInput = asNonEmptyString(input.assigned_to);
+      const task = await createPlannerTask({
+        title,
+        details: asNonEmptyString(input.details) || "",
+        dueDate: asNonEmptyString(input.due_date) || null,
+        assignedTo: isPlannerAssignee(assignedToInput) ? assignedToInput : "dez",
+        createdBy: "AL",
+        source: "chat",
+      });
+
+      return `Planner task created: #${task.id} Due for ${
+        task.assignedTo === "al" ? "AL" : "Dez"
+      } - "${task.title}"${task.dueDate ? ` due ${task.dueDate}` : ""}.`;
+    }
+
+    if (action === "update") {
+      const taskId = Number(input.task_id);
+      if (!Number.isFinite(taskId) || taskId <= 0) {
+        return "Planner update failed: valid task_id is required.";
+      }
+
+      const assignedToInput = asNonEmptyString(input.assigned_to);
+      const statusInput = asNonEmptyString(input.status);
+      const task = await updatePlannerTask(taskId, {
+        title: asNonEmptyString(input.title) || undefined,
+        details:
+          input.details === undefined ? undefined : asNonEmptyString(input.details) || "",
+        dueDate:
+          input.due_date === undefined ? undefined : asNonEmptyString(input.due_date) || null,
+        assignedTo: isPlannerAssignee(assignedToInput) ? assignedToInput : undefined,
+        status: isPlannerStatus(statusInput) ? statusInput : undefined,
+      });
+
+      return `Planner task updated: #${task.id} "${task.title}" is ${task.status}${
+        task.dueDate ? ` due ${task.dueDate}` : ""
+      } and assigned to ${task.assignedTo === "al" ? "AL" : "Dez"}.`;
+    }
+
+    const assignedToInput = asNonEmptyString(input.assigned_to);
+    const statusInput = asNonEmptyString(input.status);
+    const tasks = await listPlannerTasks();
+    const filtered = tasks.filter((task) => {
+      if (isPlannerAssignee(assignedToInput) && task.assignedTo !== assignedToInput) {
+        return false;
+      }
+      if (isPlannerStatus(statusInput) && task.status !== statusInput) {
+        return false;
+      }
+      return true;
+    });
+
+    if (filtered.length === 0) {
+      return "Planner is clear for the requested filter.";
+    }
+
+    const lines = filtered.slice(0, 12).map((task) => {
+      const due = task.dueDate ? ` due ${task.dueDate}` : "";
+      return `#${task.id} [${task.status}] ${task.assignedTo === "al" ? "AL" : "Dez"} - ${task.title}${due}`;
+    });
+
+    return `Planner tasks:\n${lines.join("\n")}`;
+  } catch (error) {
+    return `Planner task failed: ${error instanceof Error ? error.message : "unknown error"}`;
+  }
+}
+
 async function executeMemoryDelete(id: number): Promise<string> {
   const supabase = getServiceClient();
   if (!supabase) return "Memory delete failed: no database connection.";
@@ -3604,6 +3743,12 @@ async function runOpenAIChat(input: {
                 asNonEmptyString(parsedInput.category) || "general",
                 asNonEmptyString(parsedInput.content) || "",
               );
+              precomputed.push(buildOpenAIFunctionOutput(call.callId, result));
+              continue;
+            }
+
+            if (call.name === "planner_task") {
+              const result = await executePlannerTask(parsedInput);
               precomputed.push(buildOpenAIFunctionOutput(call.callId, result));
               continue;
             }
@@ -4793,6 +4938,9 @@ export async function POST(request: NextRequest) {
                 asNonEmptyString(inp.category) || "general",
                 asNonEmptyString(inp.content) || "",
               );
+              precomputed.push({ type: "tool_result", tool_use_id: sb.id, content: result });
+            } else if (sb.name === "planner_task") {
+              const result = await executePlannerTask(inp);
               precomputed.push({ type: "tool_result", tool_use_id: sb.id, content: result });
             } else if (sb.name === "memory_delete") {
               const result = await executeMemoryDelete(Number(inp.id));
