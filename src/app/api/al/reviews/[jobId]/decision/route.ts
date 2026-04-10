@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { createPlannerTask } from "@/lib/al-planner";
 import {
   fetchAlJob,
   isAuthenticatedAlSession,
@@ -16,6 +17,146 @@ const ALLOWED_ACTIONS = new Set<ReviewDecisionAction>([
   "select_alternative_option",
   "close_presentation",
 ]);
+
+type FollowUpTaskSummary = {
+  id: number;
+  title: string;
+  assigned_to: "dez" | "al";
+  status: "open" | "done" | "cancelled";
+  source_action: ReviewDecisionAction;
+  created_at: string | null;
+  details: string;
+};
+
+function asContextRecord(value: unknown): Record<string, unknown> | null {
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : null;
+}
+
+function normalizeFollowUpTask(value: unknown): FollowUpTaskSummary | null {
+  const record = asContextRecord(value);
+  if (!record) return null;
+
+  const id = Number(record.id);
+  if (!Number.isInteger(id) || id <= 0) return null;
+
+  const title = typeof record.title === "string" ? record.title.trim() : "";
+  const details = typeof record.details === "string" ? record.details.trim() : "";
+  const status =
+    record.status === "done" || record.status === "cancelled" ? record.status : "open";
+  const assignedTo = record.assigned_to === "al" ? "al" : "dez";
+  const sourceAction = String(record.source_action || "") as ReviewDecisionAction;
+
+  if (!title || !sourceAction) return null;
+
+  return {
+    id,
+    title,
+    assigned_to: assignedTo,
+    status,
+    source_action: sourceAction,
+    created_at: typeof record.created_at === "string" ? record.created_at : null,
+    details,
+  };
+}
+
+function buildFollowUpPlan(input: {
+  action: ReviewDecisionAction;
+  note: string;
+  jobId: number;
+  task: string;
+  contextValue: Record<string, unknown>;
+  isBrowserCommercePresentation: boolean;
+}): {
+  title: string;
+  details: string;
+  assignedTo: "dez" | "al";
+} | null {
+  const owner =
+    typeof input.contextValue.owner === "string" && input.contextValue.owner.trim()
+      ? input.contextValue.owner.trim()
+      : "AL team";
+  const titleSeed =
+    typeof input.contextValue.presentation_title === "string" && input.contextValue.presentation_title.trim()
+      ? input.contextValue.presentation_title.trim()
+      : input.task.trim() || `Board Room item #${input.jobId}`;
+  const boardroomPath = `/al/boardroom/${input.jobId}`;
+  const noteLine = input.note ? `Operator note: ${input.note}` : "";
+
+  switch (input.action) {
+    case "changes_requested":
+      return {
+        title: `Revise Board Room package: ${titleSeed.slice(0, 80)}`,
+        assignedTo: "al",
+        details: [
+          `Board Room operator requested changes for job #${input.jobId}.`,
+          `Owner: ${owner}`,
+          input.isBrowserCommercePresentation
+            ? "Update the recommendation package and return a revised Board Room review surface with proof."
+            : "Update the package, tighten the recommendation, and return a revised Board Room presentation.",
+          `Board Room link: ${boardroomPath}`,
+          noteLine,
+        ]
+          .filter(Boolean)
+          .join("\n"),
+      };
+    case "resume_local_session_required":
+      return {
+        title: `Resume execution for Board Room item #${input.jobId}`,
+        assignedTo: "dez",
+        details: [
+          `Board Room operator requested resume for job #${input.jobId}.`,
+          `Owner: ${owner}`,
+          input.isBrowserCommercePresentation
+            ? "Resume the local vendor/cart session, inspect the live state, and return with a fresh review checkpoint."
+            : "Resume the execution lane that produced this presentation and return with a fresh checkpoint or clear blocker.",
+          typeof input.contextValue.resume_cart_url === "string" && input.contextValue.resume_cart_url.trim()
+            ? `Resume URL: ${input.contextValue.resume_cart_url.trim()}`
+            : "",
+          `Board Room link: ${boardroomPath}`,
+          noteLine,
+        ]
+          .filter(Boolean)
+          .join("\n"),
+      };
+    case "blocked_vendor_session":
+      return {
+        title: `Unblock Board Room item #${input.jobId}`,
+        assignedTo: "dez",
+        details: [
+          `Board Room operator marked job #${input.jobId} as blocked.`,
+          `Owner: ${owner}`,
+          "Repair the upstream lane or missing access, then return with either a working review package or a concrete blocker update.",
+          `Board Room link: ${boardroomPath}`,
+          noteLine,
+        ]
+          .filter(Boolean)
+          .join("\n"),
+      };
+    case "select_alternative_option": {
+      const selectedAlternative =
+        typeof input.contextValue.selected_alternative_option === "string"
+          ? input.contextValue.selected_alternative_option.trim()
+          : "";
+      return {
+        title: `Pursue alternate Board Room option for item #${input.jobId}`,
+        assignedTo: "al",
+        details: [
+          `Board Room operator selected an alternate option for job #${input.jobId}.`,
+          selectedAlternative ? `Selected alternative: ${selectedAlternative}` : "",
+          "Rework the package around the chosen alternative and return with an updated recommendation.",
+          `Board Room link: ${boardroomPath}`,
+          noteLine,
+        ]
+          .filter(Boolean)
+          .join("\n"),
+      };
+    }
+    default:
+      return null;
+  }
+}
 
 export async function POST(
   request: NextRequest,
@@ -98,6 +239,47 @@ export async function POST(
           ? "Resume the active execution lane before this presentation can move forward."
           : "The execution path is blocked and needs repair before this presentation can move forward.";
 
+  const followUpPlan = buildFollowUpPlan({
+    action: body.action,
+    note,
+    jobId,
+    task: job.task,
+    contextValue: {
+      ...contextValue,
+      selected_alternative_option:
+        body.action === "select_alternative_option"
+          ? selectedAlternative || null
+          : contextValue.selected_alternative_option || null,
+    },
+    isBrowserCommercePresentation,
+  });
+  const existingFollowUp = normalizeFollowUpTask(contextValue.follow_up_task);
+  let followUpTask = existingFollowUp;
+
+  if (
+    followUpPlan &&
+    !(existingFollowUp && existingFollowUp.status === "open" && existingFollowUp.source_action === body.action)
+  ) {
+    const plannerTask = await createPlannerTask({
+      title: followUpPlan.title,
+      details: followUpPlan.details,
+      assignedTo: followUpPlan.assignedTo,
+      createdBy: "Authenticated AL operator",
+      source: `boardroom_review:${jobId}`,
+    });
+    followUpTask = {
+      id: plannerTask.id,
+      title: plannerTask.title,
+      assigned_to: plannerTask.assignedTo,
+      status: plannerTask.status,
+      source_action: body.action,
+      created_at: plannerTask.createdAt,
+      details: plannerTask.details,
+    };
+  } else if (!followUpPlan) {
+    followUpTask = null;
+  }
+
   const updatedContext = {
     ...contextValue,
     review_state: nextState,
@@ -106,6 +288,9 @@ export async function POST(
         ? "closed"
         : contextValue.presentation_status_label || null,
     next_action: nextAction,
+    last_operator_response_at: timestamp,
+    last_operator_response_action: body.action,
+    follow_up_task: followUpTask,
     review_decisions: [
       ...currentHistory,
       {
@@ -127,6 +312,7 @@ export async function POST(
     ok: true,
     reviewState: nextState,
     nextAction,
+    followUp: followUpTask,
     selectedAlternative: selectedAlternative || null,
   });
 }

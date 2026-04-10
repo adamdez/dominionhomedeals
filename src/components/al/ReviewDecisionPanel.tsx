@@ -2,12 +2,23 @@
 
 import { useMemo, useState } from "react";
 
+type FollowUpTaskSummary = {
+  id: number;
+  title: string;
+  assigned_to: "dez" | "al";
+  status: "open" | "done" | "cancelled";
+  source_action: string;
+  created_at: string | null;
+  details: string;
+};
+
 interface ReviewDecisionPanelProps {
   jobId: number;
   initialState: string;
   initialNextAction: string;
   alternatives: string[];
   mode?: "generic" | "browser_commerce" | "generic_blocked";
+  initialFollowUp?: FollowUpTaskSummary | null;
 }
 
 function humanizeState(value: string): string {
@@ -35,9 +46,11 @@ export function ReviewDecisionPanel({
   initialNextAction,
   alternatives,
   mode = "generic",
+  initialFollowUp = null,
 }: ReviewDecisionPanelProps) {
   const [reviewState, setReviewState] = useState(initialState);
   const [nextAction, setNextAction] = useState(initialNextAction);
+  const [followUp, setFollowUp] = useState<FollowUpTaskSummary | null>(initialFollowUp);
   const [note, setNote] = useState("");
   const [selectedAlternative, setSelectedAlternative] = useState(alternatives[0] || "");
   const [saving, setSaving] = useState(false);
@@ -109,6 +122,7 @@ export function ReviewDecisionPanel({
             error?: string;
             reviewState?: string;
             nextAction?: string;
+            followUp?: FollowUpTaskSummary | null;
           }
         | null;
 
@@ -120,7 +134,12 @@ export function ReviewDecisionPanel({
       const nextActionText = payload.nextAction || nextAction;
       setReviewState(nextReviewState);
       setNextAction(nextActionText);
-      setStatusMessage(`Saved: ${humanizeState(nextReviewState)}.`);
+      setFollowUp(payload?.followUp ?? null);
+      setStatusMessage(
+        payload?.followUp
+          ? `Saved: ${humanizeState(nextReviewState)}. Follow-up assigned to ${payload.followUp.assigned_to === "al" ? "AL" : "Dez"}.`
+          : `Saved: ${humanizeState(nextReviewState)}.`,
+      );
       setNote("");
     } catch (error) {
       setStatusMessage(error instanceof Error ? error.message : "Review update failed.");
@@ -236,6 +255,19 @@ export function ReviewDecisionPanel({
           className="mt-2 w-full rounded-2xl border border-emerald-900/25 bg-[#0b110e] px-4 py-3 text-sm text-[#eaf4ef] outline-none transition focus:border-emerald-500/50"
         />
       </label>
+
+      {followUp ? (
+        <div className="mt-6 rounded-2xl border border-sky-500/25 bg-sky-500/10 p-4">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-sky-200/70">
+            Follow-up created
+          </p>
+          <p className="mt-2 text-sm font-semibold text-sky-50">{followUp.title}</p>
+          <p className="mt-2 text-sm leading-6 text-sky-100/80">{followUp.details}</p>
+          <p className="mt-3 text-xs uppercase tracking-[0.16em] text-sky-200/65">
+            Assigned to {followUp.assigned_to === "al" ? "AL" : "Dez"}{followUp.created_at ? ` • ${new Date(followUp.created_at).toLocaleString()}` : ""}
+          </p>
+        </div>
+      ) : null}
 
       {statusMessage ? (
         <p className="mt-4 text-sm text-emerald-200/80">{statusMessage}</p>

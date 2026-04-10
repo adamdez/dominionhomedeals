@@ -137,6 +137,13 @@ function firstSubstantiveParagraph(paragraphs: string[]) {
   );
 }
 
+function formatDateTime(value: unknown) {
+  if (typeof value !== "string" || !value.trim()) return "";
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return value;
+  return parsed.toLocaleString();
+}
+
 function GenericPresentation({
   context,
   task,
@@ -179,6 +186,11 @@ function GenericPresentation({
   const secondaryLinks = links.filter((link) => link.priority === "secondary");
   const alternatives = normalizeAlternatives(context).slice(0, 4);
   const rawState = asDisplayString(context.review_state, "ready for review");
+  const followUpTask = asRecord(context.follow_up_task);
+  const followUpTitle = asDisplayString(followUpTask.title, "");
+  const followUpDetails = asDisplayString(followUpTask.details, "");
+  const followUpAssignee = followUpTask.assigned_to === "al" ? "AL" : "Dez";
+  const lastOperatorResponseAt = formatDateTime(context.last_operator_response_at);
   const blockedSignals = [
     recommendation,
     summary,
@@ -234,9 +246,9 @@ function GenericPresentation({
               </p>
             </div>
 
-            <div className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-              <div className="rounded-2xl border border-emerald-900/20 bg-[#0b110e] p-4">
-                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-300/45">Owner</p>
+              <div className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                <div className="rounded-2xl border border-emerald-900/20 bg-[#0b110e] p-4">
+                  <p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-300/45">Owner</p>
                 <p className="mt-2 text-lg font-semibold text-[#f3faf6]">{asDisplayString(context.owner, "AL team")}</p>
               </div>
               <div className="rounded-2xl border border-emerald-900/20 bg-[#0b110e] p-4">
@@ -245,9 +257,28 @@ function GenericPresentation({
               </div>
               <div className="rounded-2xl border border-emerald-900/20 bg-[#0b110e] p-4">
                 <p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-300/45">Next action</p>
-                <p className="mt-2 text-sm leading-6 text-emerald-100/70">{nextAction}</p>
+                  <p className="mt-2 text-sm leading-6 text-emerald-100/70">{nextAction}</p>
+                </div>
               </div>
-            </div>
+
+              {followUpTitle ? (
+                <div className="mt-6 rounded-2xl border border-sky-500/25 bg-sky-500/10 p-5">
+                  <p className="text-xs font-semibold uppercase tracking-[0.2em] text-sky-200/70">Live follow-up</p>
+                  <p className="mt-2 text-lg font-semibold text-sky-50">{followUpTitle}</p>
+                  <p className="mt-2 text-sm leading-6 text-sky-100/80">{followUpDetails || "A follow-up task has been created from the latest Board Room decision."}</p>
+                  <p className="mt-3 text-xs uppercase tracking-[0.16em] text-sky-200/70">
+                    Assigned to {followUpAssignee}
+                    {lastOperatorResponseAt ? ` • last operator response ${lastOperatorResponseAt}` : ""}
+                  </p>
+                </div>
+              ) : lastOperatorResponseAt ? (
+                <div className="mt-6 rounded-2xl border border-amber-500/20 bg-amber-500/10 p-5">
+                  <p className="text-xs font-semibold uppercase tracking-[0.2em] text-amber-200/70">Latest operator response</p>
+                  <p className="mt-2 text-sm leading-6 text-amber-100/80">
+                    Last response was recorded at {lastOperatorResponseAt}, but no accountable follow-up task is attached to this item.
+                  </p>
+                </div>
+              ) : null}
 
             <div className="mt-6 rounded-2xl border border-emerald-900/20 bg-[#0b110e] p-5">
               <p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-300/45">
@@ -285,6 +316,15 @@ function GenericPresentation({
                 initialState={String(isBlockedPresentation ? "blocked_vendor_session" : context.review_state || "ready_for_review")}
                 initialNextAction={nextAction}
                 alternatives={alternatives.map((entry) => entry.title)}
+                initialFollowUp={followUpTitle ? {
+                  id: Number(followUpTask.id) || jobId,
+                  title: followUpTitle,
+                  assigned_to: followUpTask.assigned_to === "al" ? "al" : "dez",
+                  status: followUpTask.status === "done" || followUpTask.status === "cancelled" ? followUpTask.status : "open",
+                  source_action: typeof followUpTask.source_action === "string" ? followUpTask.source_action : "",
+                  created_at: typeof followUpTask.created_at === "string" ? followUpTask.created_at : null,
+                  details: followUpDetails,
+                } : null}
                 mode={isBlockedPresentation ? "generic_blocked" : "generic"}
               />
             </div>
@@ -351,6 +391,10 @@ function BrowserCommercePresentation({ context, task, jobId, boardroomHomePath }
     ? context.review_decisions.filter((entry): entry is Record<string, unknown> => Boolean(entry) && typeof entry === "object" && !Array.isArray(entry))
     : [];
   const currentState = normalizeReviewState(context.review_state);
+  const followUpTask = asRecord(context.follow_up_task);
+  const followUpTitle = asDisplayString(followUpTask.title, "");
+  const followUpDetails = asDisplayString(followUpTask.details, "");
+  const lastOperatorResponseAt = formatDateTime(context.last_operator_response_at);
   const presentationTitle = buildPresentationTitle(context, task);
   const presentationSummary = typeof context.summary === "string" && context.summary.trim()
     ? context.summary.trim()
@@ -430,7 +474,27 @@ function BrowserCommercePresentation({ context, task, jobId, boardroomHomePath }
             </div>
           </section>
 
-          <ReviewDecisionPanel jobId={jobId} initialState={currentState} initialNextAction={typeof context.next_action === "string" ? context.next_action : "Review the presentation, then approve the recommendation or request changes."} alternatives={alternativeLabels} mode="browser_commerce" />
+          {followUpTitle ? (
+            <section className="rounded-3xl border border-sky-500/25 bg-sky-500/10 p-6 shadow-[0_18px_60px_rgba(0,0,0,0.22)]">
+              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-sky-200/70">Live follow-up</p>
+              <h2 className="mt-2 text-2xl font-semibold text-sky-50">{followUpTitle}</h2>
+              <p className="mt-3 text-sm leading-6 text-sky-100/80">{followUpDetails || "A follow-up task has been created from the latest Board Room decision."}</p>
+              <p className="mt-3 text-xs uppercase tracking-[0.16em] text-sky-200/70">
+                Assigned to {followUpTask.assigned_to === "al" ? "AL" : "Dez"}
+                {lastOperatorResponseAt ? ` • last operator response ${lastOperatorResponseAt}` : ""}
+              </p>
+            </section>
+          ) : null}
+
+          <ReviewDecisionPanel jobId={jobId} initialState={currentState} initialNextAction={typeof context.next_action === "string" ? context.next_action : "Review the presentation, then approve the recommendation or request changes."} alternatives={alternativeLabels} initialFollowUp={followUpTitle ? {
+            id: Number(followUpTask.id) || jobId,
+            title: followUpTitle,
+            assigned_to: followUpTask.assigned_to === "al" ? "al" : "dez",
+            status: followUpTask.status === "done" || followUpTask.status === "cancelled" ? followUpTask.status : "open",
+            source_action: typeof followUpTask.source_action === "string" ? followUpTask.source_action : "",
+            created_at: typeof followUpTask.created_at === "string" ? followUpTask.created_at : null,
+            details: followUpDetails,
+          } : null} mode="browser_commerce" />
 
           <section className="rounded-3xl border border-emerald-900/20 bg-[#101714] p-6 shadow-[0_18px_60px_rgba(0,0,0,0.22)]">
             <p className="text-xs font-semibold uppercase tracking-[0.24em] text-emerald-300/45">Alternatives</p>
