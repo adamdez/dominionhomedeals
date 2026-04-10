@@ -35,25 +35,25 @@ interface QuickAction {
 const quickActions: QuickAction[] = [
   {
     id: "morning-brief",
-    label: "Morning Brief",
+    label: "Morning rundown",
     prompt:
-      "Give me my morning brief. What happened overnight, what's on the schedule today, and what needs my immediate attention?",
+      "Give me the morning rundown. What happened overnight, what is on deck today, and what needs my attention first?",
     icon: <Sun className="h-4 w-4" />,
     category: "Daily Ops",
   },
   {
     id: "status-check",
-    label: "Status Check",
+    label: "Shop check",
     prompt:
-      "Run a status check across all businesses. Revenue, pipeline health, active deals, and any red flags for each entity.",
+      "Run a full shop check across all businesses. Give me revenue, pipeline health, active work, and any loose bolts I need to know about.",
     icon: <Activity className="h-4 w-4" />,
     category: "Daily Ops",
   },
   {
     id: "weekly-review",
-    label: "Weekly Review",
+    label: "Weekly tune-up",
     prompt:
-      "Let's do the weekly review. Summarize this week's wins, misses, key metrics, and set priorities for next week across all operations.",
+      "Let's do the weekly tune-up. Summarize wins, misses, key metrics, and what we should tighten up next week across the whole operation.",
     icon: <CalendarCheck className="h-4 w-4" />,
     category: "Daily Ops",
   },
@@ -67,32 +67,32 @@ const quickActions: QuickAction[] = [
   },
   {
     id: "ask-anything",
-    label: "Ask Al Anything",
+    label: "Talk to Al",
     prompt: "",
     icon: <MessageCircle className="h-4 w-4" />,
     category: "Business",
   },
   {
     id: "ux-audit",
-    label: "UX Audit",
+    label: "UX once-over",
     prompt:
-      "Run a full UX audit on our current website. Analyze every user flow from landing to lead form submission. Identify friction points, accessibility gaps, mobile pain points, and give me a ranked list of quick wins we can ship this week.",
+      "Give the website a full UX once-over. Check every major user flow, find the friction, call out mobile pain points, and hand me the highest-leverage fixes we can ship this week.",
     icon: <Search className="h-4 w-4" />,
     category: "UX Specialists",
   },
   {
     id: "conversion-optimizer",
-    label: "Conversion Optimizer",
+    label: "Conversion tune-up",
     prompt:
-      "Analyze our entire conversion funnel end-to-end. Evaluate landing page copy, hero sections, CTAs, form design, trust signals, social proof placement, and page speed. Give me specific, actionable changes ranked by expected impact on lead conversion rates with estimated lift percentages.",
+      "Tune up the full conversion funnel. Evaluate copy, hero, CTA flow, form design, trust signals, social proof, and page speed, then rank the changes by likely lift.",
     icon: <TrendingUp className="h-4 w-4" />,
     category: "UX Specialists",
   },
   {
     id: "board-meeting",
-    label: "Board Meeting",
+    label: "Board check-in",
     prompt:
-      "Run a board meeting. Consult Jerry and Tom for a brief status update on their business. Summarize what each reports, flag cross-business issues, and tell me what needs my attention.",
+      "Run a board check-in. Consult Jerry and Tom, summarize what each reports, flag cross-business issues, and tell me what needs my attention.",
     icon: <Users className="h-4 w-4" />,
     category: "Board",
   },
@@ -114,17 +114,17 @@ const quickActions: QuickAction[] = [
   },
   {
     id: "list-crews",
-    label: "Available Crews",
+    label: "Available crews",
     prompt:
-      "Call crew_list (I'll approve) and tell me which CrewAI crews are installed, what each one does, and when you'd run tax-scout vs wrenchready vs both.",
+      "Call crew_list and tell me which crews are installed, what each one is good for, and when you would reach for tax-scout versus wrenchready versus both.",
     icon: <Bot className="h-4 w-4" />,
     category: "Crews",
   },
   {
     id: "run-tax-scout",
-    label: "Run Tax Scout crew",
+    label: "Run Tax Scout",
     prompt:
-      "I want to run the Tax Scout crew locally. Use crew_list if needed, then crew_run with crew tax-scout. After it starts, use crew_status until the run finishes and summarize the output for me.",
+      "Run the Tax Scout crew locally. Use crew_list if needed, then crew_run with crew tax-scout. Stay with it until it finishes and give me the plain-English result.",
     icon: <Bot className="h-4 w-4" />,
     category: "Crews",
   },
@@ -172,7 +172,7 @@ export function Sidebar({
     {
       label: "Local bridge",
       status: bridgeConnected ? "live" : "blocked",
-      detail: bridgeConnected ? "Connected for vault and local execution." : "Offline from this operator session.",
+      detail: bridgeConnected ? "Connected for vault and local execution." : "Offline from this session.",
     },
     {
       label: "Media lane",
@@ -183,7 +183,7 @@ export function Sidebar({
       detail:
         bridgeConnected && bridgeHealth?.capabilities?.media_generation
           ? "Local media generation available."
-          : "Needs connected bridge with media_generation capability.",
+          : "Needs a connected bridge with media generation.",
     },
     {
       label: "Local browser fallback",
@@ -194,7 +194,7 @@ export function Sidebar({
       detail:
         bridgeConnected && bridgeHealth?.capabilities?.browser_automation
           ? "Fallback browser automation available."
-          : "Fallback browser lane unavailable from this session.",
+          : "Fallback browser lane is unavailable from this session.",
     },
   ];
 

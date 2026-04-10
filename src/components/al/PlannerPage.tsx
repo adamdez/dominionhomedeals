@@ -122,10 +122,10 @@ export function PlannerPage({ initialTasks }: { initialTasks: PlannerTask[] }) {
       <div className="mx-auto flex max-w-7xl flex-col gap-6">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.24em] text-emerald-300/45">
-            Planner
+            Punch list
           </p>
           <h1 className="mt-2 text-3xl font-semibold text-[#f3faf6] sm:text-4xl">
-            Shared due dates and to-dos
+            Shared due dates and next moves
           </h1>
           <p className="mt-3 max-w-3xl text-sm leading-6 text-emerald-100/70 sm:text-base">
             This is the shared punch list. Put the next actions here instead of losing them in chat, and AL will keep the screws tight on what is due, what is done, and what still needs a hand.
@@ -134,7 +134,7 @@ export function PlannerPage({ initialTasks }: { initialTasks: PlannerTask[] }) {
 
         <section className="rounded-3xl border border-emerald-900/20 bg-[#101714] p-4 shadow-[0_18px_60px_rgba(0,0,0,0.22)] sm:p-6">
           <p className="text-xs font-semibold uppercase tracking-[0.24em] text-emerald-300/45">
-            Add task
+            Add to the list
           </p>
           <div className="mt-4 grid gap-3 lg:grid-cols-[1.4fr_1fr_1fr_1fr_auto]">
             <input
@@ -177,7 +177,7 @@ export function PlannerPage({ initialTasks }: { initialTasks: PlannerTask[] }) {
 
         <section className="rounded-3xl border border-emerald-900/20 bg-[#101714] p-4 shadow-[0_18px_60px_rgba(0,0,0,0.22)] sm:p-6">
           <p className="text-xs font-semibold uppercase tracking-[0.24em] text-emerald-300/45">
-            This week
+            This week on the bench
           </p>
           <div className="mt-4 flex gap-3 overflow-x-auto pb-2 al-scrollbar lg:grid lg:overflow-visible lg:pb-0 lg:grid-cols-7">
             {weekBuckets.map((bucket) => (
@@ -275,7 +275,7 @@ export function PlannerPage({ initialTasks }: { initialTasks: PlannerTask[] }) {
 
         <section className="rounded-3xl border border-emerald-900/20 bg-[#101714] p-4 shadow-[0_18px_60px_rgba(0,0,0,0.22)] sm:p-6">
           <p className="text-xs font-semibold uppercase tracking-[0.24em] text-emerald-300/45">
-            Closed recently
+            Recently buttoned up
           </p>
           <div className="mt-4 grid gap-3 lg:grid-cols-2">
             {closedTasks.length > 0 ? (

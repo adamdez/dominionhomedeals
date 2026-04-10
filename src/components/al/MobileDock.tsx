@@ -5,9 +5,9 @@ import { usePathname } from "next/navigation";
 import { CalendarDays, LayoutPanelTop, MessageCircle } from "lucide-react";
 
 const navItems = [
-  { href: "/", label: "Chat", icon: MessageCircle },
+  { href: "/", label: "Talk", icon: MessageCircle },
   { href: "/boardroom", label: "Board Room", icon: LayoutPanelTop },
-  { href: "/planner", label: "Planner", icon: CalendarDays },
+  { href: "/planner", label: "Punch List", icon: CalendarDays },
 ];
 
 export function MobileDock() {
