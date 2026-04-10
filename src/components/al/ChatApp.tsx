@@ -1948,6 +1948,9 @@ function ThinkingDots() {
             />
           ))}
         </div>
+        <p className="mt-2 text-xs text-emerald-100/35">
+          Getting a straight answer lined up.
+        </p>
       </div>
     </div>
   );
@@ -1964,7 +1967,7 @@ function SearchingWeb({ query }: { query: string }) {
             style={{ animationDuration: "2s" }}
           />
           <span className="text-sm text-emerald-200/50">
-            Searching the web&hellip;
+            Checking the outside world&hellip;
           </span>
         </div>
         <p className="mt-1.5 max-w-xs truncate text-xs italic text-emerald-200/20">
@@ -2022,7 +2025,7 @@ function DelegatingToCeo({ ceo }: { ceo: string }) {
             className="h-3.5 w-3.5 animate-pulse text-emerald-400/60"
           />
           <span className="text-sm text-emerald-200/50">
-            Consulting {ceo}&hellip;
+            Checking with {ceo}&hellip;
           </span>
         </div>
       </div>
@@ -2040,7 +2043,7 @@ function PublishingToVault({ path }: { path: string }) {
             className="h-3.5 w-3.5 animate-pulse text-emerald-400/60"
           />
           <span className="text-sm text-emerald-200/50">
-            Publishing to vault&hellip;
+            Putting it on the shelf&hellip;
           </span>
         </div>
         <p className="mt-1.5 max-w-xs truncate text-xs font-mono italic text-emerald-200/20">
@@ -2059,7 +2062,7 @@ function RunningCrew({ crew }: { crew: string }) {
         <div className="flex items-center gap-2">
           <Bot className="h-3.5 w-3.5 animate-pulse text-emerald-400/60" />
           <span className="text-sm text-emerald-200/50">
-            Starting crew{crew ? ` (${crew})` : ""}&hellip;
+            Starting the crew{crew ? ` (${crew})` : ""}&hellip;
           </span>
         </div>
       </div>
@@ -2083,7 +2086,7 @@ function JobBadge({
         <div className="flex items-center gap-2">
           <Users className="h-3.5 w-3.5 animate-pulse text-emerald-400/60" />
           <span className="text-sm text-emerald-200/50">
-            Job #{job_id} &mdash; {ceo_name} running in background
+            Job #{job_id} &mdash; {ceo_name} is in the back room working on it
           </span>
           <button
             onClick={onDismiss}
@@ -2113,10 +2116,10 @@ function ToolApprovalCard({
   const hasVault = requests.some((r) => r.name.startsWith("vault_"));
   const title =
     hasCrew && hasVault
-      ? "Local bridge request"
+      ? "Bridge work request"
       : hasCrew
-        ? "CrewAI / bridge request"
-        : "File system access request";
+        ? "Crew handoff request"
+        : "File access request";
 
   return (
     <div className="flex justify-start animate-fade-up">
@@ -2165,7 +2168,7 @@ function ToolApprovalCard({
                 Executing&hellip;
               </>
             ) : (
-              "Allow"
+              "Looks good"
             )}
           </button>
           <button
@@ -2173,7 +2176,7 @@ function ToolApprovalCard({
             disabled={executing}
             className="rounded-lg border border-amber-500/15 px-4 py-2 text-xs font-medium text-amber-200/50 transition-all hover:bg-amber-500/10 hover:text-amber-200/70 disabled:opacity-50"
           >
-            Deny
+            Not now
           </button>
         </div>
       </div>
