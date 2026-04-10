@@ -77,7 +77,7 @@ export async function buildHostedRuntimeTruth(): Promise<HostedRuntimeTruth> {
   checks.reasoning_anthropic = {
     ok: Boolean(anthropicKey),
     detail: anthropicKey
-      ? "ANTHROPIC_API_KEY present as explicit non-primary dependency."
+      ? "ANTHROPIC_API_KEY present as legacy drift, not as an approved chairman primary."
       : "ANTHROPIC_API_KEY missing.",
   };
   checks.delegation_env = {
@@ -126,14 +126,14 @@ export async function buildHostedRuntimeTruth(): Promise<HostedRuntimeTruth> {
     {
       id: "chairman_reasoning",
       label: "Chairman reasoning",
-      status: openAiKey ? "live" : anthropicKey ? "degraded" : "blocked",
-      primaryMode: openAiKey ? "hosted" : "hosted",
-      fallbackMode: anthropicKey ? "hosted" : null,
+      status: openAiKey ? "live" : "blocked",
+      primaryMode: "hosted",
+      fallbackMode: null,
       detail: openAiKey
-        ? "OpenAI-first chairman reasoning is configured."
+        ? "OpenAI-only chairman reasoning is configured."
         : anthropicKey
-          ? "OpenAI primary key is missing; Anthropic fallback is the only configured reasoning path."
-          : "No hosted reasoning provider is configured.",
+          ? "OPENAI_API_KEY is missing. Anthropic is present, but chairman reasoning is intentionally not allowed to fall back there."
+          : "OPENAI_API_KEY is missing for chairman reasoning.",
       nextAction: openAiKey
         ? "Keep smoke-testing hosted chat after deploy."
         : "Set OPENAI_API_KEY in the hosted runtime.",
@@ -185,7 +185,7 @@ export async function buildHostedRuntimeTruth(): Promise<HostedRuntimeTruth> {
       id: "website_brand_media_production",
       label: "Website brand/media production",
       status:
-        (openAiKey || anthropicKey) && (cursorKey || hostedBrowser.available)
+        openAiKey && (cursorKey || hostedBrowser.available)
           ? "degraded"
           : "blocked",
       primaryMode: "mixed",

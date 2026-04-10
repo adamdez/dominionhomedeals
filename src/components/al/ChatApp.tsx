@@ -66,6 +66,8 @@ interface BridgeCapabilities {
   executor_online?: boolean;
   deep_research?: boolean;
   cowork_execution?: boolean;
+  codex_execution?: boolean;
+  local_pdf_merge?: boolean;
   browser_automation?: boolean;
   vendor_site_access?: boolean;
   design_mockup?: boolean;
@@ -700,6 +702,40 @@ async function executeBridgeAction(req: VaultToolRequest): Promise<BridgeResult>
         const session = data.session_id ? ` · session ${data.session_id}` : "";
         return `✓ Done${elapsed}${session}\n\n${data.result || JSON.stringify(data)}`;
       }
+      case "codex_task": {
+        const res = await fetch(`${url}/codex/exec`, {
+          method: "POST",
+          headers: { ...headers, "Content-Type": "application/json" },
+          body: JSON.stringify(req.input || {}),
+        });
+        const data = await res.json().catch(() => null);
+        return JSON.stringify(
+          data || {
+            ok: false,
+            status: "codex_bridge_request_failed",
+            operator_message: `Codex task failed with HTTP ${res.status}.`,
+            next_action:
+              "Verify the local Codex CLI lane and retry with a tighter task or a safer working directory.",
+          },
+        );
+      }
+      case "local_pdf_merge": {
+        const res = await fetch(`${url}/pdf/merge`, {
+          method: "POST",
+          headers: { ...headers, "Content-Type": "application/json" },
+          body: JSON.stringify(req.input || {}),
+        });
+        const data = await res.json().catch(() => null);
+        return JSON.stringify(
+          data || {
+            ok: false,
+            status: "pdf_merge_bridge_request_failed",
+            operator_message: `Local PDF merge failed with HTTP ${res.status}.`,
+            next_action:
+              "Verify the local bridge PDF merge helper and retry without using the legacy local executor.",
+          },
+        );
+      }
       case "browser_vendor_cart_review": {
         const res = await fetch(`${url}/browser/vendor-cart-review`, {
           method: "POST",
@@ -1189,12 +1225,14 @@ export function ChatApp() {
     const toolResults: unknown[] = [];
 
     for (const req of action.requests) {
-      if (req.name === "cowork_task") {
-        setDelegatingCeo("Claude Code (running task…)");
+      if (req.name === "cowork_task" || req.name === "codex_task") {
+        setDelegatingCeo(
+          req.name === "codex_task" ? "Codex (OpenAI local lane…)" : "Local executor (legacy lane…)"
+        );
       }
       let result = await executeBridgeAction(req);
       result = await maybePromoteBrowserVendorReviewResult(req, result);
-      if (req.name === "cowork_task") {
+      if (req.name === "cowork_task" || req.name === "codex_task") {
         setDelegatingCeo(null);
       }
       toolResults.push(toContinuationToolResult(action.provider, req, result));
@@ -2009,6 +2047,10 @@ function vaultActionLabel(name: string): string {
       return "Check crew run status";
     case "media_production":
       return "Generate brand media";
+    case "codex_task":
+      return "Run Codex task";
+    case "local_pdf_merge":
+      return "Merge local PDFs";
     default:
       return name;
   }
@@ -2017,6 +2059,20 @@ function vaultActionLabel(name: string): string {
 function bridgeRequestDetail(req: VaultToolRequest): string {
   if (req.name === "crew_run") return inputString(req.input.crew) || "(crew)";
   if (req.name === "crew_status") return inputString(req.input.run_id) || "(run id)";
+  if (req.name === "codex_task") {
+    return (
+      inputString(req.input.cwd) ||
+      inputString(req.input.workspace) ||
+      inputString(req.input.task) ||
+      "(Codex task)"
+    );
+  }
+  if (req.name === "local_pdf_merge") {
+    const sources = Array.isArray(req.input.source_paths)
+      ? req.input.source_paths.filter((value): value is string => typeof value === "string")
+      : [];
+    return inputString(req.input.output_path) || sources[0] || "(PDF sources)";
+  }
   if (req.name === "media_production") {
     return (
       inputString(req.input.asset_goal) ||

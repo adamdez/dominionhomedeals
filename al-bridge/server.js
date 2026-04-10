@@ -51,6 +51,7 @@ const CREW_ROOT = CREW_ROOT_ENV ? path.resolve(CREW_ROOT_ENV) : CREW_ROOT_DEFAUL
 const MAX_CONCURRENT_CREWS = 2;
 const CREW_TIMEOUT_MS = 15 * 60 * 1000;
 const MAX_CREW_OUTPUT = 500 * 1024;
+const CODEX_TIMEOUT_MS = 12 * 60 * 1000;
 
 /** Maps *_crew.py filename → argv for `python main.py <argv>` */
 const CREW_FILE_TO_CMD = {
@@ -95,6 +96,8 @@ const IMAGE_EXT = new Set([
   ".png", ".jpg", ".jpeg", ".gif", ".webp",
 ]);
 
+const PDF_EXT = new Set([".pdf"]);
+
 const SAFE_EXT = new Set([...TEXT_EXT, ...IMAGE_EXT]);
 
 const IMAGE_MIME = {
@@ -121,6 +124,93 @@ function resolveSafe(rel) {
 
 function hasSafeExt(p) {
   return SAFE_EXT.has(path.extname(p).toLowerCase());
+}
+
+function isWithinRoot(full, root) {
+  const rel = path.relative(root, full);
+  return rel === "" || (!rel.startsWith("..") && !path.isAbsolute(rel));
+}
+
+function resolveBridgePath(input, { mustExist = true } = {}) {
+  if (!input || typeof input !== "string") return null;
+  const raw = input.trim().replace(/^["']|["']$/g, "");
+  if (!raw) return null;
+
+  const root = path.resolve(VAULT);
+  const full = path.isAbsolute(raw) ? path.resolve(raw) : path.resolve(root, raw);
+  if (!isWithinRoot(full, root)) return null;
+  if (mustExist && !fsSync.existsSync(full)) return null;
+  return full;
+}
+
+function pythonCommand() {
+  return process.platform === "win32"
+    ? { cmd: "python", baseArgs: [] }
+    : { cmd: "python3", baseArgs: [] };
+}
+
+function getCodexCandidates() {
+  const candidates = [];
+  if (process.env.CODEX_CLI_PATH?.trim()) {
+    candidates.push(process.env.CODEX_CLI_PATH.trim().replace(/^["']|["']$/g, ""));
+  }
+  if (homeDir) {
+    candidates.push(path.join(homeDir, "AppData", "Local", "Programs", "1Code", "resources", "bin", "codex.exe"));
+    candidates.push(path.join(homeDir, "AppData", "Roaming", "npm", "codex.cmd"));
+    candidates.push(path.join(
+      homeDir,
+      "AppData",
+      "Local",
+      "Microsoft",
+      "WindowsApps",
+      "OpenAI.Codex_26.325.3894.0_x64__2p2nqsd0c76g0",
+      "app",
+      "resources",
+      "codex.exe",
+    ));
+  }
+  return candidates.filter(Boolean);
+}
+
+function resolveCodexBinary() {
+  for (const candidate of getCodexCandidates()) {
+    if (fsSync.existsSync(candidate)) {
+      return candidate;
+    }
+  }
+  return null;
+}
+
+function inspectCodexStack() {
+  const binary = resolveCodexBinary();
+  const authPath = homeDir ? path.join(homeDir, ".codex", "auth.json") : null;
+  const configPath = homeDir ? path.join(homeDir, ".codex", "config.toml") : null;
+  return {
+    available: Boolean(binary),
+    details: {
+      binary_path: binary,
+      auth_configured: Boolean(authPath && fsSync.existsSync(authPath)),
+      config_present: Boolean(configPath && fsSync.existsSync(configPath)),
+    },
+  };
+}
+
+function codexWorkspaceMap() {
+  const root = path.resolve(VAULT);
+  return {
+    "al-boreland-vault": path.join(root, "al-boreland-vault"),
+    al: path.join(root, "al"),
+    dominionhomedeals: path.join(root, "dominionhomedeals"),
+    sentinel: path.join(root, "Sentinel"),
+    "wrenchreadymobile-com": path.join(root, "Simon", "wrenchreadymobile.com"),
+  };
+}
+
+function resolveCodexWorkspace(name) {
+  if (!name || typeof name !== "string") return null;
+  const workspace = codexWorkspaceMap()[name.trim().toLowerCase()];
+  if (!workspace || !fsSync.existsSync(workspace)) return null;
+  return workspace;
 }
 
 /* ── HTTP helpers ───────────────────────────────────────────── */
@@ -200,6 +290,7 @@ async function handleHealth(res, o) {
   const hasExecute = Boolean(executor.endpoints["POST /execute"]);
   const browserVendorStack = inspectBrowserVendorCartReviewStack();
   const brandMediaStack = inspectBrandMediaStack();
+  const codexStack = inspectCodexStack();
 
   json(res, 200, {
     ok: true,
@@ -220,6 +311,8 @@ async function handleHealth(res, o) {
       media_generation: brandMediaStack.live,
       media_runway: brandMediaStack.details.runway_api_key,
       media_gif_export: brandMediaStack.details.ffmpeg_available,
+      local_pdf_merge: true,
+      codex_execution: codexStack.available,
     },
     browserVendorCartReview: {
       live: browserVendorStack.live,
@@ -230,6 +323,11 @@ async function handleHealth(res, o) {
       live: brandMediaStack.live,
       missingAccess: brandMediaStack.missingAccess,
       details: brandMediaStack.details,
+    },
+    codexTaskExecution: {
+      live: codexStack.available,
+      missingAccess: codexStack.available ? [] : ["local_codex_cli"],
+      details: codexStack.details,
     },
   }, o);
 }
@@ -484,6 +582,312 @@ async function handleCrewStatus(res, o, url) {
   );
 }
 
+async function handleLocalPdfMerge(req, res, o) {
+  let body;
+  try {
+    body = JSON.parse(await readBody(req));
+  } catch {
+    return json(res, 400, { error: "Invalid JSON body." }, o);
+  }
+
+  const sourcePaths = Array.isArray(body.source_paths)
+    ? body.source_paths.filter((value) => typeof value === "string" && value.trim())
+    : [];
+  if (sourcePaths.length === 0) {
+    return json(res, 400, { error: "source_paths must contain at least one PDF path." }, o);
+  }
+
+  const resolvedSources = [];
+  for (const sourcePath of sourcePaths) {
+    const resolved = resolveBridgePath(sourcePath, { mustExist: true });
+    if (!resolved) {
+      return json(
+        res,
+        400,
+        { error: `Source path is invalid or outside the bridge root: ${sourcePath}` },
+        o,
+      );
+    }
+    if (!PDF_EXT.has(path.extname(resolved).toLowerCase())) {
+      return json(res, 400, { error: `Source is not a PDF: ${sourcePath}` }, o);
+    }
+    resolvedSources.push(resolved);
+  }
+
+  const outputInput =
+    typeof body.output_path === "string" && body.output_path.trim()
+      ? body.output_path
+      : path.join("al-output", `merged-${Date.now()}.pdf`);
+  const resolvedOutput = resolveBridgePath(outputInput, { mustExist: false });
+  if (!resolvedOutput) {
+    return json(
+      res,
+      400,
+      { error: `Output path is invalid or outside the bridge root: ${outputInput}` },
+      o,
+    );
+  }
+  if (!PDF_EXT.has(path.extname(resolvedOutput).toLowerCase())) {
+    return json(res, 400, { error: "Output path must end with .pdf" }, o);
+  }
+
+  await fs.mkdir(path.dirname(resolvedOutput), { recursive: true });
+
+  const mergeScript = [
+    "import json, sys",
+    "from pypdf import PdfReader, PdfWriter",
+    "output_path = sys.argv[1]",
+    "source_paths = sys.argv[2:]",
+    "writer = PdfWriter()",
+    "page_count = 0",
+    "for source_path in source_paths:",
+    "    reader = PdfReader(source_path)",
+    "    for page in reader.pages:",
+    "        writer.add_page(page)",
+    "        page_count += 1",
+    "with open(output_path, 'wb') as handle:",
+    "    writer.write(handle)",
+    "print(json.dumps({",
+    "    'ok': True,",
+    "    'output_path': output_path,",
+    "    'source_count': len(source_paths),",
+    "    'page_count': page_count,",
+    "}))",
+  ].join("\n");
+
+  const { cmd, baseArgs } = pythonCommand();
+  const stdoutChunks = [];
+  const stderrChunks = [];
+
+  try {
+    await new Promise((resolve, reject) => {
+      const child = spawn(cmd, [...baseArgs, "-c", mergeScript, resolvedOutput, ...resolvedSources], {
+        windowsHide: true,
+        env: { ...process.env },
+      });
+
+      child.stdout.on("data", (chunk) => stdoutChunks.push(chunk.toString()));
+      child.stderr.on("data", (chunk) => stderrChunks.push(chunk.toString()));
+      child.on("error", reject);
+      child.on("close", (code) => {
+        if (code === 0) {
+          resolve();
+          return;
+        }
+        reject(new Error(stderrChunks.join("").trim() || `PDF merge exited with code ${code}`));
+      });
+    });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Unknown PDF merge error.";
+    return json(
+      res,
+      500,
+      {
+        ok: false,
+        status: "local_pdf_merge_failed",
+        error: message,
+        operator_message:
+          "Local PDF merge failed before completion. Verify Python + pypdf are available on this machine and retry.",
+        next_action:
+          "Keep this on the local bridge lane. Do not reroute a plain PDF merge to the legacy local executor.",
+      },
+      o,
+    );
+  }
+
+  const stdout = stdoutChunks.join("").trim();
+  const lastLine = stdout
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .slice(-1)[0];
+
+  let parsed = null;
+  try {
+    parsed = lastLine ? JSON.parse(lastLine) : null;
+  } catch {
+    parsed = null;
+  }
+
+  return json(
+    res,
+    200,
+    {
+      ok: true,
+      status: "local_pdf_merge_completed",
+      output_path: resolvedOutput,
+      output_relative_path: path.relative(path.resolve(VAULT), resolvedOutput).replace(/\\/g, "/"),
+      source_paths: resolvedSources,
+      source_count: parsed?.source_count ?? resolvedSources.length,
+      page_count: parsed?.page_count ?? null,
+      operator_message: "Local PDF merge completed on Dez's machine without external model credits.",
+    },
+    o,
+  );
+}
+
+async function handleCodexTask(req, res, o) {
+  let body;
+  try {
+    body = JSON.parse(await readBody(req));
+  } catch {
+    return json(res, 400, { error: "Invalid JSON body." }, o);
+  }
+
+  const task = typeof body.task === "string" ? body.task.trim() : "";
+  if (!task) {
+    return json(res, 400, { error: "Missing task." }, o);
+  }
+
+  const codexBinary = resolveCodexBinary();
+  if (!codexBinary) {
+    return json(
+      res,
+      503,
+      {
+        ok: false,
+        status: "codex_task_unavailable",
+        error: "Local Codex CLI binary not found.",
+        operator_message:
+          "Codex is not available on this machine yet. Keep this on OpenAI/Cursor or install a working Codex CLI path for the local lane.",
+      },
+      o,
+    );
+  }
+
+  const explicitCwd =
+    typeof body.cwd === "string" && body.cwd.trim()
+      ? resolveBridgePath(body.cwd, { mustExist: true })
+      : null;
+  const workspace =
+    typeof body.workspace === "string" && body.workspace.trim()
+      ? resolveCodexWorkspace(body.workspace)
+      : null;
+  const resolvedCwd = explicitCwd || workspace || path.join(path.resolve(VAULT), "dominionhomedeals");
+
+  if (!resolvedCwd || !fsSync.existsSync(resolvedCwd)) {
+    return json(
+      res,
+      400,
+      {
+        error:
+          "Unable to resolve a valid Codex working directory. Provide cwd or a known workspace such as dominionhomedeals, wrenchreadymobile-com, al-boreland-vault, al, or sentinel.",
+      },
+      o,
+    );
+  }
+
+  const sandbox =
+    body.sandbox === "read-only" || body.sandbox === "danger-full-access"
+      ? body.sandbox
+      : "workspace-write";
+
+  const additionalWritablePaths = Array.isArray(body.additional_writable_paths)
+    ? body.additional_writable_paths
+        .filter((value) => typeof value === "string" && value.trim())
+        .map((value) => resolveBridgePath(value, { mustExist: true }))
+        .filter(Boolean)
+    : [];
+
+  const runId = `codex-${Date.now()}-${crypto.randomUUID()}`;
+  const runDir = path.join(path.resolve(VAULT), "al-output", "codex-runs", runId);
+  const outputFile = path.join(runDir, "last-message.txt");
+  await fs.mkdir(runDir, { recursive: true });
+
+  const args = [
+    "exec",
+    "-C",
+    resolvedCwd,
+    "--sandbox",
+    sandbox,
+    "--skip-git-repo-check",
+    "--ephemeral",
+    "-o",
+    outputFile,
+  ];
+  for (const writablePath of additionalWritablePaths) {
+    args.push("--add-dir", writablePath);
+  }
+  args.push(task);
+
+  const stdoutChunks = [];
+  const stderrChunks = [];
+
+  try {
+    await new Promise((resolve, reject) => {
+      const child = spawn(codexBinary, args, {
+        windowsHide: true,
+        env: {
+          ...process.env,
+          CODEX_HOME: process.env.CODEX_HOME || (homeDir ? path.join(homeDir, ".codex") : undefined),
+        },
+      });
+
+      child.stdout.on("data", (chunk) => stdoutChunks.push(chunk.toString()));
+      child.stderr.on("data", (chunk) => stderrChunks.push(chunk.toString()));
+      child.on("error", reject);
+      child.on("close", (code) => {
+        if (code === 0) {
+          resolve();
+          return;
+        }
+        reject(
+          new Error(
+            stderrChunks.join("").trim() ||
+              stdoutChunks.join("").trim() ||
+              `Codex task exited with code ${code}`,
+          ),
+        );
+      });
+    });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Unknown Codex task error.";
+    return json(
+      res,
+      500,
+      {
+        ok: false,
+        status: "codex_task_failed",
+        error: message,
+        task,
+        cwd: resolvedCwd,
+        operator_message:
+          "Codex task failed before producing a usable result. Keep the work on the OpenAI-native lane, inspect the local Codex CLI state, and retry with a tighter task if needed.",
+      },
+      o,
+    );
+  }
+
+  const stdout = stdoutChunks.join("").trim();
+  const stderr = stderrChunks.join("").trim();
+  const sessionMatch = [stdout, stderr].filter(Boolean).join("\n").match(/session id:\s*([^\s]+)/i);
+  const result = fsSync.existsSync(outputFile)
+    ? fsSync.readFileSync(outputFile, "utf8").trim()
+    : "";
+
+  return json(
+    res,
+    200,
+    {
+      ok: true,
+      status: "codex_task_completed",
+      task,
+      cwd: resolvedCwd,
+      workspace: typeof body.workspace === "string" ? body.workspace : null,
+      sandbox,
+      additional_writable_paths: additionalWritablePaths,
+      codex_binary: codexBinary,
+      session_id: sessionMatch ? sessionMatch[1] : null,
+      output_path: outputFile,
+      result: result || stdout || "Codex completed without a final message.",
+      stderr: stderr || null,
+      operator_message:
+        "Codex completed the delegated task locally on Dez's machine using the OpenAI-native execution lane.",
+    },
+    o,
+  );
+}
+
 /* ── Server ─────────────────────────────────────────────────── */
 const server = http.createServer(async (req, res) => {
   const o = req.headers.origin || "";
@@ -544,6 +948,15 @@ const server = http.createServer(async (req, res) => {
     } catch (err) {
       return json(res, 502, { error: `Executor unreachable: ${err.message}` }, o);
     }
+  }
+
+  /* ── Local PDF merge — merges existing PDFs without external model credits ── */
+  async function handlePdfMerge(req, res, o) {
+    return handleLocalPdfMerge(req, res, o);
+  }
+
+  async function handleCodexExec(req, res, o) {
+    return handleCodexTask(req, res, o);
   }
 
   async function handleBrowserVendorCartReview(req, res, o) {
@@ -766,6 +1179,10 @@ const server = http.createServer(async (req, res) => {
       return handleResearch(req, res, o);
     if (p === "/cowork" && req.method === "POST")
       return handleCowork(req, res, o);
+    if (p === "/codex/exec" && req.method === "POST")
+      return handleCodexExec(req, res, o);
+    if (p === "/pdf/merge" && req.method === "POST")
+      return handlePdfMerge(req, res, o);
     if (p === "/browser/vendor-cart-review" && req.method === "POST")
       return handleBrowserVendorCartReview(req, res, o);
     if (p === "/media/brand-assets" && req.method === "POST")

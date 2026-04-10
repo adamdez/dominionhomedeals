@@ -318,6 +318,7 @@ TOOLS:
 - vault_list, vault_read, vault_read_image - browse local files when the bridge is connected.
 - crew_list, crew_run, crew_status - run local crews through the bridge.
 - planner_task - create, update, or list shared Planner tasks for Dez and AL.
+- codex_task - run a proactive local Codex task on Dez's machine using the OpenAI-native execution lane.
 - cursor_agent - dispatch a coding task to Cursor's cloud agent when that is the best execution surface.
 - media_production - generate review-ready brand images/GIFs/short video from local source photos.
 - local_pdf_merge - merge existing local PDF files into one printable packet without external model credits.
@@ -587,7 +588,7 @@ const SERVER_TOOLS: Anthropic.Tool[] = [
   {
     name: "cowork_task",
     description:
-      "Execute a real code or file task using Claude Agent SDK running locally on Dez's machine. Has full access to Read, Write, Edit, Bash, Glob, Grep tools and can git commit/push. Use for: building pages, editing code, fixing bugs, writing files, git operations, running scripts. Domains: 'dominionhomedeals' (default), canonical WrenchReady website target 'wrenchreadymobile-com' with legacy executor alias 'wrench-ready', and 'sentinel'. This runs a real Claude Code agent — not reasoning, actual execution. Bridge must be connected. This is not a browser/vendor/cart automation lane unless the live bridge capability block says browser_automation is available.",
+      "Legacy local execution lane backed by the older Claude executor on Dez's machine. Use only when a true local file or code task cannot be handled by a dedicated local bridge tool and when Cursor cloud execution is not the better fit. Domains: 'dominionhomedeals' (default), canonical WrenchReady website target 'wrenchreadymobile-com' with legacy executor alias 'wrench-ready', and 'sentinel'. This is not the preferred lane for local PDF/document assembly.",
     input_schema: {
       type: "object" as const,
       properties: {
@@ -717,6 +718,72 @@ const BRIDGE_TOOLS: Anthropic.Tool[] = [
     },
   },
   {
+    name: "local_pdf_merge",
+    description:
+      "Merge existing local PDF files into a single printable PDF on Dez's machine without using external model credits. Use this for packet assembly when every source is already a PDF. Do not use this to render Markdown, DOCX, or images into PDF.",
+    input_schema: {
+      type: "object" as const,
+      properties: {
+        source_paths: {
+          type: "array" as const,
+          description:
+            "Array of local PDF paths. Use absolute Desktop paths or bridge-relative paths under the local bridge root.",
+          items: {
+            type: "string",
+          },
+        },
+        output_path: {
+          type: "string",
+          description:
+            "Optional output PDF path. Use an absolute Desktop path or a bridge-relative path. Defaults to a file under al-output/.",
+        },
+      },
+      required: ["source_paths"],
+    },
+  },
+  {
+    name: "codex_task",
+    description:
+      "Run a proactive local Codex task on Dez's machine using the OpenAI-native execution lane. Use this for growth work, workflow creation, artifact production, refactors, or concrete system improvements when a local Codex session is the best fit. Prefer this over the legacy cowork lane when you want local OpenAI-native execution.",
+    input_schema: {
+      type: "object" as const,
+      properties: {
+        task: {
+          type: "string",
+          description:
+            "Outcome-shaped assignment for Codex. Ask for a concrete artifact, implementation, analysis, workflow, or improvement tied to a business result.",
+        },
+        workspace: {
+          type: "string",
+          description:
+            "Optional known workspace shortcut. Options: dominionhomedeals, wrenchreadymobile-com, al-boreland-vault, al, sentinel.",
+          enum: ["dominionhomedeals", "wrenchreadymobile-com", "al-boreland-vault", "al", "sentinel"],
+        },
+        cwd: {
+          type: "string",
+          description:
+            "Optional absolute Desktop path or bridge-relative path to use as Codex working directory. Overrides workspace when provided.",
+        },
+        sandbox: {
+          type: "string",
+          description:
+            "Optional Codex sandbox mode. Defaults to workspace-write. Use read-only for analysis-only tasks.",
+          enum: ["read-only", "workspace-write", "danger-full-access"],
+        },
+        additional_writable_paths: {
+          type: "array" as const,
+          description:
+            "Optional extra Desktop-rooted paths Codex may write to during the task.",
+          items: {
+            type: "string",
+          },
+        },
+        ...REVIEW_DISPATCH_SCHEMA_PROPERTIES,
+      },
+      required: ["task"],
+    },
+  },
+  {
     name: "job_status",
     description:
       "Check the status of one or more async delegations or background jobs. Use this when Dez asks 'what happened with that delegation?' or 'is the CEO done yet?'. Returns status (pending/running/done/error) and the result if complete. Omit job_id to list all recent jobs.",
@@ -808,6 +875,8 @@ function isBridgeTool(name: string) {
     name === "crew_status" ||
     name === "deep_research" ||
     name === "cowork_task" ||
+    name === "codex_task" ||
+    name === "local_pdf_merge" ||
     name === "media_production"
     // job_status and delegate_to_ceo are server-side — NOT bridge tools
   );
@@ -843,6 +912,7 @@ type DispatchExpectedDirection = "increase" | "decrease" | "hold";
 type DispatchSourceTool =
   | "delegate_to_ceo"
   | "cursor_agent"
+  | "codex_task"
   | "cowork_task"
   | "media_production"
   | "crew_run"
@@ -4019,7 +4089,11 @@ async function runOpenAIChat(input: {
               continue;
             }
 
-            if (call.name !== "cowork_task" && call.name !== "crew_run") {
+            if (
+              call.name !== "cowork_task" &&
+              call.name !== "crew_run" &&
+              call.name !== "codex_task"
+            ) {
               bridgeRequests.push({
                 id: call.callId,
                 name: call.name,
@@ -4038,10 +4112,20 @@ async function runOpenAIChat(input: {
                     ),
                   }
                 : parsedInput;
-            const sourceTool = call.name === "crew_run" ? "crew_run" : "cowork_task";
+            const sourceTool =
+              call.name === "crew_run"
+                ? "crew_run"
+                : call.name === "codex_task"
+                  ? "codex_task"
+                  : "cowork_task";
             const defaultBusinessId =
               call.name === "crew_run"
                 ? inferBusinessIdFromCrew(asNonEmptyString(parsedInput.crew))
+                : call.name === "codex_task"
+                  ? inferBusinessIdFromDomain(asNonEmptyString(bridgeInput.cwd)) ||
+                    inferBusinessIdFromDomain(asNonEmptyString(bridgeInput.workspace)) ||
+                    inferBusinessIdFromDomain(asNonEmptyString(parsedInput.task)) ||
+                    "dominion"
                 : inferBusinessIdFromDomain(asNonEmptyString(bridgeInput.domain)) ||
                   inferBusinessIdFromDomain(asNonEmptyString(parsedInput.task)) ||
                   "dominion";
@@ -4052,21 +4136,25 @@ async function runOpenAIChat(input: {
                 sourceTool,
                 toolInput: bridgeInput,
                 defaultBusinessId,
-                runtimeRefHint: `tool_use:${call.id}`,
-                fallbackChangeUnderReview:
-                  call.name === "crew_run"
-                    ? `Crew run: ${asNonEmptyString(parsedInput.crew) || "crew"}`
-                    : asNonEmptyString(parsedInput.task) || "Cowork dispatch",
-                heuristicText:
-                  call.name === "crew_run"
-                    ? [asNonEmptyString(parsedInput.crew)].filter(Boolean).join(" ")
-                    : [
-                        asNonEmptyString(parsedInput.task),
-                        asNonEmptyString(bridgeInput.domain),
-                      ]
-                        .filter(Boolean)
-                        .join(" "),
-                enforceHeuristicConsequential: call.name === "cowork_task",
+                  runtimeRefHint: `tool_use:${call.id}`,
+                  fallbackChangeUnderReview:
+                    call.name === "crew_run"
+                      ? `Crew run: ${asNonEmptyString(parsedInput.crew) || "crew"}`
+                      : asNonEmptyString(parsedInput.task) ||
+                        (call.name === "codex_task" ? "Codex dispatch" : "Cowork dispatch"),
+                  heuristicText:
+                    call.name === "crew_run"
+                      ? [asNonEmptyString(parsedInput.crew)].filter(Boolean).join(" ")
+                      : [
+                          asNonEmptyString(parsedInput.task),
+                          asNonEmptyString(bridgeInput.domain),
+                          asNonEmptyString(bridgeInput.cwd),
+                          asNonEmptyString(bridgeInput.workspace),
+                        ]
+                          .filter(Boolean)
+                          .join(" "),
+                enforceHeuristicConsequential:
+                  call.name === "cowork_task" || call.name === "codex_task",
               });
             } catch (error) {
               precomputed.push(
@@ -4092,6 +4180,9 @@ async function runOpenAIChat(input: {
                     ? asNonEmptyString(bridgeInput.domain) || DEFAULT_COWORK_DOMAIN
                     : undefined,
                 crew: call.name === "crew_run" ? asNonEmptyString(parsedInput.crew) || null : undefined,
+                cwd: call.name === "codex_task" ? asNonEmptyString(bridgeInput.cwd) || null : undefined,
+                workspace:
+                  call.name === "codex_task" ? asNonEmptyString(bridgeInput.workspace) || null : undefined,
                 tool_use_id: call.id,
                 dispatch_metadata: dispatchMetadata,
               },
@@ -4900,17 +4991,7 @@ export async function POST(request: NextRequest) {
     !continuation ||
     continuation.provider === "openai" ||
     (continuation.provider === "anthropic" && Boolean(openAIKey));
-  const shouldUseOpenAI =
-    Boolean(openAIKey) &&
-    canUseOpenAIContinuation &&
-    (
-      // Explicit provider selection for continuation calls.
-      requestedProvider === "openai" ||
-      // OpenAI-first default for fresh requests (no continuation boundary yet).
-      (!continuation && requestedProvider !== "anthropic") ||
-      // Keep legacy env behavior for compatibility when OpenAI key exists.
-      (requestedProvider !== "anthropic" && PRIMARY_REASONING_PROVIDER === "openai")
-    );
+  const shouldUseOpenAI = Boolean(openAIKey) && canUseOpenAIContinuation;
 
   if (shouldUseOpenAI) {
     return runOpenAIChat({
@@ -4926,19 +5007,17 @@ export async function POST(request: NextRequest) {
     });
   }
 
-  const apiKey = readEnvSecret("ANTHROPIC_API_KEY");
-  if (!apiKey) {
-    return new Response(
-      `data: ${JSON.stringify({
-        error:
-          PRIMARY_REASONING_PROVIDER === "openai"
-            ? "OPENAI_API_KEY is not configured for the AL chairman path, and no Anthropic fallback is available."
-            : "ANTHROPIC_API_KEY is not configured.",
-      })}\n\ndata: [DONE]\n\n`,
-      { headers: sseHeaders() }
-    );
-  }
+  return new Response(
+    `data: ${JSON.stringify({
+      error:
+        requestedProvider === "anthropic"
+          ? "Anthropic chairman reasoning is disabled. Start a new message and AL will continue on the OpenAI path once OPENAI_API_KEY is configured."
+          : "OPENAI_API_KEY is not configured for the AL chairman path. Anthropic fallback is intentionally disabled.",
+    })}\n\ndata: [DONE]\n\n`,
+    { headers: sseHeaders() }
+  );
 
+  const apiKey = readEnvSecret("ANTHROPIC_API_KEY");
   const anthropic = new Anthropic({ apiKey });
   const tools = [...SERVER_TOOLS];
   if (bridgeConnected) tools.push(...BRIDGE_TOOLS);
@@ -4961,13 +5040,14 @@ export async function POST(request: NextRequest) {
 
   // For continuation: append the assistant tool-use turn and tool results
   if (continuation) {
+    const activeContinuation = continuation!;
     messages.push({
       role: "assistant",
-      content: continuation.assistantBlocks as Anthropic.ContentBlockParam[],
+      content: activeContinuation.assistantBlocks as Anthropic.ContentBlockParam[],
     });
     const allResults = [
-      ...(continuation.precomputedResults || []),
-      ...continuation.toolResults,
+      ...(activeContinuation.precomputedResults || []),
+      ...activeContinuation.toolResults,
     ] as Anthropic.ToolResultBlockParam[];
     messages.push({ role: "user", content: allResults });
   }
@@ -5197,7 +5277,11 @@ export async function POST(request: NextRequest) {
             }> = [];
 
             for (const block of bridgeBlocks) {
-              if (block.name !== "cowork_task" && block.name !== "crew_run") {
+              if (
+                block.name !== "cowork_task" &&
+                block.name !== "crew_run" &&
+                block.name !== "codex_task"
+              ) {
                 bridgeRequests.push({
                   id: block.id,
                   name: block.name,
@@ -5218,10 +5302,19 @@ export async function POST(request: NextRequest) {
                     }
                   : rawBridgeInput;
               const sourceTool =
-                block.name === "crew_run" ? "crew_run" : "cowork_task";
+                block.name === "crew_run"
+                  ? "crew_run"
+                  : block.name === "codex_task"
+                    ? "codex_task"
+                    : "cowork_task";
               const defaultBusinessId =
                 block.name === "crew_run"
                   ? inferBusinessIdFromCrew(asNonEmptyString(bridgeInput.crew))
+                  : block.name === "codex_task"
+                    ? inferBusinessIdFromDomain(asNonEmptyString(bridgeInput.cwd)) ||
+                      inferBusinessIdFromDomain(asNonEmptyString(bridgeInput.workspace)) ||
+                      inferBusinessIdFromDomain(asNonEmptyString(bridgeInput.task)) ||
+                      "dominion"
                   : inferBusinessIdFromDomain(asNonEmptyString(bridgeInput.domain)) ||
                     inferBusinessIdFromDomain(asNonEmptyString(bridgeInput.task)) ||
                     "dominion";
@@ -5236,7 +5329,8 @@ export async function POST(request: NextRequest) {
                   fallbackChangeUnderReview:
                     block.name === "crew_run"
                       ? `Crew run: ${asNonEmptyString(bridgeInput.crew) || "crew"}`
-                      : asNonEmptyString(bridgeInput.task) || "Cowork dispatch",
+                      : asNonEmptyString(bridgeInput.task) ||
+                        (block.name === "codex_task" ? "Codex dispatch" : "Cowork dispatch"),
                   heuristicText:
                     block.name === "crew_run"
                       ? [asNonEmptyString(bridgeInput.crew)]
@@ -5245,10 +5339,13 @@ export async function POST(request: NextRequest) {
                       : [
                           asNonEmptyString(bridgeInput.task),
                           asNonEmptyString(bridgeInput.domain),
+                          asNonEmptyString(bridgeInput.cwd),
+                          asNonEmptyString(bridgeInput.workspace),
                         ]
                           .filter(Boolean)
                           .join(" "),
-                  enforceHeuristicConsequential: block.name === "cowork_task",
+                  enforceHeuristicConsequential:
+                    block.name === "cowork_task" || block.name === "codex_task",
                 });
               } catch (error) {
                 precomputed.push({
@@ -5273,6 +5370,14 @@ export async function POST(request: NextRequest) {
                   domain:
                     block.name === "cowork_task"
                       ? asNonEmptyString(bridgeInput.domain) || DEFAULT_COWORK_DOMAIN
+                      : undefined,
+                  cwd:
+                    block.name === "codex_task"
+                      ? asNonEmptyString(bridgeInput.cwd) || null
+                      : undefined,
+                  workspace:
+                    block.name === "codex_task"
+                      ? asNonEmptyString(bridgeInput.workspace) || null
                       : undefined,
                   crew:
                     block.name === "crew_run"
