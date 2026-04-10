@@ -18,7 +18,10 @@ import {
   Receipt,
   Heart,
   Bot,
+  ChevronDown,
+  ChevronRight,
 } from "lucide-react";
+import { useState } from "react";
 
 interface QuickAction {
   id: string;
@@ -162,6 +165,7 @@ export function Sidebar({
   bridgeConnected,
   bridgeHealth,
 }: SidebarProps) {
+  const [showRuntime, setShowRuntime] = useState(false);
   const categories = [...new Set(quickActions.map((a) => a.category))];
   const localLaneRows = [
     {
@@ -258,23 +262,82 @@ export function Sidebar({
           </div>
 
           <div className="mb-5">
-            <h3 className="mb-2 px-2 text-[11px] font-semibold uppercase tracking-wider text-emerald-200/25">
-              Runtime
-            </h3>
-            <div className="space-y-2 px-2">
-              {hostedRuntimeTruth && (
-                <div className="rounded-xl border border-emerald-900/20 bg-[#111916] p-3">
-                  <div className="mb-2 flex items-center justify-between">
-                    <span className="text-xs font-semibold text-[#e2ede8]">Hosted AL</span>
-                    <span className="text-[10px] text-emerald-200/35">
-                      {hostedRuntimeTruth.summary.live} live / {hostedRuntimeTruth.summary.degraded} degraded / {hostedRuntimeTruth.summary.blocked} blocked
-                    </span>
+            <div className="px-2">
+              <button
+                type="button"
+                onClick={() => setShowRuntime((value) => !value)}
+                className="flex w-full items-center justify-between rounded-xl border border-emerald-900/20 bg-[#111916] px-3 py-3 text-left transition hover:border-emerald-500/25 hover:bg-emerald-500/5"
+              >
+                <div>
+                  <p className="text-[11px] font-semibold uppercase tracking-wider text-emerald-200/25">
+                    Runtime
+                  </p>
+                  <p className="mt-1 text-xs text-emerald-100/70">
+                    {hostedRuntimeTruth
+                      ? `${hostedRuntimeTruth.summary.live} live, ${hostedRuntimeTruth.summary.degraded} degraded`
+                      : "Runtime status unavailable"}
+                    {" · "}
+                    {bridgeConnected ? "local bridge connected" : "local bridge offline"}
+                  </p>
+                </div>
+                {showRuntime ? (
+                  <ChevronDown className="h-4 w-4 text-emerald-200/45" />
+                ) : (
+                  <ChevronRight className="h-4 w-4 text-emerald-200/45" />
+                )}
+              </button>
+
+              {showRuntime ? (
+                <div className="mt-2 rounded-xl border border-emerald-900/20 bg-[#111916] p-3">
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        onQuickAction(
+                          "Run a status check and summarize what is live, degraded, blocked, and what needs action now.",
+                        )
+                      }
+                      className="rounded-xl border border-emerald-800/40 bg-[#0b110e] px-3 py-2 text-xs font-semibold text-emerald-100 transition hover:border-emerald-500/45"
+                    >
+                      Run status check
+                    </button>
                   </div>
-                  <div className="space-y-2">
-                    {hostedRuntimeTruth.lanes.map((lane) => (
+
+                  {hostedRuntimeTruth ? (
+                    <div className="mt-3 space-y-2">
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-300/40">
+                        Hosted lanes
+                      </p>
+                      {hostedRuntimeTruth.lanes.map((lane) => (
+                        <div
+                          key={lane.id}
+                          className={`rounded-lg border px-3 py-2 ${statusClasses(lane.status)}`}
+                        >
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="text-[11px] font-semibold">{lane.label}</span>
+                            <span className="text-[10px] uppercase tracking-wide opacity-75">
+                              {lane.status}
+                            </span>
+                          </div>
+                          <p className="mt-1 text-[10px] opacity-80">
+                            {lane.primaryMode}
+                            {lane.fallbackMode ? ` -> ${lane.fallbackMode}` : ""}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  ) : null}
+
+                  <div className="mt-3 space-y-2">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-300/40">
+                      Local lanes
+                    </p>
+                    {localLaneRows.map((lane) => (
                       <div
-                        key={lane.id}
-                        className={`rounded-lg border p-2 ${statusClasses(lane.status)}`}
+                        key={lane.label}
+                        className={`rounded-lg border px-3 py-2 ${statusClasses(
+                          lane.status as "live" | "degraded" | "blocked",
+                        )}`}
                       >
                         <div className="flex items-center justify-between gap-2">
                           <span className="text-[11px] font-semibold">{lane.label}</span>
@@ -282,42 +345,12 @@ export function Sidebar({
                             {lane.status}
                           </span>
                         </div>
-                        <p className="mt-1 text-[10px] leading-relaxed opacity-80">
-                          {lane.primaryMode}
-                          {lane.fallbackMode ? ` -> ${lane.fallbackMode}` : ""}
-                        </p>
+                        <p className="mt-1 text-[10px] opacity-80">{lane.detail}</p>
                       </div>
                     ))}
                   </div>
                 </div>
-              )}
-
-              <div className="rounded-xl border border-emerald-900/20 bg-[#111916] p-3">
-                <div className="mb-2 flex items-center justify-between">
-                  <span className="text-xs font-semibold text-[#e2ede8]">Local session</span>
-                  <span className="text-[10px] text-emerald-200/35">
-                    {bridgeConnected ? "bridge connected" : "bridge offline"}
-                  </span>
-                </div>
-                <div className="space-y-2">
-                  {localLaneRows.map((lane) => (
-                    <div
-                      key={lane.label}
-                      className={`rounded-lg border p-2 ${statusClasses(lane.status as "live" | "degraded" | "blocked")}`}
-                    >
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="text-[11px] font-semibold">{lane.label}</span>
-                        <span className="text-[10px] uppercase tracking-wide opacity-75">
-                          {lane.status}
-                        </span>
-                      </div>
-                      <p className="mt-1 text-[10px] leading-relaxed opacity-80">
-                        {lane.detail}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              </div>
+              ) : null}
             </div>
           </div>
 
