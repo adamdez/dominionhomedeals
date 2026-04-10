@@ -1581,7 +1581,7 @@ export function ChatApp() {
       />
 
       <div
-        className="relative flex flex-1 flex-col min-w-0"
+        className="relative flex min-w-0 flex-1 flex-col pb-24 lg:pb-0"
         onDragEnter={handleDragEnter}
         onDragLeave={handleDragLeave}
         onDragOver={handleDragOver}
@@ -1622,6 +1622,20 @@ export function ChatApp() {
             </p>
           </div>
           <div className="flex items-center gap-2 flex-shrink-0">
+            <div className="hidden items-center gap-2 sm:flex lg:hidden">
+              <a
+                href="/boardroom"
+                className="rounded-full border border-emerald-900/25 bg-[#101714] px-3 py-1.5 text-xs font-semibold text-emerald-100/80"
+              >
+                Board Room
+              </a>
+              <a
+                href="/planner"
+                className="rounded-full border border-emerald-900/25 bg-[#101714] px-3 py-1.5 text-xs font-semibold text-emerald-100/80"
+              >
+                Planner
+              </a>
+            </div>
             {bridgeConnected && (
               <div className="flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-2.5 py-1">
                 <FolderOpen className="h-3 w-3 text-emerald-400/60" />
@@ -1704,7 +1718,7 @@ export function ChatApp() {
         </div>
 
         {/* Input */}
-        <div className="border-t border-emerald-900/20 p-4 lg:p-6">
+        <div className="border-t border-emerald-900/20 bg-[#0a0f0d] p-4 pb-5 lg:p-6">
           <div className="mx-auto max-w-3xl">
             {/* File preview strip */}
             {pendingFiles.length > 0 && (

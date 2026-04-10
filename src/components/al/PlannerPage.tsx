@@ -118,7 +118,7 @@ export function PlannerPage({ initialTasks }: { initialTasks: PlannerTask[] }) {
   }
 
   return (
-    <main className="h-full w-full overflow-y-auto bg-[#07100b] px-4 py-6 text-[#eaf4ef] sm:px-6 lg:px-8">
+    <main className="h-full w-full overflow-y-auto bg-[#07100b] px-4 py-5 pb-28 text-[#eaf4ef] sm:px-6 lg:px-8 lg:pb-8">
       <div className="mx-auto flex max-w-7xl flex-col gap-6">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.24em] text-emerald-300/45">
@@ -132,24 +132,27 @@ export function PlannerPage({ initialTasks }: { initialTasks: PlannerTask[] }) {
           </p>
         </div>
 
-        <section className="rounded-3xl border border-emerald-900/20 bg-[#101714] p-6 shadow-[0_18px_60px_rgba(0,0,0,0.22)]">
-          <div className="grid gap-4 lg:grid-cols-[1.4fr_1fr_1fr_1fr_auto]">
+        <section className="rounded-3xl border border-emerald-900/20 bg-[#101714] p-4 shadow-[0_18px_60px_rgba(0,0,0,0.22)] sm:p-6">
+          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-emerald-300/45">
+            Add task
+          </p>
+          <div className="mt-4 grid gap-3 lg:grid-cols-[1.4fr_1fr_1fr_1fr_auto]">
             <input
               value={title}
               onChange={(event) => setTitle(event.target.value)}
               placeholder="Add a task title"
-              className="rounded-2xl border border-emerald-900/25 bg-[#0b110e] px-4 py-3 text-sm text-[#eaf4ef] outline-none"
+              className="rounded-2xl border border-emerald-900/25 bg-[#0b110e] px-4 py-3.5 text-sm text-[#eaf4ef] outline-none"
             />
             <input
               value={dueDate}
               onChange={(event) => setDueDate(event.target.value)}
               type="date"
-              className="rounded-2xl border border-emerald-900/25 bg-[#0b110e] px-4 py-3 text-sm text-[#eaf4ef] outline-none"
+              className="rounded-2xl border border-emerald-900/25 bg-[#0b110e] px-4 py-3.5 text-sm text-[#eaf4ef] outline-none"
             />
             <select
               value={assignedTo}
               onChange={(event) => setAssignedTo(event.target.value as "dez" | "al")}
-              className="rounded-2xl border border-emerald-900/25 bg-[#0b110e] px-4 py-3 text-sm text-[#eaf4ef] outline-none"
+              className="rounded-2xl border border-emerald-900/25 bg-[#0b110e] px-4 py-3.5 text-sm text-[#eaf4ef] outline-none"
             >
               <option value="dez">Due for Dez</option>
               <option value="al">Due for AL</option>
@@ -158,27 +161,27 @@ export function PlannerPage({ initialTasks }: { initialTasks: PlannerTask[] }) {
               value={details}
               onChange={(event) => setDetails(event.target.value)}
               placeholder="Short note or handoff"
-              className="rounded-2xl border border-emerald-900/25 bg-[#0b110e] px-4 py-3 text-sm text-[#eaf4ef] outline-none"
+              className="rounded-2xl border border-emerald-900/25 bg-[#0b110e] px-4 py-3.5 text-sm text-[#eaf4ef] outline-none"
             />
             <button
               type="button"
               onClick={createTask}
               disabled={saving}
-              className="rounded-2xl bg-emerald-500 px-4 py-3 text-sm font-semibold text-[#05110b] transition hover:bg-emerald-400 disabled:opacity-60"
+              className="rounded-2xl bg-emerald-500 px-4 py-3.5 text-sm font-semibold text-[#05110b] transition hover:bg-emerald-400 disabled:opacity-60"
             >
-              Add
+              Add task
             </button>
           </div>
           {message ? <p className="mt-4 text-sm text-emerald-200/80">{message}</p> : null}
         </section>
 
-        <section className="rounded-3xl border border-emerald-900/20 bg-[#101714] p-6 shadow-[0_18px_60px_rgba(0,0,0,0.22)]">
+        <section className="rounded-3xl border border-emerald-900/20 bg-[#101714] p-4 shadow-[0_18px_60px_rgba(0,0,0,0.22)] sm:p-6">
           <p className="text-xs font-semibold uppercase tracking-[0.24em] text-emerald-300/45">
             This week
           </p>
-          <div className="mt-4 grid gap-4 lg:grid-cols-7">
+          <div className="mt-4 flex gap-3 overflow-x-auto pb-2 al-scrollbar lg:grid lg:overflow-visible lg:pb-0 lg:grid-cols-7">
             {weekBuckets.map((bucket) => (
-              <div key={bucket.key} className="rounded-2xl border border-emerald-900/20 bg-[#0b110e] p-4">
+              <div key={bucket.key} className="min-w-[180px] rounded-2xl border border-emerald-900/20 bg-[#0b110e] p-4 lg:min-w-0">
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-300/45">
                   {bucket.label}
                 </p>
@@ -208,7 +211,7 @@ export function PlannerPage({ initialTasks }: { initialTasks: PlannerTask[] }) {
           ].map((column) => (
             <div
               key={column.title}
-              className="rounded-3xl border border-emerald-900/20 bg-[#101714] p-6 shadow-[0_18px_60px_rgba(0,0,0,0.22)]"
+              className="rounded-3xl border border-emerald-900/20 bg-[#101714] p-4 shadow-[0_18px_60px_rgba(0,0,0,0.22)] sm:p-6"
             >
               <p className="text-xs font-semibold uppercase tracking-[0.24em] text-emerald-300/45">
                 {column.title}
@@ -228,12 +231,12 @@ export function PlannerPage({ initialTasks }: { initialTasks: PlannerTask[] }) {
                           {formatDueLabel(task.dueDate)}
                         </p>
                       </div>
-                      <div className="mt-4 flex flex-wrap gap-2">
+                      <div className="mt-4 grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
                         <button
                           type="button"
                           onClick={() => updateTask(task.id, { status: "done" })}
                           disabled={saving}
-                          className="rounded-xl bg-emerald-500 px-3 py-2 text-xs font-semibold text-[#05110b]"
+                          className="rounded-xl bg-emerald-500 px-3 py-3 text-xs font-semibold text-[#05110b]"
                         >
                           Mark done
                         </button>
@@ -245,7 +248,7 @@ export function PlannerPage({ initialTasks }: { initialTasks: PlannerTask[] }) {
                             })
                           }
                           disabled={saving}
-                          className="rounded-xl border border-emerald-800/40 bg-[#111916] px-3 py-2 text-xs font-semibold text-emerald-100"
+                          className="rounded-xl border border-emerald-800/40 bg-[#111916] px-3 py-3 text-xs font-semibold text-emerald-100"
                         >
                           Send to {task.assignedTo === "dez" ? "AL" : "Dez"}
                         </button>
@@ -253,7 +256,7 @@ export function PlannerPage({ initialTasks }: { initialTasks: PlannerTask[] }) {
                           type="button"
                           onClick={() => updateTask(task.id, { status: "cancelled" })}
                           disabled={saving}
-                          className="rounded-xl border border-slate-600/40 bg-slate-500/10 px-3 py-2 text-xs font-semibold text-slate-200"
+                          className="col-span-2 rounded-xl border border-slate-600/40 bg-slate-500/10 px-3 py-3 text-xs font-semibold text-slate-200 sm:col-auto"
                         >
                           Cancel
                         </button>
@@ -270,7 +273,7 @@ export function PlannerPage({ initialTasks }: { initialTasks: PlannerTask[] }) {
           ))}
         </section>
 
-        <section className="rounded-3xl border border-emerald-900/20 bg-[#101714] p-6 shadow-[0_18px_60px_rgba(0,0,0,0.22)]">
+        <section className="rounded-3xl border border-emerald-900/20 bg-[#101714] p-4 shadow-[0_18px_60px_rgba(0,0,0,0.22)] sm:p-6">
           <p className="text-xs font-semibold uppercase tracking-[0.24em] text-emerald-300/45">
             Closed recently
           </p>

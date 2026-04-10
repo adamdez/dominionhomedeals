@@ -135,7 +135,7 @@ function GenericPresentation({
         blockedSignals.includes("do not know a repo")));
 
   return (
-    <main className="h-full w-full overflow-y-auto bg-[#07100b] px-4 py-6 text-[#eaf4ef] sm:px-6 lg:px-8">
+    <main className="h-full w-full overflow-y-auto bg-[#07100b] px-4 py-5 pb-28 text-[#eaf4ef] sm:px-6 lg:px-8 lg:pb-8">
       <div className="mx-auto flex max-w-7xl flex-col gap-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
@@ -143,7 +143,7 @@ function GenericPresentation({
             <h1 className="mt-2 text-3xl font-semibold text-[#f3faf6] sm:text-4xl">{title}</h1>
             <p className="mt-3 max-w-3xl text-sm leading-6 text-emerald-100/70 sm:text-base">{summary}</p>
           </div>
-          <Link href={boardroomHomePath} className="rounded-2xl border border-emerald-900/25 bg-[#101714] px-4 py-3 text-sm font-semibold text-emerald-100 transition hover:border-emerald-500/40">Back to Board Room</Link>
+          <Link href={boardroomHomePath} className="hidden rounded-2xl border border-emerald-900/25 bg-[#101714] px-4 py-3 text-sm font-semibold text-emerald-100 transition hover:border-emerald-500/40 sm:inline-flex">Back to Board Room</Link>
         </div>
 
         <section className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
@@ -189,7 +189,7 @@ function GenericPresentation({
                 {isBlockedPresentation ? "Review status" : "Review now"}
               </p>
               {primaryLinks.length > 0 && !isBlockedPresentation ? (
-                <div className="mt-4 flex flex-wrap gap-3">
+                <div className="mt-4 grid gap-3 sm:flex sm:flex-wrap">
                   {primaryLinks.map((link) => (
                     <a key={`${link.label}-${link.url}`} href={link.url} target="_blank" rel="noreferrer" className="rounded-2xl bg-emerald-500 px-4 py-3 text-sm font-semibold text-[#05110b] transition hover:bg-emerald-400">{link.label}</a>
                   ))}
@@ -239,7 +239,7 @@ function GenericPresentation({
               {secondaryLinks.length > 0 ? (
                 <div className="rounded-2xl border border-emerald-900/20 bg-[#0b110e] p-4">
                   <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-300/45">Supporting links</p>
-                  <div className="mt-3 flex flex-wrap gap-3">
+                  <div className="mt-3 grid gap-3 sm:flex sm:flex-wrap">
                     {secondaryLinks.map((link) => (
                       <a key={`${link.label}-${link.url}`} href={link.url} target="_blank" rel="noreferrer" className="rounded-2xl border border-emerald-900/25 bg-[#101714] px-4 py-3 text-sm font-semibold text-emerald-100 transition hover:border-emerald-500/40">{link.label}</a>
                     ))}
@@ -294,7 +294,7 @@ function BrowserCommercePresentation({ context, task, jobId, boardroomHomePath }
       .filter(Boolean);
 
     return (
-      <main className="h-full w-full overflow-y-auto bg-[#07100b] px-4 py-6 text-[#eaf4ef] sm:px-6 lg:px-8">
+      <main className="h-full w-full overflow-y-auto bg-[#07100b] px-4 py-5 pb-28 text-[#eaf4ef] sm:px-6 lg:px-8 lg:pb-8">
         <div className="mx-auto flex max-w-7xl flex-col gap-6">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
@@ -302,7 +302,7 @@ function BrowserCommercePresentation({ context, task, jobId, boardroomHomePath }
               <h1 className="mt-2 text-3xl font-semibold text-[#f3faf6] sm:text-4xl">{presentationTitle}</h1>
               <p className="mt-3 max-w-3xl text-sm leading-6 text-emerald-100/70 sm:text-base">{presentationSummary}</p>
             </div>
-            <Link href={boardroomHomePath} className="rounded-2xl border border-emerald-900/25 bg-[#101714] px-4 py-3 text-sm font-semibold text-emerald-100 transition hover:border-emerald-500/40">Back to Board Room</Link>
+            <Link href={boardroomHomePath} className="hidden rounded-2xl border border-emerald-900/25 bg-[#101714] px-4 py-3 text-sm font-semibold text-emerald-100 transition hover:border-emerald-500/40 sm:inline-flex">Back to Board Room</Link>
           </div>
 
           <section className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
@@ -327,7 +327,7 @@ function BrowserCommercePresentation({ context, task, jobId, boardroomHomePath }
                 <p className="mt-2 text-sm leading-6 text-emerald-100/75">{asDisplayString(chosenOption.why_best, "This is the strongest current path based on the review package that made it to a real operator checkpoint.")}</p>
               </div>
 
-              <div className="mt-6 flex flex-wrap gap-3">
+              <div className="mt-6 grid gap-3 sm:flex sm:flex-wrap">
                 {typeof context.review_page_url === "string" ? <a href={String(context.review_page_url)} className="rounded-2xl bg-emerald-500 px-4 py-3 text-sm font-semibold text-[#05110b] transition hover:bg-emerald-400">Open presentation</a> : null}
                 {typeof context.proof_url === "string" ? <a href={String(context.proof_url)} target="_blank" rel="noreferrer" className="rounded-2xl border border-emerald-900/25 bg-[#101714] px-4 py-3 text-sm font-semibold text-emerald-100 transition hover:border-emerald-500/40">Open proof</a> : null}
                 {typeof reviewSurface.hosted_debugger_fullscreen_url === "string" ? <a href={String(reviewSurface.hosted_debugger_fullscreen_url)} target="_blank" rel="noreferrer" className="rounded-2xl border border-emerald-900/25 bg-[#101714] px-4 py-3 text-sm font-semibold text-emerald-100 transition hover:border-emerald-500/40">Open hosted replay</a> : typeof reviewSurface.hosted_session_url === "string" ? <a href={String(reviewSurface.hosted_session_url)} target="_blank" rel="noreferrer" className="rounded-2xl border border-emerald-900/25 bg-[#101714] px-4 py-3 text-sm font-semibold text-emerald-100 transition hover:border-emerald-500/40">Open hosted session</a> : null}

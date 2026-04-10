@@ -220,10 +220,11 @@ export function Sidebar({
 
       <aside
         className={`
-          fixed left-0 top-0 z-40 flex h-full w-72 flex-col
+          fixed left-0 top-0 z-40 flex h-full w-72 flex-col pb-24
           border-r border-emerald-900/20 bg-[#0d1410]
           transition-transform duration-300 ease-out
           lg:relative lg:translate-x-0
+          lg:pb-0
           ${isOpen ? "translate-x-0" : "-translate-x-full"}
         `}
       >
@@ -256,14 +257,16 @@ export function Sidebar({
             <div className="space-y-2">
               <Link
                 href="/boardroom"
-                className="flex items-center justify-between rounded-xl border border-emerald-900/20 bg-[#111916] px-3 py-3 text-sm font-semibold text-[#e2ede8] transition hover:border-emerald-500/35 hover:bg-emerald-500/10"
+                className="flex items-center justify-between rounded-xl border border-emerald-900/20 bg-[#111916] px-3 py-3 text-sm font-semibold text-[#e2ede8] transition hover:border-emerald-500/35 hover:bg-emerald-500/10 active:scale-[0.99]"
+                onClick={onClose}
               >
                 <span>Board Room</span>
                 <span className="text-xs uppercase tracking-[0.18em] text-emerald-300/45">Open</span>
               </Link>
               <Link
                 href="/planner"
-                className="flex items-center justify-between rounded-xl border border-emerald-900/20 bg-[#111916] px-3 py-3 text-sm font-semibold text-[#e2ede8] transition hover:border-emerald-500/35 hover:bg-emerald-500/10"
+                className="flex items-center justify-between rounded-xl border border-emerald-900/20 bg-[#111916] px-3 py-3 text-sm font-semibold text-[#e2ede8] transition hover:border-emerald-500/35 hover:bg-emerald-500/10 active:scale-[0.99]"
+                onClick={onClose}
               >
                 <span className="flex items-center gap-2">
                   <CalendarDays className="h-4 w-4 text-emerald-400/65" />

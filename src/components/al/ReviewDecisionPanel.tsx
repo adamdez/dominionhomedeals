@@ -146,13 +146,13 @@ export function ReviewDecisionPanel({
         </div>
       </div>
 
-      <div className="mt-5 flex flex-wrap gap-3">
+      <div className="mt-5 grid grid-cols-2 gap-3 sm:flex sm:flex-wrap">
         {showApprove ? (
           <button
             type="button"
             onClick={() => submitDecision("approved_for_checkout")}
             disabled={saving}
-            className="rounded-2xl bg-emerald-500 px-4 py-3 text-sm font-semibold text-[#05110b] transition hover:bg-emerald-400 disabled:cursor-not-allowed disabled:opacity-60"
+            className="rounded-2xl bg-emerald-500 px-4 py-3.5 text-sm font-semibold text-[#05110b] transition hover:bg-emerald-400 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {actionLabels.approve}
           </button>
@@ -162,7 +162,7 @@ export function ReviewDecisionPanel({
             type="button"
             onClick={() => submitDecision("changes_requested")}
             disabled={saving}
-            className="rounded-2xl border border-emerald-800/40 bg-[#0b110e] px-4 py-3 text-sm font-semibold text-emerald-100 transition hover:border-emerald-500/45 disabled:cursor-not-allowed disabled:opacity-60"
+            className="rounded-2xl border border-emerald-800/40 bg-[#0b110e] px-4 py-3.5 text-sm font-semibold text-emerald-100 transition hover:border-emerald-500/45 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {actionLabels.changes}
           </button>
@@ -172,7 +172,7 @@ export function ReviewDecisionPanel({
             type="button"
             onClick={() => submitDecision("blocked_vendor_session")}
             disabled={saving}
-            className="rounded-2xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm font-semibold text-red-200 transition hover:bg-red-500/15 disabled:cursor-not-allowed disabled:opacity-60"
+            className="rounded-2xl border border-red-500/30 bg-red-500/10 px-4 py-3.5 text-sm font-semibold text-red-200 transition hover:bg-red-500/15 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {actionLabels.blocked}
           </button>
@@ -182,7 +182,7 @@ export function ReviewDecisionPanel({
             type="button"
             onClick={() => submitDecision("resume_local_session_required")}
             disabled={saving}
-            className="rounded-2xl border border-emerald-800/40 bg-[#0b110e] px-4 py-3 text-sm font-semibold text-emerald-100 transition hover:border-emerald-500/45 disabled:cursor-not-allowed disabled:opacity-60"
+            className="rounded-2xl border border-emerald-800/40 bg-[#0b110e] px-4 py-3.5 text-sm font-semibold text-emerald-100 transition hover:border-emerald-500/45 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {actionLabels.resume}
           </button>
@@ -192,7 +192,7 @@ export function ReviewDecisionPanel({
             type="button"
             onClick={() => submitDecision("close_presentation")}
             disabled={saving}
-            className="rounded-2xl border border-slate-600/40 bg-slate-500/10 px-4 py-3 text-sm font-semibold text-slate-200 transition hover:bg-slate-500/15 disabled:cursor-not-allowed disabled:opacity-60"
+            className="col-span-2 rounded-2xl border border-slate-600/40 bg-slate-500/10 px-4 py-3.5 text-sm font-semibold text-slate-200 transition hover:bg-slate-500/15 disabled:cursor-not-allowed disabled:opacity-60 sm:col-auto"
           >
             {actionLabels.close}
           </button>
