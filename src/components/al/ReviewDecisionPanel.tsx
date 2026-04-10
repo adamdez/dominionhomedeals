@@ -7,7 +7,7 @@ interface ReviewDecisionPanelProps {
   initialState: string;
   initialNextAction: string;
   alternatives: string[];
-  mode?: "generic" | "browser_commerce";
+  mode?: "generic" | "browser_commerce" | "generic_blocked";
 }
 
 function humanizeState(value: string): string {
@@ -56,6 +56,17 @@ export function ReviewDecisionPanel({
             note: "Optional operator note",
             notePlaceholder: "Add a quick instruction only if the team needs one.",
           }
+        : mode === "generic_blocked"
+          ? {
+              approve: "Approve recommendation",
+              changes: "Request changes",
+              resume: "Mark fixed / resume",
+              blocked: "Keep blocked",
+              close: "Close presentation",
+              alternate: "Choose this alternate",
+              note: "Blocked-item note",
+              notePlaceholder: "Add the exact fix needed or who owns it.",
+            }
         : {
             approve: "Approve recommendation",
             changes: "Request changes",
@@ -68,6 +79,13 @@ export function ReviewDecisionPanel({
           },
     [mode],
   );
+
+  const showApprove = mode !== "generic_blocked";
+  const showChanges = mode !== "generic_blocked";
+  const showBlocked = true;
+  const showResume = true;
+  const showClose = true;
+  const showAlternatives = alternatives.length > 0 && mode !== "generic_blocked";
 
   async function submitDecision(action: string) {
     setSaving(true);
@@ -129,49 +147,59 @@ export function ReviewDecisionPanel({
       </div>
 
       <div className="mt-5 flex flex-wrap gap-3">
-        <button
-          type="button"
-          onClick={() => submitDecision("approved_for_checkout")}
-          disabled={saving}
-          className="rounded-2xl bg-emerald-500 px-4 py-3 text-sm font-semibold text-[#05110b] transition hover:bg-emerald-400 disabled:cursor-not-allowed disabled:opacity-60"
-        >
-          {actionLabels.approve}
-        </button>
-        <button
-          type="button"
-          onClick={() => submitDecision("changes_requested")}
-          disabled={saving}
-          className="rounded-2xl border border-emerald-800/40 bg-[#0b110e] px-4 py-3 text-sm font-semibold text-emerald-100 transition hover:border-emerald-500/45 disabled:cursor-not-allowed disabled:opacity-60"
-        >
-          {actionLabels.changes}
-        </button>
-        <button
-          type="button"
-          onClick={() => submitDecision("blocked_vendor_session")}
-          disabled={saving}
-          className="rounded-2xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm font-semibold text-red-200 transition hover:bg-red-500/15 disabled:cursor-not-allowed disabled:opacity-60"
-        >
-          {actionLabels.blocked}
-        </button>
-        <button
-          type="button"
-          onClick={() => submitDecision("resume_local_session_required")}
-          disabled={saving}
-          className="rounded-2xl border border-emerald-800/40 bg-[#0b110e] px-4 py-3 text-sm font-semibold text-emerald-100 transition hover:border-emerald-500/45 disabled:cursor-not-allowed disabled:opacity-60"
-        >
-          {actionLabels.resume}
-        </button>
-        <button
-          type="button"
-          onClick={() => submitDecision("close_presentation")}
-          disabled={saving}
-          className="rounded-2xl border border-slate-600/40 bg-slate-500/10 px-4 py-3 text-sm font-semibold text-slate-200 transition hover:bg-slate-500/15 disabled:cursor-not-allowed disabled:opacity-60"
-        >
-          {actionLabels.close}
-        </button>
+        {showApprove ? (
+          <button
+            type="button"
+            onClick={() => submitDecision("approved_for_checkout")}
+            disabled={saving}
+            className="rounded-2xl bg-emerald-500 px-4 py-3 text-sm font-semibold text-[#05110b] transition hover:bg-emerald-400 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {actionLabels.approve}
+          </button>
+        ) : null}
+        {showChanges ? (
+          <button
+            type="button"
+            onClick={() => submitDecision("changes_requested")}
+            disabled={saving}
+            className="rounded-2xl border border-emerald-800/40 bg-[#0b110e] px-4 py-3 text-sm font-semibold text-emerald-100 transition hover:border-emerald-500/45 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {actionLabels.changes}
+          </button>
+        ) : null}
+        {showBlocked ? (
+          <button
+            type="button"
+            onClick={() => submitDecision("blocked_vendor_session")}
+            disabled={saving}
+            className="rounded-2xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm font-semibold text-red-200 transition hover:bg-red-500/15 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {actionLabels.blocked}
+          </button>
+        ) : null}
+        {showResume ? (
+          <button
+            type="button"
+            onClick={() => submitDecision("resume_local_session_required")}
+            disabled={saving}
+            className="rounded-2xl border border-emerald-800/40 bg-[#0b110e] px-4 py-3 text-sm font-semibold text-emerald-100 transition hover:border-emerald-500/45 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {actionLabels.resume}
+          </button>
+        ) : null}
+        {showClose ? (
+          <button
+            type="button"
+            onClick={() => submitDecision("close_presentation")}
+            disabled={saving}
+            className="rounded-2xl border border-slate-600/40 bg-slate-500/10 px-4 py-3 text-sm font-semibold text-slate-200 transition hover:bg-slate-500/15 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {actionLabels.close}
+          </button>
+        ) : null}
       </div>
 
-      {alternatives.length > 0 ? (
+      {showAlternatives ? (
         <div className="mt-6 rounded-2xl border border-emerald-900/20 bg-[#0b110e] p-4">
           <p className="text-sm font-semibold text-emerald-100">Alternate option</p>
           <div className="mt-3 flex flex-wrap gap-3">

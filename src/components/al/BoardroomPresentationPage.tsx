@@ -114,6 +114,25 @@ function GenericPresentation({
   const primaryLinks = links.filter((link) => link.priority === "primary");
   const secondaryLinks = links.filter((link) => link.priority === "secondary");
   const alternatives = normalizeAlternatives(context).slice(0, 4);
+  const rawState = asDisplayString(context.review_state, "ready for review");
+  const blockedSignals = [
+    recommendation,
+    summary,
+    nextAction,
+    bodyParagraphs[0] || "",
+    task,
+  ]
+    .join(" ")
+    .toLowerCase();
+  const isBlockedPresentation =
+    rawState === "blocked_vendor_session" ||
+    (primaryLinks.length === 0 &&
+      alternatives.length === 0 &&
+      (blockedSignals.includes("error:") ||
+        blockedSignals.includes("blocked") ||
+        blockedSignals.includes("repair") ||
+        blockedSignals.includes("don't know a repo") ||
+        blockedSignals.includes("do not know a repo")));
 
   return (
     <main className="h-full w-full overflow-y-auto bg-[#07100b] px-4 py-6 text-[#eaf4ef] sm:px-6 lg:px-8">
@@ -132,16 +151,22 @@ function GenericPresentation({
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.24em] text-emerald-300/45">Recommendation</p>
-                <h2 className="mt-2 text-2xl font-semibold text-[#f3faf6]">{recommendation}</h2>
+                <h2 className="mt-2 text-2xl font-semibold text-[#f3faf6]">
+                  {isBlockedPresentation ? "Blocked execution item" : recommendation}
+                </h2>
               </div>
               <div className="rounded-full border border-emerald-500/20 bg-emerald-500/10 px-4 py-2 text-sm font-semibold text-emerald-200">
-                {asDisplayString(context.review_state, "ready for review").replace(/_/g, " ")}
+                {(isBlockedPresentation ? "blocked" : rawState).replace(/_/g, " ")}
               </div>
             </div>
 
             <div className="mt-6 rounded-2xl border border-emerald-900/20 bg-[#0b110e] p-5">
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-300/45">Why this won</p>
-              <p className="mt-2 text-sm leading-6 text-emerald-100/75">{whySelected}</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-300/45">
+                {isBlockedPresentation ? "What broke" : "Why this won"}
+              </p>
+              <p className="mt-2 text-sm leading-6 text-emerald-100/75">
+                {isBlockedPresentation ? recommendation : whySelected}
+              </p>
             </div>
 
             <div className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
@@ -160,24 +185,31 @@ function GenericPresentation({
             </div>
 
             <div className="mt-6 rounded-2xl border border-emerald-900/20 bg-[#0b110e] p-5">
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-300/45">Review now</p>
-              {primaryLinks.length > 0 ? (
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-300/45">
+                {isBlockedPresentation ? "Review status" : "Review now"}
+              </p>
+              {primaryLinks.length > 0 && !isBlockedPresentation ? (
                 <div className="mt-4 flex flex-wrap gap-3">
                   {primaryLinks.map((link) => (
                     <a key={`${link.label}-${link.url}`} href={link.url} target="_blank" rel="noreferrer" className="rounded-2xl bg-emerald-500 px-4 py-3 text-sm font-semibold text-[#05110b] transition hover:bg-emerald-400">{link.label}</a>
                   ))}
                 </div>
               ) : (
-                <p className="mt-3 text-sm leading-6 text-emerald-100/65">No direct review links were attached to this presentation yet.</p>
+                <p className="mt-3 text-sm leading-6 text-emerald-100/65">
+                  {isBlockedPresentation
+                    ? "No review artifact is attached because this item is blocked upstream and needs repair before review."
+                    : "No direct review links were attached to this presentation yet."}
+                </p>
               )}
             </div>
 
             <div className="mt-6">
               <ReviewDecisionPanel
                 jobId={jobId}
-                initialState={String(context.review_state || "ready_for_review")}
+                initialState={String(isBlockedPresentation ? "blocked_vendor_session" : context.review_state || "ready_for_review")}
                 initialNextAction={nextAction}
                 alternatives={alternatives.map((entry) => entry.title)}
+                mode={isBlockedPresentation ? "generic_blocked" : "generic"}
               />
             </div>
           </div>
