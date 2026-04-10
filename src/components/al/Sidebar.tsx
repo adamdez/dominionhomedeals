@@ -228,7 +228,10 @@ export function Sidebar({
           ${isOpen ? "translate-x-0" : "-translate-x-full"}
         `}
       >
-        <div className="flex items-center justify-between border-b border-emerald-900/20 px-5 py-5">
+        <div
+          className="flex items-center justify-between border-b border-emerald-900/20 px-5 pb-5 pt-6"
+          style={{ paddingTop: "max(env(safe-area-inset-top), 1.25rem)" }}
+        >
           <div className="flex items-center gap-3">
             <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-500/10 ring-1 ring-emerald-500/20">
               <Sparkles className="h-4 w-4 text-emerald-400" />
@@ -245,7 +248,7 @@ export function Sidebar({
           </div>
           <button
             onClick={onClose}
-            className="rounded-lg p-1.5 text-emerald-200/40 transition-colors hover:bg-emerald-500/10 hover:text-emerald-200/60 lg:hidden"
+            className="rounded-xl p-3 text-emerald-200/45 transition-colors hover:bg-emerald-500/10 hover:text-emerald-200/65 lg:hidden"
             aria-label="Close sidebar"
           >
             <X className="h-4 w-4" />

@@ -1603,10 +1603,13 @@ export function ChatApp() {
         )}
 
         {/* Top bar */}
-        <header className="flex items-center gap-3 border-b border-emerald-900/20 px-4 py-3 lg:px-6">
+        <header
+          className="flex items-center gap-3 border-b border-emerald-900/20 px-4 pb-3 pt-4 lg:px-6 lg:py-3"
+          style={{ paddingTop: "max(env(safe-area-inset-top), 1rem)" }}
+        >
           <button
             onClick={() => setSidebarOpen(true)}
-            className="rounded-lg p-2 text-emerald-200/40 transition-colors hover:bg-emerald-500/10 hover:text-emerald-200/60 lg:hidden"
+            className="rounded-xl p-3 text-emerald-200/50 transition-colors hover:bg-emerald-500/10 hover:text-emerald-200/70 lg:hidden"
             aria-label="Open sidebar"
           >
             <Menu className="h-5 w-5" />
