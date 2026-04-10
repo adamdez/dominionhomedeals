@@ -22,6 +22,8 @@ function humanizeState(value: string): string {
       return "blocked";
     case "cart_ready_for_review":
       return "ready for review";
+    case "presentation_closed":
+      return "closed";
     default:
       return value.replace(/_/g, " ");
   }
@@ -49,6 +51,7 @@ export function ReviewDecisionPanel({
             changes: "Request changes",
             resume: "Resume local cart",
             blocked: "Mark cart blocked",
+            close: "Close presentation",
             alternate: "Pick this alternate",
             note: "Optional operator note",
             notePlaceholder: "Add a quick instruction only if the team needs one.",
@@ -58,6 +61,7 @@ export function ReviewDecisionPanel({
             changes: "Request changes",
             resume: "Resume execution",
             blocked: "Mark blocked",
+            close: "Close presentation",
             alternate: "Choose this alternate",
             note: "Optional note for AL",
             notePlaceholder: "Add a short change request, approval note, or blocker.",
@@ -156,6 +160,14 @@ export function ReviewDecisionPanel({
           className="rounded-2xl border border-emerald-800/40 bg-[#0b110e] px-4 py-3 text-sm font-semibold text-emerald-100 transition hover:border-emerald-500/45 disabled:cursor-not-allowed disabled:opacity-60"
         >
           {actionLabels.resume}
+        </button>
+        <button
+          type="button"
+          onClick={() => submitDecision("close_presentation")}
+          disabled={saving}
+          className="rounded-2xl border border-slate-600/40 bg-slate-500/10 px-4 py-3 text-sm font-semibold text-slate-200 transition hover:bg-slate-500/15 disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          {actionLabels.close}
         </button>
       </div>
 

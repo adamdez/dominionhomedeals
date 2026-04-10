@@ -14,6 +14,7 @@ const ALLOWED_ACTIONS = new Set<ReviewDecisionAction>([
   "resume_local_session_required",
   "blocked_vendor_session",
   "select_alternative_option",
+  "close_presentation",
 ]);
 
 export async function POST(
@@ -89,6 +90,8 @@ export async function POST(
           : "The execution path is blocked and needs repair before this presentation can move forward."
     : nextState === "approved_for_checkout"
       ? "The recommendation is approved. AL can continue the chosen execution path and return with the next review checkpoint."
+      : nextState === "presentation_closed"
+        ? "This presentation is closed. It stays in the audit trail, but it is removed from the active Board Room queue."
       : nextState === "changes_requested"
         ? "Changes were requested. Update the presentation, keep the recommendation tight, and return to Board Room with the revised package."
         : nextState === "resume_local_session_required"
@@ -98,6 +101,10 @@ export async function POST(
   const updatedContext = {
     ...contextValue,
     review_state: nextState,
+    presentation_status_label:
+      nextState === "presentation_closed"
+        ? "closed"
+        : contextValue.presentation_status_label || null,
     next_action: nextAction,
     review_decisions: [
       ...currentHistory,

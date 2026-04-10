@@ -8,14 +8,16 @@ export type ReviewState =
   | "changes_requested"
   | "approved_for_checkout"
   | "resume_local_session_required"
-  | "blocked_vendor_session";
+  | "blocked_vendor_session"
+  | "presentation_closed";
 
 export type ReviewDecisionAction =
   | "approved_for_checkout"
   | "changes_requested"
   | "resume_local_session_required"
   | "blocked_vendor_session"
-  | "select_alternative_option";
+  | "select_alternative_option"
+  | "close_presentation";
 
 export interface ReviewArtifactUploadInput {
   dataUrl: string;
@@ -83,6 +85,7 @@ export function normalizeReviewState(value: unknown): ReviewState {
     case "resume_local_session_required":
     case "blocked_vendor_session":
     case "cart_ready_for_review":
+    case "presentation_closed":
       return value as ReviewState;
     default:
       return "cart_ready_for_review";
@@ -172,9 +175,13 @@ export async function fetchBoardroomPresentations(
         (typeof context.presentation_title === "string" && context.presentation_title.trim().length > 0) ||
         (typeof context.presentation_body === "string" && context.presentation_body.trim().length > 0);
 
-      if (!hasReviewSurface && !hasBoardroomLink && !hasPresentationShell) {
-        return null;
-      }
+        if (!hasReviewSurface && !hasBoardroomLink && !hasPresentationShell) {
+          return null;
+        }
+
+        if (normalizeReviewState(context.review_state) === "presentation_closed") {
+          return null;
+        }
 
       const title =
         typeof context.presentation_title === "string" && context.presentation_title.trim()
@@ -350,6 +357,8 @@ export function reviewActionToState(action: ReviewDecisionAction): ReviewState {
       return "resume_local_session_required";
     case "blocked_vendor_session":
       return "blocked_vendor_session";
+    case "close_presentation":
+      return "presentation_closed";
     case "changes_requested":
     case "select_alternative_option":
     default:
