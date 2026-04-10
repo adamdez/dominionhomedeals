@@ -137,7 +137,7 @@ export function ReviewDecisionPanel({
             Decision
           </p>
           <h2 className="mt-2 text-2xl font-semibold text-[#eaf4ef]">
-            Fast review
+            Quick call
           </h2>
           <p className="mt-3 max-w-3xl text-sm leading-6 text-emerald-100/70">{nextAction}</p>
         </div>

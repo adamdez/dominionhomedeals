@@ -221,7 +221,7 @@ export function Sidebar({
       <aside
         className={`
           fixed left-0 top-0 z-40 flex h-full w-72 flex-col pb-24
-          border-r border-emerald-900/20 bg-[#0d1410]
+          border-r border-amber-700/20 bg-[#0d1410]
           transition-transform duration-300 ease-out
           lg:relative lg:translate-x-0
           lg:pb-0
@@ -229,20 +229,23 @@ export function Sidebar({
         `}
       >
         <div
-          className="flex items-center justify-between border-b border-emerald-900/20 px-5 pb-5 pt-6"
+          className="al-flannel-panel flex items-center justify-between border-b border-amber-700/20 px-5 pb-5 pt-6"
           style={{ paddingTop: "max(env(safe-area-inset-top), 1.25rem)" }}
         >
           <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-500/10 ring-1 ring-emerald-500/20">
-              <Sparkles className="h-4 w-4 text-emerald-400" />
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-amber-500/10 ring-1 ring-amber-500/20">
+              <Sparkles className="h-4 w-4 text-amber-300" />
             </div>
             <div>
-              <h2 className="text-sm font-semibold text-[#e2ede8]">
+              <p className="text-[10px] font-semibold uppercase al-brass-label">
+                Straight Answer
+              </p>
+              <h2 className="text-sm font-semibold text-[#f2f6f3]">
                 Al Boreland
               </h2>
               <div className="flex items-center gap-1.5">
                 <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse-soft" />
-                <span className="text-xs text-emerald-200/40">Online</span>
+                <span className="text-xs text-emerald-100/50">Steady hand online</span>
               </div>
             </div>
           </div>
@@ -260,22 +263,22 @@ export function Sidebar({
             <div className="space-y-2">
               <Link
                 href="/boardroom"
-                className="flex items-center justify-between rounded-xl border border-emerald-900/20 bg-[#111916] px-3 py-3 text-sm font-semibold text-[#e2ede8] transition hover:border-emerald-500/35 hover:bg-emerald-500/10 active:scale-[0.99]"
+                className="al-shop-card flex items-center justify-between rounded-xl px-3 py-3 text-sm font-semibold text-[#f2f6f3] transition hover:border-amber-400/35 hover:bg-amber-500/5 active:scale-[0.99]"
                 onClick={onClose}
               >
                 <span>Board Room</span>
-                <span className="text-xs uppercase tracking-[0.18em] text-emerald-300/45">Open</span>
+                <span className="text-xs uppercase tracking-[0.18em] text-amber-300/55">Open</span>
               </Link>
               <Link
                 href="/planner"
-                className="flex items-center justify-between rounded-xl border border-emerald-900/20 bg-[#111916] px-3 py-3 text-sm font-semibold text-[#e2ede8] transition hover:border-emerald-500/35 hover:bg-emerald-500/10 active:scale-[0.99]"
+                className="al-shop-card flex items-center justify-between rounded-xl px-3 py-3 text-sm font-semibold text-[#f2f6f3] transition hover:border-amber-400/35 hover:bg-amber-500/5 active:scale-[0.99]"
                 onClick={onClose}
               >
                 <span className="flex items-center gap-2">
                   <CalendarDays className="h-4 w-4 text-emerald-400/65" />
                   Planner
                 </span>
-                <span className="text-xs uppercase tracking-[0.18em] text-emerald-300/45">Open</span>
+                <span className="text-xs uppercase tracking-[0.18em] text-amber-300/55">Open</span>
               </Link>
             </div>
           </div>
@@ -285,13 +288,13 @@ export function Sidebar({
               <button
                 type="button"
                 onClick={() => setShowRuntime((value) => !value)}
-                className="flex w-full items-center justify-between rounded-xl border border-emerald-900/20 bg-[#111916] px-3 py-3 text-left transition hover:border-emerald-500/25 hover:bg-emerald-500/5"
+                className="al-shop-card flex w-full items-center justify-between rounded-xl px-3 py-3 text-left transition hover:border-amber-400/30 hover:bg-amber-500/5"
               >
                 <div>
-                  <p className="text-[11px] font-semibold uppercase tracking-wider text-emerald-200/25">
+                  <p className="text-[11px] font-semibold uppercase tracking-wider text-amber-300/50">
                     Runtime
                   </p>
-                  <p className="mt-1 text-xs text-emerald-100/70">
+                  <p className="mt-1 text-xs text-emerald-100/72">
                     {hostedRuntimeTruth
                       ? `${hostedRuntimeTruth.summary.live} live, ${hostedRuntimeTruth.summary.degraded} degraded`
                       : "Runtime status unavailable"}
@@ -307,7 +310,7 @@ export function Sidebar({
               </button>
 
               {showRuntime ? (
-                <div className="mt-2 rounded-xl border border-emerald-900/20 bg-[#111916] p-3">
+                <div className="al-shop-card mt-2 rounded-xl p-3">
                   <div className="flex flex-wrap gap-2">
                     <button
                       type="button"
@@ -324,7 +327,7 @@ export function Sidebar({
 
                   {hostedRuntimeTruth ? (
                     <div className="mt-3 space-y-2">
-                      <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-300/40">
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-amber-300/50">
                         Hosted lanes
                       </p>
                       {hostedRuntimeTruth.lanes.map((lane) => (
@@ -348,7 +351,7 @@ export function Sidebar({
                   ) : null}
 
                   <div className="mt-3 space-y-2">
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-300/40">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-amber-300/50">
                       Local lanes
                     </p>
                     {localLaneRows.map((lane) => (
@@ -375,7 +378,7 @@ export function Sidebar({
 
           {categories.map((category) => (
             <div key={category} className="mb-5">
-              <h3 className="mb-2 px-2 text-[11px] font-semibold uppercase tracking-wider text-emerald-200/25">
+              <h3 className="mb-2 px-2 text-[11px] font-semibold uppercase tracking-wider text-amber-300/45">
                 {category}
               </h3>
               <div className="space-y-0.5">

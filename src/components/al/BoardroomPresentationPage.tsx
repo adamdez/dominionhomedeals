@@ -100,14 +100,14 @@ function GenericPresentation({
   boardroomHomePath: string;
 }) {
   const title = buildPresentationTitle(context, task);
-  const summary = asDisplayString(context.summary, "Review the latest recommendation from AL's team and decide what should happen next.");
-  const recommendation = asDisplayString(context.presentation_recommendation, "Review the brief and supporting links before approving the next step.");
+  const summary = asDisplayString(context.summary, "Here is the latest recommendation from AL's team, laid out cleanly so you can decide what should happen next.");
+  const recommendation = asDisplayString(context.presentation_recommendation, "Review the brief, check the supporting links, and make the next call.");
   const highlights = asStringArray(context.presentation_highlights).slice(0, 6);
   const whySelected = asDisplayString(
     context.presentation_why_selected ?? context.why_selected ?? context.rationale,
-    highlights[0] || "AL believes this is the strongest current path based on the latest evidence.",
+    highlights[0] || "AL believes this is the strongest current path based on the latest evidence, with the rough edges sanded off.",
   );
-  const nextAction = asDisplayString(context.next_action, "Decide whether to approve, request changes, or wait for a final review package.");
+  const nextAction = asDisplayString(context.next_action, "Decide whether to approve it, ask for changes, or hold until the package is ready.");
   const body = asDisplayString(context.presentation_body, asDisplayString(context.result_snapshot, "No presentation body was captured."));
   const bodyParagraphs = paragraphize(body);
   const links = normalizeOperatorLinks(context);

@@ -128,7 +128,7 @@ export function PlannerPage({ initialTasks }: { initialTasks: PlannerTask[] }) {
             Shared due dates and to-dos
           </h1>
           <p className="mt-3 max-w-3xl text-sm leading-6 text-emerald-100/70 sm:text-base">
-            Put the next actions here instead of losing them in chat. AL can work from this list, and you can review what is due today, this week, and what is already done.
+            This is the shared punch list. Put the next actions here instead of losing them in chat, and AL will keep the screws tight on what is due, what is done, and what still needs a hand.
           </p>
         </div>
 

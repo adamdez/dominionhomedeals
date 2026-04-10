@@ -1615,10 +1615,10 @@ export function ChatApp() {
             <Menu className="h-5 w-5" />
           </button>
           <div className="flex-1 min-w-0">
-            <h1 className="text-sm font-semibold text-[#e2ede8] truncate">
-              Command Center
+            <h1 className="text-sm font-semibold text-[#f2f6f3] truncate">
+              Al Boreland
             </h1>
-            <p className="text-xs text-emerald-200/35 truncate">
+            <p className="text-xs text-emerald-100/45 truncate">
               {messages.length === 0
                 ? `${getGreeting()} — ready when you are`
                 : `${messages.length} message${messages.length === 1 ? "" : "s"} this session`}
@@ -1662,15 +1662,16 @@ export function ChatApp() {
         <div className="flex-1 overflow-y-auto px-4 py-6 al-scrollbar lg:px-6">
           {messages.length === 0 ? (
             <div className="flex h-full flex-col items-center justify-center text-center px-4">
-              <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-2xl bg-emerald-500/10 ring-1 ring-emerald-500/15">
-                <span className="text-3xl font-display text-emerald-400">A</span>
+              <div className="al-avatar-badge relative mb-6 flex h-20 w-20 items-center justify-center overflow-hidden rounded-2xl">
+                <span className="relative z-10 text-2xl font-display text-[#f3faf6]">AB</span>
+                <div className="al-avatar-beard absolute inset-x-3 bottom-2 h-5 rounded-b-full" />
               </div>
               <h2 className="font-display text-xl text-[#e2ede8]">
                 {getGreeting()}
               </h2>
-              <p className="mt-2 max-w-sm text-sm leading-relaxed text-emerald-200/35">
-                Your command center is ready. Use the sidebar for quick actions,
-                or type a message below to get started.
+              <p className="mt-2 max-w-sm text-sm leading-relaxed text-emerald-100/45">
+                I&apos;ll help you sort what matters, route the work, and keep the next move clear.
+                Measure twice, move once.
               </p>
             </div>
           ) : (
