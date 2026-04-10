@@ -1874,7 +1874,10 @@ function MessageBubble({ message }: { message: Message }) {
       >
         {!isUser && (
           <div className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-emerald-400/60">
-            Al
+            <span className="al-avatar-mini">
+              <span className="relative z-10 text-[9px] font-semibold text-[#f3faf6]">AB</span>
+            </span>
+            <span>Al</span>
             {message.typing && (
               <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-400" />
             )}
@@ -1936,7 +1939,12 @@ function ThinkingDots() {
   return (
     <div className="flex justify-start animate-fade-up">
       <div className="rounded-2xl border border-emerald-900/15 bg-[#141f1a] px-4 py-3">
-        <div className="mb-1.5 text-xs font-medium text-emerald-400/60">Al</div>
+        <div className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-emerald-400/60">
+          <span className="al-avatar-mini">
+            <span className="relative z-10 text-[9px] font-semibold text-[#f3faf6]">AB</span>
+          </span>
+          <span>Al</span>
+        </div>
         <div className="flex items-center gap-1.5">
           {[0, 1, 2].map((i) => (
             <span
@@ -1960,7 +1968,12 @@ function SearchingWeb({ query }: { query: string }) {
   return (
     <div className="flex justify-start animate-fade-up">
       <div className="rounded-2xl border border-emerald-900/15 bg-[#141f1a] px-4 py-3">
-        <div className="mb-1.5 text-xs font-medium text-emerald-400/60">Al</div>
+        <div className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-emerald-400/60">
+          <span className="al-avatar-mini">
+            <span className="relative z-10 text-[9px] font-semibold text-[#f3faf6]">AB</span>
+          </span>
+          <span>Al</span>
+        </div>
         <div className="flex items-center gap-2">
           <Globe
             className="h-3.5 w-3.5 animate-spin text-emerald-400/60"
@@ -2019,7 +2032,12 @@ function DelegatingToCeo({ ceo }: { ceo: string }) {
   return (
     <div className="flex justify-start animate-fade-up">
       <div className="rounded-2xl border border-emerald-900/15 bg-[#141f1a] px-4 py-3">
-        <div className="mb-1.5 text-xs font-medium text-emerald-400/60">Al</div>
+        <div className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-emerald-400/60">
+          <span className="al-avatar-mini">
+            <span className="relative z-10 text-[9px] font-semibold text-[#f3faf6]">AB</span>
+          </span>
+          <span>Al</span>
+        </div>
         <div className="flex items-center gap-2">
           <Users
             className="h-3.5 w-3.5 animate-pulse text-emerald-400/60"
@@ -2037,7 +2055,12 @@ function PublishingToVault({ path }: { path: string }) {
   return (
     <div className="flex justify-start animate-fade-up">
       <div className="rounded-2xl border border-emerald-900/15 bg-[#141f1a] px-4 py-3">
-        <div className="mb-1.5 text-xs font-medium text-emerald-400/60">Al</div>
+        <div className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-emerald-400/60">
+          <span className="al-avatar-mini">
+            <span className="relative z-10 text-[9px] font-semibold text-[#f3faf6]">AB</span>
+          </span>
+          <span>Al</span>
+        </div>
         <div className="flex items-center gap-2">
           <BookUp
             className="h-3.5 w-3.5 animate-pulse text-emerald-400/60"
@@ -2058,7 +2081,12 @@ function RunningCrew({ crew }: { crew: string }) {
   return (
     <div className="flex justify-start animate-fade-up">
       <div className="rounded-2xl border border-emerald-900/15 bg-[#141f1a] px-4 py-3">
-        <div className="mb-1.5 text-xs font-medium text-emerald-400/60">Al</div>
+        <div className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-emerald-400/60">
+          <span className="al-avatar-mini">
+            <span className="relative z-10 text-[9px] font-semibold text-[#f3faf6]">AB</span>
+          </span>
+          <span>Al</span>
+        </div>
         <div className="flex items-center gap-2">
           <Bot className="h-3.5 w-3.5 animate-pulse text-emerald-400/60" />
           <span className="text-sm text-emerald-200/50">
