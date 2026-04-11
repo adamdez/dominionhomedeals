@@ -462,6 +462,7 @@ async function buildBridgeStatusSnapshot() {
   return {
     executor,
     coworkProbe,
+    claudeAuth: executor.claudeAuth || null,
     capabilities: {
       executor_online: executor.online,
       deep_research: executor.online && hasAsk,
@@ -523,6 +524,7 @@ async function maybeSendRemoteBridgeHeartbeat(force = false) {
       bridgeAuthRequired: Boolean(TOKEN),
       capabilities: snapshot.capabilities,
       coworkProbe: snapshot.coworkProbe,
+      claudeAuth: snapshot.claudeAuth,
     }),
   });
 
@@ -605,6 +607,7 @@ async function readExecutorHealth() {
         status: `HTTP ${response.status}`,
         version: null,
         endpoints: {},
+        claudeAuth: null,
       };
     }
 
@@ -617,6 +620,24 @@ async function readExecutorHealth() {
         data && typeof data.endpoints === "object" && data.endpoints
           ? data.endpoints
           : {},
+      claudeAuth:
+        data &&
+        typeof data.claude_auth === "object" &&
+        data.claude_auth
+          ? {
+              configured: data.claude_auth.configured === true,
+              status:
+                typeof data.claude_auth.status === "string"
+                  ? data.claude_auth.status
+                  : "unknown",
+              detail:
+                typeof data.claude_auth.detail === "string"
+                  ? data.claude_auth.detail
+                  : "No Claude auth detail reported.",
+              oauthExpired: data.claude_auth.oauthExpired === true,
+              apiKeyPresent: data.claude_auth.apiKeyPresent === true,
+            }
+          : null,
     };
   } catch (err) {
     return {
@@ -624,6 +645,7 @@ async function readExecutorHealth() {
       status: err instanceof Error ? err.message : "executor unreachable",
       version: null,
       endpoints: {},
+      claudeAuth: null,
     };
   }
 }

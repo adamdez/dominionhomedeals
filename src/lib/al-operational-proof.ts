@@ -200,9 +200,13 @@ export async function buildOperationalProofReport(input?: {
   const relayHeartbeatFresh = relayHeartbeatAgeMinutes !== null && relayHeartbeatAgeMinutes <= 5;
   const relayCoworkHealthy = remoteBridgeHeartbeat?.coworkProbe?.ok === true;
   const relayCodexHealthy = remoteBridgeHeartbeat?.capabilities?.codex_execution === true;
+  const relayClaudeAuth = remoteBridgeHeartbeat?.claudeAuth || null;
   const relayCoworkStatus = remoteBridgeHeartbeat?.coworkProbe?.status || null;
   const relayCoworkDetail = remoteBridgeHeartbeat?.coworkProbe?.detail?.trim() || null;
   const relayCoworkNeedsAuthRefresh =
+    relayClaudeAuth?.oauthExpired === true ||
+    relayClaudeAuth?.status === "oauth_expired" ||
+    relayClaudeAuth?.status === "oauth_expired_api_present" ||
     relayCoworkStatus === "auth_invalid" ||
     (relayCoworkDetail
       ? /invalid api key|invalid authentication credentials|refresh claude login/i.test(
@@ -234,6 +238,9 @@ export async function buildOperationalProofReport(input?: {
       remoteBridgeHeartbeat?.coworkProbe
         ? `Claude cowork probe: ${remoteBridgeHeartbeat.coworkProbe.status} - ${remoteBridgeHeartbeat.coworkProbe.detail}`
         : "No Claude cowork probe has been reported yet.",
+      relayClaudeAuth
+        ? `Executor Claude auth: ${relayClaudeAuth.status} - ${relayClaudeAuth.detail}`
+        : "No executor Claude auth state has been reported yet.",
       relayCoworkNeedsAuthRefresh
         ? "Claude cowork specifically needs a local Claude re-login or a valid Anthropic executor key before this lane can be trusted."
         : "Claude cowork is not currently signaling a known auth-specific remediation.",

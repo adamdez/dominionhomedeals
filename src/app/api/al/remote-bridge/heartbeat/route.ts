@@ -34,6 +34,24 @@ function normalizeCoworkProbe(value: unknown): RemoteBridgeHeartbeatSnapshot["co
   };
 }
 
+function normalizeClaudeAuth(value: unknown): RemoteBridgeHeartbeatSnapshot["claudeAuth"] {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  const record = value as Record<string, unknown>;
+  return {
+    configured: record.configured === true,
+    status:
+      typeof record.status === "string" && record.status.trim()
+        ? record.status.trim().slice(0, 120)
+        : "unknown",
+    detail:
+      typeof record.detail === "string" && record.detail.trim()
+        ? record.detail.trim().slice(0, 1000)
+        : "No Claude auth detail reported.",
+    oauthExpired: record.oauthExpired === true,
+    apiKeyPresent: record.apiKeyPresent === true,
+  };
+}
+
 export async function POST(request: NextRequest) {
   const sharedSecret = readRemoteBridgeSharedSecret();
   if (!sharedSecret) {
@@ -66,6 +84,7 @@ export async function POST(request: NextRequest) {
     bridgeAuthRequired: body.bridgeAuthRequired === true,
     capabilities: normalizeCapabilities(body.capabilities),
     coworkProbe: normalizeCoworkProbe(body.coworkProbe),
+    claudeAuth: normalizeClaudeAuth(body.claudeAuth),
   };
 
   const recorded = await recordRemoteBridgeHeartbeat(heartbeat);

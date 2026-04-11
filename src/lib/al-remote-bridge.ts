@@ -45,6 +45,13 @@ export interface RemoteBridgeHeartbeatSnapshot {
     status: string;
     detail: string;
   } | null;
+  claudeAuth: {
+    configured: boolean;
+    status: string;
+    detail: string;
+    oauthExpired: boolean;
+    apiKeyPresent: boolean;
+  } | null;
 }
 
 type JsonRecord = Record<string, unknown>;
@@ -180,6 +187,10 @@ function rowToHeartbeat(row: {
     context.cowork_probe && typeof context.cowork_probe === "object" && !Array.isArray(context.cowork_probe)
       ? (context.cowork_probe as Record<string, unknown>)
       : null;
+  const claudeAuthRecord =
+    context.claude_auth && typeof context.claude_auth === "object" && !Array.isArray(context.claude_auth)
+      ? (context.claude_auth as Record<string, unknown>)
+      : null;
 
   return {
     clientId,
@@ -201,6 +212,21 @@ function rowToHeartbeat(row: {
             typeof coworkRecord.detail === "string" && coworkRecord.detail.trim()
               ? coworkRecord.detail.trim()
               : "No cowork detail reported.",
+        }
+      : null,
+    claudeAuth: claudeAuthRecord
+      ? {
+          configured: claudeAuthRecord.configured === true,
+          status:
+            typeof claudeAuthRecord.status === "string" && claudeAuthRecord.status.trim()
+              ? claudeAuthRecord.status.trim()
+              : "unknown",
+          detail:
+            typeof claudeAuthRecord.detail === "string" && claudeAuthRecord.detail.trim()
+              ? claudeAuthRecord.detail.trim()
+              : "No Claude auth detail reported.",
+          oauthExpired: claudeAuthRecord.oauthExpired === true,
+          apiKeyPresent: claudeAuthRecord.apiKeyPresent === true,
         }
       : null,
   };
@@ -255,6 +281,7 @@ export async function recordRemoteBridgeHeartbeat(
     bridge_auth_required: heartbeat.bridgeAuthRequired,
     capabilities: heartbeat.capabilities,
     cowork_probe: heartbeat.coworkProbe,
+    claude_auth: heartbeat.claudeAuth,
   };
 
   const { error } = await supabase.from("al_jobs").insert({
