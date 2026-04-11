@@ -819,6 +819,7 @@ async function executeBridgeAction(req: VaultToolRequest): Promise<BridgeResult>
           }
           return `Error: ${errorText}`;
         }
+
         const elapsed = data.elapsed ? ` (${data.elapsed}s)` : "";
         const session = data.session_id ? ` · session ${data.session_id}` : "";
         return `✓ Done${elapsed}${session}\n\n${data.result || JSON.stringify(data)}`;
