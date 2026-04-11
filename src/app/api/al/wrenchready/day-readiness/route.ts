@@ -7,6 +7,8 @@ import {
   type DayReadinessRisk,
 } from "@/lib/wrenchready-day-readiness";
 
+export const dynamic = "force-dynamic";
+
 export async function GET(request: NextRequest) {
   const session = request.cookies.get("al_session");
   if (!isAuthenticatedAlSession(session?.value)) {

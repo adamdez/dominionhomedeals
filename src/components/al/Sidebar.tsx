@@ -157,6 +157,11 @@ interface SidebarProps {
       browser_automation?: boolean;
       cowork_execution?: boolean;
     };
+    coworkProbe?: {
+      ok?: boolean | null;
+      status?: string;
+      detail?: string;
+    };
   } | null;
 }
 
@@ -188,6 +193,25 @@ export function Sidebar({
         bridgeConnected && bridgeHealth?.capabilities?.media_generation
           ? "Local media generation available."
           : "Needs a connected bridge with media generation.",
+    },
+    {
+      label: "Claude cowork backup",
+      status:
+        bridgeConnected && bridgeHealth?.capabilities?.cowork_execution
+          ? "live"
+          : bridgeConnected && bridgeHealth?.coworkProbe?.status
+            ? "degraded"
+            : "blocked",
+      detail:
+        bridgeConnected && bridgeHealth?.capabilities?.cowork_execution
+          ? "Legacy Claude executor is available as a secondary local lane."
+          : bridgeConnected &&
+              bridgeHealth?.coworkProbe?.detail &&
+              bridgeHealth?.capabilities?.codex_execution
+            ? `Claude backup issue: ${bridgeHealth.coworkProbe.detail} Codex fallback is available, so coding work can still continue locally.`
+            : bridgeConnected && bridgeHealth?.coworkProbe?.detail
+              ? `Claude backup issue: ${bridgeHealth.coworkProbe.detail}`
+            : "Secondary Claude executor is unavailable from this session.",
     },
     {
       label: "Local browser fallback",

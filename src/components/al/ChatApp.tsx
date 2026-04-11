@@ -65,6 +65,12 @@ interface VaultAction {
   precomputedResults: unknown[];
 }
 
+interface RemoteBridgeRequestResult {
+  id: string;
+  name: string;
+  result: string | BridgeImageResult;
+}
+
 interface BridgeCapabilities {
   executor_online?: boolean;
   deep_research?: boolean;
@@ -90,6 +96,32 @@ interface BridgeHealthResponse {
     status?: string;
     version?: string | null;
   };
+  coworkProbe?: {
+    ok?: boolean | null;
+    status?: string;
+    detail?: string;
+  };
+}
+
+function codexWorkspaceForCoworkDomain(domain: string): string {
+  const normalized = domain.trim().toLowerCase();
+  if (
+    normalized.includes("wrench") ||
+    normalized.includes("simon") ||
+    normalized.includes("wrench-ready")
+  ) {
+    return "wrenchreadymobile-com";
+  }
+  if (normalized.includes("sentinel")) {
+    return "sentinel";
+  }
+  if (normalized === "al" || normalized.includes("al-boreland")) {
+    return "al";
+  }
+  if (normalized.includes("vault")) {
+    return "al-boreland-vault";
+  }
+  return "dominionhomedeals";
 }
 
 interface RuntimeLaneTruth {
@@ -430,6 +462,12 @@ function inputString(value: unknown): string {
   return typeof value === "string" ? value : "";
 }
 
+function isRemoteOperatorMode() {
+  if (typeof window === "undefined") return false;
+  const host = window.location.hostname;
+  return host !== "127.0.0.1" && host !== "localhost";
+}
+
 const URL_PATTERN = /(https?:\/\/[^\s]+)/g;
 const MARKDOWN_LINK_PATTERN = /\[([^\]\n]+)\]\((https?:\/\/[^\s)]+)\)/g;
 
@@ -628,6 +666,36 @@ async function maybePromoteBrowserVendorReviewResult(
 async function executeBridgeAction(req: VaultToolRequest): Promise<BridgeResult> {
   const { url } = getBridgeConfig();
   const headers = bridgeHeaders();
+
+  async function runCodexFallbackForCowork(reason: string): Promise<string> {
+    const domain = inputString(req.input.domain) || "dominionhomedeals";
+    const workspace = codexWorkspaceForCoworkDomain(domain);
+    const res = await fetch(`${url}/codex/exec`, {
+      method: "POST",
+      headers: { ...headers, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        task: inputString(req.input.task),
+        workspace,
+        sandbox: "workspace-write",
+      }),
+    });
+    const data = await res.json().catch(() => null);
+    const codexMessage =
+      typeof data?.result === "string"
+        ? data.result
+        : typeof data?.operator_message === "string"
+          ? data.operator_message
+          : data
+            ? JSON.stringify(data)
+            : `Codex task failed with HTTP ${res.status}.`;
+
+    if (res.ok && data?.ok !== false) {
+      return `Claude cowork backup was unavailable (${reason}). AL rerouted this coding task to the OpenAI-native Codex lane (${workspace}) so work could keep moving.\n\n${codexMessage}`;
+    }
+
+    return `Claude cowork backup was unavailable (${reason}). AL also attempted the OpenAI-native Codex fallback (${workspace}), but that lane did not finish cleanly.\n\n${codexMessage}`;
+  }
+
   try {
     switch (req.name) {
       case "vault_list": {
@@ -711,6 +779,24 @@ async function executeBridgeAction(req: VaultToolRequest): Promise<BridgeResult>
         return data.result || JSON.stringify(data);
       }
       case "cowork_task": {
+        const healthRes = await fetch(`${url}/health`, { headers }).catch(() => null);
+        const health = healthRes && healthRes.ok
+          ? ((await healthRes.json().catch(() => null)) as BridgeHealthResponse | null)
+          : null;
+        const coworkBlocked = health?.capabilities?.cowork_execution === false;
+        const coworkReason =
+          health?.coworkProbe?.detail ||
+          health?.coworkProbe?.status ||
+          "Claude cowork execution is unavailable.";
+
+        if (coworkBlocked) {
+          const status = health?.coworkProbe?.status || "unavailable";
+          if (status === "auth_invalid" || status === "credit_blocked") {
+            return runCodexFallbackForCowork(coworkReason);
+          }
+          return `Cowork unavailable (${status}): ${coworkReason}`;
+        }
+
         const res = await fetch(`${url}/cowork`, {
           method: "POST",
           headers: { ...headers, "Content-Type": "application/json" },
@@ -721,7 +807,18 @@ async function executeBridgeAction(req: VaultToolRequest): Promise<BridgeResult>
           }),
         });
         const data = await res.json();
-        if (!res.ok) return `Error: ${data.error || res.status}`;
+        if (!res.ok) {
+          const errorText =
+            typeof data?.error === "string" ? data.error : `HTTP ${res.status}`;
+          if (
+            /invalid api key|authenticate|credit balance is too low|credits?/i.test(
+              errorText,
+            )
+          ) {
+            return runCodexFallbackForCowork(errorText);
+          }
+          return `Error: ${errorText}`;
+        }
         const elapsed = data.elapsed ? ` (${data.elapsed}s)` : "";
         const session = data.session_id ? ` · session ${data.session_id}` : "";
         return `✓ Done${elapsed}${session}\n\n${data.result || JSON.stringify(data)}`;
@@ -800,6 +897,79 @@ async function executeBridgeAction(req: VaultToolRequest): Promise<BridgeResult>
   } catch (err) {
     return `Bridge connection failed: ${err instanceof Error ? err.message : "unknown error"}`;
   }
+}
+
+async function dispatchRemoteBridgeAction(
+  requests: VaultToolRequest[],
+): Promise<number> {
+  const response = await fetch("/api/al/remote-bridge/dispatch", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "same-origin",
+    body: JSON.stringify({
+      requests: requests.map((req) => ({
+        id: req.id,
+        name: req.name,
+        input: req.input,
+        accountabilityJobId: req.accountabilityJobId,
+      })),
+    }),
+  });
+  const payload = (await response.json().catch(() => null)) as
+    | { ok?: boolean; jobId?: number; error?: string }
+    | null;
+  if (!response.ok || !payload?.ok || !payload.jobId) {
+    throw new Error(payload?.error || "Could not dispatch remote bridge bundle.");
+  }
+  return payload.jobId;
+}
+
+async function waitForRemoteBridgeAction(
+  jobId: number,
+): Promise<RemoteBridgeRequestResult[]> {
+  const deadline = Date.now() + 12 * 60 * 1000;
+
+  while (Date.now() < deadline) {
+    const response = await fetch(`/api/al/remote-bridge/status/${jobId}`, {
+      credentials: "same-origin",
+    });
+    const payload = (await response.json().catch(() => null)) as
+      | {
+          ok?: boolean;
+          error?: string;
+          bundle?: {
+            status?: string;
+            results?: RemoteBridgeRequestResult[];
+          };
+        }
+      | null;
+
+    if (!response.ok || !payload?.ok || !payload.bundle) {
+      throw new Error(payload?.error || "Could not read remote bridge bundle status.");
+    }
+
+    if (payload.bundle.status === "done") {
+      return Array.isArray(payload.bundle.results) ? payload.bundle.results : [];
+    }
+
+    if (payload.bundle.status === "error") {
+      const errorText =
+        Array.isArray(payload.bundle.results) && payload.bundle.results.length > 0
+          ? payload.bundle.results
+              .map((entry) =>
+                typeof entry.result === "string"
+                  ? `${entry.name}: ${entry.result}`
+                  : `${entry.name}: image result`,
+              )
+              .join("\n")
+          : "Remote bridge bundle failed.";
+      throw new Error(errorText);
+    }
+
+    await new Promise((resolve) => setTimeout(resolve, 2500));
+  }
+
+  throw new Error("Remote bridge bundle timed out waiting for desktop execution.");
 }
 
 function toContinuationToolResult(
@@ -1436,10 +1606,24 @@ export function ChatApp() {
     if (approved) {
       setExecutingVault(true);
       toolResults = [];
-      for (const req of action.requests) {
-        let result = await executeBridgeAction(req);
-        result = await maybePromoteBrowserVendorReviewResult(req, result);
-        toolResults.push(toContinuationToolResult(action.provider, req, result));
+      const shouldUseRemoteRelay = isRemoteOperatorMode() && !bridgeConnected;
+      if (shouldUseRemoteRelay) {
+        const remoteJobId = await dispatchRemoteBridgeAction(action.requests);
+        const remoteResults = await waitForRemoteBridgeAction(remoteJobId);
+        for (const req of action.requests) {
+          const remoteResult = remoteResults.find((entry) => entry.id === req.id);
+          let result: BridgeResult = remoteResult
+            ? (remoteResult.result as BridgeResult)
+            : "Bridge connection failed: remote desktop relay returned no result for this request.";
+          result = await maybePromoteBrowserVendorReviewResult(req, result);
+          toolResults.push(toContinuationToolResult(action.provider, req, result));
+        }
+      } else {
+        for (const req of action.requests) {
+          let result = await executeBridgeAction(req);
+          result = await maybePromoteBrowserVendorReviewResult(req, result);
+          toolResults.push(toContinuationToolResult(action.provider, req, result));
+        }
       }
       setExecutingVault(false);
     } else {

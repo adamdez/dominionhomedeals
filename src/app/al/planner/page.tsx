@@ -4,6 +4,8 @@ import { PlannerPage } from "@/components/al/PlannerPage";
 import { listPlannerTasks } from "@/lib/al-planner";
 import { isAuthenticatedAlSession } from "@/lib/al-review";
 
+export const dynamic = "force-dynamic";
+
 export default async function AlPlannerPage() {
   const cookieStore = await cookies();
   if (!isAuthenticatedAlSession(cookieStore.get("al_session")?.value)) {

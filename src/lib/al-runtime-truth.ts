@@ -1,5 +1,6 @@
 import { getServiceClient } from "@/lib/supabase";
 import { inspectHostedBrowserVendorCartReviewStack } from "@/lib/browser-vendor-cart-hosted";
+import { getLatestRemoteBridgeHeartbeat } from "@/lib/al-remote-bridge";
 
 export type RuntimeLaneStatus = "live" | "degraded" | "blocked";
 export type RuntimeMode = "hosted" | "local-bridge" | "mixed";
@@ -69,6 +70,17 @@ export async function buildHostedRuntimeTruth(): Promise<HostedRuntimeTruth> {
   const cursorKey = readEnvSecret("CURSOR_AGENTS_API_KEY");
   const openClawSecret =
     readEnvSecret("AL_OPENCLAW_SHARED_SECRET") || readEnvSecret("OPENCLAW_AL_SHARED_SECRET");
+  const remoteBridgeSecret =
+    readEnvSecret("AL_REMOTE_BRIDGE_SECRET") || readEnvSecret("REMOTE_BRIDGE_SHARED_SECRET");
+  const remoteBridgeHeartbeat = await getLatestRemoteBridgeHeartbeat();
+  const remoteBridgeHeartbeatAgeMinutes =
+    remoteBridgeHeartbeat?.observedAt
+      ? Math.max(0, Math.round((Date.now() - new Date(remoteBridgeHeartbeat.observedAt).getTime()) / 60000))
+      : null;
+  const remoteBridgeHeartbeatFresh =
+    remoteBridgeHeartbeatAgeMinutes !== null && Number.isFinite(remoteBridgeHeartbeatAgeMinutes)
+      ? remoteBridgeHeartbeatAgeMinutes <= 5
+      : false;
 
   checks.reasoning_openai = {
     ok: Boolean(openAiKey),
@@ -100,6 +112,16 @@ export async function buildHostedRuntimeTruth(): Promise<HostedRuntimeTruth> {
     detail: openClawSecret
       ? "OpenClaw shared secret present for authenticated AL ingress."
       : "AL_OPENCLAW_SHARED_SECRET / OPENCLAW_AL_SHARED_SECRET missing.",
+  };
+  checks.remote_bridge_relay = {
+    ok: Boolean(remoteBridgeSecret && remoteBridgeHeartbeatFresh),
+    detail: !remoteBridgeSecret
+      ? "AL_REMOTE_BRIDGE_SECRET / REMOTE_BRIDGE_SHARED_SECRET missing."
+      : remoteBridgeHeartbeatFresh
+        ? `Remote desktop relay heartbeat is fresh (${remoteBridgeHeartbeatAgeMinutes}m ago).`
+        : remoteBridgeHeartbeat
+          ? `Remote desktop relay heartbeat is stale (${remoteBridgeHeartbeatAgeMinutes}m ago).`
+          : "No remote desktop relay heartbeat has been observed yet.",
   };
 
   try {
@@ -144,6 +166,32 @@ export async function buildHostedRuntimeTruth(): Promise<HostedRuntimeTruth> {
         ? "Keep the command contract narrow and test one trusted channel first."
         : "Set AL_OPENCLAW_SHARED_SECRET or OPENCLAW_AL_SHARED_SECRET before enabling OpenClaw ingress.",
       outcome: "Mobile command access and recurring automation use the same AL truth surfaces instead of creating a second assistant.",
+    },
+    {
+      id: "desktop_relay",
+      label: "Remote desktop relay",
+      status: !remoteBridgeSecret
+        ? "blocked"
+        : remoteBridgeHeartbeatFresh &&
+            remoteBridgeHeartbeat?.capabilities?.codex_execution === true &&
+            remoteBridgeHeartbeat?.coworkProbe?.ok === true
+          ? "live"
+          : "degraded",
+      primaryMode: "hosted",
+      fallbackMode: "local-bridge",
+      detail: !remoteBridgeSecret
+        ? "Remote desktop relay secret is not configured yet."
+        : !remoteBridgeHeartbeat
+          ? "Hosted AL can queue desktop work, but no bridge heartbeat has been observed yet."
+          : remoteBridgeHeartbeatFresh
+            ? `Desktop relay heartbeat is fresh (${remoteBridgeHeartbeatAgeMinutes}m ago); Codex is ${remoteBridgeHeartbeat.capabilities?.codex_execution === true ? "live" : "degraded"} and Claude cowork is ${remoteBridgeHeartbeat.coworkProbe?.ok === true ? "live" : "degraded"}.`
+            : `Desktop relay heartbeat is stale (${remoteBridgeHeartbeatAgeMinutes}m ago), so off-machine desktop work is not trustworthy right now.`,
+      nextAction: remoteBridgeSecret
+        ? remoteBridgeHeartbeatFresh
+          ? "Keep the desktop bridge alive, and repair Claude cowork if it stays degraded."
+          : "Get the desktop bridge polling again so hosted AL has a fresh heartbeat before relying on remote work."
+        : "Set AL_REMOTE_BRIDGE_SECRET / REMOTE_BRIDGE_SHARED_SECRET and restart hosted + local bridge runtimes.",
+      outcome: "Hosted AL can reach Codex, cowork, and local file labor even when Dez is away from the machine.",
     },
     {
       id: "chairman_reasoning",

@@ -4,6 +4,8 @@ import { OperationalProofPage } from "@/components/al/OperationalProofPage";
 import { buildOperationalProofReport } from "@/lib/al-operational-proof";
 import { buildHostedAppPrefix, isAuthenticatedAlSession } from "@/lib/al-review";
 
+export const dynamic = "force-dynamic";
+
 export default async function AlOperationalProofPage() {
   const cookieStore = await cookies();
   if (!isAuthenticatedAlSession(cookieStore.get("al_session")?.value)) {

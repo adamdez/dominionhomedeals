@@ -7,6 +7,8 @@ import {
 } from "@/lib/dominion-leads";
 import { isAuthenticatedAlSession } from "@/lib/al-review";
 
+export const dynamic = "force-dynamic";
+
 export async function PATCH(
   request: NextRequest,
   context: { params: Promise<{ id: string }> },

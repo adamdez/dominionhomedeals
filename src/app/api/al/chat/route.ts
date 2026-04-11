@@ -3199,7 +3199,71 @@ async function executeCoworkTask(task: string, domain?: string): Promise<string>
   const bridgeToken = process.env.AL_BRIDGE_TOKEN || "";
   const resolvedDomain = resolveCoworkDomain(domain, task);
 
+  const codexWorkspace =
+    resolvedDomain.includes("wrench") || resolvedDomain.includes("simon")
+      ? "wrenchreadymobile-com"
+      : resolvedDomain.includes("sentinel")
+        ? "sentinel"
+        : resolvedDomain === "al" || resolvedDomain.includes("al-boreland")
+          ? "al"
+          : resolvedDomain.includes("vault")
+            ? "al-boreland-vault"
+            : "dominionhomedeals";
+
+  async function runCodexFallback(reason: string): Promise<string> {
+    const res = await fetch(`${bridgeUrl}/codex/exec`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...(bridgeToken ? { Authorization: `Bearer ${bridgeToken}` } : {}),
+      },
+      body: JSON.stringify({
+        task,
+        workspace: codexWorkspace,
+        sandbox: "workspace-write",
+      }),
+      signal: AbortSignal.timeout(280000),
+    });
+    const data = (await res.json().catch(() => null)) as Record<string, unknown> | null;
+    const codexMessage =
+      typeof data?.result === "string"
+        ? data.result
+        : typeof data?.operator_message === "string"
+          ? data.operator_message
+          : data
+            ? JSON.stringify(data)
+            : `Codex task failed with HTTP ${res.status}.`;
+
+    if (res.ok && data?.ok !== false) {
+      return `Claude cowork backup was unavailable (${reason}). AL rerouted this coding task to the OpenAI-native Codex lane (${codexWorkspace}) so work could keep moving.\n\n${codexMessage}`;
+    }
+
+    return `Claude cowork backup was unavailable (${reason}). AL also attempted the OpenAI-native Codex fallback (${codexWorkspace}), but that lane did not finish cleanly.\n\n${codexMessage}`;
+  }
+
   try {
+    const healthRes = await fetch(`${bridgeUrl}/health`, {
+      headers: bridgeToken ? { Authorization: `Bearer ${bridgeToken}` } : undefined,
+      signal: AbortSignal.timeout(12000),
+    }).catch(() => null);
+    const health = healthRes && healthRes.ok
+      ? (await healthRes.json().catch(() => null)) as
+          | {
+              capabilities?: { cowork_execution?: boolean };
+              coworkProbe?: { status?: string; detail?: string };
+            }
+          | null
+      : null;
+
+    if (health?.capabilities?.cowork_execution === false) {
+      const probeStatus = health.coworkProbe?.status || "unavailable";
+      const probeDetail = health.coworkProbe?.detail || "Cowork execution lane is unavailable.";
+      if (probeStatus === "auth_invalid" || probeStatus === "credit_blocked") {
+        return runCodexFallback(probeDetail);
+      }
+      return `Cowork unavailable (${probeStatus}): ${probeDetail}`;
+    }
+
     const res = await fetch(`${bridgeUrl}/cowork`, {
       method: "POST",
       headers: {
@@ -3214,6 +3278,9 @@ async function executeCoworkTask(task: string, domain?: string): Promise<string>
 
     if (!res.ok) {
       const errMsg = typeof data.error === "string" ? data.error : "Executor error";
+      if (/invalid api key|authenticate|credit balance is too low|credits?/i.test(errMsg)) {
+        return runCodexFallback(errMsg);
+      }
       return `Cowork failed: ${errMsg}`;
     }
 

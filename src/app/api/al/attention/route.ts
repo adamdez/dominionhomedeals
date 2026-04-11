@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { buildAttentionBrief } from "@/lib/al-attention-brief";
 import { isAuthenticatedAlSession } from "@/lib/al-review";
 
+export const dynamic = "force-dynamic";
+
 export async function GET(request: NextRequest) {
   const session = request.cookies.get("al_session");
   if (!isAuthenticatedAlSession(session?.value)) {

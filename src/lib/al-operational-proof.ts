@@ -6,6 +6,7 @@ import {
   buildHostedPlannerPath,
   fetchBoardroomPresentations,
 } from "@/lib/al-review";
+import { getLatestRemoteBridgeHeartbeat } from "@/lib/al-remote-bridge";
 import {
   buildHostedDominionLeadsPath,
   getDominionLeadDashboard,
@@ -22,6 +23,7 @@ export interface OperationalProofCheck {
   id:
     | "boardroom_followthrough"
     | "dominion_lead_control"
+    | "desktop_relay"
     | "wrenchready_day_readiness"
     | "openclaw_ingress"
     | "attention_brief";
@@ -88,6 +90,8 @@ function buildTopNextMove(checks: OperationalProofCheck[]) {
       return "Repair the Board Room accountability gaps before adding more approvals or presentation volume.";
     case "dominion_lead_control":
       return "Repair the Dominion lead-control trail so every open lead is visibly tied to Planner.";
+    case "desktop_relay":
+      return "Repair the desktop relay before promising off-machine file, Codex, or cowork labor from a phone.";
     case "wrenchready_day_readiness":
       return "Get tomorrow's WrenchReady readiness loop back into a truthful tracked state before wrench time starts.";
     case "openclaw_ingress":
@@ -97,6 +101,13 @@ function buildTopNextMove(checks: OperationalProofCheck[]) {
     default:
       return "Repair the weakest control loop before expanding the system further.";
   }
+}
+
+function minutesSince(value: string | null): number | null {
+  if (!value) return null;
+  const timestamp = new Date(value).getTime();
+  if (!Number.isFinite(timestamp)) return null;
+  return Math.max(0, Math.round((Date.now() - timestamp) / 60000));
 }
 
 export async function buildOperationalProofReport(input?: {
@@ -110,6 +121,7 @@ export async function buildOperationalProofReport(input?: {
     boardroom,
     dominionDashboard,
     dominionLeads,
+    remoteBridgeHeartbeat,
     wrenchReadySummary,
     plannerTasks,
     attentionBrief,
@@ -117,6 +129,7 @@ export async function buildOperationalProofReport(input?: {
     fetchBoardroomPresentations(host, 24),
     getDominionLeadDashboard(48),
     listDominionLeads(null),
+    getLatestRemoteBridgeHeartbeat(),
     getWrenchReadyDayReadinessSummary(null, { host, origin }),
     listPlannerTasks(),
     buildAttentionBrief({ host, origin }),
@@ -181,6 +194,42 @@ export async function buildOperationalProofReport(input?: {
         : "No Dominion leads are stale or untouched right now.",
     ],
     href: absolutePath(origin, buildHostedDominionLeadsPath(host)),
+  };
+
+  const relayHeartbeatAgeMinutes = minutesSince(remoteBridgeHeartbeat?.observedAt || null);
+  const relayHeartbeatFresh = relayHeartbeatAgeMinutes !== null && relayHeartbeatAgeMinutes <= 5;
+  const relayCoworkHealthy = remoteBridgeHeartbeat?.coworkProbe?.ok === true;
+  const relayCodexHealthy = remoteBridgeHeartbeat?.capabilities?.codex_execution === true;
+  const relayCheck: OperationalProofCheck = {
+    id: "desktop_relay",
+    title: "Desktop relay",
+    status: !remoteBridgeHeartbeat || !relayHeartbeatFresh
+      ? "failing"
+      : relayCoworkHealthy && relayCodexHealthy
+        ? "healthy"
+        : "warning",
+    summary: !remoteBridgeHeartbeat
+      ? "No desktop relay heartbeat has reached hosted AL yet."
+      : relayHeartbeatFresh
+        ? `Desktop heartbeat is fresh (${relayHeartbeatAgeMinutes}m ago), Codex is ${relayCodexHealthy ? "live" : "degraded"}, and Claude cowork is ${relayCoworkHealthy ? "live" : "degraded"}.`
+        : `Desktop heartbeat is stale (${relayHeartbeatAgeMinutes}m ago), so off-machine desktop labor is not trustworthy right now.`,
+    evidence: [
+      remoteBridgeHeartbeat
+        ? `Last seen from ${remoteBridgeHeartbeat.clientId} at ${remoteBridgeHeartbeat.observedAt}.`
+        : "Hosted AL has not heard from any desktop relay client yet.",
+      remoteBridgeHeartbeat
+        ? remoteBridgeHeartbeat.bridgeAuthRequired
+          ? "The local bridge requires bearer auth for direct requests."
+          : "The local bridge is still open on localhost and should be treated as a weaker local boundary."
+        : "No bridge auth posture has been reported yet.",
+      remoteBridgeHeartbeat?.coworkProbe
+        ? `Claude cowork probe: ${remoteBridgeHeartbeat.coworkProbe.status} - ${remoteBridgeHeartbeat.coworkProbe.detail}`
+        : "No Claude cowork probe has been reported yet.",
+      remoteBridgeHeartbeat
+        ? `Codex desktop lane: ${relayCodexHealthy ? "live" : "not confirmed"}`
+        : "Codex desktop lane has not reported through the relay yet.",
+    ],
+    href: absolutePath(origin, buildHostedOperationalProofPath(host)),
   };
 
   const tomorrowKey = localTomorrowKey();
@@ -255,6 +304,7 @@ export async function buildOperationalProofReport(input?: {
   const checks = [
     boardroomCheck,
     dominionCheck,
+    relayCheck,
     wrenchReadyCheck,
     openClawCheck,
     attentionCheck,

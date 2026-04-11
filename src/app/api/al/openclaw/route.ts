@@ -8,6 +8,8 @@ import {
   type OpenClawEnvelope,
 } from "@/lib/al-openclaw";
 
+export const dynamic = "force-dynamic";
+
 function unauthorized(message: string, status = 401) {
   return NextResponse.json({ ok: false, error: message }, { status });
 }

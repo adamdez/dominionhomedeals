@@ -41,6 +41,13 @@ if (fsSync.existsSync(envFile)) {
 const PORT = parseInt(process.env.BRIDGE_PORT || "3141", 10);
 const VAULT = (process.env.VAULT_PATH || "").replace(/[\\/]+$/, "");
 const TOKEN = (process.env.BRIDGE_TOKEN || "").trim();
+const REMOTE_BRIDGE_API_BASE = (process.env.REMOTE_BRIDGE_API_BASE || "https://al.dominionhomedeals.com").trim().replace(/\/+$/, "");
+const REMOTE_BRIDGE_SECRET =
+  (process.env.AL_REMOTE_BRIDGE_SECRET || process.env.REMOTE_BRIDGE_SHARED_SECRET || "").trim();
+const ENABLE_REMOTE_BRIDGE_RELAY =
+  String(process.env.ENABLE_REMOTE_BRIDGE_RELAY || "").trim().toLowerCase() === "true";
+const REMOTE_BRIDGE_CLIENT_ID =
+  (process.env.REMOTE_BRIDGE_CLIENT_ID || `${require("os").hostname()}-desktop-bridge`).trim();
 
 const homeDir = process.env.USERPROFILE || process.env.HOME || "";
 const CREW_ROOT_DEFAULT = homeDir
@@ -53,6 +60,7 @@ const MAX_CONCURRENT_CREWS = 2;
 const CREW_TIMEOUT_MS = 15 * 60 * 1000;
 const MAX_CREW_OUTPUT = 500 * 1024;
 const CODEX_TIMEOUT_MS = 12 * 60 * 1000;
+const COWORK_HEALTH_PROBE_TTL_MS = 10 * 60 * 1000;
 
 /** Maps *_crew.py filename → argv for `python main.py <argv>` */
 const CREW_FILE_TO_CMD = {
@@ -80,6 +88,12 @@ function fileToCrewId(file) {
 }
 
 const crewRuns = new Map();
+let coworkHealthCache = {
+  checkedAt: 0,
+  ok: null,
+  status: "unchecked",
+  detail: "Cowork execute lane has not been probed yet.",
+};
 
 const ORIGINS = new Set([
   "https://dominionhomedeals.com",
@@ -158,6 +172,10 @@ function trimRouteNoise(value) {
     decoded = decodeURIComponent(decoded);
   } catch {}
   return decoded.replace(/[`'"\\)\]\s]+$/g, "");
+}
+
+function inputString(value) {
+  return typeof value === "string" ? value : "";
 }
 
 function getCodexCandidates() {
@@ -262,6 +280,318 @@ function readBody(req) {
   });
 }
 
+function remoteRelayConfigured() {
+  return ENABLE_REMOTE_BRIDGE_RELAY && Boolean(REMOTE_BRIDGE_API_BASE && REMOTE_BRIDGE_SECRET);
+}
+
+function bridgeAuthHeaders() {
+  return TOKEN ? { Authorization: `Bearer ${TOKEN}` } : {};
+}
+
+async function callLocalBridge(pathname, options = {}) {
+  const response = await fetch(`http://127.0.0.1:${PORT}${pathname}`, {
+    ...options,
+    headers: {
+      ...(options.headers || {}),
+      ...bridgeAuthHeaders(),
+    },
+  });
+  const data = await response.json().catch(() => null);
+  return { response, data };
+}
+
+async function runRemoteBridgeRequest(request) {
+  const input = request && typeof request.input === "object" && request.input
+    ? request.input
+    : {};
+  switch (request.name) {
+    case "vault_list": {
+      const { response, data } = await callLocalBridge(
+        `/list?path=${encodeURIComponent(inputString(input.path))}`,
+      );
+      if (!response.ok) return `Error: ${data?.error || response.status}`;
+      return (data.entries || []).map((entry) => `[${entry.type}] ${entry.name}`).join("\n") || "Empty folder.";
+    }
+    case "vault_read": {
+      const { response, data } = await callLocalBridge(
+        `/read?path=${encodeURIComponent(inputString(input.path))}`,
+      );
+      return response.ok ? data.content : `Error: ${data?.error || response.status}`;
+    }
+    case "vault_read_image": {
+      const { response, data } = await callLocalBridge(
+        `/read-image?path=${encodeURIComponent(inputString(input.path))}`,
+      );
+      if (!response.ok) return `Error: ${data?.error || response.status}`;
+      return {
+        type: "image",
+        base64: data.base64,
+        mimeType: data.mimeType || "image/png",
+        path: data.path || inputString(input.path),
+      };
+    }
+    case "crew_list": {
+      const { response, data } = await callLocalBridge("/crew/list");
+      if (!response.ok) return `Error: ${data?.error || response.status}`;
+      let out = "";
+      if (data.error) out += `Setup: ${data.error}\n\n`;
+      const crews = data.crews || [];
+      out += crews.length ? crews.map((crew) => `- ${crew.id} (${crew.file})`).join("\n") : "No crews discovered.";
+      const runs = data.activeRuns || [];
+      if (runs.length) out += `\n\nActive runs:\n${runs.map((run) => `- ${run.crew} (${run.id})`).join("\n")}`;
+      if (data.crewRoot) out += `\n\nProject: ${data.crewRoot}`;
+      return out.trim();
+    }
+    case "crew_run": {
+      const { response, data } = await callLocalBridge("/crew/run", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ crew: inputString(input.crew) }),
+      });
+      return response.ok ? JSON.stringify(data, null, 2) : `Error: ${data?.error || response.status}`;
+    }
+    case "crew_status": {
+      const { response, data } = await callLocalBridge(
+        `/crew/status?id=${encodeURIComponent(inputString(input.run_id))}`,
+      );
+      return response.ok ? JSON.stringify(data, null, 2) : `Error: ${data?.error || response.status}`;
+    }
+    case "deep_research": {
+      const { response, data } = await callLocalBridge("/research", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ task: inputString(input.task) }),
+      });
+      return response.ok ? data.result || JSON.stringify(data) : `Error: ${data?.error || response.status}`;
+    }
+    case "cowork_task": {
+      const { response, data } = await callLocalBridge("/cowork", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          task: inputString(input.task),
+          domain: inputString(input.domain) || "dominionhomedeals",
+          authority_zone: 1,
+        }),
+      });
+      if (!response.ok) return `Error: ${data?.error || response.status}`;
+      const elapsed = data.elapsed ? ` (${data.elapsed}s)` : "";
+      const session = data.session_id ? ` · session ${data.session_id}` : "";
+      return `✓ Done${elapsed}${session}\n\n${data.result || JSON.stringify(data)}`;
+    }
+    case "codex_task": {
+      const { response, data } = await callLocalBridge("/codex/exec", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(input || {}),
+      });
+      return JSON.stringify(
+        data || {
+          ok: false,
+          status: "codex_bridge_request_failed",
+          operator_message: `Codex task failed with HTTP ${response.status}.`,
+        },
+      );
+    }
+    case "local_pdf_merge": {
+      const { response, data } = await callLocalBridge("/pdf/merge", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(input || {}),
+      });
+      return JSON.stringify(
+        data || {
+          ok: false,
+          status: "pdf_merge_bridge_request_failed",
+          operator_message: `Local PDF merge failed with HTTP ${response.status}.`,
+        },
+      );
+    }
+    case "browser_vendor_cart_review": {
+      const { response, data } = await callLocalBridge("/browser/vendor-cart-review", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(input || {}),
+      });
+      return JSON.stringify(
+        data || {
+          ok: false,
+          status: "bridge_request_failed",
+          operator_message: `Vendor/design lane failed with HTTP ${response.status}.`,
+        },
+      );
+    }
+    case "media_production": {
+      const { response, data } = await callLocalBridge("/media/brand-assets", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(input || {}),
+      });
+      return JSON.stringify(
+        data || {
+          ok: false,
+          status: "media_bridge_request_failed",
+          operator_message: `Media production lane failed with HTTP ${response.status}.`,
+        },
+      );
+    }
+    default:
+      return `Unknown bridge tool: ${request.name}`;
+  }
+}
+
+let remoteRelayBusy = false;
+let lastRemoteHeartbeatSentAt = 0;
+
+async function buildBridgeStatusSnapshot() {
+  const executor = await readExecutorHealth();
+  const hasAsk = Boolean(executor.endpoints["POST /ask"]);
+  const hasExecute = Boolean(executor.endpoints["POST /execute"]);
+  const coworkProbe =
+    executor.online && hasExecute
+      ? await probeCoworkExecutionHealth()
+      : {
+          ok: false,
+          status: "executor_unavailable",
+          detail: "Executor is offline or missing POST /execute.",
+        };
+  const browserVendorStack = inspectBrowserVendorCartReviewStack();
+  const brandMediaStack = inspectBrandMediaStack();
+  const codexStack = inspectCodexStack();
+
+  return {
+    executor,
+    coworkProbe,
+    capabilities: {
+      executor_online: executor.online,
+      deep_research: executor.online && hasAsk,
+      cowork_execution: executor.online && hasExecute && coworkProbe.ok === true,
+      browser_automation: browserVendorStack.details.browser_automation,
+      vendor_site_access: browserVendorStack.details.vendor_site_access,
+      design_mockup: browserVendorStack.details.design_mockup,
+      screenshot_capture: browserVendorStack.details.screenshot_capture,
+      cart_preparation: browserVendorStack.details.cart_preparation,
+      review_checkpoint: browserVendorStack.details.review_checkpoint,
+      media_generation: brandMediaStack.live,
+      media_runway: brandMediaStack.details.runway_api_key,
+      media_gif_export: brandMediaStack.details.ffmpeg_available,
+      local_pdf_merge: true,
+      codex_execution: codexStack.available,
+      remote_bridge_relay: remoteRelayConfigured(),
+    },
+    browserVendorCartReview: {
+      live: browserVendorStack.live,
+      missingAccess: browserVendorStack.missingAccess,
+      details: browserVendorStack.details,
+    },
+    brandMediaProduction: {
+      live: brandMediaStack.live,
+      missingAccess: brandMediaStack.missingAccess,
+      details: brandMediaStack.details,
+    },
+    codexTaskExecution: {
+      live: codexStack.available,
+      missingAccess: codexStack.available ? [] : ["local_codex_cli"],
+      details: codexStack.details,
+    },
+    remoteBridgeRelay: {
+      live: remoteRelayConfigured(),
+      missingAccess: remoteRelayConfigured() ? [] : ["AL_REMOTE_BRIDGE_SECRET", "ENABLE_REMOTE_BRIDGE_RELAY"],
+      details: {
+        api_base: REMOTE_BRIDGE_API_BASE || null,
+        client_id: REMOTE_BRIDGE_CLIENT_ID,
+      },
+    },
+  };
+}
+
+async function maybeSendRemoteBridgeHeartbeat(force = false) {
+  if (!remoteRelayConfigured()) return;
+  const now = Date.now();
+  if (!force && now - lastRemoteHeartbeatSentAt < 60000) return;
+
+  const snapshot = await buildBridgeStatusSnapshot();
+  const response = await fetch(`${REMOTE_BRIDGE_API_BASE}/api/al/remote-bridge/heartbeat`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-al-remote-bridge-secret": REMOTE_BRIDGE_SECRET,
+    },
+    body: JSON.stringify({
+      clientId: REMOTE_BRIDGE_CLIENT_ID,
+      relayApiBase: REMOTE_BRIDGE_API_BASE,
+      bridgeAuthRequired: Boolean(TOKEN),
+      capabilities: snapshot.capabilities,
+      coworkProbe: snapshot.coworkProbe,
+    }),
+  });
+
+  if (response.ok) {
+    lastRemoteHeartbeatSentAt = now;
+  }
+}
+
+async function processRemoteBridgeRelayQueue() {
+  if (!remoteRelayConfigured() || remoteRelayBusy) return;
+  remoteRelayBusy = true;
+  try {
+    await maybeSendRemoteBridgeHeartbeat();
+    const pollResponse = await fetch(`${REMOTE_BRIDGE_API_BASE}/api/al/remote-bridge/poll`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-al-remote-bridge-secret": REMOTE_BRIDGE_SECRET,
+      },
+      body: JSON.stringify({ clientId: REMOTE_BRIDGE_CLIENT_ID }),
+    });
+
+    const pollPayload = await pollResponse.json().catch(() => null);
+    if (!pollResponse.ok || !pollPayload?.ok || !pollPayload.bundle) {
+      return;
+    }
+
+    const bundle = pollPayload.bundle;
+    const requests = Array.isArray(bundle.requests) ? bundle.requests : [];
+    const results = [];
+    let hasError = false;
+    let errorMessage = null;
+
+    for (const request of requests) {
+      try {
+        const result = await runRemoteBridgeRequest(request);
+        results.push({ id: request.id, name: request.name, result });
+      } catch (err) {
+        hasError = true;
+        errorMessage = err instanceof Error ? err.message : "Unknown remote bridge request error.";
+        results.push({
+          id: request.id,
+          name: request.name,
+          result: `Bridge connection failed: ${errorMessage}`,
+        });
+      }
+    }
+
+    await fetch(`${REMOTE_BRIDGE_API_BASE}/api/al/remote-bridge/complete`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-al-remote-bridge-secret": REMOTE_BRIDGE_SECRET,
+      },
+      body: JSON.stringify({
+        jobId: bundle.jobId,
+        clientId: REMOTE_BRIDGE_CLIENT_ID,
+        isError: hasError,
+        errorMessage,
+        results,
+      }),
+    });
+  } catch {
+    // Stay quiet here; the hosted AL proof surface should tell the truth about relay availability.
+  } finally {
+    remoteRelayBusy = false;
+  }
+}
+
 /* ── Routes ─────────────────────────────────────────────────── */
 async function readExecutorHealth() {
   try {
@@ -298,51 +628,88 @@ async function readExecutorHealth() {
   }
 }
 
-async function handleHealth(res, o) {
-  const executor = await readExecutorHealth();
-  const hasAsk = Boolean(executor.endpoints["POST /ask"]);
-  const hasExecute = Boolean(executor.endpoints["POST /execute"]);
-  const browserVendorStack = inspectBrowserVendorCartReviewStack();
-  const brandMediaStack = inspectBrandMediaStack();
-  const codexStack = inspectCodexStack();
+async function probeCoworkExecutionHealth(force = false) {
+  const now = Date.now();
+  if (!force && coworkHealthCache.ok !== null && now - coworkHealthCache.checkedAt < COWORK_HEALTH_PROBE_TTL_MS) {
+    return coworkHealthCache;
+  }
 
+  try {
+    const execRes = await fetch("http://127.0.0.1:3456/execute", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        task: "Do not write files or change anything. Return exactly: OK",
+        domain: "dominionhomedeals",
+        authority_zone: 1,
+        secret: process.env.EXECUTOR_SECRET || "sentinel-ceo-2026",
+      }),
+      signal: AbortSignal.timeout(20000),
+    });
+    const data = await execRes.json().catch(() => null);
+    const raw =
+      data && typeof data === "object"
+        ? String(data.output || data.result || data.error || "")
+        : "";
+    const normalized = raw.toLowerCase();
+    const authFailure =
+      normalized.includes("invalid api key") ||
+      normalized.includes("fix external api key");
+    const creditFailure =
+      normalized.includes("credit balance is too low") ||
+      normalized.includes("insufficient credits");
+    const failed =
+      !execRes.ok ||
+      authFailure ||
+      creditFailure ||
+      normalized.includes('"success":false') ||
+      normalized.includes("executor error");
+
+    coworkHealthCache = failed
+      ? {
+          checkedAt: now,
+          ok: false,
+          status: authFailure
+            ? "auth_invalid"
+            : creditFailure
+              ? "credit_blocked"
+              : `probe_failed_http_${execRes.status}`,
+          detail:
+            raw ||
+            `Cowork execute probe failed with HTTP ${execRes.status}.`,
+        }
+      : {
+          checkedAt: now,
+          ok: true,
+          status: "ready",
+          detail: raw || "Cowork execute probe succeeded.",
+        };
+  } catch (err) {
+    coworkHealthCache = {
+      checkedAt: now,
+      ok: false,
+      status: "probe_error",
+      detail: err instanceof Error ? err.message : "Unknown cowork probe error.",
+    };
+  }
+
+  return coworkHealthCache;
+}
+
+async function handleHealth(res, o) {
+  const snapshot = await buildBridgeStatusSnapshot();
   json(res, 200, {
     ok: true,
     vault: VAULT,
     crewProject: crewProjectOk(),
     crewRoot: CREW_ROOT || null,
-    executor,
-    capabilities: {
-      executor_online: executor.online,
-      deep_research: executor.online && hasAsk,
-      cowork_execution: executor.online && hasExecute,
-      browser_automation: browserVendorStack.details.browser_automation,
-      vendor_site_access: browserVendorStack.details.vendor_site_access,
-      design_mockup: browserVendorStack.details.design_mockup,
-      screenshot_capture: browserVendorStack.details.screenshot_capture,
-      cart_preparation: browserVendorStack.details.cart_preparation,
-      review_checkpoint: browserVendorStack.details.review_checkpoint,
-      media_generation: brandMediaStack.live,
-      media_runway: brandMediaStack.details.runway_api_key,
-      media_gif_export: brandMediaStack.details.ffmpeg_available,
-      local_pdf_merge: true,
-      codex_execution: codexStack.available,
-    },
-    browserVendorCartReview: {
-      live: browserVendorStack.live,
-      missingAccess: browserVendorStack.missingAccess,
-      details: browserVendorStack.details,
-    },
-    brandMediaProduction: {
-      live: brandMediaStack.live,
-      missingAccess: brandMediaStack.missingAccess,
-      details: brandMediaStack.details,
-    },
-    codexTaskExecution: {
-      live: codexStack.available,
-      missingAccess: codexStack.available ? [] : ["local_codex_cli"],
-      details: codexStack.details,
-    },
+    executor: snapshot.executor,
+    coworkProbe: snapshot.coworkProbe,
+    capabilities: snapshot.capabilities,
+    browserVendorCartReview: snapshot.browserVendorCartReview,
+    brandMediaProduction: snapshot.brandMediaProduction,
+    codexTaskExecution: snapshot.codexTaskExecution,
+    remoteBridgeRelay: snapshot.remoteBridgeRelay,
   }, o);
 }
 
@@ -933,6 +1300,67 @@ const server = http.createServer(async (req, res) => {
   }
 
   /* ── Cowork proxy — forwards to AL executor /execute (Claude Agent SDK, full tools) ── */
+  function codexWorkspaceForCoworkDomain(domain) {
+    const normalized = String(domain || "").trim().toLowerCase();
+    if (
+      normalized.includes("wrench") ||
+      normalized.includes("simon") ||
+      normalized.includes("wrench-ready")
+    ) {
+      return "wrenchreadymobile-com";
+    }
+    if (normalized.includes("sentinel")) return "sentinel";
+    if (normalized === "al" || normalized.includes("al-boreland")) return "al";
+    if (normalized.includes("vault")) return "al-boreland-vault";
+    return "dominionhomedeals";
+  }
+
+  async function runCodexFallbackForCowork({ task, domain }) {
+    const workspace = codexWorkspaceForCoworkDomain(domain);
+    const codexRes = await fetch(`http://127.0.0.1:${PORT}/codex/exec`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        task,
+        workspace,
+        sandbox: "workspace-write",
+      }),
+      signal: AbortSignal.timeout(280000),
+    });
+    const codexData = await codexRes.json().catch(() => null);
+    const codexMessage =
+      typeof codexData?.result === "string"
+        ? codexData.result
+        : typeof codexData?.operator_message === "string"
+          ? codexData.operator_message
+          : codexData
+            ? JSON.stringify(codexData)
+            : `Codex task failed with HTTP ${codexRes.status}.`;
+
+    if (codexRes.ok && codexData?.ok !== false) {
+      return {
+        statusCode: 200,
+        payload: {
+          result:
+            `Claude cowork backup was unavailable. AL rerouted this coding task to the OpenAI-native Codex lane (${workspace}) so work could keep moving.\n\n${codexMessage}`,
+          session_id: codexData?.session_id || null,
+          elapsed: null,
+          domain,
+          fallback_lane: "codex_task",
+          fallback_workspace: workspace,
+        },
+      };
+    }
+
+    return {
+      statusCode: codexRes.status || 500,
+      payload: {
+        error:
+          `Claude cowork backup was unavailable, and the OpenAI-native Codex fallback (${workspace}) also failed.\n\n${codexMessage}`,
+      },
+    };
+  }
+
   async function handleCowork(req, res, o) {
     const body = JSON.parse(await readBody(req));
     const task = (body.task || "").trim();
@@ -952,9 +1380,65 @@ const server = http.createServer(async (req, res) => {
         signal: AbortSignal.timeout(280000),
       });
       const data = await execRes.json();
-      if (!execRes.ok) return json(res, execRes.status, { error: data.error || "Executor error" }, o);
+      if (!execRes.ok) {
+        const error = data.error || "Executor error";
+        const normalized = String(error).toLowerCase();
+        if (normalized.includes("invalid api key") || normalized.includes("fix external api key")) {
+          coworkHealthCache = {
+            checkedAt: Date.now(),
+            ok: false,
+            status: "auth_invalid",
+            detail: String(error),
+          };
+        } else if (normalized.includes("credit balance is too low") || normalized.includes("insufficient credits")) {
+          coworkHealthCache = {
+            checkedAt: Date.now(),
+            ok: false,
+            status: "credit_blocked",
+            detail: String(error),
+          };
+        }
+        if (
+          normalized.includes("invalid api key") ||
+          normalized.includes("fix external api key") ||
+          normalized.includes("credit balance is too low") ||
+          normalized.includes("insufficient credits")
+        ) {
+          const fallback = await runCodexFallbackForCowork({ task, domain });
+          return json(res, fallback.statusCode, fallback.payload, o);
+        }
+        return json(res, execRes.status, { error }, o);
+      }
+      const resultText = String(data.output || data.result || JSON.stringify(data));
+      const normalizedResult = resultText.toLowerCase();
+      if (
+        normalizedResult.includes("invalid api key") ||
+        normalizedResult.includes("fix external api key") ||
+        normalizedResult.includes("credit balance is too low") ||
+        normalizedResult.includes("insufficient credits") ||
+        normalizedResult.includes('"success":false')
+      ) {
+        coworkHealthCache = {
+          checkedAt: Date.now(),
+          ok: false,
+          status:
+            normalizedResult.includes("credit balance is too low") ||
+            normalizedResult.includes("insufficient credits")
+              ? "credit_blocked"
+              : "auth_invalid",
+          detail: resultText,
+        };
+        const fallback = await runCodexFallbackForCowork({ task, domain });
+        return json(res, fallback.statusCode, fallback.payload, o);
+      }
+      coworkHealthCache = {
+        checkedAt: Date.now(),
+        ok: true,
+        status: "ready",
+        detail: "Cowork execution succeeded.",
+      };
       return json(res, 200, {
-        result: data.output || data.result || JSON.stringify(data),
+        result: resultText,
         session_id: data.session_id || null,
         elapsed: data.elapsed_seconds || null,
         domain: data.domain || domain,
@@ -1348,6 +1832,15 @@ server.listen(PORT, "127.0.0.1", () => {
     `  Crew:  ${crewProjectOk() ? CREW_ROOT : "not found — set CREW_PROJECT_ROOT"}`
   );
   console.log(`  Auth:  ${TOKEN ? "token required" : "open (set BRIDGE_TOKEN to secure)"}`);
+  console.log(`  Relay: ${remoteRelayConfigured() ? `polling ${REMOTE_BRIDGE_API_BASE}` : "disabled"}`);
   console.log("  Ready.");
   console.log("");
+
+  if (remoteRelayConfigured()) {
+    maybeSendRemoteBridgeHeartbeat(true).catch(() => {});
+    processRemoteBridgeRelayQueue().catch(() => {});
+    setInterval(() => {
+      processRemoteBridgeRelayQueue().catch(() => {});
+    }, 3000);
+  }
 });

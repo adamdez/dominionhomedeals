@@ -8,6 +8,8 @@ import {
   getWrenchReadyDayReadinessSummary,
 } from "@/lib/wrenchready-day-readiness";
 
+export const dynamic = "force-dynamic";
+
 function tomorrowKey() {
   const date = new Date();
   date.setHours(0, 0, 0, 0);

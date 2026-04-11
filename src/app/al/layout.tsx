@@ -2,6 +2,8 @@ import type { Metadata, Viewport } from "next";
 import { AlShellFrame } from "@/components/al/AlShellFrame";
 import { MobileDock } from "@/components/al/MobileDock";
 
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: "AL Boreland Command Center",
   robots: { index: false, follow: false },

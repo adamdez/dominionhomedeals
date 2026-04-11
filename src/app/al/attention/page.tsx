@@ -4,6 +4,8 @@ import { AttentionPage } from "@/components/al/AttentionPage";
 import { buildAttentionBrief } from "@/lib/al-attention-brief";
 import { buildHostedAppPrefix, isAuthenticatedAlSession } from "@/lib/al-review";
 
+export const dynamic = "force-dynamic";
+
 export default async function AlAttentionPage() {
   const cookieStore = await cookies();
   if (!isAuthenticatedAlSession(cookieStore.get("al_session")?.value)) {
