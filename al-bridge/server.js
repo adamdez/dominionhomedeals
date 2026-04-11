@@ -6,7 +6,7 @@ const fs = require("fs").promises;
 const fsSync = require("fs");
 const path = require("path");
 const { URL } = require("url");
-const { spawn } = require("child_process");
+const { spawn, spawnSync } = require("child_process");
 const crypto = require("crypto");
 const {
   resolveBrowserVendorReviewFile,
@@ -100,6 +100,12 @@ let coworkHealthCache = {
   status: "unchecked",
   detail: "Cowork execute lane has not been probed yet.",
 };
+let claudeCliStatusCache = {
+  checkedAt: 0,
+  loggedIn: null,
+  email: null,
+  detail: "Claude CLI auth status has not been checked yet.",
+};
 
 const ORIGINS = new Set([
   "https://dominionhomedeals.com",
@@ -146,11 +152,46 @@ function readEnvSecret(value) {
   return trimmed;
 }
 
-function readLocalClaudeAuthHealth() {
+function readClaudeCliStatus() {
+  const now = Date.now();
+  if (claudeCliStatusCache.checkedAt && now - claudeCliStatusCache.checkedAt < 10 * 60 * 1000) {
+    return claudeCliStatusCache;
+  }
+
+  try {
+    const result = spawnSync("claude", ["auth", "status"], {
+      encoding: "utf8",
+      timeout: 5000,
+      windowsHide: true,
+    });
+    const raw = `${result.stdout || ""}`.trim();
+    const parsed = raw ? JSON.parse(raw) : null;
+    const loggedIn = parsed?.loggedIn === true;
+    claudeCliStatusCache = {
+      checkedAt: now,
+      loggedIn,
+      email: loggedIn && typeof parsed?.email === "string" ? parsed.email.trim() : null,
+      detail: loggedIn
+        ? `Claude CLI reports a logged-in session${parsed?.email ? ` for ${parsed.email.trim()}` : ""}.`
+        : "Claude CLI does not report a logged-in session.",
+    };
+  } catch (error) {
+    claudeCliStatusCache = {
+      checkedAt: now,
+      loggedIn: null,
+      email: null,
+      detail: error instanceof Error ? error.message : "Claude CLI auth status check failed.",
+    };
+  }
+
+  return claudeCliStatusCache;
+}
+
+function readLocalClaudeAuthHealth(coworkProbe = null) {
   let apiKeyPresent = false;
   let oauthPresent = false;
-  let oauthExpired = false;
-  let oauthExpiresAt = null;
+  let fileOauthExpired = false;
+  let fileOauthExpiresAt = null;
 
   try {
     if (EXECUTOR_ENV_PATH && fsSync.existsSync(EXECUTOR_ENV_PATH)) {
@@ -172,16 +213,21 @@ function readLocalClaudeAuthHealth() {
       const parsed = JSON.parse(fsSync.readFileSync(CLAUDE_CREDENTIALS_PATH, "utf8"));
       const expiresAt = parsed?.claudeAiOauth?.expiresAt;
       oauthPresent = Boolean(parsed?.claudeAiOauth?.accessToken);
-      oauthExpiresAt =
+      fileOauthExpiresAt =
         typeof expiresAt === "number" && Number.isFinite(expiresAt)
           ? new Date(expiresAt).toISOString()
           : null;
-      oauthExpired =
+      fileOauthExpired =
         typeof expiresAt === "number" && Number.isFinite(expiresAt)
           ? expiresAt <= Date.now()
           : false;
     }
   } catch {}
+
+  const cliStatus = readClaudeCliStatus();
+  const trustFileExpiry = cliStatus.loggedIn !== true;
+  const oauthExpired = trustFileExpiry ? fileOauthExpired : false;
+  const oauthExpiresAt = trustFileExpiry ? fileOauthExpiresAt : null;
 
   const configured = apiKeyPresent || oauthPresent;
   let status = "configured";
@@ -199,6 +245,18 @@ function readLocalClaudeAuthHealth() {
   } else if (apiKeyPresent && !oauthPresent) {
     status = "api_key_only";
     detail = "Claude execution is relying on the Anthropic executor key only.";
+  }
+
+  if (coworkProbe?.status === "auth_invalid") {
+    if (cliStatus.loggedIn === true) {
+      status = apiKeyPresent ? "runtime_invalid_api_present" : "runtime_invalid";
+      detail = `Claude CLI reports a logged-in session${cliStatus.email ? ` for ${cliStatus.email}` : ""}, but live execution still returns invalid authentication credentials.${apiKeyPresent ? " The Anthropic executor key fallback also appears invalid." : ""}`;
+    } else if (!configured || oauthExpired) {
+      status = apiKeyPresent ? "runtime_invalid_api_present" : "runtime_invalid";
+      detail = apiKeyPresent
+        ? "Live Claude execution returns invalid authentication credentials, and the Anthropic executor key fallback appears invalid."
+        : "Live Claude execution returns invalid authentication credentials.";
+    }
   }
 
   return {
@@ -527,7 +585,6 @@ let lastRemoteHeartbeatSentAt = 0;
 
 async function buildBridgeStatusSnapshot() {
   const executor = await readExecutorHealth();
-  const localClaudeAuth = readLocalClaudeAuthHealth();
   const hasAsk = Boolean(executor.endpoints["POST /ask"]);
   const hasExecute = Boolean(executor.endpoints["POST /execute"]);
   const coworkProbe =
@@ -538,6 +595,7 @@ async function buildBridgeStatusSnapshot() {
           status: "executor_unavailable",
           detail: "Executor is offline or missing POST /execute.",
         };
+  const localClaudeAuth = readLocalClaudeAuthHealth(coworkProbe);
   const browserVendorStack = inspectBrowserVendorCartReviewStack();
   const brandMediaStack = inspectBrandMediaStack();
   const codexStack = inspectCodexStack();
