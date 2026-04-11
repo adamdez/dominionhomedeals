@@ -156,6 +156,7 @@ interface SidebarProps {
       media_generation?: boolean;
       browser_automation?: boolean;
       cowork_execution?: boolean;
+      codex_execution?: boolean;
     };
     coworkProbe?: {
       ok?: boolean | null;
