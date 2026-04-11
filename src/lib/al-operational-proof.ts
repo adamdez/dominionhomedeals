@@ -200,6 +200,15 @@ export async function buildOperationalProofReport(input?: {
   const relayHeartbeatFresh = relayHeartbeatAgeMinutes !== null && relayHeartbeatAgeMinutes <= 5;
   const relayCoworkHealthy = remoteBridgeHeartbeat?.coworkProbe?.ok === true;
   const relayCodexHealthy = remoteBridgeHeartbeat?.capabilities?.codex_execution === true;
+  const relayCoworkStatus = remoteBridgeHeartbeat?.coworkProbe?.status || null;
+  const relayCoworkDetail = remoteBridgeHeartbeat?.coworkProbe?.detail?.trim() || null;
+  const relayCoworkNeedsAuthRefresh =
+    relayCoworkStatus === "auth_invalid" ||
+    (relayCoworkDetail
+      ? /invalid api key|invalid authentication credentials|refresh claude login/i.test(
+          relayCoworkDetail,
+        )
+      : false);
   const relayCheck: OperationalProofCheck = {
     id: "desktop_relay",
     title: "Desktop relay",
@@ -211,7 +220,7 @@ export async function buildOperationalProofReport(input?: {
     summary: !remoteBridgeHeartbeat
       ? "No desktop relay heartbeat has reached hosted AL yet."
       : relayHeartbeatFresh
-        ? `Desktop heartbeat is fresh (${relayHeartbeatAgeMinutes}m ago), Codex is ${relayCodexHealthy ? "live" : "degraded"}, and Claude cowork is ${relayCoworkHealthy ? "live" : "degraded"}.`
+        ? `Desktop heartbeat is fresh (${relayHeartbeatAgeMinutes}m ago), Codex is ${relayCodexHealthy ? "live" : "degraded"}, and Claude cowork is ${relayCoworkHealthy ? "live" : relayCoworkNeedsAuthRefresh ? "blocked by auth" : "degraded"}.`
         : `Desktop heartbeat is stale (${relayHeartbeatAgeMinutes}m ago), so off-machine desktop labor is not trustworthy right now.`,
     evidence: [
       remoteBridgeHeartbeat
@@ -225,6 +234,9 @@ export async function buildOperationalProofReport(input?: {
       remoteBridgeHeartbeat?.coworkProbe
         ? `Claude cowork probe: ${remoteBridgeHeartbeat.coworkProbe.status} - ${remoteBridgeHeartbeat.coworkProbe.detail}`
         : "No Claude cowork probe has been reported yet.",
+      relayCoworkNeedsAuthRefresh
+        ? "Claude cowork specifically needs a local Claude re-login or a valid Anthropic executor key before this lane can be trusted."
+        : "Claude cowork is not currently signaling a known auth-specific remediation.",
       remoteBridgeHeartbeat
         ? `Codex desktop lane: ${relayCodexHealthy ? "live" : "not confirmed"}`
         : "Codex desktop lane has not reported through the relay yet.",

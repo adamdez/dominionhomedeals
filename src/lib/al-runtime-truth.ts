@@ -81,6 +81,15 @@ export async function buildHostedRuntimeTruth(): Promise<HostedRuntimeTruth> {
     remoteBridgeHeartbeatAgeMinutes !== null && Number.isFinite(remoteBridgeHeartbeatAgeMinutes)
       ? remoteBridgeHeartbeatAgeMinutes <= 5
       : false;
+  const remoteCoworkStatus = remoteBridgeHeartbeat?.coworkProbe?.status || null;
+  const remoteCoworkDetail = remoteBridgeHeartbeat?.coworkProbe?.detail?.trim() || null;
+  const remoteCoworkNeedsAuthRefresh =
+    remoteCoworkStatus === "auth_invalid" ||
+    (remoteCoworkDetail
+      ? /invalid api key|invalid authentication credentials|refresh claude login/i.test(
+          remoteCoworkDetail,
+        )
+      : false);
 
   checks.reasoning_openai = {
     ok: Boolean(openAiKey),
@@ -184,11 +193,13 @@ export async function buildHostedRuntimeTruth(): Promise<HostedRuntimeTruth> {
         : !remoteBridgeHeartbeat
           ? "Hosted AL can queue desktop work, but no bridge heartbeat has been observed yet."
           : remoteBridgeHeartbeatFresh
-            ? `Desktop relay heartbeat is fresh (${remoteBridgeHeartbeatAgeMinutes}m ago); Codex is ${remoteBridgeHeartbeat.capabilities?.codex_execution === true ? "live" : "degraded"} and Claude cowork is ${remoteBridgeHeartbeat.coworkProbe?.ok === true ? "live" : "degraded"}.`
+            ? `Desktop relay heartbeat is fresh (${remoteBridgeHeartbeatAgeMinutes}m ago); Codex is ${remoteBridgeHeartbeat.capabilities?.codex_execution === true ? "live" : "degraded"} and Claude cowork is ${remoteBridgeHeartbeat.coworkProbe?.ok === true ? "live" : remoteCoworkNeedsAuthRefresh ? `blocked by auth (${remoteCoworkDetail || remoteCoworkStatus || "unknown"})` : "degraded"}.`
             : `Desktop relay heartbeat is stale (${remoteBridgeHeartbeatAgeMinutes}m ago), so off-machine desktop work is not trustworthy right now.`,
       nextAction: remoteBridgeSecret
         ? remoteBridgeHeartbeatFresh
-          ? "Keep the desktop bridge alive, and repair Claude cowork if it stays degraded."
+          ? remoteCoworkNeedsAuthRefresh
+            ? "Keep the desktop bridge alive, then refresh Claude login on Dez's machine or replace the stale Anthropic executor key."
+            : "Keep the desktop bridge alive, and repair Claude cowork if it stays degraded."
           : "Get the desktop bridge polling again so hosted AL has a fresh heartbeat before relying on remote work."
         : "Set AL_REMOTE_BRIDGE_SECRET / REMOTE_BRIDGE_SHARED_SECRET and restart hosted + local bridge runtimes.",
       outcome: "Hosted AL can reach Codex, cowork, and local file labor even when Dez is away from the machine.",
