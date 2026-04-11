@@ -67,6 +67,8 @@ export async function buildHostedRuntimeTruth(): Promise<HostedRuntimeTruth> {
   const delegateSecret =
     readEnvSecret("AL_DELEGATE_SECRET") || readEnvSecret("SUPABASE_SERVICE_ROLE_KEY");
   const cursorKey = readEnvSecret("CURSOR_AGENTS_API_KEY");
+  const openClawSecret =
+    readEnvSecret("AL_OPENCLAW_SHARED_SECRET") || readEnvSecret("OPENCLAW_AL_SHARED_SECRET");
 
   checks.reasoning_openai = {
     ok: Boolean(openAiKey),
@@ -92,6 +94,12 @@ export async function buildHostedRuntimeTruth(): Promise<HostedRuntimeTruth> {
     detail: cursorKey
       ? "CURSOR_AGENTS_API_KEY present for hosted code execution fallback."
       : "CURSOR_AGENTS_API_KEY missing.",
+  };
+  checks.openclaw_ingress = {
+    ok: Boolean(openClawSecret),
+    detail: openClawSecret
+      ? "OpenClaw shared secret present for authenticated AL ingress."
+      : "AL_OPENCLAW_SHARED_SECRET / OPENCLAW_AL_SHARED_SECRET missing.",
   };
 
   try {
@@ -123,6 +131,20 @@ export async function buildHostedRuntimeTruth(): Promise<HostedRuntimeTruth> {
   };
 
   const lanes: RuntimeLaneTruth[] = [
+    {
+      id: "openclaw_ingress",
+      label: "OpenClaw mobile and automation ingress",
+      status: openClawSecret ? "live" : "blocked",
+      primaryMode: "hosted",
+      fallbackMode: null,
+      detail: openClawSecret
+        ? "OpenClaw can route authenticated operator and automation traffic into the same AL runtime."
+        : "OpenClaw ingress secret is not configured yet.",
+      nextAction: openClawSecret
+        ? "Keep the command contract narrow and test one trusted channel first."
+        : "Set AL_OPENCLAW_SHARED_SECRET or OPENCLAW_AL_SHARED_SECRET before enabling OpenClaw ingress.",
+      outcome: "Mobile command access and recurring automation use the same AL truth surfaces instead of creating a second assistant.",
+    },
     {
       id: "chairman_reasoning",
       label: "Chairman reasoning",

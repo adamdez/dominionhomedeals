@@ -202,6 +202,12 @@ function buildPublicJobUrl(jobId, suffix = "") {
   return `${base}${base.includes("?") ? "&" : "?"}token=${encodeURIComponent(BRIDGE_TOKEN)}`;
 }
 
+function buildPublicLatestReviewUrl() {
+  const base = `${BRIDGE_PUBLIC_BASE_URL}/media/brand-assets/latest/review`;
+  if (!BRIDGE_TOKEN) return base;
+  return `${base}${base.includes("?") ? "&" : "?"}token=${encodeURIComponent(BRIDGE_TOKEN)}`;
+}
+
 function buildArtifactUrl(jobId, fileName) {
   return buildPublicJobUrl(jobId, `/artifact/${encodeURIComponent(fileName)}`);
 }
@@ -563,6 +569,7 @@ async function runBrandMediaProduction(input = {}) {
       prompt_pack: promptPack,
       source_images: reviewSourceImages,
       review_page_url: buildPublicJobUrl(jobId, "/review"),
+      latest_review_url: buildPublicLatestReviewUrl(),
       artifacts: {
         source_preview_urls: sourcePreviewAssets.map((asset) => asset.url),
         poster_url: sourcePreviewAssets[0]?.url || null,
@@ -602,6 +609,7 @@ async function runBrandMediaProduction(input = {}) {
       prompt_pack: promptPack,
       source_images: reviewSourceImages,
       review_page_url: buildPublicJobUrl(jobId, "/review"),
+      latest_review_url: buildPublicLatestReviewUrl(),
       artifacts: {
         source_preview_urls: sourcePreviewAssets.map((asset) => asset.url),
         poster_url: sourcePreviewAssets[0]?.url || null,
@@ -674,6 +682,7 @@ async function runBrandMediaProduction(input = {}) {
       prompt_pack: promptPack,
       source_images: reviewSourceImages,
       review_page_url: buildPublicJobUrl(jobId, "/review"),
+      latest_review_url: buildPublicLatestReviewUrl(),
       artifacts: {
         video_url: buildArtifactUrl(jobId, videoFileName),
         gif_url: gifExport.ok ? buildArtifactUrl(jobId, gifFileName) : null,
@@ -714,6 +723,7 @@ async function runBrandMediaProduction(input = {}) {
         prompt_pack: promptPack,
         source_images: reviewSourceImages,
         review_page_url: buildPublicJobUrl(jobId, "/review"),
+        latest_review_url: buildPublicLatestReviewUrl(),
         artifacts: {
           source_preview_urls: sourcePreviewAssets.map((asset) => asset.url),
           poster_url: sourcePreviewAssets[0]?.url || null,

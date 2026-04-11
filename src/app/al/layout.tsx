@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { AlShellFrame } from "@/components/al/AlShellFrame";
 import { MobileDock } from "@/components/al/MobileDock";
 
 export const metadata: Metadata = {
@@ -33,7 +34,7 @@ export const viewport: Viewport = {
 export default function AlLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="al-workshop-bg fixed inset-0 z-[200] flex overflow-hidden text-[#e2ede8]">
-      {children}
+      <AlShellFrame>{children}</AlShellFrame>
       <MobileDock />
     </div>
   );

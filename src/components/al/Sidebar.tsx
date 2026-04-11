@@ -21,8 +21,11 @@ import {
   ChevronDown,
   ChevronRight,
   CalendarDays,
+  ShieldCheck,
 } from "lucide-react";
 import { useState } from "react";
+import { usePathname } from "next/navigation";
+import { withAlAppPrefix } from "@/lib/al-app-path";
 
 interface QuickAction {
   id: string;
@@ -167,6 +170,7 @@ export function Sidebar({
   bridgeHealth,
 }: SidebarProps) {
   const [showRuntime, setShowRuntime] = useState(false);
+  const pathname = usePathname();
   const categories = [...new Set(quickActions.map((a) => a.category))];
   const localLaneRows = [
     {
@@ -262,7 +266,7 @@ export function Sidebar({
           <div className="mb-5 px-2">
             <div className="space-y-2">
               <Link
-                href="/boardroom"
+                href={withAlAppPrefix(pathname, "/boardroom")}
                 className="al-shop-card flex items-center justify-between rounded-xl px-3 py-3 text-sm font-semibold text-[#f2f6f3] transition hover:border-amber-400/35 hover:bg-amber-500/5 active:scale-[0.99]"
                 onClick={onClose}
               >
@@ -270,13 +274,57 @@ export function Sidebar({
                 <span className="text-xs uppercase tracking-[0.18em] text-amber-300/55">Open</span>
               </Link>
               <Link
-                href="/planner"
+                href={withAlAppPrefix(pathname, "/attention")}
+                className="al-shop-card flex items-center justify-between rounded-xl px-3 py-3 text-sm font-semibold text-[#f2f6f3] transition hover:border-amber-400/35 hover:bg-amber-500/5 active:scale-[0.99]"
+                onClick={onClose}
+              >
+                <span className="flex items-center gap-2">
+                  <Activity className="h-4 w-4 text-emerald-400/65" />
+                  Attention
+                </span>
+                <span className="text-xs uppercase tracking-[0.18em] text-amber-300/55">Open</span>
+              </Link>
+              <Link
+                href={withAlAppPrefix(pathname, "/planner")}
                 className="al-shop-card flex items-center justify-between rounded-xl px-3 py-3 text-sm font-semibold text-[#f2f6f3] transition hover:border-amber-400/35 hover:bg-amber-500/5 active:scale-[0.99]"
                 onClick={onClose}
               >
                 <span className="flex items-center gap-2">
                   <CalendarDays className="h-4 w-4 text-emerald-400/65" />
                   Planner
+                </span>
+                <span className="text-xs uppercase tracking-[0.18em] text-amber-300/55">Open</span>
+              </Link>
+              <Link
+                href={withAlAppPrefix(pathname, "/operational-proof")}
+                className="al-shop-card flex items-center justify-between rounded-xl px-3 py-3 text-sm font-semibold text-[#f2f6f3] transition hover:border-amber-400/35 hover:bg-amber-500/5 active:scale-[0.99]"
+                onClick={onClose}
+              >
+                <span className="flex items-center gap-2">
+                  <ShieldCheck className="h-4 w-4 text-emerald-400/65" />
+                  Operational Proof
+                </span>
+                <span className="text-xs uppercase tracking-[0.18em] text-amber-300/55">Open</span>
+              </Link>
+              <Link
+                href={withAlAppPrefix(pathname, "/dominion/leads")}
+                className="al-shop-card flex items-center justify-between rounded-xl px-3 py-3 text-sm font-semibold text-[#f2f6f3] transition hover:border-amber-400/35 hover:bg-amber-500/5 active:scale-[0.99]"
+                onClick={onClose}
+              >
+                <span className="flex items-center gap-2">
+                  <Building2 className="h-4 w-4 text-emerald-400/65" />
+                  Dominion Leads
+                </span>
+                <span className="text-xs uppercase tracking-[0.18em] text-amber-300/55">Open</span>
+              </Link>
+              <Link
+                href={withAlAppPrefix(pathname, "/wrenchready/day-readiness")}
+                className="al-shop-card flex items-center justify-between rounded-xl px-3 py-3 text-sm font-semibold text-[#f2f6f3] transition hover:border-amber-400/35 hover:bg-amber-500/5 active:scale-[0.99]"
+                onClick={onClose}
+              >
+                <span className="flex items-center gap-2">
+                  <Wrench className="h-4 w-4 text-emerald-400/65" />
+                  Day Readiness
                 </span>
                 <span className="text-xs uppercase tracking-[0.18em] text-amber-300/55">Open</span>
               </Link>

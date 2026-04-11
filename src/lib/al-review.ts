@@ -51,6 +51,12 @@ export interface BoardroomPresentationRecord {
   bucket: "review_now" | "needs_attention" | "local_only";
   updatedAt: string | null;
   boardroomPath: string;
+  followUpOwner: "AL" | "Dez" | "System" | null;
+  followUpStatus: string | null;
+  waitingOn: string;
+  lastOperatorResponseAt: string | null;
+  isStale: boolean;
+  staleReason: string | null;
 }
 
 type JsonRecord = Record<string, unknown>;
@@ -93,18 +99,29 @@ export function normalizeReviewState(value: unknown): ReviewState {
   }
 }
 
-export function buildHostedReviewPath(host: string | null | undefined, jobId: number): string {
+export function buildHostedAppPrefix(host: string | null | undefined): string {
   const normalizedHost = String(host || "").toLowerCase();
-  return normalizedHost.startsWith("al.dominionhomedeals.com")
-    ? `/boardroom/${jobId}`
-    : `/al/boardroom/${jobId}`;
+  return normalizedHost.startsWith("al.dominionhomedeals.com") ? "" : "/al";
+}
+
+export function buildHostedReviewPath(host: string | null | undefined, jobId: number): string {
+  return `${buildHostedAppPrefix(host)}/boardroom/${jobId}`;
 }
 
 export function buildHostedBoardroomHomePath(host: string | null | undefined): string {
-  const normalizedHost = String(host || "").toLowerCase();
-  return normalizedHost.startsWith("al.dominionhomedeals.com")
-    ? "/boardroom"
-    : "/al/boardroom";
+  return `${buildHostedAppPrefix(host)}/boardroom`;
+}
+
+export function buildHostedPlannerPath(host: string | null | undefined): string {
+  return `${buildHostedAppPrefix(host)}/planner`;
+}
+
+export function buildHostedAttentionPath(host: string | null | undefined): string {
+  return `${buildHostedAppPrefix(host)}/attention`;
+}
+
+export function buildHostedOperationalProofPath(host: string | null | undefined): string {
+  return `${buildHostedAppPrefix(host)}/operational-proof`;
 }
 
 export function buildHostedReviewUrl(
@@ -174,6 +191,92 @@ function extractEmbeddedErrorText(value: string): string | null {
     return null;
   }
   return null;
+}
+
+function asContextRecord(value: unknown): JsonRecord | null {
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? (value as JsonRecord)
+    : null;
+}
+
+function asIsoString(value: unknown): string | null {
+  return typeof value === "string" && value.trim() ? value.trim() : null;
+}
+
+function hoursSince(value: string | null): number | null {
+  if (!value) return null;
+  const timestamp = new Date(value).getTime();
+  if (!Number.isFinite(timestamp)) return null;
+  return Math.max(0, (Date.now() - timestamp) / 3600000);
+}
+
+function boardroomWaitingState(input: {
+  context: JsonRecord;
+  bucket: BoardroomPresentationRecord["bucket"];
+  stateLabel: string;
+}): Pick<
+  BoardroomPresentationRecord,
+  "followUpOwner" | "followUpStatus" | "waitingOn" | "lastOperatorResponseAt" | "isStale" | "staleReason"
+> & { updatedAt: string | null } {
+  const followUpTask = asContextRecord(input.context.follow_up_task);
+  const followUpStatus =
+    typeof followUpTask?.status === "string" && followUpTask.status.trim()
+      ? followUpTask.status.trim()
+      : null;
+  const followUpOwner =
+    followUpTask?.assigned_to === "al"
+      ? "AL"
+      : followUpTask?.assigned_to === "dez"
+        ? "Dez"
+        : input.bucket === "needs_attention"
+          ? "System"
+          : null;
+  const lastOperatorResponseAt = asIsoString(input.context.last_operator_response_at);
+  const movementAnchor =
+    lastOperatorResponseAt ||
+    asIsoString(followUpTask?.created_at) ||
+    asIsoString(input.context.completed_at) ||
+    null;
+  const ageHours = hoursSince(movementAnchor);
+  const staleThresholdHours =
+    input.bucket === "review_now" ? 8 : input.bucket === "needs_attention" ? 4 : 6;
+  const isStale = ageHours !== null && ageHours >= staleThresholdHours;
+  const loweredState = input.stateLabel.toLowerCase();
+
+  let waitingOn = "AL follow-up";
+  if (followUpOwner === "Dez" && followUpStatus === "open") {
+    waitingOn = "Dez";
+  } else if (followUpOwner === "AL" && followUpStatus === "open") {
+    waitingOn = "AL";
+  } else if (input.bucket === "local_only") {
+    waitingOn = "Dez's machine";
+  } else if (loweredState.includes("blocked")) {
+    waitingOn = "System repair";
+  } else if (input.bucket === "review_now") {
+    waitingOn = "Dez review";
+  }
+
+  const staleReason = isStale
+    ? followUpOwner === "Dez" && followUpStatus === "open"
+      ? "Waiting too long on Dez"
+      : followUpOwner === "AL" && followUpStatus === "open"
+        ? "Waiting too long on AL"
+        : input.bucket === "local_only"
+          ? "Still local-only"
+          : loweredState.includes("blocked")
+            ? "Blocked too long"
+            : "No recent movement"
+    : null;
+
+  return {
+    followUpOwner,
+    followUpStatus,
+    waitingOn,
+    lastOperatorResponseAt,
+    isStale,
+    staleReason,
+    updatedAt: movementAnchor,
+  };
 }
 
 export async function fetchBoardroomPresentations(
@@ -287,6 +390,12 @@ export async function fetchBoardroomPresentations(
               (loweredJobType === "cowork_task" && !hasHostedReviewLink && !hasReviewSurface)
             ? "needs_attention"
             : "review_now";
+      const waitingState = boardroomWaitingState({
+        context,
+        bucket,
+        stateLabel,
+      });
+      const { updatedAt: movementUpdatedAt, ...waitingStatePublic } = waitingState;
 
       return {
         id: row.id as number,
@@ -297,9 +406,11 @@ export async function fetchBoardroomPresentations(
         state: stateLabel,
         bucket,
         updatedAt:
+          movementUpdatedAt ||
           (typeof row.completed_at === "string" ? row.completed_at : null) ||
           (typeof row.started_at === "string" ? row.started_at : null),
         boardroomPath: buildHostedReviewPath(host, row.id as number),
+        ...waitingStatePublic,
       } satisfies BoardroomPresentationRecord;
     })
     .filter((entry): entry is BoardroomPresentationRecord => Boolean(entry));

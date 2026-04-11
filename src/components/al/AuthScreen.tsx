@@ -62,6 +62,7 @@ export function AuthScreen({ onAuthenticated }: AuthScreenProps) {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Enter password"
+                autoComplete="current-password"
                 autoFocus
                 className="w-full rounded-xl border border-emerald-900/30 bg-[#0a0f0d] py-3 pl-10 pr-4 text-sm text-[#e2ede8] placeholder-emerald-200/25 transition-colors focus:border-emerald-500/50 focus:outline-none focus:ring-1 focus:ring-emerald-500/25"
               />

@@ -20,6 +20,16 @@ function relativeTimeLabel(value: string | null): string {
   return `${days}d ago`;
 }
 
+function ownerTone(value: "AL" | "Dez" | "System" | null) {
+  if (value === "Dez") {
+    return "border-amber-500/20 bg-amber-500/10 text-amber-100";
+  }
+  if (value === "System") {
+    return "border-red-500/20 bg-red-500/10 text-red-100";
+  }
+  return "border-sky-500/20 bg-sky-500/10 text-sky-100";
+}
+
 export default async function AlBoardroomIndexPage() {
   const cookieStore = await cookies();
   if (!isAuthenticatedAlSession(cookieStore.get("al_session")?.value)) {
@@ -57,6 +67,51 @@ export default async function AlBoardroomIndexPage() {
             <p className="mt-4 text-sm leading-6 text-emerald-100/70">
               {presentation.summary}
             </p>
+            <div className="mt-4 flex flex-wrap gap-2">
+              <span className={`rounded-full border px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.15em] ${ownerTone(presentation.followUpOwner)}`}>
+                Waiting on {presentation.waitingOn}
+              </span>
+              {presentation.followUpOwner ? (
+                <span className={`rounded-full border px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.15em] ${ownerTone(presentation.followUpOwner)}`}>
+                  Owner {presentation.followUpOwner}
+                </span>
+              ) : null}
+              {presentation.followUpStatus ? (
+                <span className="rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.15em] text-emerald-200">
+                  Follow-up {presentation.followUpStatus}
+                </span>
+              ) : null}
+              {presentation.isStale ? (
+                <span className="rounded-full border border-red-500/20 bg-red-500/10 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.15em] text-red-100">
+                  Stale
+                </span>
+              ) : null}
+            </div>
+            <div className="mt-4 grid gap-3 sm:grid-cols-2">
+              <div className="rounded-xl border border-emerald-900/20 bg-[#101714] px-4 py-3">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-300/40">
+                  Last movement
+                </p>
+                <p className="mt-2 text-sm text-emerald-100/80">
+                  {relativeTimeLabel(presentation.updatedAt)}
+                </p>
+              </div>
+              <div className="rounded-xl border border-emerald-900/20 bg-[#101714] px-4 py-3">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-300/40">
+                  Last operator response
+                </p>
+                <p className="mt-2 text-sm text-emerald-100/80">
+                  {presentation.lastOperatorResponseAt
+                    ? relativeTimeLabel(presentation.lastOperatorResponseAt)
+                    : "No operator response yet"}
+                </p>
+              </div>
+            </div>
+            {presentation.staleReason ? (
+              <p className="mt-4 text-sm leading-6 text-red-100/80">
+                {presentation.staleReason}.
+              </p>
+            ) : null}
             <div className="mt-5 flex flex-wrap items-center justify-between gap-3">
               <p className="text-xs uppercase tracking-[0.18em] text-emerald-300/35">
                 Updated {relativeTimeLabel(presentation.updatedAt)}

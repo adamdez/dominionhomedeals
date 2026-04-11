@@ -19,6 +19,7 @@ const {
 const {
   inspectBrandMediaStack,
   runBrandMediaProduction,
+  resolveBrandMediaJobDir,
   resolveBrandMediaArtifact,
 } = require("./media-brand-assets");
 
@@ -86,6 +87,8 @@ const ORIGINS = new Set([
   "https://al.dominionhomedeals.com",
   "http://localhost:3000",
   "http://localhost:3001",
+  "http://127.0.0.1:3000",
+  "http://127.0.0.1:3001",
 ]);
 
 const TEXT_EXT = new Set([
@@ -147,6 +150,14 @@ function pythonCommand() {
   return process.platform === "win32"
     ? { cmd: "python", baseArgs: [] }
     : { cmd: "python3", baseArgs: [] };
+}
+
+function trimRouteNoise(value) {
+  let decoded = String(value || "");
+  try {
+    decoded = decodeURIComponent(decoded);
+  } catch {}
+  return decoded.replace(/[`'"\\)\]\s]+$/g, "");
 }
 
 function getCodexCandidates() {
@@ -216,14 +227,17 @@ function resolveCodexWorkspace(name) {
 /* ── HTTP helpers ───────────────────────────────────────────── */
 function cors(origin) {
   const allowed = ORIGINS.has(origin);
-  return {
-    "Access-Control-Allow-Origin": allowed ? origin : "",
+  const headers = {
     "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
     "Access-Control-Allow-Headers": "Content-Type, Authorization",
     "Access-Control-Max-Age": "86400",
-    "Access-Control-Allow-Private-Network": allowed ? "true" : "false",
     Vary: "Origin, Access-Control-Request-Private-Network",
   };
+  if (allowed) {
+    headers["Access-Control-Allow-Origin"] = origin;
+    headers["Access-Control-Allow-Private-Network"] = "true";
+  }
+  return headers;
 }
 
 function json(res, code, data, origin) {
@@ -1121,6 +1135,100 @@ const server = http.createServer(async (req, res) => {
     return html(res, 200, markup, o);
   }
 
+  function resolveBrandMediaOutputRoot() {
+    const probe = resolveBrandMediaJobDir("probe");
+    return probe ? path.dirname(probe) : null;
+  }
+
+  function listBrandMediaJobs() {
+    const root = resolveBrandMediaOutputRoot();
+    if (!root || !fsSync.existsSync(root)) return [];
+    return fsSync
+      .readdirSync(root, { withFileTypes: true })
+      .filter((entry) => entry.isDirectory())
+      .map((entry) => {
+        const jobId = entry.name;
+        const reviewFile = path.join(root, jobId, "review.html");
+        const manifestFile = path.join(root, jobId, "review-manifest.json");
+        const stat = fsSync.statSync(path.join(root, jobId));
+        let summary = "";
+        try {
+          if (fsSync.existsSync(manifestFile)) {
+            const parsed = JSON.parse(fsSync.readFileSync(manifestFile, "utf8"));
+            summary =
+              parsed?.result?.summary ||
+              parsed?.result?.operator_message ||
+              parsed?.result?.status ||
+              "";
+          }
+        } catch {}
+        return {
+          jobId,
+          createdAt: stat.mtimeMs,
+          reviewExists: fsSync.existsSync(reviewFile),
+          summary,
+        };
+      })
+      .sort((a, b) => b.createdAt - a.createdAt);
+  }
+
+  async function handleBrandMediaLatestReviewPage(res, o) {
+    const latest = listBrandMediaJobs().find((job) => job.reviewExists);
+    if (!latest) {
+      return html(
+        res,
+        404,
+        "<!doctype html><title>No brand media reviews</title><p>No brand media review jobs were found yet.</p>",
+        o,
+      );
+    }
+    return handleBrandMediaReviewPage(res, o, latest.jobId);
+  }
+
+  async function handleBrandMediaReviewIndex(res, o) {
+    const jobs = listBrandMediaJobs().slice(0, 20);
+    const items = jobs.length
+      ? jobs
+          .map((job) => {
+            const reviewUrl = `/media/brand-assets/job/${encodeURIComponent(job.jobId)}/review`;
+            return `<li style="margin:0 0 16px;">
+  <div><a href="${reviewUrl}">${job.jobId}</a></div>
+  <div style="color:#55748f;font-size:14px;">${new Date(job.createdAt).toLocaleString()}</div>
+  <div style="color:#10243b;">${job.summary || "Review package ready."}</div>
+</li>`;
+          })
+          .join("")
+      : "<li>No brand media review jobs found yet.</li>";
+
+    return html(
+      res,
+      200,
+      `<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Brand Media Reviews</title>
+    <style>
+      body { margin: 0; background: #f3f8fd; color: #10243b; font-family: Arial, Helvetica, sans-serif; }
+      main { width: min(900px, calc(100vw - 36px)); margin: 24px auto; background: #fff; border: 1px solid #d9e7f3; border-radius: 18px; padding: 24px; box-shadow: 0 14px 40px rgba(16, 36, 59, 0.08); }
+      h1 { margin-top: 0; }
+      a { color: #1468b0; font-weight: 700; text-decoration: none; }
+      a:hover { text-decoration: underline; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Local Brand Media Reviews</h1>
+      <p><a href="/media/brand-assets/latest/review">Open latest review</a></p>
+      <ul>${items}</ul>
+    </main>
+  </body>
+</html>`,
+      o,
+    );
+  }
+
   async function handleBrandMediaArtifact(res, o, jobId, fileName) {
     const full = resolveBrandMediaArtifact(jobId, fileName);
     if (!full || !fsSync.existsSync(full)) {
@@ -1152,7 +1260,7 @@ const server = http.createServer(async (req, res) => {
     return json(res, 401, { error: "Unauthorized" }, o);
 
   try {
-    const p = u.pathname;
+    const p = trimRouteNoise(u.pathname);
     const reviewPageMatch = p.match(/^\/browser\/vendor-cart-review\/job\/([^/]+)\/review$/);
     const reviewArtifactMatch = p.match(/^\/browser\/vendor-cart-review\/job\/([^/]+)\/artifact\/([^/]+)$/);
     const reviewResumeMatch = p.match(/^\/browser\/vendor-cart-review\/job\/([^/]+)\/resume\/([^/]+)$/);
@@ -1187,6 +1295,10 @@ const server = http.createServer(async (req, res) => {
       return handleBrowserVendorCartReview(req, res, o);
     if (p === "/media/brand-assets" && req.method === "POST")
       return handleBrandMediaProduction(req, res, o);
+    if (p === "/media/brand-assets/reviews" && req.method === "GET")
+      return handleBrandMediaReviewIndex(res, o);
+    if (p === "/media/brand-assets/latest/review" && req.method === "GET")
+      return handleBrandMediaLatestReviewPage(res, o);
     if (reviewPageMatch && req.method === "GET")
       return handleBrowserVendorReviewPage(res, o, decodeURIComponent(reviewPageMatch[1]));
     if (reviewArtifactMatch && req.method === "GET")

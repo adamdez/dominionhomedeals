@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 import {
   Fragment,
   useState,
@@ -23,6 +25,7 @@ import {
   Users,
   Bot,
 } from "lucide-react";
+import { withAlAppPrefix } from "@/lib/al-app-path";
 import { AuthScreen } from "./AuthScreen";
 import { Sidebar } from "./Sidebar";
 
@@ -122,6 +125,16 @@ interface HostedHealthResponse {
   runtimeTruth?: HostedRuntimeTruth;
 }
 
+interface OperationalProofReport {
+  generatedAt: string;
+  summary: {
+    healthy: number;
+    warning: number;
+    failing: number;
+  };
+  topNextMove: string;
+}
+
 /* ------------------------------------------------------------------ */
 /*  Constants                                                          */
 /* ------------------------------------------------------------------ */
@@ -144,6 +157,17 @@ const ACCEPTED_TYPES = [
 ];
 
 const DEFAULT_BRIDGE_URL = "http://localhost:3141";
+
+function defaultBridgeUrl() {
+  if (typeof window === "undefined") {
+    return DEFAULT_BRIDGE_URL;
+  }
+  const host = window.location.hostname;
+  if (host === "127.0.0.1" || host === "localhost") {
+    return `${window.location.protocol}//${host}:3141`;
+  }
+  return DEFAULT_BRIDGE_URL;
+}
 
 /* ------------------------------------------------------------------ */
 /*  File processing helpers                                            */
@@ -381,7 +405,7 @@ function getGreeting(): string {
 function getBridgeConfig() {
   if (typeof window === "undefined") return { url: DEFAULT_BRIDGE_URL, token: "" };
   return {
-    url: localStorage.getItem("al_bridge_url") || DEFAULT_BRIDGE_URL,
+    url: localStorage.getItem("al_bridge_url") || defaultBridgeUrl(),
     token: localStorage.getItem("al_bridge_token") || "",
   };
 }
@@ -852,6 +876,7 @@ function toContinuationToolResult(
 
 export function ChatApp() {
   /* ── Core state ── */
+  const pathname = usePathname();
   const [authed, setAuthed] = useState<boolean | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
@@ -869,6 +894,7 @@ export function ChatApp() {
   const [bridgeConnected, setBridgeConnected] = useState(false);
   const [bridgeHealth, setBridgeHealth] = useState<BridgeHealthResponse | null>(null);
   const [hostedHealth, setHostedHealth] = useState<HostedHealthResponse | null>(null);
+  const [operationalProof, setOperationalProof] = useState<OperationalProofReport | null>(null);
   const [pendingVaultAction, setPendingVaultAction] = useState<VaultAction | null>(null);
   const [executingVault, setExecutingVault] = useState(false);
 
@@ -932,6 +958,14 @@ export function ChatApp() {
     checkHostedHealth();
   }, []);
 
+  useEffect(() => {
+    if (authed) {
+      checkOperationalProof();
+    } else if (authed === false) {
+      setOperationalProof(null);
+    }
+  }, [authed]);
+
   function checkBridge() {
     const { url, token } = getBridgeConfig();
     const headers: Record<string, string> = {};
@@ -956,6 +990,17 @@ export function ChatApp() {
       })
       .catch(() => {
         setHostedHealth(null);
+      });
+  }
+
+  function checkOperationalProof() {
+    fetch("/api/al/operational-proof", { credentials: "same-origin" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d: { ok?: boolean; report?: OperationalProofReport } | null) => {
+        setOperationalProof(d?.ok && d.report ? d.report : null);
+      })
+      .catch(() => {
+        setOperationalProof(null);
       });
   }
 
@@ -1664,19 +1709,38 @@ export function ChatApp() {
           </div>
           <div className="flex items-center gap-2 flex-shrink-0">
             <div className="hidden items-center gap-2 sm:flex lg:hidden">
-              <a
-                href="/boardroom"
+              <Link
+                href={withAlAppPrefix(pathname, "/operational-proof")}
+                className="rounded-full border border-emerald-500/25 bg-emerald-500/10 px-3 py-1.5 text-xs font-semibold text-emerald-100"
+              >
+                Operational Proof
+              </Link>
+              <Link
+                href={withAlAppPrefix(pathname, "/attention")}
+                className="rounded-full border border-emerald-900/25 bg-[#101714] px-3 py-1.5 text-xs font-semibold text-emerald-100/80"
+              >
+                Attention
+              </Link>
+              <Link
+                href={withAlAppPrefix(pathname, "/boardroom")}
                 className="rounded-full border border-emerald-900/25 bg-[#101714] px-3 py-1.5 text-xs font-semibold text-emerald-100/80"
               >
                 Board Room
-              </a>
-              <a
-                href="/planner"
+              </Link>
+              <Link
+                href={withAlAppPrefix(pathname, "/planner")}
                 className="rounded-full border border-emerald-900/25 bg-[#101714] px-3 py-1.5 text-xs font-semibold text-emerald-100/80"
               >
                 Planner
-              </a>
+              </Link>
             </div>
+            <Link
+              href={withAlAppPrefix(pathname, "/operational-proof")}
+              className="hidden items-center gap-1.5 rounded-full border border-emerald-500/25 bg-emerald-500/10 px-3 py-1.5 text-[10px] font-semibold text-emerald-100 sm:hidden md:inline-flex"
+            >
+              <ShieldCheck className="h-3 w-3" />
+              <span>System Health</span>
+            </Link>
             {bridgeConnected && (
               <div className="flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-2.5 py-1">
                 <FolderOpen className="h-3 w-3 text-emerald-400/60" />
@@ -1711,6 +1775,76 @@ export function ChatApp() {
                 I&apos;ll help you sort what matters, route the work, and keep the next move clear.
                 Measure twice, move once.
               </p>
+              <div className="mt-8 w-full max-w-2xl rounded-3xl border border-emerald-500/18 bg-[#101714] p-5 text-left shadow-[0_18px_60px_rgba(0,0,0,0.22)]">
+                <div className="flex flex-wrap items-start justify-between gap-4">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-[0.22em] text-emerald-300/45">
+                      Operational Proof
+                    </p>
+                    <h3 className="mt-2 text-xl font-semibold text-[#f3faf6]">
+                      Can we trust the loops?
+                    </h3>
+                    <p className="mt-2 max-w-xl text-sm leading-6 text-emerald-100/65">
+                      This is the trust panel for AL. It scores Board Room follow-through, Dominion lead control, WrenchReady day-readiness, OpenClaw ingress, and the attention brief.
+                    </p>
+                  </div>
+                  <Link
+                    href={withAlAppPrefix(pathname, "/operational-proof")}
+                    className="inline-flex items-center gap-2 rounded-2xl bg-emerald-500 px-4 py-3 text-sm font-semibold text-[#05110b] transition hover:bg-emerald-400"
+                  >
+                    <ShieldCheck className="h-4 w-4" />
+                    Open Operational Proof
+                  </Link>
+                </div>
+                <div className="mt-3 flex flex-wrap gap-3">
+                  <Link
+                    href={withAlAppPrefix(pathname, "/wrenchready/day-readiness")}
+                    className="inline-flex items-center gap-2 rounded-2xl border border-emerald-900/25 bg-[#0b110e] px-4 py-3 text-sm font-semibold text-emerald-100 transition hover:border-emerald-500/40"
+                  >
+                    Open Tomorrow Readiness
+                  </Link>
+                  <Link
+                    href={withAlAppPrefix(pathname, "/attention")}
+                    className="inline-flex items-center gap-2 rounded-2xl border border-emerald-900/25 bg-[#0b110e] px-4 py-3 text-sm font-semibold text-emerald-100 transition hover:border-emerald-500/40"
+                  >
+                    Open Attention
+                  </Link>
+                </div>
+                <div className="mt-5 grid gap-3 sm:grid-cols-3">
+                  <div className="rounded-2xl border border-emerald-500/18 bg-[#0b110e] p-4">
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-200/65">
+                      Healthy
+                    </p>
+                    <p className="mt-2 text-3xl font-semibold text-emerald-100">
+                      {operationalProof?.summary.healthy ?? "-"}
+                    </p>
+                  </div>
+                  <div className="rounded-2xl border border-amber-500/18 bg-[#0b110e] p-4">
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-amber-200/70">
+                      Warning
+                    </p>
+                    <p className="mt-2 text-3xl font-semibold text-amber-100">
+                      {operationalProof?.summary.warning ?? "-"}
+                    </p>
+                  </div>
+                  <div className="rounded-2xl border border-red-500/18 bg-[#0b110e] p-4">
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-red-200/70">
+                      Failing
+                    </p>
+                    <p className="mt-2 text-3xl font-semibold text-red-100">
+                      {operationalProof?.summary.failing ?? "-"}
+                    </p>
+                  </div>
+                </div>
+                <div className="mt-4 rounded-2xl border border-emerald-900/20 bg-[#0b110e] p-4">
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-300/45">
+                    Top next move
+                  </p>
+                  <p className="mt-2 text-sm leading-6 text-emerald-100/75">
+                    {operationalProof?.topNextMove || "Checking the control-loop health now."}
+                  </p>
+                </div>
+              </div>
             </div>
           ) : (
             <div className="mx-auto max-w-3xl space-y-4">
@@ -1878,6 +2012,7 @@ export function ChatApp() {
           }}
           bridgeConnected={bridgeConnected}
           onBridgeCheck={checkBridge}
+          hostedRuntimeTruth={hostedHealth?.runtimeTruth || null}
         />
       )}
     </div>
@@ -2275,14 +2410,18 @@ function SettingsModal({
   onClearChat,
   bridgeConnected,
   onBridgeCheck,
+  hostedRuntimeTruth,
 }: {
   onClose: () => void;
   onClearChat: () => void;
   bridgeConnected: boolean;
   onBridgeCheck: () => void;
+  hostedRuntimeTruth: HostedRuntimeTruth | null;
 }) {
   const [bridgeUrl, setBridgeUrl] = useState(
-    () => (typeof window !== "undefined" ? localStorage.getItem("al_bridge_url") : null) || DEFAULT_BRIDGE_URL
+    () =>
+      (typeof window !== "undefined" ? localStorage.getItem("al_bridge_url") : null) ||
+      defaultBridgeUrl()
   );
   const [bridgeToken, setBridgeToken] = useState(
     () => (typeof window !== "undefined" ? localStorage.getItem("al_bridge_token") : null) || ""
@@ -2318,16 +2457,19 @@ function SettingsModal({
               <div>
                 <p className="text-sm font-medium text-[#e2ede8]">Model</p>
                 <p className="mt-0.5 text-xs text-emerald-200/35">
-                  Claude Sonnet 4
+                  OpenAI-first chairman runtime
                 </p>
               </div>
               <div className="flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-2.5 py-1">
                 <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
                 <span className="text-[11px] font-medium text-emerald-400">
-                  Connected
+                  {hostedRuntimeTruth ? "Verified" : "Configured"}
                 </span>
               </div>
             </div>
+            <p className="mt-2 text-[11px] leading-5 text-emerald-200/35">
+              Chairman reasoning is OpenAI-first. Legacy Claude-backed lanes can still exist for specialized fallback work, but they are no longer the primary runtime.
+            </p>
           </div>
 
           {/* Web Search */}

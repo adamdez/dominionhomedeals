@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { recordDominionLeadSubmission } from '@/lib/dominion-leads'
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -360,15 +361,47 @@ export async function POST(request: NextRequest) {
 
     // Send email + SMS + forward to Sentinel CRM in parallel
     // All are best-effort — failures don't block the response
-    await Promise.allSettled([
+    const sideEffects = await Promise.allSettled([
       sendEmailNotification(lead),
       sendSmsNotification(lead),
       forwardToSentinel(lead),
+      recordDominionLeadSubmission({
+        firstName: lead.firstName,
+        lastName: lead.lastName,
+        phone: lead.phone,
+        email: lead.email,
+        address: lead.address,
+        city: lead.city,
+        state: lead.state,
+        zip: lead.zip,
+        condition: lead.condition,
+        timeline: lead.timeline,
+        source: lead.source,
+        landingPage: lead.landingPage,
+        utmSource: lead.utmSource,
+        utmMedium: lead.utmMedium,
+        utmCampaign: lead.utmCampaign,
+        submittedAt: lead.submittedAt,
+      }),
     ])
+
+    const [, , , controlWrite] = sideEffects
+    if (controlWrite?.status === 'rejected') {
+      console.error('[LEAD CONTROL ERROR]', {
+        message:
+          controlWrite.reason instanceof Error
+            ? controlWrite.reason.message
+            : String(controlWrite.reason || 'Unknown Dominion lead control failure.'),
+        submittedAt: lead.submittedAt,
+        seller: `${lead.firstName} ${lead.lastName}`.trim(),
+        property: `${lead.address}, ${lead.city}, ${lead.state} ${lead.zip}`.trim(),
+      })
+    }
 
     return NextResponse.json({
       success: true,
       message: 'Thank you! One of our team members will reach out within 24 hours.',
+      controlRecorded: controlWrite?.status !== 'rejected',
     })
   } catch (err) {
     console.error('[LEAD API ERROR]', err)
