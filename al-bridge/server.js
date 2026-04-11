@@ -50,6 +50,12 @@ const REMOTE_BRIDGE_CLIENT_ID =
   (process.env.REMOTE_BRIDGE_CLIENT_ID || `${require("os").hostname()}-desktop-bridge`).trim();
 
 const homeDir = process.env.USERPROFILE || process.env.HOME || "";
+const CLAUDE_CREDENTIALS_PATH = homeDir
+  ? path.join(homeDir, ".claude", ".credentials.json")
+  : "";
+const EXECUTOR_ENV_PATH = homeDir
+  ? path.join(homeDir, "Desktop", "sentinel ai", "sentinel-executor", ".env")
+  : "";
 const CREW_ROOT_DEFAULT = homeDir
   ? path.join(homeDir, "Desktop", "al boreland-crew")
   : "";
@@ -128,6 +134,82 @@ const IMAGE_MIME = {
 const MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5 MB for images
 
 const MAX_SIZE = 1024 * 1024; // 1 MB
+
+function readEnvSecret(value) {
+  const trimmed = String(value || "").trim();
+  if (
+    (trimmed.startsWith('"') && trimmed.endsWith('"')) ||
+    (trimmed.startsWith("'") && trimmed.endsWith("'"))
+  ) {
+    return trimmed.slice(1, -1).trim();
+  }
+  return trimmed;
+}
+
+function readLocalClaudeAuthHealth() {
+  let apiKeyPresent = false;
+  let oauthPresent = false;
+  let oauthExpired = false;
+  let oauthExpiresAt = null;
+
+  try {
+    if (EXECUTOR_ENV_PATH && fsSync.existsSync(EXECUTOR_ENV_PATH)) {
+      for (const line of fsSync.readFileSync(EXECUTOR_ENV_PATH, "utf8").split("\n")) {
+        const trimmed = line.trim();
+        if (!trimmed || trimmed.startsWith("#")) continue;
+        const eq = trimmed.indexOf("=");
+        if (eq < 1) continue;
+        const key = trimmed.slice(0, eq).trim();
+        if (key !== "ANTHROPIC_API_KEY") continue;
+        apiKeyPresent = Boolean(readEnvSecret(trimmed.slice(eq + 1)));
+        break;
+      }
+    }
+  } catch {}
+
+  try {
+    if (CLAUDE_CREDENTIALS_PATH && fsSync.existsSync(CLAUDE_CREDENTIALS_PATH)) {
+      const parsed = JSON.parse(fsSync.readFileSync(CLAUDE_CREDENTIALS_PATH, "utf8"));
+      const expiresAt = parsed?.claudeAiOauth?.expiresAt;
+      oauthPresent = Boolean(parsed?.claudeAiOauth?.accessToken);
+      oauthExpiresAt =
+        typeof expiresAt === "number" && Number.isFinite(expiresAt)
+          ? new Date(expiresAt).toISOString()
+          : null;
+      oauthExpired =
+        typeof expiresAt === "number" && Number.isFinite(expiresAt)
+          ? expiresAt <= Date.now()
+          : false;
+    }
+  } catch {}
+
+  const configured = apiKeyPresent || oauthPresent;
+  let status = "configured";
+  let detail = "Claude auth is configured on this desktop.";
+
+  if (!configured) {
+    status = "missing";
+    detail = "No Claude OAuth credentials and no Anthropic executor key were found on this desktop.";
+  } else if (oauthPresent && oauthExpired && !apiKeyPresent) {
+    status = "oauth_expired";
+    detail = "Claude desktop OAuth credentials are expired and there is no Anthropic executor key fallback.";
+  } else if (oauthPresent && oauthExpired && apiKeyPresent) {
+    status = "oauth_expired_api_present";
+    detail = "Claude desktop OAuth credentials are expired. The executor is relying on the Anthropic executor key fallback.";
+  } else if (apiKeyPresent && !oauthPresent) {
+    status = "api_key_only";
+    detail = "Claude execution is relying on the Anthropic executor key only.";
+  }
+
+  return {
+    configured,
+    status,
+    detail,
+    oauthExpired,
+    oauthExpiresAt,
+    apiKeyPresent,
+  };
+}
 
 /* ── Path safety ────────────────────────────────────────────── */
 function resolveSafe(rel) {
@@ -445,6 +527,7 @@ let lastRemoteHeartbeatSentAt = 0;
 
 async function buildBridgeStatusSnapshot() {
   const executor = await readExecutorHealth();
+  const localClaudeAuth = readLocalClaudeAuthHealth();
   const hasAsk = Boolean(executor.endpoints["POST /ask"]);
   const hasExecute = Boolean(executor.endpoints["POST /execute"]);
   const coworkProbe =
@@ -462,7 +545,7 @@ async function buildBridgeStatusSnapshot() {
   return {
     executor,
     coworkProbe,
-    claudeAuth: executor.claudeAuth || null,
+    claudeAuth: executor.claudeAuth || localClaudeAuth,
     capabilities: {
       executor_online: executor.online,
       deep_research: executor.online && hasAsk,
@@ -735,6 +818,7 @@ async function handleHealth(res, o) {
     crewRoot: CREW_ROOT || null,
     executor: snapshot.executor,
     coworkProbe: snapshot.coworkProbe,
+    claudeAuth: snapshot.claudeAuth,
     capabilities: snapshot.capabilities,
     browserVendorCartReview: snapshot.browserVendorCartReview,
     brandMediaProduction: snapshot.brandMediaProduction,
