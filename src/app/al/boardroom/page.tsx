@@ -1,11 +1,15 @@
 import Link from "next/link";
 import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { BoardroomQueueActions } from "@/components/al/BoardroomQueueActions";
+import { BoardroomWaitingQueue } from "@/components/al/BoardroomWaitingQueue";
 import {
   buildHostedBoardroomHomePath,
   fetchBoardroomPresentations,
   isAuthenticatedAlSession,
 } from "@/lib/al-review";
+
+export const dynamic = "force-dynamic";
 
 function relativeTimeLabel(value: string | null): string {
   if (!value) return "Time unavailable";
@@ -30,6 +34,35 @@ function ownerTone(value: "AL" | "Dez" | "System" | null) {
   return "border-sky-500/20 bg-sky-500/10 text-sky-100";
 }
 
+function queueMaintenancePriority(input: {
+  waitingOn: string;
+  bucket: "review_now" | "needs_attention" | "local_only";
+  isStale: boolean;
+  updatedAt: string | null;
+}) {
+  const waitingOn = input.waitingOn.toLowerCase();
+  const updatedAt = input.updatedAt ? new Date(input.updatedAt).getTime() : Number.POSITIVE_INFINITY;
+  const waitingRank =
+    waitingOn === "dez review"
+      ? 0
+      : waitingOn === "dez"
+        ? 1
+        : waitingOn === "system repair"
+          ? 2
+          : waitingOn === "dez's machine"
+            ? 3
+            : 4;
+  const bucketRank =
+    input.bucket === "needs_attention" ? 0 : input.bucket === "local_only" ? 1 : 2;
+
+  return [
+    input.isStale ? 0 : 1,
+    waitingRank,
+    bucketRank,
+    updatedAt,
+  ] as const;
+}
+
 export default async function AlBoardroomIndexPage() {
   const cookieStore = await cookies();
   if (!isAuthenticatedAlSession(cookieStore.get("al_session")?.value)) {
@@ -38,9 +71,37 @@ export default async function AlBoardroomIndexPage() {
 
   const host = (await headers()).get("host");
   const presentations = await fetchBoardroomPresentations(host, 12);
+  const queueMaintenanceItems = presentations
+    .filter(
+      (presentation) =>
+        presentation.waitingOn === "Dez review" ||
+        presentation.waitingOn === "Dez" ||
+        presentation.bucket === "needs_attention" ||
+        presentation.bucket === "local_only",
+    )
+    .sort((left, right) => {
+      const leftPriority = queueMaintenancePriority(left);
+      const rightPriority = queueMaintenancePriority(right);
+      for (let index = 0; index < leftPriority.length; index += 1) {
+        if (leftPriority[index] !== rightPriority[index]) {
+          return leftPriority[index] - rightPriority[index];
+        }
+      }
+      return right.id - left.id;
+    });
+  const queueMaintenanceIds = new Set(queueMaintenanceItems.map((presentation) => presentation.id));
   const reviewNow = presentations.filter((presentation) => presentation.bucket === "review_now");
-  const needsAttention = presentations.filter((presentation) => presentation.bucket === "needs_attention");
-  const localOnly = presentations.filter((presentation) => presentation.bucket === "local_only");
+  const reviewNowRemaining = reviewNow.filter(
+    (presentation) => !queueMaintenanceIds.has(presentation.id),
+  );
+  const needsAttention = presentations.filter(
+    (presentation) =>
+      presentation.bucket === "needs_attention" && !queueMaintenanceIds.has(presentation.id),
+  );
+  const localOnly = presentations.filter(
+    (presentation) =>
+      presentation.bucket === "local_only" && !queueMaintenanceIds.has(presentation.id),
+  );
   const homePath = buildHostedBoardroomHomePath(host);
 
   function renderPresentationCards(items: typeof presentations) {
@@ -116,13 +177,11 @@ export default async function AlBoardroomIndexPage() {
               <p className="text-xs uppercase tracking-[0.18em] text-emerald-300/35">
                 Updated {relativeTimeLabel(presentation.updatedAt)}
               </p>
-              <Link
-                href={presentation.boardroomPath}
-                className="rounded-2xl bg-emerald-500 px-4 py-3 text-sm font-semibold text-[#05110b] transition hover:bg-emerald-400"
-              >
-                Open presentation
-              </Link>
             </div>
+            <BoardroomQueueActions
+              jobId={presentation.id}
+              boardroomPath={presentation.boardroomPath}
+            />
           </article>
         ))}
       </div>
@@ -175,6 +234,30 @@ export default async function AlBoardroomIndexPage() {
             </div>
           ) : (
             <div className="mt-6 space-y-8">
+              {queueMaintenanceItems.length > 0 ? (
+                <div>
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-amber-300/55">
+                        Queue maintenance
+                      </p>
+                      <h3 className="mt-2 text-xl font-semibold text-[#f3faf6]">
+                        Fast bulk controls
+                      </h3>
+                    </div>
+                    <span className="rounded-full border border-amber-500/20 bg-amber-500/10 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.15em] text-amber-100">
+                      {queueMaintenanceItems.length}
+                    </span>
+                  </div>
+                  <div className="mt-4 rounded-2xl border border-amber-900/20 bg-[#0b110e] p-5 text-sm leading-6 text-emerald-100/70">
+                    Close, reject, or delete the packages most likely to need cleanup without opening each presentation first. Delete removes the package from the live queue but keeps the audit trail intact.
+                  </div>
+                  <div className="mt-4">
+                    <BoardroomWaitingQueue items={queueMaintenanceItems} />
+                  </div>
+                </div>
+              ) : null}
+
               <div>
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div>
@@ -186,10 +269,10 @@ export default async function AlBoardroomIndexPage() {
                     </h3>
                   </div>
                   <span className="rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.15em] text-emerald-200">
-                    {reviewNow.length}
+                    {reviewNowRemaining.length}
                   </span>
                 </div>
-                {reviewNow.length > 0 ? renderPresentationCards(reviewNow) : (
+                {reviewNowRemaining.length > 0 ? renderPresentationCards(reviewNowRemaining) : (
                   <div className="mt-4 rounded-2xl border border-emerald-900/20 bg-[#0b110e] p-5 text-sm leading-6 text-emerald-100/70">
                     Nothing is fully review-ready right now.
                   </div>

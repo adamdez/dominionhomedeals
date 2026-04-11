@@ -9,7 +9,9 @@ export type ReviewState =
   | "approved_for_checkout"
   | "resume_local_session_required"
   | "blocked_vendor_session"
-  | "presentation_closed";
+  | "presentation_closed"
+  | "presentation_rejected"
+  | "presentation_deleted";
 
 export type ReviewDecisionAction =
   | "approved_for_checkout"
@@ -17,7 +19,15 @@ export type ReviewDecisionAction =
   | "resume_local_session_required"
   | "blocked_vendor_session"
   | "select_alternative_option"
-  | "close_presentation";
+  | "close_presentation"
+  | "reject_presentation"
+  | "delete_presentation";
+
+const TERMINAL_REVIEW_STATES = new Set<ReviewState>([
+  "presentation_closed",
+  "presentation_rejected",
+  "presentation_deleted",
+]);
 
 export interface ReviewArtifactUploadInput {
   dataUrl: string;
@@ -93,10 +103,16 @@ export function normalizeReviewState(value: unknown): ReviewState {
     case "blocked_vendor_session":
     case "cart_ready_for_review":
     case "presentation_closed":
+    case "presentation_rejected":
+    case "presentation_deleted":
       return value as ReviewState;
     default:
       return "cart_ready_for_review";
   }
+}
+
+export function isTerminalReviewState(value: unknown): boolean {
+  return TERMINAL_REVIEW_STATES.has(normalizeReviewState(value));
 }
 
 export function buildHostedAppPrefix(host: string | null | undefined): string {
@@ -330,7 +346,7 @@ export async function fetchBoardroomPresentations(
           return null;
         }
 
-        if (normalizeReviewState(context.review_state) === "presentation_closed") {
+        if (isTerminalReviewState(context.review_state)) {
           return null;
         }
 
@@ -560,6 +576,10 @@ export function reviewActionToState(action: ReviewDecisionAction): ReviewState {
       return "blocked_vendor_session";
     case "close_presentation":
       return "presentation_closed";
+    case "reject_presentation":
+      return "presentation_rejected";
+    case "delete_presentation":
+      return "presentation_deleted";
     case "changes_requested":
     case "select_alternative_option":
     default:

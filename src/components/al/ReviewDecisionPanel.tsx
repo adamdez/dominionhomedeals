@@ -35,9 +35,21 @@ function humanizeState(value: string): string {
       return "ready for review";
     case "presentation_closed":
       return "closed";
+    case "presentation_rejected":
+      return "rejected";
+    case "presentation_deleted":
+      return "removed";
     default:
       return value.replace(/_/g, " ");
   }
+}
+
+function isTerminalState(value: string): boolean {
+  return (
+    value === "presentation_closed" ||
+    value === "presentation_rejected" ||
+    value === "presentation_deleted"
+  );
 }
 
 export function ReviewDecisionPanel({
@@ -65,6 +77,8 @@ export function ReviewDecisionPanel({
             resume: "Resume local cart",
             blocked: "Mark cart blocked",
             close: "Close presentation",
+            reject: "Reject package",
+            remove: "Delete from Board Room",
             alternate: "Pick this alternate",
             note: "Optional operator note",
             notePlaceholder: "Add a quick instruction only if the team needs one.",
@@ -76,6 +90,8 @@ export function ReviewDecisionPanel({
               resume: "Mark fixed / resume",
               blocked: "Keep blocked",
               close: "Close presentation",
+              reject: "Reject package",
+              remove: "Delete from Board Room",
               alternate: "Choose this alternate",
               note: "Blocked-item note",
               notePlaceholder: "Add the exact fix needed or who owns it.",
@@ -86,6 +102,8 @@ export function ReviewDecisionPanel({
             resume: "Resume execution",
             blocked: "Mark blocked",
             close: "Close presentation",
+            reject: "Reject package",
+            remove: "Delete from Board Room",
             alternate: "Choose this alternate",
             note: "Optional note for AL",
             notePlaceholder: "Add a short change request, approval note, or blocker.",
@@ -98,7 +116,10 @@ export function ReviewDecisionPanel({
   const showBlocked = true;
   const showResume = true;
   const showClose = true;
+  const showReject = true;
+  const showRemove = true;
   const showAlternatives = alternatives.length > 0 && mode !== "generic_blocked";
+  const terminalState = isTerminalState(reviewState);
 
   async function submitDecision(action: string) {
     setSaving(true);
@@ -165,60 +186,91 @@ export function ReviewDecisionPanel({
         </div>
       </div>
 
-      <div className="mt-5 grid grid-cols-2 gap-3 sm:flex sm:flex-wrap">
-        {showApprove ? (
-          <button
-            type="button"
-            onClick={() => submitDecision("approved_for_checkout")}
-            disabled={saving}
-            className="rounded-2xl bg-emerald-500 px-4 py-3.5 text-sm font-semibold text-[#05110b] transition hover:bg-emerald-400 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {actionLabels.approve}
-          </button>
-        ) : null}
-        {showChanges ? (
-          <button
-            type="button"
-            onClick={() => submitDecision("changes_requested")}
-            disabled={saving}
-            className="rounded-2xl border border-emerald-800/40 bg-[#0b110e] px-4 py-3.5 text-sm font-semibold text-emerald-100 transition hover:border-emerald-500/45 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {actionLabels.changes}
-          </button>
-        ) : null}
-        {showBlocked ? (
-          <button
-            type="button"
-            onClick={() => submitDecision("blocked_vendor_session")}
-            disabled={saving}
-            className="rounded-2xl border border-red-500/30 bg-red-500/10 px-4 py-3.5 text-sm font-semibold text-red-200 transition hover:bg-red-500/15 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {actionLabels.blocked}
-          </button>
-        ) : null}
-        {showResume ? (
-          <button
-            type="button"
-            onClick={() => submitDecision("resume_local_session_required")}
-            disabled={saving}
-            className="rounded-2xl border border-emerald-800/40 bg-[#0b110e] px-4 py-3.5 text-sm font-semibold text-emerald-100 transition hover:border-emerald-500/45 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {actionLabels.resume}
-          </button>
-        ) : null}
-        {showClose ? (
-          <button
-            type="button"
-            onClick={() => submitDecision("close_presentation")}
-            disabled={saving}
-            className="col-span-2 rounded-2xl border border-slate-600/40 bg-slate-500/10 px-4 py-3.5 text-sm font-semibold text-slate-200 transition hover:bg-slate-500/15 disabled:cursor-not-allowed disabled:opacity-60 sm:col-auto"
-          >
-            {actionLabels.close}
-          </button>
-        ) : null}
-      </div>
+      {terminalState ? (
+        <div className="mt-5 rounded-2xl border border-slate-500/20 bg-slate-500/10 p-4">
+          <p className="text-sm font-semibold text-slate-100">
+            This presentation is no longer active in the Board Room queue.
+          </p>
+          <p className="mt-2 text-sm leading-6 text-slate-200/75">
+            Approvals and change requests are locked once an item has been closed, rejected, or removed.
+          </p>
+        </div>
+      ) : (
+        <div className="mt-5 grid grid-cols-2 gap-3 sm:flex sm:flex-wrap">
+          {showApprove ? (
+            <button
+              type="button"
+              onClick={() => submitDecision("approved_for_checkout")}
+              disabled={saving}
+              className="rounded-2xl bg-emerald-500 px-4 py-3.5 text-sm font-semibold text-[#05110b] transition hover:bg-emerald-400 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {actionLabels.approve}
+            </button>
+          ) : null}
+          {showChanges ? (
+            <button
+              type="button"
+              onClick={() => submitDecision("changes_requested")}
+              disabled={saving}
+              className="rounded-2xl border border-emerald-800/40 bg-[#0b110e] px-4 py-3.5 text-sm font-semibold text-emerald-100 transition hover:border-emerald-500/45 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {actionLabels.changes}
+            </button>
+          ) : null}
+          {showBlocked ? (
+            <button
+              type="button"
+              onClick={() => submitDecision("blocked_vendor_session")}
+              disabled={saving}
+              className="rounded-2xl border border-red-500/30 bg-red-500/10 px-4 py-3.5 text-sm font-semibold text-red-200 transition hover:bg-red-500/15 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {actionLabels.blocked}
+            </button>
+          ) : null}
+          {showResume ? (
+            <button
+              type="button"
+              onClick={() => submitDecision("resume_local_session_required")}
+              disabled={saving}
+              className="rounded-2xl border border-emerald-800/40 bg-[#0b110e] px-4 py-3.5 text-sm font-semibold text-emerald-100 transition hover:border-emerald-500/45 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {actionLabels.resume}
+            </button>
+          ) : null}
+          {showClose ? (
+            <button
+              type="button"
+              onClick={() => submitDecision("close_presentation")}
+              disabled={saving}
+              className="col-span-2 rounded-2xl border border-slate-600/40 bg-slate-500/10 px-4 py-3.5 text-sm font-semibold text-slate-200 transition hover:bg-slate-500/15 disabled:cursor-not-allowed disabled:opacity-60 sm:col-auto"
+            >
+              {actionLabels.close}
+            </button>
+          ) : null}
+          {showReject ? (
+            <button
+              type="button"
+              onClick={() => submitDecision("reject_presentation")}
+              disabled={saving}
+              className="rounded-2xl border border-amber-500/30 bg-amber-500/10 px-4 py-3.5 text-sm font-semibold text-amber-100 transition hover:bg-amber-500/15 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {actionLabels.reject}
+            </button>
+          ) : null}
+          {showRemove ? (
+            <button
+              type="button"
+              onClick={() => submitDecision("delete_presentation")}
+              disabled={saving}
+              className="rounded-2xl border border-red-500/30 bg-red-500/10 px-4 py-3.5 text-sm font-semibold text-red-100 transition hover:bg-red-500/15 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {actionLabels.remove}
+            </button>
+          ) : null}
+        </div>
+      )}
 
-      {showAlternatives ? (
+      {showAlternatives && !terminalState ? (
         <div className="mt-6 rounded-2xl border border-emerald-900/20 bg-[#0b110e] p-4">
           <p className="text-sm font-semibold text-emerald-100">Alternate option</p>
           <div className="mt-3 flex flex-wrap gap-3">
@@ -245,16 +297,18 @@ export function ReviewDecisionPanel({
         </div>
       ) : null}
 
-      <label className="mt-6 block text-sm font-medium text-emerald-100/85">
-        {actionLabels.note}
-        <textarea
-          value={note}
-          onChange={(event) => setNote(event.target.value)}
-          rows={2}
-          placeholder={actionLabels.notePlaceholder}
-          className="mt-2 w-full rounded-2xl border border-emerald-900/25 bg-[#0b110e] px-4 py-3 text-sm text-[#eaf4ef] outline-none transition focus:border-emerald-500/50"
-        />
-      </label>
+      {!terminalState ? (
+        <label className="mt-6 block text-sm font-medium text-emerald-100/85">
+          {actionLabels.note}
+          <textarea
+            value={note}
+            onChange={(event) => setNote(event.target.value)}
+            rows={2}
+            placeholder={actionLabels.notePlaceholder}
+            className="mt-2 w-full rounded-2xl border border-emerald-900/25 bg-[#0b110e] px-4 py-3 text-sm text-[#eaf4ef] outline-none transition focus:border-emerald-500/50"
+          />
+        </label>
+      ) : null}
 
       {followUp ? (
         <div className="mt-6 rounded-2xl border border-sky-500/25 bg-sky-500/10 p-4">
