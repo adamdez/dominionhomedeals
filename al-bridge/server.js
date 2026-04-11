@@ -651,7 +651,15 @@ async function probeCoworkExecutionHealth(force = false) {
       data && typeof data === "object"
         ? String(data.output || data.result || data.error || "")
         : "";
-    const normalized = raw.toLowerCase();
+    let detail = raw;
+    try {
+      const parsed = JSON.parse(raw);
+      if (parsed && typeof parsed === "object") {
+        detail =
+          String(parsed.error || parsed.result || parsed.output || raw);
+      }
+    } catch {}
+    const normalized = detail.toLowerCase();
     const authFailure =
       normalized.includes("invalid api key") ||
       normalized.includes("fix external api key");
@@ -675,14 +683,14 @@ async function probeCoworkExecutionHealth(force = false) {
               ? "credit_blocked"
               : `probe_failed_http_${execRes.status}`,
           detail:
-            raw ||
+            detail ||
             `Cowork execute probe failed with HTTP ${execRes.status}.`,
         }
       : {
           checkedAt: now,
           ok: true,
           status: "ready",
-          detail: raw || "Cowork execute probe succeeded.",
+          detail: detail || "Cowork execute probe succeeded.",
         };
   } catch (err) {
     coworkHealthCache = {
@@ -1319,7 +1327,10 @@ const server = http.createServer(async (req, res) => {
     const workspace = codexWorkspaceForCoworkDomain(domain);
     const codexRes = await fetch(`http://127.0.0.1:${PORT}/codex/exec`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        ...bridgeAuthHeaders(),
+      },
       body: JSON.stringify({
         task,
         workspace,

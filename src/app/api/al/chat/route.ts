@@ -252,6 +252,13 @@ For website_brand_media_production:
 - If blocked, name the exact missing component: media lane access, repo execution access, or browser review access.
 - Do not claim the website update is complete without a reviewable browser surface.
 
+LOCAL CODING EXECUTION RULE:
+If the user needs local coding, refactors, file edits, implementation work, or repo-level execution on Dez's machine, prefer codex_task first.
+For local coding execution:
+- Treat codex_task as the primary local OpenAI-native coding lane.
+- Use cowork_task only as a secondary legacy backup when Codex is not the right fit or when a specific Claude-only local behavior is required.
+- If cowork_task is degraded by auth or credit issues, say that plainly and keep work moving through Codex when possible.
+
 LOCAL PDF TASK RULE:
 If the user asks to merge, combine, or assemble existing local PDF files into one printable packet, prefer the local_pdf_merge bridge lane first.
 For local_pdf_merge:
@@ -588,7 +595,7 @@ const SERVER_TOOLS: Anthropic.Tool[] = [
   {
     name: "cowork_task",
     description:
-      "Legacy local execution lane backed by the older Claude executor on Dez's machine. Use only when a true local file or code task cannot be handled by a dedicated local bridge tool and when Cursor cloud execution is not the better fit. Domains: 'dominionhomedeals' (default), canonical WrenchReady website target 'wrenchreadymobile-com' with legacy executor alias 'wrench-ready', and 'sentinel'. This is not the preferred lane for local PDF/document assembly.",
+      "Legacy local execution lane backed by the older Claude executor on Dez's machine. Use only when codex_task is not the better local fit and when a true local file or code task cannot be handled by a dedicated bridge tool. Domains: 'dominionhomedeals' (default), canonical WrenchReady website target 'wrenchreadymobile-com' with legacy executor alias 'wrench-ready', and 'sentinel'. This is a secondary backup lane and not the preferred lane for local PDF/document assembly.",
     input_schema: {
       type: "object" as const,
       properties: {
