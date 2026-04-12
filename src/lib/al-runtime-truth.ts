@@ -82,18 +82,20 @@ export async function buildHostedRuntimeTruth(): Promise<HostedRuntimeTruth> {
       ? remoteBridgeHeartbeatAgeMinutes <= 5
       : false;
   const remoteClaudeAuth = remoteBridgeHeartbeat?.claudeAuth || null;
+  const remoteCoworkHealthy = remoteBridgeHeartbeat?.coworkProbe?.ok === true;
   const remoteCoworkStatus = remoteBridgeHeartbeat?.coworkProbe?.status || null;
   const remoteCoworkDetail = remoteBridgeHeartbeat?.coworkProbe?.detail?.trim() || null;
   const remoteCoworkNeedsAuthRefresh =
-    remoteClaudeAuth?.oauthExpired === true ||
-    remoteClaudeAuth?.status === "oauth_expired" ||
-    remoteClaudeAuth?.status === "oauth_expired_api_present" ||
-    remoteCoworkStatus === "auth_invalid" ||
-    (remoteCoworkDetail
-      ? /invalid api key|invalid authentication credentials|refresh claude login/i.test(
-          remoteCoworkDetail,
-        )
-      : false);
+    !remoteCoworkHealthy &&
+    (remoteClaudeAuth?.oauthExpired === true ||
+      remoteClaudeAuth?.status === "oauth_expired" ||
+      remoteClaudeAuth?.status === "oauth_expired_api_present" ||
+      remoteCoworkStatus === "auth_invalid" ||
+      (remoteCoworkDetail
+        ? /invalid api key|invalid authentication credentials|refresh claude login/i.test(
+            remoteCoworkDetail,
+          )
+        : false));
 
   checks.reasoning_openai = {
     ok: Boolean(openAiKey),
@@ -187,7 +189,7 @@ export async function buildHostedRuntimeTruth(): Promise<HostedRuntimeTruth> {
         ? "blocked"
         : remoteBridgeHeartbeatFresh &&
             remoteBridgeHeartbeat?.capabilities?.codex_execution === true &&
-            remoteBridgeHeartbeat?.coworkProbe?.ok === true
+            remoteCoworkHealthy
           ? "live"
           : "degraded",
       primaryMode: "hosted",
@@ -197,7 +199,7 @@ export async function buildHostedRuntimeTruth(): Promise<HostedRuntimeTruth> {
         : !remoteBridgeHeartbeat
           ? "Hosted AL can queue desktop work, but no bridge heartbeat has been observed yet."
           : remoteBridgeHeartbeatFresh
-            ? `Desktop relay heartbeat is fresh (${remoteBridgeHeartbeatAgeMinutes}m ago); Codex is ${remoteBridgeHeartbeat.capabilities?.codex_execution === true ? "live" : "degraded"} and Claude cowork is ${remoteBridgeHeartbeat.coworkProbe?.ok === true ? "live" : remoteCoworkNeedsAuthRefresh ? `blocked by auth (${remoteClaudeAuth?.detail || remoteCoworkDetail || remoteCoworkStatus || "unknown"})` : "degraded"}.`
+            ? `Desktop relay heartbeat is fresh (${remoteBridgeHeartbeatAgeMinutes}m ago); Codex is ${remoteBridgeHeartbeat.capabilities?.codex_execution === true ? "live" : "degraded"} and Claude cowork is ${remoteCoworkHealthy ? "live" : remoteCoworkNeedsAuthRefresh ? `blocked by auth (${remoteClaudeAuth?.detail || remoteCoworkDetail || remoteCoworkStatus || "unknown"})` : "degraded"}.`
             : `Desktop relay heartbeat is stale (${remoteBridgeHeartbeatAgeMinutes}m ago), so off-machine desktop work is not trustworthy right now.`,
       nextAction: remoteBridgeSecret
         ? remoteBridgeHeartbeatFresh

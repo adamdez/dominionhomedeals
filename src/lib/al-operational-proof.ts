@@ -204,15 +204,16 @@ export async function buildOperationalProofReport(input?: {
   const relayCoworkStatus = remoteBridgeHeartbeat?.coworkProbe?.status || null;
   const relayCoworkDetail = remoteBridgeHeartbeat?.coworkProbe?.detail?.trim() || null;
   const relayCoworkNeedsAuthRefresh =
-    relayClaudeAuth?.oauthExpired === true ||
-    relayClaudeAuth?.status === "oauth_expired" ||
-    relayClaudeAuth?.status === "oauth_expired_api_present" ||
-    relayCoworkStatus === "auth_invalid" ||
-    (relayCoworkDetail
-      ? /invalid api key|invalid authentication credentials|refresh claude login/i.test(
-          relayCoworkDetail,
-        )
-      : false);
+    !relayCoworkHealthy &&
+    (relayClaudeAuth?.oauthExpired === true ||
+      relayClaudeAuth?.status === "oauth_expired" ||
+      relayClaudeAuth?.status === "oauth_expired_api_present" ||
+      relayCoworkStatus === "auth_invalid" ||
+      (relayCoworkDetail
+        ? /invalid api key|invalid authentication credentials|refresh claude login/i.test(
+            relayCoworkDetail,
+          )
+        : false));
   const relayCheck: OperationalProofCheck = {
     id: "desktop_relay",
     title: "Desktop relay",
