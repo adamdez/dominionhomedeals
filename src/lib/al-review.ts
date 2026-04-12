@@ -157,6 +157,10 @@ export function buildHostedLaborLanesPath(host: string | null | undefined): stri
   return `${buildHostedAppPrefix(host)}/labor-lanes`;
 }
 
+export function buildHostedInboxPath(host: string | null | undefined): string {
+  return `${buildHostedAppPrefix(host)}/inbox`;
+}
+
 export function buildHostedReviewUrl(
   origin: string,
   host: string | null | undefined,

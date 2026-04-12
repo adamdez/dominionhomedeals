@@ -15,6 +15,7 @@ import {
   Users,
   Building2,
   Wrench,
+  BookUp,
   Receipt,
   Heart,
   Bot,
@@ -296,6 +297,17 @@ export function Sidebar({
                 onClick={onClose}
               >
                 <span>Board Room</span>
+                <span className="text-xs uppercase tracking-[0.18em] text-amber-300/55">Open</span>
+              </Link>
+              <Link
+                href={withAlAppPrefix(pathname, "/inbox")}
+                className="al-shop-card flex items-center justify-between rounded-xl px-3 py-3 text-sm font-semibold text-[#f2f6f3] transition hover:border-amber-400/35 hover:bg-amber-500/5 active:scale-[0.99]"
+                onClick={onClose}
+              >
+                <span className="flex items-center gap-2">
+                  <BookUp className="h-4 w-4 text-emerald-400/65" />
+                  Inbox
+                </span>
                 <span className="text-xs uppercase tracking-[0.18em] text-amber-300/55">Open</span>
               </Link>
               <Link

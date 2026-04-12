@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   Activity,
+  BookUp,
   Building2,
   CalendarDays,
   LayoutPanelTop,
@@ -16,6 +17,7 @@ import { withAlAppPrefix } from "@/lib/al-app-path";
 
 const sectionLinks = [
   { href: "/", label: "Command Center", icon: MessageCircle, note: "Talk to AL" },
+  { href: "/inbox", label: "Inbox", icon: BookUp, note: "Queue asks without blocking chat" },
   { href: "/attention", label: "Attention", icon: Activity, note: "What needs action" },
   { href: "/operational-proof", label: "Operational Proof", icon: ShieldCheck, note: "Are the loops healthy?" },
   { href: "/labor-lanes", label: "Labor Lanes", icon: Receipt, note: "Can AL replace labor here?" },

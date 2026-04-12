@@ -200,6 +200,22 @@ interface LaborLaneReport {
   };
 }
 
+interface InboxItemRecord {
+  id: number;
+  title: string;
+  body: string;
+  status: "queued" | "running" | "done" | "blocked" | "cancelled";
+  business: "dominion" | "wrenchready" | "cross-business" | "general";
+  lane: "chairman" | "ceo" | "creative" | "systems" | "research" | "follow-through";
+  createdBy: string;
+  source: string;
+  startedAt: string | null;
+  completedAt: string | null;
+  lastError: string | null;
+  createdAt: string | null;
+  updatedAt: string | null;
+}
+
 /* ------------------------------------------------------------------ */
 /*  Constants                                                          */
 /* ------------------------------------------------------------------ */
@@ -1101,6 +1117,7 @@ export function ChatApp() {
   const [operationalProof, setOperationalProof] = useState<OperationalProofReport | null>(null);
   const [dashboardSummary, setDashboardSummary] = useState<DashboardSummary | null>(null);
   const [laborLanes, setLaborLanes] = useState<LaborLaneReport | null>(null);
+  const [inboxItems, setInboxItems] = useState<InboxItemRecord[]>([]);
   const [pendingVaultAction, setPendingVaultAction] = useState<VaultAction | null>(null);
   const [executingVault, setExecutingVault] = useState(false);
 
@@ -1115,6 +1132,8 @@ export function ChatApp() {
   const activeAlIdRef = useRef<string | null>(null);
   const accumulatedRef = useRef("");
   const originalRequestRef = useRef<Record<string, unknown> | null>(null);
+  const drainingInboxIdRef = useRef<number | null>(null);
+  const activeInboxItemIdRef = useRef<number | null>(null);
 
   messagesRef.current = messages;
   pendingRef.current = pendingFiles;
@@ -1169,10 +1188,12 @@ export function ChatApp() {
       checkOperationalProof();
       checkDashboardSummary();
       checkLaborLanes();
+      checkInbox();
     } else if (authed === false) {
       setOperationalProof(null);
       setDashboardSummary(null);
       setLaborLanes(null);
+      setInboxItems([]);
     }
   }, [authed]);
 
@@ -1235,6 +1256,126 @@ export function ChatApp() {
         setLaborLanes(null);
       });
   }
+
+  function checkInbox() {
+    fetch("/api/al/inbox", { credentials: "same-origin" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d: { ok?: boolean; items?: InboxItemRecord[] } | null) => {
+        setInboxItems(d?.ok && Array.isArray(d.items) ? d.items : []);
+      })
+      .catch(() => {
+        setInboxItems([]);
+      });
+  }
+
+  async function updateInboxStatus(
+    id: number,
+    updates: Partial<Pick<InboxItemRecord, "status" | "startedAt" | "completedAt" | "lastError">>,
+  ) {
+    const response = await fetch(`/api/al/inbox/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      credentials: "same-origin",
+      body: JSON.stringify(updates),
+    });
+    const payload = (await response.json()) as {
+      ok?: boolean;
+      item?: InboxItemRecord;
+      error?: string;
+    };
+    if (!response.ok || !payload.ok || !payload.item) {
+      throw new Error(payload.error || "Could not update inbox item.");
+    }
+    setInboxItems((prev) =>
+      prev.map((item) => (item.id === id ? payload.item! : item)),
+    );
+    return payload.item;
+  }
+
+  async function finalizeActiveInboxItem(
+    status: "done" | "blocked" | "cancelled",
+    lastError?: string | null,
+  ) {
+    const inboxId = activeInboxItemIdRef.current;
+    if (!inboxId) return;
+    activeInboxItemIdRef.current = null;
+    drainingInboxIdRef.current = null;
+    try {
+      await updateInboxStatus(inboxId, {
+        status,
+        lastError: lastError ?? null,
+        completedAt:
+          status === "done" || status === "cancelled"
+            ? new Date().toISOString()
+            : null,
+      });
+    } catch {
+      checkInbox();
+    }
+  }
+
+  async function queueAsk(text: string) {
+    const trimmed = text.trim();
+    if (!trimmed) return null;
+
+    const response = await fetch("/api/al/inbox", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "same-origin",
+      body: JSON.stringify({
+        body: trimmed,
+        createdBy: "Dez",
+        source: "chat_busy_queue",
+      }),
+    });
+    const payload = (await response.json()) as {
+      ok?: boolean;
+      item?: InboxItemRecord;
+      error?: string;
+    };
+    if (!response.ok || !payload.ok || !payload.item) {
+      throw new Error(payload.error || "Could not queue ask.");
+    }
+
+    setInboxItems((prev) => [payload.item!, ...prev.filter((item) => item.id !== payload.item!.id)]);
+    setMessages((prev) => [
+      ...prev,
+      {
+        id: crypto.randomUUID(),
+        role: "al",
+        content: `Queued in AL Inbox: ${payload.item!.title}\n\nI’ll keep the current lane moving and come back to this ask next.`,
+        timestamp: Date.now(),
+      },
+    ]);
+    return payload.item;
+  }
+
+  useEffect(() => {
+    const isBusy = loading || executingVault || !!pendingVaultAction;
+    if (!authed || isBusy || drainingInboxIdRef.current) return;
+
+    const nextQueued = inboxItems.find((item) => item.status === "queued");
+    if (!nextQueued) return;
+
+    drainingInboxIdRef.current = nextQueued.id;
+    activeInboxItemIdRef.current = nextQueued.id;
+
+    void (async () => {
+      try {
+        await updateInboxStatus(nextQueued.id, {
+          status: "running",
+          startedAt: new Date().toISOString(),
+          lastError: null,
+        });
+        await runConversationTurn(nextQueued.body);
+      } catch (error) {
+        await finalizeActiveInboxItem(
+          "blocked",
+          error instanceof Error ? error.message : "Queued ask could not start.",
+        );
+      }
+    })();
+  }, [authed, inboxItems, loading, executingVault, pendingVaultAction]);
 
   /* ── File handling ── */
 
@@ -1371,13 +1512,12 @@ export function ChatApp() {
     return { accumulated, vaultAction };
   }
 
-  /* ── Send message ── */
+  /* ── Send / queue message ── */
 
-  const sendMessage = useCallback(
+  const runConversationTurn = useCallback(
     async (text: string) => {
       const files = pendingRef.current;
-      if (!text.trim() && files.length === 0) return;
-      if (loading) return;
+      if (!text.trim() && files.length === 0) return "completed" as const;
 
       setPendingFiles([]);
       setInput("");
@@ -1454,12 +1594,25 @@ export function ChatApp() {
           );
           if (needsApproval) {
             setPendingVaultAction(vaultAction);
+            if (activeInboxItemIdRef.current) {
+              setMessages((prev) => [
+                ...prev,
+                {
+                  id: crypto.randomUUID(),
+                  role: "al",
+                  content:
+                    "This queued ask needs manual approval before AL can keep moving it. I’m holding it in front of you instead of pretending it finished.",
+                  timestamp: Date.now(),
+                },
+              ]);
+            }
+            return "pending_approval" as const;
           } else {
             // Execute immediately, no permission dialog
             await autoExecuteVaultAction(vaultAction, alId);
           }
           vaultActionReceived = true;
-          return;
+          return "completed" as const;
         }
 
         setSearchQuery(null);
@@ -1472,6 +1625,10 @@ export function ChatApp() {
               : m
           )
         );
+        if (activeInboxItemIdRef.current) {
+          await finalizeActiveInboxItem("done");
+        }
+        return "completed" as const;
       } catch (err: unknown) {
         const isAbort = err instanceof Error && err.name === "AbortError";
         if (!isAbort) {
@@ -1486,13 +1643,66 @@ export function ChatApp() {
                 : m
             )
           );
+          if (activeInboxItemIdRef.current) {
+            await finalizeActiveInboxItem(
+              "blocked",
+              err instanceof Error ? err.message : "Failed to reach AL.",
+            );
+          }
         }
+        return "completed" as const;
       } finally {
         abortRef.current = null;
         if (!vaultActionReceived) setLoading(false);
       }
     },
-    [loading, bridgeConnected, bridgeHealth]
+    [bridgeConnected, bridgeHealth]
+  );
+
+  const sendMessage = useCallback(
+    async (text: string) => {
+      const files = pendingRef.current;
+      if (!text.trim() && files.length === 0) return;
+
+      const isBusy = loading || executingVault || !!pendingVaultAction;
+      if (isBusy) {
+        if (files.length > 0) {
+          setMessages((prev) => [
+            ...prev,
+            {
+              id: crypto.randomUUID(),
+              role: "al",
+              content:
+                "I can queue text asks while another lane is running, but file-backed asks still need a clear lane first. Let the current turn finish, then send the files.",
+              timestamp: Date.now(),
+            },
+          ]);
+          return;
+        }
+        setInput("");
+        if (inputRef.current) inputRef.current.style.height = "auto";
+        try {
+          await queueAsk(text);
+        } catch (error) {
+          setMessages((prev) => [
+            ...prev,
+            {
+              id: crypto.randomUUID(),
+              role: "al",
+              content:
+                error instanceof Error
+                  ? error.message
+                  : "Could not queue that ask right now.",
+              timestamp: Date.now(),
+            },
+          ]);
+        }
+        return;
+      }
+
+      await runConversationTurn(text);
+    },
+    [loading, executingVault, pendingVaultAction, queueAsk, runConversationTurn]
   );
 
   /* ── Auto-execute vault actions (no approval needed for reads) ── */
@@ -1629,6 +1839,9 @@ export function ChatApp() {
           m.id === alId ? { ...m, content: accumulated || "No response.", typing: false } : m
         )
       );
+      if (activeInboxItemIdRef.current) {
+        await finalizeActiveInboxItem("done");
+      }
     } catch (err: unknown) {
       const isAbort = err instanceof Error && err.name === "AbortError";
       if (!isAbort) {
@@ -1648,6 +1861,9 @@ export function ChatApp() {
               : m
           )
         );
+        if (activeInboxItemIdRef.current) {
+          await finalizeActiveInboxItem("blocked", detail);
+        }
       }
     } finally {
       abortRef.current = null;
@@ -1813,6 +2029,9 @@ export function ChatApp() {
             : m
         )
       );
+      if (activeInboxItemIdRef.current) {
+        await finalizeActiveInboxItem("done");
+      }
     } catch (err: unknown) {
       const isAbort = err instanceof Error && err.name === "AbortError";
       if (!isAbort) {
@@ -1832,6 +2051,9 @@ export function ChatApp() {
               : m
           )
         );
+        if (activeInboxItemIdRef.current) {
+          await finalizeActiveInboxItem("blocked", detail);
+        }
       }
     } finally {
       abortRef.current = null;
@@ -1874,9 +2096,15 @@ export function ChatApp() {
     setMessages((prev) =>
       prev.map((m) => (m.typing ? { ...m, typing: false } : m))
     );
+    if (activeInboxItemIdRef.current) {
+      void finalizeActiveInboxItem("blocked", "Stopped before AL finished the queued ask.");
+    }
   }
 
   const canSend = input.trim() || pendingFiles.length > 0;
+  const isBusy = loading || executingVault || !!pendingVaultAction;
+  const queuedInboxCount = inboxItems.filter((item) => item.status === "queued").length;
+  const runningInboxCount = inboxItems.filter((item) => item.status === "running").length;
 
   /* ── Render gates ── */
 
@@ -1980,12 +2208,25 @@ export function ChatApp() {
                 Board Room
               </Link>
               <Link
+                href={withAlAppPrefix(pathname, "/inbox")}
+                className="rounded-full border border-emerald-900/25 bg-[#101714] px-3 py-1.5 text-xs font-semibold text-emerald-100/80"
+              >
+                Inbox
+              </Link>
+              <Link
                 href={withAlAppPrefix(pathname, "/planner")}
                 className="rounded-full border border-emerald-900/25 bg-[#101714] px-3 py-1.5 text-xs font-semibold text-emerald-100/80"
               >
                 Planner
               </Link>
             </div>
+            <Link
+              href={withAlAppPrefix(pathname, "/inbox")}
+              className="hidden items-center gap-1.5 rounded-full border border-emerald-900/25 bg-[#101714] px-3 py-1.5 text-[10px] font-semibold text-emerald-100/80 lg:inline-flex"
+            >
+              <BookUp className="h-3 w-3" />
+              <span>Inbox</span>
+            </Link>
             <Link
               href={withAlAppPrefix(pathname, "/operational-proof")}
               className="hidden items-center gap-1.5 rounded-full border border-emerald-500/25 bg-emerald-500/10 px-3 py-1.5 text-[10px] font-semibold text-emerald-100 sm:hidden md:inline-flex"
@@ -2034,6 +2275,54 @@ export function ChatApp() {
                 I&apos;ll help you sort what matters, route the work, and keep the next move clear.
                 Measure twice, move once.
               </p>
+              <div className="mt-8 w-full max-w-2xl rounded-3xl border border-emerald-900/20 bg-[#101714] p-5 text-left shadow-[0_18px_60px_rgba(0,0,0,0.22)]">
+                <div className="flex flex-wrap items-start justify-between gap-4">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-[0.22em] text-emerald-300/45">
+                      Inbox Queue
+                    </p>
+                    <h3 className="mt-2 text-xl font-semibold text-[#f3faf6]">
+                      Keep asking without waiting on one lane
+                    </h3>
+                    <p className="mt-2 max-w-xl text-sm leading-6 text-emerald-100/65">
+                      Queue new asks for AL while something else is already running. This is the cross-business intake lane so Dominion and WrenchReady work do not have to fight over one chat turn.
+                    </p>
+                  </div>
+                  <Link
+                    href={withAlAppPrefix(pathname, "/inbox")}
+                    className="inline-flex items-center gap-2 rounded-2xl bg-emerald-500 px-4 py-3 text-sm font-semibold text-[#05110b] transition hover:bg-emerald-400"
+                  >
+                    <BookUp className="h-4 w-4" />
+                    Open Inbox
+                  </Link>
+                </div>
+                <div className="mt-5 grid gap-3 sm:grid-cols-3">
+                  <div className="rounded-2xl border border-amber-500/18 bg-[#0b110e] p-4">
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-amber-200/70">
+                      Queued
+                    </p>
+                    <p className="mt-2 text-3xl font-semibold text-amber-100">
+                      {queuedInboxCount}
+                    </p>
+                  </div>
+                  <div className="rounded-2xl border border-sky-500/18 bg-[#0b110e] p-4">
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-sky-200/70">
+                      Running
+                    </p>
+                    <p className="mt-2 text-3xl font-semibold text-sky-100">
+                      {runningInboxCount}
+                    </p>
+                  </div>
+                  <div className="rounded-2xl border border-emerald-500/18 bg-[#0b110e] p-4">
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-200/65">
+                      Chat lane
+                    </p>
+                    <p className="mt-2 text-sm font-semibold text-emerald-100">
+                      {isBusy ? "Busy, queue stays open" : "Clear, draining inbox"}
+                    </p>
+                  </div>
+                </div>
+              </div>
               <div className="mt-8 w-full max-w-2xl rounded-3xl border border-emerald-900/20 bg-[#101714] p-5 text-left shadow-[0_18px_60px_rgba(0,0,0,0.22)]">
                 <div className="flex flex-wrap items-start justify-between gap-4">
                   <div>
@@ -2244,6 +2533,12 @@ export function ChatApp() {
               {loading && searchQuery && <SearchingWeb query={searchQuery} />}
               {loading && publishingPath && <PublishingToVault path={publishingPath} />}
               {loading && delegatingCeo && <DelegatingToCeo ceo={delegatingCeo} />}
+              {inboxItems
+                .filter((item) => item.status === "queued" || item.status === "running")
+                .slice(0, 6)
+                .map((item) => (
+                  <InboxQueueCard key={item.id} item={item} />
+                ))}
               {activeJobs.map((job) => (
                 <JobBadge
                   key={job.job_id}
@@ -2334,7 +2629,7 @@ export function ChatApp() {
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
-                disabled={loading || pendingFiles.length >= MAX_FILES}
+                disabled={isBusy || pendingFiles.length >= MAX_FILES}
                 className="flex h-12 w-10 flex-shrink-0 items-center justify-center rounded-lg text-emerald-200/35 transition-colors hover:bg-emerald-500/10 hover:text-emerald-200/60 disabled:opacity-30 disabled:cursor-not-allowed"
                 aria-label="Attach files"
               >
@@ -2351,10 +2646,11 @@ export function ChatApp() {
                   placeholder={
                     pendingFiles.length > 0
                       ? "Add a message or just send the files..."
-                      : "Message Al..."
+                      : isBusy
+                        ? "Queue another ask while AL works..."
+                        : "Message Al..."
                   }
                   rows={1}
-                  disabled={loading}
                   className="w-full resize-none rounded-xl border border-emerald-900/25 bg-[#111916] px-4 py-3 text-sm text-[#e2ede8] placeholder-emerald-200/25 transition-colors focus:border-emerald-500/40 focus:outline-none focus:ring-1 focus:ring-emerald-500/20 disabled:opacity-50"
                   style={{ minHeight: 48, maxHeight: 160 }}
                   onInput={(e) => {
@@ -2365,15 +2661,26 @@ export function ChatApp() {
                 />
               </div>
 
-              {loading ? (
-                <button
-                  type="button"
-                  onClick={stopGenerating}
-                  className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl border border-emerald-900/25 bg-[#111916] text-emerald-200/50 transition-all hover:bg-[#1a2820] hover:text-emerald-200/70 active:scale-95"
-                  aria-label="Stop generating"
-                >
-                  <div className="h-3.5 w-3.5 rounded-sm bg-emerald-400/70" />
-                </button>
+              {isBusy ? (
+                <div className="flex flex-shrink-0 items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={stopGenerating}
+                    className="flex h-12 w-12 items-center justify-center rounded-xl border border-emerald-900/25 bg-[#111916] text-emerald-200/50 transition-all hover:bg-[#1a2820] hover:text-emerald-200/70 active:scale-95"
+                    aria-label="Stop generating"
+                  >
+                    <div className="h-3.5 w-3.5 rounded-sm bg-emerald-400/70" />
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={!input.trim()}
+                    className="flex h-12 w-12 items-center justify-center rounded-xl border border-emerald-500/25 bg-emerald-500/10 text-emerald-100 transition-all hover:bg-emerald-500/20 active:scale-95 disabled:cursor-not-allowed disabled:opacity-30"
+                    aria-label="Queue ask"
+                    title="Queue this ask while AL is still working"
+                  >
+                    <BookUp className="h-4 w-4" />
+                  </button>
+                </div>
               ) : (
                 <button
                   type="submit"
@@ -2386,7 +2693,7 @@ export function ChatApp() {
               )}
             </form>
             <p className="mt-2 text-center text-[11px] text-emerald-200/15">
-              Enter to send &middot; Shift+Enter for new line &middot; Paste or
+              Enter to send or queue &middot; Shift+Enter for new line &middot; Paste or
               drag images &amp; PDFs
             </p>
           </div>
@@ -2412,6 +2719,33 @@ export function ChatApp() {
 /* ------------------------------------------------------------------ */
 /*  Sub-components                                                     */
 /* ------------------------------------------------------------------ */
+
+function InboxQueueCard({ item }: { item: InboxItemRecord }) {
+  const timestamp = new Date(item.updatedAt || item.createdAt || Date.now()).toLocaleTimeString([], {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+  const tone =
+    item.status === "running"
+      ? "border-sky-500/20 bg-sky-500/10 text-sky-100"
+      : "border-amber-500/20 bg-amber-500/10 text-amber-100";
+
+  return (
+    <div className="rounded-2xl border border-emerald-900/20 bg-[#141b18] p-4">
+      <div className="flex flex-wrap items-center gap-2">
+        <span className={`rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.15em] ${tone}`}>
+          {item.status === "running" ? "Inbox running" : "Inbox queued"}
+        </span>
+        <span className="text-[11px] uppercase tracking-[0.16em] text-emerald-300/45">
+          {item.business.replace("-", " ")} · {item.lane.replace("-", " ")}
+        </span>
+      </div>
+      <p className="mt-3 text-sm font-semibold text-[#f3faf6]">{item.title}</p>
+      <p className="mt-2 text-sm leading-6 text-emerald-100/70">{item.body}</p>
+      <p className="mt-3 text-xs text-emerald-100/40">Updated {timestamp}</p>
+    </div>
+  );
+}
 
 function MessageBubble({ message }: { message: Message }) {
   const isUser = message.role === "user";
