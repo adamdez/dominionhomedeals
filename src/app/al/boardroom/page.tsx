@@ -5,7 +5,7 @@ import { BoardroomQueueActions } from "@/components/al/BoardroomQueueActions";
 import { BoardroomWaitingQueue } from "@/components/al/BoardroomWaitingQueue";
 import {
   buildHostedBoardroomHomePath,
-  fetchBoardroomPresentations,
+  fetchBoardroomQueueSnapshot,
   isAuthenticatedAlSession,
 } from "@/lib/al-review";
 
@@ -70,7 +70,8 @@ export default async function AlBoardroomIndexPage() {
   }
 
   const host = (await headers()).get("host");
-  const presentations = await fetchBoardroomPresentations(host, 12);
+  const queueSnapshot = await fetchBoardroomQueueSnapshot(host, 12);
+  const presentations = queueSnapshot.visible;
   const queueMaintenanceItems = presentations
     .filter(
       (presentation) =>
@@ -200,8 +201,8 @@ export default async function AlBoardroomIndexPage() {
               Presentations and approvals
             </h1>
             <p className="mt-3 max-w-3xl text-sm leading-6 text-emerald-100/70 sm:text-base">
-              Review the latest operator-facing packages from AL’s team, compare options quickly,
-              and record the next decision without digging through raw runtime output.
+              Review the live queue only. Older stale, no-proof, or dead-end packages are buried
+              from the default view so this page stays useful again.
             </p>
           </div>
           <Link
@@ -223,17 +224,27 @@ export default async function AlBoardroomIndexPage() {
               </h2>
             </div>
             <span className="rounded-full border border-emerald-500/20 bg-emerald-500/10 px-4 py-2 text-sm font-semibold text-emerald-200">
-              {presentations.length} visible
+              {queueSnapshot.counts.visible} active
             </span>
           </div>
 
           {presentations.length === 0 ? (
             <div className="mt-6 rounded-2xl border border-emerald-900/20 bg-[#0b110e] p-5 text-sm leading-6 text-emerald-100/70">
-              No presentation packages are available yet. Once AL syncs a review-ready job, it
-              will appear here.
+              Nothing is active enough to deserve Board Room space right now. New review-ready
+              work will appear here, and older stale packages stay buried until they are revived
+              or cleaned up.
             </div>
           ) : (
             <div className="mt-6 space-y-8">
+              {queueSnapshot.counts.buried > 0 ? (
+                <div className="rounded-2xl border border-slate-700/30 bg-[#0b110e] p-5 text-sm leading-6 text-emerald-100/70">
+                  {queueSnapshot.counts.buried} older stale or no-proof package
+                  {queueSnapshot.counts.buried === 1 ? "" : "s"} are buried from the live queue by
+                  default. The audit trail still exists, but the active Board Room is now focused
+                  on what can actually move.
+                </div>
+              ) : null}
+
               {queueMaintenanceItems.length > 0 ? (
                 <div>
                   <div className="flex flex-wrap items-center justify-between gap-3">

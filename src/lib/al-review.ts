@@ -69,6 +69,19 @@ export interface BoardroomPresentationRecord {
   staleReason: string | null;
 }
 
+export interface BoardroomQueueSnapshot {
+  visible: BoardroomPresentationRecord[];
+  buried: BoardroomPresentationRecord[];
+  counts: {
+    visible: number;
+    buried: number;
+    reviewNow: number;
+    needsAttention: number;
+    localOnly: number;
+    staleVisible: number;
+  };
+}
+
 type JsonRecord = Record<string, unknown>;
 
 let bucketReady: Promise<void> | null = null;
@@ -295,7 +308,36 @@ function boardroomWaitingState(input: {
   };
 }
 
-export async function fetchBoardroomPresentations(
+function shouldBuryPresentation(presentation: BoardroomPresentationRecord): boolean {
+  const ageHours = hoursSince(presentation.updatedAt);
+  const ownerWaitingOpen =
+    (presentation.waitingOn === "AL" || presentation.waitingOn === "Dez") &&
+    presentation.followUpStatus === "open";
+
+  if (presentation.bucket === "review_now") {
+    return false;
+  }
+
+  if (ownerWaitingOpen && ageHours !== null && ageHours < 72) {
+    return false;
+  }
+
+  if (presentation.waitingOn === "Dez review" && ageHours !== null && ageHours < 48) {
+    return false;
+  }
+
+  if (presentation.bucket === "local_only") {
+    return ageHours !== null && ageHours >= 24;
+  }
+
+  if (presentation.bucket === "needs_attention") {
+    return ageHours !== null && ageHours >= 18;
+  }
+
+  return presentation.isStale && ageHours !== null && ageHours >= 18;
+}
+
+async function fetchBoardroomPresentationCandidates(
   host: string | null | undefined,
   limit = 12,
 ): Promise<BoardroomPresentationRecord[]> {
@@ -444,6 +486,37 @@ export async function fetchBoardroomPresentations(
     .filter((entry): entry is BoardroomPresentationRecord => Boolean(entry));
 
   return presentations.slice(0, limit);
+}
+
+export async function fetchBoardroomQueueSnapshot(
+  host: string | null | undefined,
+  limit = 12,
+): Promise<BoardroomQueueSnapshot> {
+  const candidates = await fetchBoardroomPresentationCandidates(host, Math.max(limit * 4, 24));
+  const visible = candidates.filter((presentation) => !shouldBuryPresentation(presentation));
+  const buried = candidates.filter((presentation) => shouldBuryPresentation(presentation));
+
+  return {
+    visible: visible.slice(0, limit),
+    buried,
+    counts: {
+      visible: visible.length,
+      buried: buried.length,
+      reviewNow: visible.filter((presentation) => presentation.bucket === "review_now").length,
+      needsAttention: visible.filter((presentation) => presentation.bucket === "needs_attention")
+        .length,
+      localOnly: visible.filter((presentation) => presentation.bucket === "local_only").length,
+      staleVisible: visible.filter((presentation) => presentation.isStale).length,
+    },
+  };
+}
+
+export async function fetchBoardroomPresentations(
+  host: string | null | undefined,
+  limit = 12,
+): Promise<BoardroomPresentationRecord[]> {
+  const snapshot = await fetchBoardroomQueueSnapshot(host, limit);
+  return snapshot.visible;
 }
 
 export async function updateAlJobContext(jobId: number, context: JsonRecord): Promise<void> {

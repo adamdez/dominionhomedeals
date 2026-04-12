@@ -167,6 +167,27 @@ interface OperationalProofReport {
   topNextMove: string;
 }
 
+interface DashboardSummarySpotlight {
+  title: string;
+  reason: string;
+  href: string;
+  tone: "emerald" | "amber" | "red" | "sky";
+}
+
+interface DashboardSummary {
+  generatedAt: string;
+  headline: string;
+  counts: {
+    reviewReady: number;
+    activeCleanup: number;
+    buriedStale: number;
+    waitingOnDez: number;
+    waitingOnAl: number;
+    blockedSystems: number;
+  };
+  spotlight: DashboardSummarySpotlight[];
+}
+
 /* ------------------------------------------------------------------ */
 /*  Constants                                                          */
 /* ------------------------------------------------------------------ */
@@ -1066,6 +1087,7 @@ export function ChatApp() {
   const [bridgeHealth, setBridgeHealth] = useState<BridgeHealthResponse | null>(null);
   const [hostedHealth, setHostedHealth] = useState<HostedHealthResponse | null>(null);
   const [operationalProof, setOperationalProof] = useState<OperationalProofReport | null>(null);
+  const [dashboardSummary, setDashboardSummary] = useState<DashboardSummary | null>(null);
   const [pendingVaultAction, setPendingVaultAction] = useState<VaultAction | null>(null);
   const [executingVault, setExecutingVault] = useState(false);
 
@@ -1132,8 +1154,10 @@ export function ChatApp() {
   useEffect(() => {
     if (authed) {
       checkOperationalProof();
+      checkDashboardSummary();
     } else if (authed === false) {
       setOperationalProof(null);
+      setDashboardSummary(null);
     }
   }, [authed]);
 
@@ -1172,6 +1196,17 @@ export function ChatApp() {
       })
       .catch(() => {
         setOperationalProof(null);
+      });
+  }
+
+  function checkDashboardSummary() {
+    fetch("/api/al/dashboard-summary", { credentials: "same-origin" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d: { ok?: boolean; summary?: DashboardSummary } | null) => {
+        setDashboardSummary(d?.ok && d.summary ? d.summary : null);
+      })
+      .catch(() => {
+        setDashboardSummary(null);
       });
   }
 
@@ -1960,6 +1995,81 @@ export function ChatApp() {
                 I&apos;ll help you sort what matters, route the work, and keep the next move clear.
                 Measure twice, move once.
               </p>
+              <div className="mt-8 w-full max-w-2xl rounded-3xl border border-emerald-900/20 bg-[#101714] p-5 text-left shadow-[0_18px_60px_rgba(0,0,0,0.22)]">
+                <div className="flex flex-wrap items-start justify-between gap-4">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-[0.22em] text-emerald-300/45">
+                      Today
+                    </p>
+                    <h3 className="mt-2 text-xl font-semibold text-[#f3faf6]">
+                      {dashboardSummary?.headline || "Pulling the real queue into focus."}
+                    </h3>
+                    <p className="mt-2 max-w-xl text-sm leading-6 text-emerald-100/65">
+                      The command center now buries stale junk by default and shows the live queue,
+                      cleanup load, and what is actually waiting on you.
+                    </p>
+                  </div>
+                  <Link
+                    href={withAlAppPrefix(pathname, "/attention")}
+                    className="inline-flex items-center gap-2 rounded-2xl bg-emerald-500 px-4 py-3 text-sm font-semibold text-[#05110b] transition hover:bg-emerald-400"
+                  >
+                    Open Attention
+                  </Link>
+                </div>
+                <div className="mt-5 grid gap-3 sm:grid-cols-3">
+                  <div className="rounded-2xl border border-emerald-500/18 bg-[#0b110e] p-4">
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-200/65">
+                      Review ready
+                    </p>
+                    <p className="mt-2 text-3xl font-semibold text-emerald-100">
+                      {dashboardSummary?.counts.reviewReady ?? "-"}
+                    </p>
+                  </div>
+                  <div className="rounded-2xl border border-amber-500/18 bg-[#0b110e] p-4">
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-amber-200/70">
+                      Cleanup live
+                    </p>
+                    <p className="mt-2 text-3xl font-semibold text-amber-100">
+                      {dashboardSummary?.counts.activeCleanup ?? "-"}
+                    </p>
+                  </div>
+                  <div className="rounded-2xl border border-slate-500/18 bg-[#0b110e] p-4">
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-200/70">
+                      Buried stale
+                    </p>
+                    <p className="mt-2 text-3xl font-semibold text-slate-100">
+                      {dashboardSummary?.counts.buriedStale ?? "-"}
+                    </p>
+                  </div>
+                </div>
+                {dashboardSummary?.spotlight?.length ? (
+                  <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                    {dashboardSummary.spotlight.map((item) => {
+                      const toneClass =
+                        item.tone === "red"
+                          ? "border-red-500/20 bg-red-500/10 text-red-100"
+                          : item.tone === "amber"
+                            ? "border-amber-500/20 bg-amber-500/10 text-amber-100"
+                            : item.tone === "sky"
+                              ? "border-sky-500/20 bg-sky-500/10 text-sky-100"
+                              : "border-emerald-500/20 bg-emerald-500/10 text-emerald-100";
+                      return (
+                        <a
+                          key={`${item.href}-${item.title}`}
+                          href={item.href}
+                          className="rounded-2xl border border-emerald-900/20 bg-[#0b110e] p-4 text-left transition hover:border-emerald-500/35"
+                        >
+                          <span className={`inline-flex rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.15em] ${toneClass}`}>
+                            Spotlight
+                          </span>
+                          <p className="mt-3 text-base font-semibold text-[#f3faf6]">{item.title}</p>
+                          <p className="mt-2 text-sm leading-6 text-emerald-100/70">{item.reason}</p>
+                        </a>
+                      );
+                    })}
+                  </div>
+                ) : null}
+              </div>
               <div className="mt-8 w-full max-w-2xl rounded-3xl border border-emerald-500/18 bg-[#101714] p-5 text-left shadow-[0_18px_60px_rgba(0,0,0,0.22)]">
                 <div className="flex flex-wrap items-start justify-between gap-4">
                   <div>
