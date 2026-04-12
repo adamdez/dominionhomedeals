@@ -225,6 +225,37 @@ Outcomes decide what survives.
 
 Passing a checklist is not success.
 
+EXECUTIVE RESPONSE CONTRACT:
+For consequential business questions, do not act like a generic assistant.
+Lead with:
+- your best recommendation
+- why it wins
+- the biggest risks
+- what a real human operator or customer would require before trusting it
+- the next 1-3 actions with owner
+Do not hide behind a vague menu of options when one path is clearly better.
+If confidence is limited, say that plainly and name what would change the recommendation.
+
+PROACTIVE OPERATOR RULE:
+Do not stop at analysis when the real need is progress.
+Think one step ahead for Dez:
+- what will bottleneck this next
+- what prerequisite is missing
+- what should be tracked
+- what should be reviewed
+If async work is launched, make sure there is visible follow-through instead of relying on Dez to remember it later.
+
+HUMAN STANDARD RULE:
+Judge output by whether a sharp human founder, operator, or paying customer would accept it.
+If something is generic, low-trust, awkward, incomplete, or below human standard, it is not done.
+This matters especially for:
+- recommendations
+- customer-facing writing
+- creative work
+- website decisions
+- offers, messaging, and sales materials
+- operational promises that affect real people
+
 CONSEQUENTIAL DISPATCH RULE:
 When a tool call changes deployment state, routing, authority posture, board-feed behavior, spend posture, lane status, or another meaningful operating behavior, include structured review metadata in the tool call.
 Use review_required=true and provide the intended business outcome, primary metric, expected direction, and minimum meaningful delta.
@@ -306,15 +337,16 @@ The user should feel like AL is capable, warm, and handy under pressure.
 
 DELEGATION PROTOCOL:
 You have a delegate_to_ceo tool. Use it when:
-- A question clearly belongs to one company CEO (real estate -> dominion, runtime alias dominion-homes; auto repair -> wrenchready)
-- The user asks for a status update, analysis, or recommendation in a specific company
-- You need specialized thinking that benefits from a CEO's focused expertise
+- Specialized company context or async company labor is truly needed
+- A task needs business-specific follow-through beyond what AL can complete directly in the current response
+- You need focused CEO execution, not just first-pass reasoning
 
 When you delegate:
-- Tell Dez which CEO you are dispatching and why, then move on.
+- Give Dez your best current chairman view first, then say which CEO you are dispatching and why.
 - Delegation is async. You get a job ID back immediately.
 - After delegating, keep working. Do not wait around.
-- When Dez asks for the result, use job_status with the job ID.
+- Create or update visible follow-through when async work matters.
+- Do not rely on Dez to remember job_status on his own. Use job_status to refresh the state when needed, not as the only reminder mechanism.
 
 TOOLS:
 - web_search - quick internet search for facts, prices, news.
@@ -1815,6 +1847,183 @@ function toolResultLooksLikeError(result: unknown): boolean {
   return /^(Error:|Cowork failed:|Cowork error:|Bridge connection failed:)/i.test(text);
 }
 
+const AUTO_FOLLOW_THROUGH_JOB_TYPES = new Set([
+  "delegate_to_ceo",
+  "codex_task",
+  "cowork_task",
+  "cursor_agent",
+  "crew_run",
+  "media_production",
+  "website_brand_media_production",
+  "local_pdf_merge",
+]);
+
+function localPlannerDueDate() {
+  const date = new Date();
+  date.setHours(0, 0, 0, 0);
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function compactAccountabilityTask(task: string, limit = 88) {
+  const normalized = task.replace(/\s+/g, " ").trim();
+  if (!normalized) return "Untitled follow-through";
+  return normalized.length <= limit
+    ? normalized
+    : `${normalized.slice(0, Math.max(0, limit - 3)).trimEnd()}...`;
+}
+
+function accountabilityJobLabel(jobType: string) {
+  switch (jobType) {
+    case "delegate_to_ceo":
+      return "CEO follow-through";
+    case "codex_task":
+      return "Codex follow-through";
+    case "cowork_task":
+      return "Cowork follow-through";
+    case "cursor_agent":
+      return "Cursor follow-through";
+    case "crew_run":
+      return "Crew follow-through";
+    case "media_production":
+      return "Media follow-through";
+    case "website_brand_media_production":
+      return "Website follow-through";
+    case "local_pdf_merge":
+      return "Packet follow-through";
+    default:
+      return "AL follow-through";
+  }
+}
+
+function shouldAutoTrackAccountabilityJob(input: {
+  jobType: string;
+  status?: "pending" | "running" | "done" | "error";
+}) {
+  return (
+    AUTO_FOLLOW_THROUGH_JOB_TYPES.has(input.jobType) &&
+    (input.status === "running" || input.status === "pending")
+  );
+}
+
+function buildAccountabilityPlannerTitle(jobType: string, task: string) {
+  return `${accountabilityJobLabel(jobType)} - ${compactAccountabilityTask(task)}`;
+}
+
+function buildAccountabilityPlannerDetails(input: {
+  jobId: number;
+  jobType: string;
+  task: string;
+  context?: Record<string, unknown>;
+  result?: string;
+}) {
+  const lines = [
+    `Track AL follow-through for job #${input.jobId} (${input.jobType}).`,
+    `Original request: ${compactAccountabilityTask(input.task, 220)}`,
+  ];
+  const nextAction = asBriefString(input.context?.next_action);
+  if (nextAction) {
+    lines.push(`Expected next move: ${nextAction}`);
+  }
+  const owner = asBriefString(input.context?.owner);
+  if (owner) {
+    lines.push(`Owner: ${owner}`);
+  }
+  const result = compactAccountabilityTask(input.result || "", 260);
+  if (result && result !== "Untitled follow-through") {
+    lines.push(`Latest result: ${result}`);
+  }
+  return lines.join("\n\n");
+}
+
+async function ensureAccountabilityPlannerTask(input: {
+  jobId: number;
+  jobType: string;
+  task: string;
+  status?: "pending" | "running" | "done" | "error";
+  context?: Record<string, unknown>;
+}): Promise<Record<string, unknown>> {
+  const existingContext = input.context || {};
+  const existingTaskId = Number(existingContext.planner_task_id);
+  if (
+    !shouldAutoTrackAccountabilityJob({
+      jobType: input.jobType,
+      status: input.status,
+    }) ||
+    (Number.isFinite(existingTaskId) && existingTaskId > 0)
+  ) {
+    return existingContext;
+  }
+
+  try {
+    const plannerTask = await createPlannerTask({
+      title: buildAccountabilityPlannerTitle(input.jobType, input.task),
+      details: buildAccountabilityPlannerDetails({
+        jobId: input.jobId,
+        jobType: input.jobType,
+        task: input.task,
+        context: existingContext,
+      }),
+      dueDate: localPlannerDueDate(),
+      assignedTo: "al",
+      createdBy: "AL",
+      source: "accountability_follow_through",
+    });
+
+    const nextContext = {
+      ...existingContext,
+      planner_task_id: plannerTask.id,
+      planner_task_title: plannerTask.title,
+      planner_task_due_date: plannerTask.dueDate,
+      planner_task_assigned_to: plannerTask.assignedTo,
+    };
+    await updateAccountabilityJobContext(input.jobId, nextContext);
+    return nextContext;
+  } catch {
+    return existingContext;
+  }
+}
+
+async function syncAccountabilityPlannerTask(input: {
+  jobId: number;
+  jobType: string;
+  task: string;
+  context: Record<string, unknown>;
+  result: string;
+  isError: boolean;
+  statusOverride: string | null;
+}): Promise<void> {
+  const plannerTaskId = Number(input.context.planner_task_id);
+  if (!Number.isFinite(plannerTaskId) || plannerTaskId <= 0) {
+    return;
+  }
+
+  const keepOpen =
+    input.isError ||
+    input.statusOverride === "blocked" ||
+    input.statusOverride === "partial" ||
+    input.statusOverride === "error";
+
+  try {
+    await updatePlannerTask(plannerTaskId, {
+      details: buildAccountabilityPlannerDetails({
+        jobId: input.jobId,
+        jobType: input.jobType,
+        task: input.task,
+        context: input.context,
+        result: input.result,
+      }),
+      dueDate: keepOpen ? localPlannerDueDate() : undefined,
+      assignedTo: keepOpen ? "al" : undefined,
+      status: keepOpen ? "open" : "done",
+    });
+  } catch {
+    // Keep accountability completion moving even if Planner sync fails.
+  }
+}
+
 async function createAccountabilityJob(input: {
   jobType: string;
   task: string;
@@ -1884,6 +2093,13 @@ async function createAccountabilityJob(input: {
         }
 
         await supabase.from("al_jobs").update(reusePayload).eq("id", reusable.id);
+        await ensureAccountabilityPlannerTask({
+          jobId: reusable.id as number,
+          jobType: input.jobType,
+          task: input.task,
+          status: input.status,
+          context: mergedContext,
+        });
         return { jobId: reusable.id as number };
       }
     }
@@ -1906,6 +2122,14 @@ async function createAccountabilityJob(input: {
   if (error || !data?.id) {
     return { error: error?.message || "unknown accountability insert error" };
   }
+
+  await ensureAccountabilityPlannerTask({
+    jobId: data.id as number,
+    jobType: input.jobType,
+    task: input.task,
+    status: input.status,
+    context: input.context,
+  });
 
   return { jobId: data.id as number };
 }
@@ -2590,6 +2814,18 @@ async function completeAccountabilityJob(input: {
   }
 
   await supabase.from("al_jobs").update(payload).eq("id", input.jobId);
+
+  if (existingJob) {
+    await syncAccountabilityPlannerTask({
+      jobId: input.jobId,
+      jobType: existingJob.job_type,
+      task: existingJob.task,
+      context: finalContext,
+      result: input.result,
+      isError: input.isError,
+      statusOverride,
+    });
+  }
 }
 
 async function updateAccountabilityJobContext(
