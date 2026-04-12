@@ -341,6 +341,17 @@ export async function fetchBoardroomPresentations(
       const hasPresentationShell =
         (typeof context.presentation_title === "string" && context.presentation_title.trim().length > 0) ||
         (typeof context.presentation_body === "string" && context.presentation_body.trim().length > 0);
+      const creativeGuard =
+        context.creative_production_guard &&
+        typeof context.creative_production_guard === "object" &&
+        !Array.isArray(context.creative_production_guard)
+          ? (context.creative_production_guard as Record<string, unknown>)
+          : null;
+      const creativeArtifactProofStatus =
+        typeof creativeGuard?.artifactProofStatus === "string"
+          ? creativeGuard.artifactProofStatus.trim().toLowerCase()
+          : "";
+      const creativeReviewable = creativeGuard?.reviewable === true;
 
         if (!hasReviewSurface && !hasBoardroomLink && !hasPresentationShell) {
           return null;
@@ -402,6 +413,7 @@ export async function fetchBoardroomPresentations(
               loweredSummary.includes("error") ||
               loweredSummary.includes("blocked") ||
               loweredSummary.includes("credit balance is too low") ||
+              (creativeGuard !== null && (!creativeReviewable || creativeArtifactProofStatus === "missing")) ||
               (loweredJobType === "cursor_agent" && !hasHostedReviewLink && !hasReviewSurface) ||
               (loweredJobType === "cowork_task" && !hasHostedReviewLink && !hasReviewSurface)
             ? "needs_attention"

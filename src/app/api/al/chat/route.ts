@@ -2042,6 +2042,198 @@ function summarizeCoworkExecution(cleanResult: string, task: string): {
   };
 }
 
+type CreativeJobClass =
+  | "static_web_asset"
+  | "motion_web_asset"
+  | "print_collateral"
+  | "vehicle_signage";
+
+interface CreativeProductionGuard {
+  isCreative: boolean;
+  reviewable: boolean;
+  blocked: boolean;
+  mixedBrief: boolean;
+  jobClass: CreativeJobClass | "mixed" | "unclassified";
+  artifactProofStatus: "complete" | "partial" | "missing";
+  summary: string;
+  recommendation: string;
+  missingDeliverables: string[];
+  deliveredSignals: string[];
+}
+
+function isNoResponseResult(value: string) {
+  const normalized = value.replace(/\s+/g, " ").trim().toLowerCase();
+  return normalized === "no response" || normalized.endsWith("] no response");
+}
+
+function collectNestedStrings(value: unknown, out: string[] = []): string[] {
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    if (trimmed) out.push(trimmed);
+    return out;
+  }
+  if (Array.isArray(value)) {
+    for (const entry of value) collectNestedStrings(entry, out);
+    return out;
+  }
+  if (value && typeof value === "object") {
+    for (const entry of Object.values(value as Record<string, unknown>)) {
+      collectNestedStrings(entry, out);
+    }
+  }
+  return out;
+}
+
+function inferCreativeJobClasses(
+  jobType: string,
+  task: string,
+  context: Record<string, unknown>,
+): CreativeJobClass[] {
+  const combined = [
+    task,
+    asBriefString(context.change_under_review),
+    asBriefString(asRecord(context.dispatch_metadata).change_under_review),
+    asBriefString(context.summary),
+    asBriefString(context.presentation_title),
+  ]
+    .join(" ")
+    .toLowerCase();
+
+  const classes = new Set<CreativeJobClass>();
+
+  if (
+    /\b(tri[- ]?fold|brochure|postcard|eddm|one[- ]pager|flyer|mailer|print-ready|dieline)\b/i.test(
+      combined,
+    )
+  ) {
+    classes.add("print_collateral");
+  }
+  if (/\b(van|vehicle|decal|decals|panel|signage|wrap|magnet|vinyl)\b/i.test(combined)) {
+    classes.add("vehicle_signage");
+  }
+  if (/\b(video|gif|loop|motion|clip|mp4|webm|runway)\b/i.test(combined)) {
+    classes.add("motion_web_asset");
+  }
+  if (
+    /\b(hero|static|still|image|photo|portrait|logo export|png|web image|homepage image)\b/i.test(
+      combined,
+    )
+  ) {
+    classes.add("static_web_asset");
+  }
+
+  if (classes.size === 0 && jobType === "media_production") {
+    classes.add("motion_web_asset");
+  }
+
+  return [...classes];
+}
+
+function buildCreativeProductionGuard(input: {
+  jobType: string;
+  task: string;
+  result: string;
+  context: Record<string, unknown>;
+  isError: boolean;
+}): CreativeProductionGuard | null {
+  const classes = inferCreativeJobClasses(input.jobType, input.task, input.context);
+  if (classes.length === 0) return null;
+
+  const flattenedStrings = collectNestedStrings(input.context);
+  if (input.result.trim()) flattenedStrings.push(input.result.trim());
+
+  const hasReviewLink = flattenedStrings.some(
+    (entry) =>
+      /^https?:\/\//i.test(entry) &&
+      /(review|artifact|proof|presentation|boardroom|preview)/i.test(entry),
+  );
+  const hasPdf = flattenedStrings.some((entry) => /\.(pdf)(?:$|[?#])/i.test(entry));
+  const hasVideo = flattenedStrings.some((entry) => /\.(mp4|webm|mov)(?:$|[?#])/i.test(entry));
+  const hasGif = flattenedStrings.some((entry) => /\.(gif)(?:$|[?#])/i.test(entry));
+  const hasImage = flattenedStrings.some(
+    (entry) => /\.(png|jpg|jpeg|webp|svg)(?:$|[?#])/i.test(entry),
+  );
+  const hasPreviewThumb = flattenedStrings.some(
+    (entry) => /\.(png|jpg|jpeg|webp)(?:$|[?#])/i.test(entry),
+  );
+  const noResponse = isNoResponseResult(input.result);
+  const mixedBrief = classes.length > 1;
+
+  const missingDeliverables: string[] = [];
+  const deliveredSignals: string[] = [];
+
+  if (hasReviewLink) deliveredSignals.push("review surface");
+  if (hasPdf) deliveredSignals.push("PDF artifact");
+  if (hasVideo) deliveredSignals.push("video artifact");
+  if (hasGif) deliveredSignals.push("GIF artifact");
+  if (hasImage) deliveredSignals.push("image artifact");
+  if (hasPreviewThumb) deliveredSignals.push("preview thumbnail");
+
+  for (const jobClass of classes) {
+    if (jobClass === "print_collateral") {
+      if (!hasPdf) missingDeliverables.push("print-ready PDF");
+      if (!hasPreviewThumb) missingDeliverables.push("brochure/postcard preview image");
+    }
+    if (jobClass === "vehicle_signage") {
+      if (!hasPdf) missingDeliverables.push("signage print-ready panel PDFs");
+      if (!hasPreviewThumb) missingDeliverables.push("side/rear panel preview thumbnails");
+    }
+    if (jobClass === "motion_web_asset") {
+      if (!hasVideo && !hasGif) missingDeliverables.push("motion asset");
+      if (!hasReviewLink && !hasImage) missingDeliverables.push("reviewable motion preview or poster");
+    }
+    if (jobClass === "static_web_asset") {
+      if (!hasImage) missingDeliverables.push("final image asset");
+      if (!hasReviewLink && !hasPreviewThumb) missingDeliverables.push("reviewable static preview");
+    }
+  }
+
+  let artifactProofStatus: CreativeProductionGuard["artifactProofStatus"] = "complete";
+  if (missingDeliverables.length > 0) {
+    artifactProofStatus = deliveredSignals.length > 0 ? "partial" : "missing";
+  }
+
+  if (mixedBrief) {
+    artifactProofStatus = deliveredSignals.length > 0 ? "partial" : "missing";
+    missingDeliverables.unshift("split this mixed brief into separate creative jobs");
+  }
+
+  if (noResponse) {
+    artifactProofStatus = "missing";
+  }
+
+  const blocked = input.isError || noResponse || mixedBrief || missingDeliverables.length > 0;
+  const reviewable = !blocked && hasReviewLink;
+  const jobClassLabel = mixedBrief ? "mixed" : classes[0] || "unclassified";
+  const summary = noResponse
+    ? "This creative job closed without a real deliverable response."
+    : mixedBrief
+      ? "This creative brief mixed multiple deliverable families and is not reviewable as one package."
+      : missingDeliverables.length > 0
+        ? `Creative package is incomplete: missing ${uniqueStrings(missingDeliverables).slice(0, 3).join(", ")}.`
+        : "Creative package has artifact proof and is ready for review.";
+  const recommendation = noResponse
+    ? "Reopen this creative item and require artifact proof before it can close."
+    : mixedBrief
+      ? "Split the hero/media, signage, and print collateral into separate jobs before asking for review."
+      : missingDeliverables.length > 0
+        ? `Do not treat this as review-ready. Missing: ${uniqueStrings(missingDeliverables).join(", ")}.`
+        : "Review the attached creative artifacts and either approve the package or request changes.";
+
+  return {
+    isCreative: true,
+    reviewable,
+    blocked,
+    mixedBrief,
+    jobClass: jobClassLabel,
+    artifactProofStatus,
+    summary,
+    recommendation,
+    missingDeliverables: uniqueStrings(missingDeliverables),
+    deliveredSignals: uniqueStrings(deliveredSignals),
+  };
+}
+
 function buildBoardroomPromotionContext(input: {
   jobType: string;
   task: string;
@@ -2052,6 +2244,7 @@ function buildBoardroomPromotionContext(input: {
   const context = input.context;
   const dispatchMetadata = asRecord(context.dispatch_metadata);
   const owner = presentationOwnerFromContext(context);
+  const creativeGuard = buildCreativeProductionGuard(input);
   const businessName =
     businessNameFromId(dispatchMetadata.business_id) ||
     businessNameFromId(context.business_id) ||
@@ -2067,22 +2260,54 @@ function buildBoardroomPromotionContext(input: {
       firstMeaningfulParagraph(cleanResult) ||
       "A CEO brief is ready for review.";
     const highlights = markdownHighlights(cleanResult, 6);
+    const summary = creativeGuard?.isCreative ? creativeGuard.summary : reportSummary;
+    const recommendation = creativeGuard?.isCreative
+      ? creativeGuard.recommendation
+      : reportSummary.length > 160
+        ? `${reportSummary.slice(0, 157)}...`
+        : reportSummary;
     return {
       ...context,
       owner,
       business_name: businessName,
       presentation_type: "executive_brief",
       presentation_title: `${owner} CEO Brief`,
-      presentation_status_label: input.isError ? "blocked" : "ready for review",
-      presentation_recommendation:
-        reportSummary.length > 160 ? `${reportSummary.slice(0, 157)}...` : reportSummary,
-      summary: reportSummary,
+      presentation_status_label: input.isError
+        ? "blocked"
+        : creativeGuard?.isCreative
+          ? creativeGuard.reviewable
+            ? "ready for review"
+            : "needs artifact proof"
+          : "ready for review",
+      presentation_recommendation: recommendation,
+      summary,
       presentation_body: cleanResult,
-      presentation_highlights: highlights,
+      presentation_highlights: uniqueStrings([
+        ...highlights,
+        ...(creativeGuard?.deliveredSignals || []),
+      ]),
       result_snapshot: cleanResult,
+      review_state:
+        input.isError || creativeGuard?.blocked
+          ? "needs_attention"
+          : "ready_for_review",
+      creative_production_guard: creativeGuard,
+      missing_deliverables: creativeGuard?.missingDeliverables || [],
+      job_completion_status:
+        input.isError
+          ? "error"
+          : creativeGuard?.isCreative
+            ? creativeGuard.reviewable
+              ? "review_ready"
+              : creativeGuard.artifactProofStatus === "missing"
+                ? "blocked"
+                : "partial"
+            : "done",
       next_action:
         asBriefString(context.next_action) ||
-        "Review the CEO brief, decide what should be approved now, and hand back only the next operating move.",
+        (creativeGuard?.isCreative
+          ? creativeGuard.recommendation
+          : "Review the CEO brief, decide what should be approved now, and hand back only the next operating move."),
     };
   }
 
@@ -2117,30 +2342,60 @@ function buildBoardroomPromotionContext(input: {
         ...(repoUrl ? [{ label: "Open repo", url: repoUrl, priority: "secondary" }] : []),
       ],
       result_snapshot: cleanResult,
+      review_state: input.isError ? "needs_attention" : "execution_launched",
+      job_completion_status: input.isError ? "error" : "launched",
       next_action:
         asBriefString(context.next_action) ||
         "Wait for the Cursor agent to finish, then publish the actual design/code review package into Board Room.",
     };
   }
 
-  if (input.jobType === "cowork_task") {
+  if (input.jobType === "cowork_task" || input.jobType === "codex_task") {
     const coworkSummary = summarizeCoworkExecution(cleanResult, input.task);
+    const summary = creativeGuard?.isCreative ? creativeGuard.summary : coworkSummary.summary;
     return {
       ...context,
       owner,
       business_name: businessName,
       presentation_type: "execution_update",
       presentation_title:
-        businessName ? `${businessName} Local Execution Update` : "Local Execution Update",
-      presentation_status_label: coworkSummary.blocked ? "blocked" : "ready for review",
-      presentation_recommendation: coworkSummary.summary,
-      summary: coworkSummary.summary,
+        businessName
+          ? `${businessName} ${input.jobType === "codex_task" ? "Codex" : "Local"} Execution Update`
+          : `${input.jobType === "codex_task" ? "Codex" : "Local"} Execution Update`,
+      presentation_status_label:
+        coworkSummary.blocked || creativeGuard?.blocked
+          ? "blocked"
+          : creativeGuard?.isCreative
+            ? "ready for review"
+            : "ready for review",
+      presentation_recommendation:
+        creativeGuard?.isCreative ? creativeGuard.recommendation : coworkSummary.summary,
+      summary,
       presentation_body: cleanResult,
-      presentation_highlights: coworkSummary.highlights,
+      presentation_highlights: uniqueStrings([
+        ...coworkSummary.highlights,
+        ...(creativeGuard?.deliveredSignals || []),
+      ]),
       result_snapshot: cleanResult,
+      review_state:
+        coworkSummary.blocked || creativeGuard?.blocked
+          ? "needs_attention"
+          : "ready_for_review",
+      creative_production_guard: creativeGuard,
+      missing_deliverables: creativeGuard?.missingDeliverables || [],
+      job_completion_status:
+        coworkSummary.blocked
+          ? "error"
+          : creativeGuard?.isCreative
+            ? creativeGuard.reviewable
+              ? "review_ready"
+              : creativeGuard.artifactProofStatus === "missing"
+                ? "blocked"
+                : "partial"
+            : "done",
       next_action:
         asBriefString(context.next_action) ||
-        coworkSummary.nextAction,
+        (creativeGuard?.isCreative ? creativeGuard.recommendation : coworkSummary.nextAction),
     };
   }
 
@@ -2171,15 +2426,19 @@ function buildBoardroomPromotionContext(input: {
       presentation_title:
         businessName ? `${businessName} Review Package` : "Review Package",
       presentation_status_label:
-        input.isError || /partial/i.test(asBriefString(context.media_status) || "")
-          ? "review with blocker"
+        input.isError || creativeGuard?.blocked || /partial/i.test(asBriefString(context.media_status) || "")
+          ? creativeGuard?.reviewable
+            ? "review with blocker"
+            : "needs artifact proof"
           : "ready for review",
-      presentation_recommendation: summary,
-      summary,
+      presentation_recommendation: creativeGuard?.isCreative ? creativeGuard.recommendation : summary,
+      summary: creativeGuard?.isCreative ? creativeGuard.summary : summary,
       presentation_body: cleanResult || summary,
       presentation_highlights: uniqueStrings(
         [
-          /partial/i.test(asBriefString(context.media_status) || "")
+          creativeGuard?.mixedBrief
+            ? "This mixed creative brief should be split before review."
+            : /partial/i.test(asBriefString(context.media_status) || "")
             ? "AI render hit a blocker, but a fallback package is ready for review."
             : "Media package is ready for review.",
           asBriefString(context.selected_execution_path)?.includes("bridge:media_production")
@@ -2188,13 +2447,32 @@ function buildBoardroomPromotionContext(input: {
           asBriefString(context.repo_target)?.includes("wrenchreadymobile-com")
             ? "Prepared for the WrenchReady website repo."
             : "",
+          ...(creativeGuard?.deliveredSignals || []),
         ].filter(Boolean),
       ),
       operator_links: operatorLinks,
       result_snapshot: cleanResult,
+      review_state:
+        input.isError || creativeGuard?.blocked || /partial/i.test(asBriefString(context.media_status) || "")
+          ? "needs_attention"
+          : "ready_for_review",
+      creative_production_guard: creativeGuard,
+      missing_deliverables: creativeGuard?.missingDeliverables || [],
+      job_completion_status:
+        input.isError
+          ? "error"
+          : creativeGuard?.isCreative
+            ? creativeGuard.reviewable
+              ? "review_ready"
+              : creativeGuard.artifactProofStatus === "missing"
+                ? "blocked"
+                : "partial"
+            : "review_ready",
       next_action:
         asBriefString(context.next_action) ||
-        "Open the attached presentation and decide whether to approve, request changes, or resolve the blocker first.",
+        (creativeGuard?.isCreative
+          ? creativeGuard.recommendation
+          : "Open the attached presentation and decide whether to approve, request changes, or resolve the blocker first."),
     };
   }
 
@@ -2225,6 +2503,7 @@ async function completeAccountabilityJob(input: {
       })
     : null;
   const finalContext = boardroomContext ? { ...mergedContext, ...boardroomContext } : mergedContext;
+  const statusOverride = asBriefString(finalContext.job_completion_status);
 
   const payload = input.isError
     ? {
@@ -2233,7 +2512,7 @@ async function completeAccountabilityJob(input: {
         completed_at: new Date().toISOString(),
       }
     : {
-        status: "done",
+        status: statusOverride || "done",
         result: input.result,
         completed_at: new Date().toISOString(),
       };

@@ -96,6 +96,26 @@ function normalizeAlternatives(context: Record<string, unknown>) {
     .filter((entry): entry is { title: string; note: string } => Boolean(entry));
 }
 
+function normalizeCreativeProductionGuard(context: Record<string, unknown>) {
+  const guard =
+    context.creative_production_guard &&
+    typeof context.creative_production_guard === "object" &&
+    !Array.isArray(context.creative_production_guard)
+      ? (context.creative_production_guard as Record<string, unknown>)
+      : null;
+  if (!guard) return null;
+
+  return {
+    jobClass: asDisplayString(guard.jobClass, "creative"),
+    artifactProofStatus: asDisplayString(guard.artifactProofStatus, "missing"),
+    reviewable: guard.reviewable === true,
+    mixedBrief: guard.mixedBrief === true,
+    missingDeliverables: asStringArray(guard.missingDeliverables).slice(0, 8),
+    deliveredSignals: asStringArray(guard.deliveredSignals).slice(0, 8),
+    recommendation: asDisplayString(guard.recommendation, ""),
+  };
+}
+
 function isLocalOnlyUrl(value: string | undefined) {
   if (!value) return false;
   try {
@@ -186,6 +206,7 @@ function GenericPresentation({
   const secondaryLinks = links.filter((link) => link.priority === "secondary");
   const alternatives = normalizeAlternatives(context).slice(0, 4);
   const rawState = asDisplayString(context.review_state, "ready for review");
+  const creativeGuard = normalizeCreativeProductionGuard(context);
   const followUpTask = asRecord(context.follow_up_task);
   const followUpTitle = asDisplayString(followUpTask.title, "");
   const followUpDetails = asDisplayString(followUpTask.details, "");
@@ -202,6 +223,7 @@ function GenericPresentation({
     .toLowerCase();
   const isBlockedPresentation =
     rawState === "blocked_vendor_session" ||
+    (creativeGuard !== null && !creativeGuard.reviewable) ||
     (primaryLinks.length === 0 &&
       localOnlyPrimaryLinks.length === 0 &&
       alternatives.length === 0 &&
@@ -260,6 +282,52 @@ function GenericPresentation({
                   <p className="mt-2 text-sm leading-6 text-emerald-100/70">{nextAction}</p>
                 </div>
               </div>
+
+              {creativeGuard ? (
+                <div className="mt-6 rounded-2xl border border-rose-500/20 bg-rose-500/10 p-5">
+                  <p className="text-xs font-semibold uppercase tracking-[0.2em] text-rose-200/70">
+                    Creative proof check
+                  </p>
+                  <div className="mt-3 grid gap-4 sm:grid-cols-3">
+                    <div className="rounded-2xl bg-[#101714] p-4">
+                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-300/45">Job class</p>
+                      <p className="mt-2 text-sm font-semibold text-[#f3faf6]">{creativeGuard.jobClass.replace(/_/g, " ")}</p>
+                    </div>
+                    <div className="rounded-2xl bg-[#101714] p-4">
+                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-300/45">Artifact proof</p>
+                      <p className="mt-2 text-sm font-semibold text-[#f3faf6]">{creativeGuard.artifactProofStatus}</p>
+                    </div>
+                    <div className="rounded-2xl bg-[#101714] p-4">
+                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-300/45">Reviewability</p>
+                      <p className="mt-2 text-sm font-semibold text-[#f3faf6]">{creativeGuard.reviewable ? "reviewable" : "not reviewable"}</p>
+                    </div>
+                  </div>
+                  {creativeGuard.deliveredSignals.length > 0 ? (
+                    <div className="mt-4 rounded-2xl bg-[#101714] p-4">
+                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-300/45">Delivered proof</p>
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        {creativeGuard.deliveredSignals.map((signal) => (
+                          <span key={signal} className="rounded-full border border-emerald-900/25 bg-[#0b110e] px-3 py-1 text-xs font-semibold text-emerald-100/80">
+                            {signal}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  ) : null}
+                  {creativeGuard.missingDeliverables.length > 0 ? (
+                    <div className="mt-4 rounded-2xl bg-[#101714] p-4">
+                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-rose-200/70">Missing deliverables</p>
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        {creativeGuard.missingDeliverables.map((item) => (
+                          <span key={item} className="rounded-full border border-rose-500/20 bg-rose-500/10 px-3 py-1 text-xs font-semibold text-rose-100/85">
+                            {item}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  ) : null}
+                </div>
+              ) : null}
 
               {followUpTitle ? (
                 <div className="mt-6 rounded-2xl border border-sky-500/25 bg-sky-500/10 p-5">
