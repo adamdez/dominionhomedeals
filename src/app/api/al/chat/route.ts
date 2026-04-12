@@ -1824,6 +1824,71 @@ async function createAccountabilityJob(input: {
   const supabase = getServiceClient();
   if (!supabase) return { error: "no database connection" };
 
+  const normalizedTask = input.task.replace(/\s+/g, " ").trim().toLowerCase();
+  const dedupeEligible =
+    normalizedTask.length > 0 &&
+    [
+      "browser_commerce_design",
+      "website_brand_media_production",
+      "media_production",
+      "cursor_agent",
+      "cowork_task",
+      "codex_task",
+      "delegate_to_ceo",
+    ].includes(input.jobType);
+
+  if (dedupeEligible) {
+    const activeStatuses = ["pending", "running", "launched"];
+    const activeSince = new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString();
+    const { data: existingRows, error: existingError } = await supabase
+      .from("al_jobs")
+      .select("id, task, context, status, started_at")
+      .eq("job_type", input.jobType)
+      .eq("triggered_by", "al_chat")
+      .in("status", activeStatuses)
+      .gte("started_at", activeSince)
+      .order("id", { ascending: false })
+      .limit(12);
+
+    if (!existingError && Array.isArray(existingRows)) {
+      const reusable = existingRows.find((row) => {
+        const existingTask = String(row.task || "").replace(/\s+/g, " ").trim().toLowerCase();
+        return existingTask === normalizedTask;
+      });
+
+      if (reusable?.id) {
+        const mergedContext = input.context
+          ? {
+              ...parseStoredAccountabilityContext(reusable.context),
+              ...input.context,
+              deduplicated_reuse_count:
+                Number(
+                  parseStoredAccountabilityContext(reusable.context).deduplicated_reuse_count || 0,
+                ) + 1,
+              deduplicated_last_reused_at: new Date().toISOString(),
+            }
+          : {
+              ...parseStoredAccountabilityContext(reusable.context),
+              deduplicated_reuse_count:
+                Number(
+                  parseStoredAccountabilityContext(reusable.context).deduplicated_reuse_count || 0,
+                ) + 1,
+              deduplicated_last_reused_at: new Date().toISOString(),
+            };
+
+        const reusePayload: Record<string, unknown> = {
+          context: JSON.stringify(mergedContext),
+        };
+        if (reusable.status === "pending" && input.status === "running") {
+          reusePayload.status = "running";
+        }
+
+        await supabase.from("al_jobs").update(reusePayload).eq("id", reusable.id);
+        return { jobId: reusable.id as number };
+      }
+    }
+  }
+
   const timestamp = new Date().toISOString();
   const { data, error } = await supabase
     .from("al_jobs")
@@ -2508,6 +2573,7 @@ async function completeAccountabilityJob(input: {
   const payload = input.isError
     ? {
         status: "error",
+        result: input.result,
         error_msg: input.result,
         completed_at: new Date().toISOString(),
       }
