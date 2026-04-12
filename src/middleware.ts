@@ -1,9 +1,13 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { getAlCanonicalHost, normalizeHost } from "@/lib/al-platform";
+import {
+  getAlCanonicalHost,
+  isBorelandRootHost,
+  isPrivateAlSurfaceHost,
+  normalizeHost,
+} from "@/lib/al-platform";
 
 const ALLOWED_COUNTRIES = new Set(["US"]);
-const BORELAND_ROOT_HOSTS = new Set(["borelandops.com", "www.borelandops.com"]);
 const ALLOWED_BOT_PATTERNS = [
   /Googlebot/i,
   /AdsBot-Google/i,
@@ -130,6 +134,16 @@ function redirectToCanonicalAlPath(request: NextRequest): NextResponse | null {
 
 function rewriteCanonicalAlHost(request: NextRequest): NextResponse | null {
   const pathname = request.nextUrl.pathname;
+  if (pathname === "/robots.txt") {
+    const nextUrl = request.nextUrl.clone();
+    nextUrl.pathname = "/private-robots.txt";
+    return NextResponse.rewrite(nextUrl);
+  }
+
+  if (pathname === "/sitemap.xml") {
+    return new NextResponse("Not Found", { status: 404 });
+  }
+
   if (pathname.startsWith("/api/") || isStaticLikePath(pathname)) {
     return null;
   }
@@ -146,6 +160,16 @@ function rewriteCanonicalAlHost(request: NextRequest): NextResponse | null {
 
 function rewriteBorelandRootHost(request: NextRequest): NextResponse | null {
   const pathname = request.nextUrl.pathname;
+
+  if (pathname === "/robots.txt") {
+    const nextUrl = request.nextUrl.clone();
+    nextUrl.pathname = "/private-robots.txt";
+    return NextResponse.rewrite(nextUrl);
+  }
+
+  if (pathname === "/sitemap.xml") {
+    return new NextResponse("Not Found", { status: 404 });
+  }
 
   if (pathname.startsWith("/api/")) {
     return new NextResponse("Not Found", { status: 404 });
@@ -176,18 +200,26 @@ export function middleware(request: NextRequest) {
   if (host === getAlCanonicalHost()) {
     const rewritten = rewriteCanonicalAlHost(request);
     if (rewritten) {
+      if (isPrivateAlSurfaceHost(host)) {
+        rewritten.headers.set("X-Robots-Tag", "noindex, nofollow, noarchive");
+      }
       return rewritten;
     }
   }
 
-  if (BORELAND_ROOT_HOSTS.has(host)) {
+  if (isBorelandRootHost(host)) {
     const rewritten = rewriteBorelandRootHost(request);
     if (rewritten) {
+      rewritten.headers.set("X-Robots-Tag", "noindex, nofollow, noarchive");
       return rewritten;
     }
   }
 
-  return NextResponse.next();
+  const response = NextResponse.next();
+  if (isPrivateAlSurfaceHost(host)) {
+    response.headers.set("X-Robots-Tag", "noindex, nofollow, noarchive");
+  }
+  return response;
 }
 
 export const config = {

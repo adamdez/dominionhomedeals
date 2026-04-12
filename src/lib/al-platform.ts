@@ -40,6 +40,8 @@ export interface AlBusinessModuleContract {
   operatorHomePath: string;
 }
 
+const BORELAND_ROOT_HOSTS = new Set(["borelandops.com", "www.borelandops.com"]);
+
 function trimOrigin(value: string): string {
   return value.replace(/\/+$/, "");
 }
@@ -88,6 +90,14 @@ export function isCanonicalAlHost(host: string | null | undefined): boolean {
   return normalizeHost(host) === getAlCanonicalHost();
 }
 
+export function isBorelandRootHost(host: string | null | undefined): boolean {
+  return BORELAND_ROOT_HOSTS.has(normalizeHost(host));
+}
+
+export function isPrivateAlSurfaceHost(host: string | null | undefined): boolean {
+  return isCanonicalAlHost(host) || isBorelandRootHost(host);
+}
+
 export function getAlAppPrefixForHost(host: string | null | undefined): string {
   return isCanonicalAlHost(host) ? "" : "/al";
 }
@@ -128,4 +138,3 @@ export function buildAlUrl(
   const context = resolveAlPlatformContext(input);
   return `${context.origin}${buildAlPath(context.host, targetPath)}`;
 }
-
