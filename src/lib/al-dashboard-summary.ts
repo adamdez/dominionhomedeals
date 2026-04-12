@@ -1,3 +1,4 @@
+import { getAlCanonicalHost, getAlCanonicalOrigin, resolveAlOrigin } from "@/lib/al-platform";
 import {
   buildHostedAttentionPath,
   buildHostedBoardroomHomePath,
@@ -27,8 +28,7 @@ export interface DashboardSummary {
   spotlight: DashboardSummarySpotlight[];
 }
 
-const CANONICAL_AL_ORIGIN =
-  process.env.AL_CANONICAL_ORIGIN?.trim().replace(/\/+$/, "") || "https://al.dominionhomedeals.com";
+const CANONICAL_AL_ORIGIN = getAlCanonicalOrigin();
 
 function absolutePath(origin: string, path: string) {
   return `${origin.replace(/\/+$/, "")}${path.startsWith("/") ? path : `/${path}`}`;
@@ -51,8 +51,8 @@ export async function buildDashboardSummary(input?: {
   host?: string | null;
   origin?: string | null;
 }): Promise<DashboardSummary> {
-  const host = input?.host || "al.dominionhomedeals.com";
-  const origin = input?.origin?.trim() || CANONICAL_AL_ORIGIN;
+  const host = input?.host || getAlCanonicalHost();
+  const origin = resolveAlOrigin({ host: input?.host, origin: input?.origin });
   const [attentionBrief, boardroomSnapshot] = await Promise.all([
     buildAttentionBrief({ host, origin }),
     fetchBoardroomQueueSnapshot(host, 12),

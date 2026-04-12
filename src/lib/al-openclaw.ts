@@ -1,9 +1,15 @@
+import {
+  buildBusinessOperatorHomeUrl,
+} from "@/lib/al-business-registry";
+import {
+  getAlCanonicalHost,
+  getAlCanonicalOrigin,
+} from "@/lib/al-platform";
 import { createPlannerTask, listPlannerTasks } from "@/lib/al-planner";
 import { buildAttentionBrief } from "@/lib/al-attention-brief";
 import { buildLaborLaneReport } from "@/lib/al-labor-lanes";
 import { buildOperationalProofReport } from "@/lib/al-operational-proof";
 import {
-  buildHostedDominionLeadsPath,
   buildDominionLeadAttentionSummary,
 } from "@/lib/dominion-leads";
 import {
@@ -57,9 +63,8 @@ export interface OpenClawResult {
   data?: Record<string, unknown>;
 }
 
-const CANONICAL_AL_ORIGIN =
-  process.env.AL_CANONICAL_ORIGIN?.trim().replace(/\/+$/, "") || "https://al.dominionhomedeals.com";
-const CANONICAL_AL_HOST = new URL(CANONICAL_AL_ORIGIN).host;
+const CANONICAL_AL_ORIGIN = getAlCanonicalOrigin();
+const CANONICAL_AL_HOST = getAlCanonicalHost();
 
 export function readOpenClawSharedSecret(): string {
   return (
@@ -95,9 +100,19 @@ function hostedPath(
     case "boardroom":
       return absolutePath("/boardroom");
     case "wrenchready":
-      return absolutePath(buildHostedWrenchReadyDayReadinessPath(CANONICAL_AL_HOST));
+      return (
+        buildBusinessOperatorHomeUrl("wrenchready", {
+          host: CANONICAL_AL_HOST,
+          origin: CANONICAL_AL_ORIGIN,
+        }) || absolutePath(buildHostedWrenchReadyDayReadinessPath(CANONICAL_AL_HOST))
+      );
     case "dominion_leads":
-      return absolutePath(buildHostedDominionLeadsPath(CANONICAL_AL_HOST));
+      return (
+        buildBusinessOperatorHomeUrl("dominion", {
+          host: CANONICAL_AL_HOST,
+          origin: CANONICAL_AL_ORIGIN,
+        }) || CANONICAL_AL_ORIGIN
+      );
     case "operational_proof":
       return absolutePath(buildHostedOperationalProofPath(CANONICAL_AL_HOST));
     case "labor_lanes":
@@ -438,7 +453,7 @@ export async function runOpenClawCommand(input: OpenClawEnvelope): Promise<OpenC
   }
 
   const actor = resolved.actor === "al" ? "AL" : "Dez";
-  const presentations = (await fetchBoardroomPresentations("al.dominionhomedeals.com", 16))
+  const presentations = (await fetchBoardroomPresentations(CANONICAL_AL_HOST, 16))
     .filter((item) =>
       actor === "Dez"
         ? item.waitingOn === "Dez" || item.waitingOn === "Dez review"

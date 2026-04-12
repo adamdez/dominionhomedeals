@@ -1,6 +1,7 @@
 import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { LaborLanesPage } from "@/components/al/LaborLanesPage";
+import { resolveAlOrigin } from "@/lib/al-platform";
 import { buildLaborLaneReport } from "@/lib/al-labor-lanes";
 import { buildHostedAppPrefix, isAuthenticatedAlSession } from "@/lib/al-review";
 
@@ -15,7 +16,7 @@ export default async function AlLaborLanesPage() {
   const headerStore = await headers();
   const host = headerStore.get("host");
   const proto = headerStore.get("x-forwarded-proto") || "http";
-  const origin = host ? `${proto}://${host}` : "https://al.dominionhomedeals.com";
+  const origin = resolveAlOrigin({ host, proto });
   const report = await buildLaborLaneReport({ host, origin });
 
   return (

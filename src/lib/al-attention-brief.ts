@@ -1,3 +1,4 @@
+import { getAlCanonicalOrigin, getAlCanonicalHost, resolveAlOrigin } from "@/lib/al-platform";
 import { listPlannerTasks } from "@/lib/al-planner";
 import { buildDominionLeadAttentionSummary } from "@/lib/dominion-leads";
 import {
@@ -21,8 +22,7 @@ export interface AttentionBrief {
   topNextMove: string;
 }
 
-const CANONICAL_AL_ORIGIN =
-  process.env.AL_CANONICAL_ORIGIN?.trim().replace(/\/+$/, "") || "https://al.dominionhomedeals.com";
+const CANONICAL_AL_ORIGIN = getAlCanonicalOrigin();
 
 function absolutePath(origin: string, path: string) {
   return `${origin.replace(/\/+$/, "")}${path.startsWith("/") ? path : `/${path}`}`;
@@ -40,8 +40,8 @@ export async function buildAttentionBrief(input?: {
   host?: string | null;
   origin?: string | null;
 }): Promise<AttentionBrief> {
-  const host = input?.host || "al.dominionhomedeals.com";
-  const origin = input?.origin?.trim() || CANONICAL_AL_ORIGIN;
+  const host = input?.host || getAlCanonicalHost();
+  const origin = resolveAlOrigin({ host: input?.host, origin: input?.origin });
   const plannerPath = buildHostedPlannerPath(host);
   const [tasks, presentations, leadSummary, wrenchReady] = await Promise.all([
     listPlannerTasks(),

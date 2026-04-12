@@ -1,5 +1,6 @@
 import { buildAttentionBrief } from "@/lib/al-attention-brief";
 import { listPlannerTasks } from "@/lib/al-planner";
+import { getAlCanonicalHost, getAlCanonicalOrigin, resolveAlOrigin } from "@/lib/al-platform";
 import {
   buildHostedBoardroomHomePath,
   buildHostedOperationalProofPath,
@@ -45,9 +46,7 @@ export interface OperationalProofReport {
   checks: OperationalProofCheck[];
 }
 
-const CANONICAL_AL_ORIGIN =
-  process.env.AL_CANONICAL_ORIGIN?.trim().replace(/\/+$/, "") ||
-  "https://al.dominionhomedeals.com";
+const CANONICAL_AL_ORIGIN = getAlCanonicalOrigin();
 
 function absolutePath(origin: string, path: string) {
   return `${origin.replace(/\/+$/, "")}${path.startsWith("/") ? path : `/${path}`}`;
@@ -114,8 +113,8 @@ export async function buildOperationalProofReport(input?: {
   host?: string | null;
   origin?: string | null;
 }): Promise<OperationalProofReport> {
-  const host = input?.host || "al.dominionhomedeals.com";
-  const origin = input?.origin?.trim() || CANONICAL_AL_ORIGIN;
+  const host = input?.host || getAlCanonicalHost();
+  const origin = resolveAlOrigin({ host: input?.host, origin: input?.origin });
 
   const [
     boardroom,

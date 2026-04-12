@@ -1,3 +1,4 @@
+import { getAlCanonicalOrigin } from "@/lib/al-platform";
 import {
   createPlannerTask,
   listPlannerTasks,
@@ -391,9 +392,7 @@ export async function getWrenchReadyDayReadinessSummary(
 ) {
   const record = await getWrenchReadyDayReadiness(date || tomorrowKey());
   const origin =
-    input?.origin?.trim() ||
-    process.env.AL_CANONICAL_ORIGIN?.trim().replace(/\/+$/, "") ||
-    "https://al.dominionhomedeals.com";
+    input?.origin?.trim() || getAlCanonicalOrigin();
   const readinessHref = `${origin}${buildHostedWrenchReadyDayReadinessPath(input?.host)}`;
   if (!record) {
     return {

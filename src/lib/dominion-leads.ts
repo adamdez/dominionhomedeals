@@ -1,3 +1,4 @@
+import { getAlCanonicalOrigin } from "@/lib/al-platform";
 import {
   createPlannerTask,
   listPlannerTasks,
@@ -7,8 +8,7 @@ import { buildHostedAppPrefix } from "@/lib/al-review";
 import { getServiceClient } from "@/lib/supabase";
 
 const DOMINION_LEAD_CATEGORY = "dominion_lead_control";
-const CANONICAL_AL_ORIGIN =
-  process.env.AL_CANONICAL_ORIGIN?.trim().replace(/\/+$/, "") || "https://al.dominionhomedeals.com";
+const CANONICAL_AL_ORIGIN = getAlCanonicalOrigin();
 
 type JsonRecord = Record<string, unknown>;
 

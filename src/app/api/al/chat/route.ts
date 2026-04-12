@@ -6,6 +6,7 @@ import {
   listPlannerTasks,
   updatePlannerTask,
 } from "@/lib/al-planner";
+import { getAlCanonicalOrigin } from "@/lib/al-platform";
 import { getServiceClient } from "@/lib/supabase";
 import { syncBrowserCommerceReviewJob } from "@/lib/al-review";
 import {
@@ -27,6 +28,7 @@ const OPENAI_HEAVY_MODEL = process.env.AL_OPENAI_MODEL_HEAVY?.trim() || "gpt-5.4
 // Chairman reasoning is intentionally OpenAI-only. Legacy Anthropic code remains
 // only so older in-flight continuations can be recovered onto the OpenAI path.
 const PRIMARY_REASONING_PROVIDER = "openai";
+const AL_CANONICAL_ORIGIN = getAlCanonicalOrigin();
 
 function readEnvSecret(key: string): string {
   const value = process.env[key]?.trim() || "";
@@ -282,6 +284,23 @@ For media_production:
 - Use the user-provided local source photo path when available.
 - Produce review-ready assets with links and stop for approval before publish.
 - If blocked, report exact missing access (source photos, RUNWAY_API_KEY, or GIF export support).
+
+STATIC IMAGE EDIT TASK RULE:
+If the user asks to replace, swap, or apply a real logo onto an existing hero image, website image, or other static source image, prefer the static_brand_swap bridge lane.
+For static_brand_swap:
+- Treat it as deterministic proof work, not generative media exploration.
+- Use the real source image and the real transparent logo asset.
+- Return one review-ready proof image and stop for approval before production replacement.
+- If blocked, report the exact missing access (source image, transparent logo asset, or local Pillow image-edit support).
+
+CREATIVE IMAGE ROUTING RULE:
+When the user asks for website imagery, decide the class of request before choosing a tool.
+- If the job is "edit this exact existing image" or "swap logos on this current asset", use static_brand_swap.
+- If the job is "make a new better hero image" or "create a fresh branded image from scratch", use media_production.
+- Do not send exact deterministic edit work into the generative lane.
+- Do not send fresh creative hero generation into the deterministic edit lane.
+- If the user only cares about the best final hero outcome and does not require an exact duplicate, prefer a fresh hero generation path.
+- Say the class of request out loud when it matters: exact edit, fresh hero generation, or broader website production.
 
 WEBSITE PRODUCTION TASK RULE:
 If the user asks for WrenchReady website production that depends on brand/media assets, route first to media_production and then to code execution on the real WrenchReady website repo.
@@ -925,6 +944,34 @@ const BRIDGE_TOOLS: Anthropic.Tool[] = [
       required: [],
     },
   },
+  {
+    name: "static_brand_swap",
+    description:
+      "Create one deterministic static proof by applying the real WrenchReady logo onto an existing source image. Use this for exact hero-image logo swaps, shirt/hat/truck logo replacement, and review-safe static compositing. This is the right lane for a logo proof, not the generative media lane.",
+    input_schema: {
+      type: "object" as const,
+      properties: {
+        preset: {
+          type: "string",
+          description:
+            "Named placement preset. Use wrenchready_hero_main for the current homepage hero image logo swap proof.",
+          enum: ["wrenchready_hero_main"],
+        },
+        source_image_path: {
+          type: "string",
+          description:
+            "Absolute local path to the existing source image to edit. Defaults to the current WrenchReady hero source image when omitted.",
+        },
+        logo_path: {
+          type: "string",
+          description:
+            "Absolute local path to the transparent logo asset. Defaults to the current WrenchReady transparent logo PNG when omitted.",
+        },
+        ...REVIEW_DISPATCH_SCHEMA_PROPERTIES,
+      },
+      required: [],
+    },
+  },
 ];
 
 function isBridgeTool(name: string) {
@@ -939,7 +986,8 @@ function isBridgeTool(name: string) {
     name === "cowork_task" ||
     name === "codex_task" ||
     name === "local_pdf_merge" ||
-    name === "media_production"
+    name === "media_production" ||
+    name === "static_brand_swap"
     // job_status and delegate_to_ceo are server-side — NOT bridge tools
   );
 }
@@ -977,6 +1025,7 @@ type DispatchSourceTool =
   | "codex_task"
   | "cowork_task"
   | "media_production"
+  | "static_brand_swap"
   | "crew_run"
   | "browser_commerce_design";
 type DispatchBusinessId = "dominion" | "wrenchready";
@@ -994,11 +1043,13 @@ interface BridgeCapabilities {
   media_generation?: boolean;
   media_runway?: boolean;
   media_gif_export?: boolean;
+  static_image_edit?: boolean;
 }
 
 type ChatTaskClass =
   | "browser_commerce_design"
-  | "website_brand_media_production";
+  | "website_brand_media_production"
+  | "static_brand_swap_proof";
 
 interface TaskClassification {
   taskClass: ChatTaskClass;
@@ -1032,6 +1083,16 @@ interface WebsiteProductionAssessment {
     selectedPath: string | null;
     missingAccess: string[];
   };
+}
+
+interface StaticBrandSwapAssessment {
+  executable: boolean;
+  selectedExecutionPath: string;
+  missingAccess: string[];
+  operatorMessage: string;
+  sourceImagePath: string;
+  logoPath: string;
+  preset: string;
 }
 
 interface TaskPathAssessment {
@@ -1099,6 +1160,23 @@ interface MediaProductionBridgeResult {
   generation_error?: string;
 }
 
+interface StaticBrandSwapBridgeResult {
+  ok?: boolean;
+  status?: string;
+  lane_id?: string;
+  preferred_execution_path?: string;
+  selected_execution_path?: string;
+  summary?: string;
+  next_action?: string;
+  review_page_url?: string | null;
+  operator_message?: string;
+  artifacts?: Record<string, unknown> | null;
+  missing_access?: string[];
+  error?: string;
+  preset?: string;
+  placements?: Array<Record<string, unknown>>;
+}
+
 interface DispatchMetadata {
   review_required: boolean;
   business_id: DispatchBusinessId | null;
@@ -1139,6 +1217,18 @@ const WEBSITE_PRODUCTION_PATTERN =
   /\b(website|site update|homepage|landing page|hero section|service page|web design|site refresh|page refresh|website refresh)\b/i;
 const BRAND_MEDIA_PATTERN =
   /\b(photo|photos|portrait|headshot|face|image|images|gif|gifs|video|videos|short video|brand asset|assets|logo)\b/i;
+const STATIC_BRAND_SWAP_TRIGGER_PATTERN =
+  /\b(replace|swap|apply|put|use|update)\b/i;
+const STATIC_BRAND_SWAP_TARGET_PATTERN =
+  /\b(hero image|hero photo|existing image|website hero|hero)\b/i;
+const STATIC_BRAND_SWAP_PLACEMENT_PATTERN =
+  /\b(hat|shirt|truck)\b/i;
+const STATIC_BRAND_SWAP_LOGO_PATTERN =
+  /\blogo\b/i;
+const CREATIVE_REMAKE_PATTERN =
+  /\b(from scratch|remake|rebuild|new hero|fresh hero|create a new|make a new|better hero|hero image from scratch)\b/i;
+const EXACT_EDIT_PATTERN =
+  /\b(exact|current|existing|this image|this exact|replace the .* on the current|swap the .* on the current)\b/i;
 const ANTHROPIC_BILLING_ERROR_PATTERN =
   /\b(credit balance|insufficient credits|billing|payment required|402|quota|rate limit exceeded for billing)\b/i;
 type BrowserRuntimePreference =
@@ -1172,10 +1262,48 @@ function classifyTaskForRouting(message: string): TaskClassification | null {
     return null;
   }
 
+  const wantsFreshHero =
+    WEBSITE_PRODUCTION_PATTERN.test(normalized) &&
+    BRAND_MEDIA_PATTERN.test(normalized) &&
+    /\b(wrenchready|simon)\b/i.test(normalized) &&
+    CREATIVE_REMAKE_PATTERN.test(normalized);
+  const wantsExactStaticEdit =
+    STATIC_BRAND_SWAP_TRIGGER_PATTERN.test(normalized) &&
+    STATIC_BRAND_SWAP_TARGET_PATTERN.test(normalized) &&
+    STATIC_BRAND_SWAP_PLACEMENT_PATTERN.test(normalized) &&
+    STATIC_BRAND_SWAP_LOGO_PATTERN.test(normalized) &&
+    /\b(wrenchready|simon)\b/i.test(normalized) &&
+    !CREATIVE_REMAKE_PATTERN.test(normalized);
+
+  if (wantsFreshHero) {
+    return {
+      taskClass: "website_brand_media_production",
+      businessId: "wrenchready",
+      owner: "Tom",
+      laneId: "wrenchready-website-production",
+      preferredExecutionPath: `${WEBSITE_MEDIA_EXECUTION_PATH} -> ${WEBSITE_COWORK_EXECUTION_PATH}`,
+      summary: normalizeConsequentialChange(normalized, 180),
+      reviewCheckpointRequired: true,
+    };
+  }
+
+  if (wantsExactStaticEdit) {
+    return {
+      taskClass: "static_brand_swap_proof",
+      businessId: "wrenchready",
+      owner: "Tom",
+      laneId: "wrenchready-static-brand-swap",
+      preferredExecutionPath: STATIC_BRAND_SWAP_EXECUTION_PATH,
+      summary: normalizeConsequentialChange(normalized, 180),
+      reviewCheckpointRequired: true,
+    };
+  }
+
   if (
     WEBSITE_PRODUCTION_PATTERN.test(normalized) &&
     BRAND_MEDIA_PATTERN.test(normalized) &&
-    /\b(wrenchready|simon)\b/i.test(normalized)
+    /\b(wrenchready|simon)\b/i.test(normalized) &&
+    !EXACT_EDIT_PATTERN.test(normalized)
   ) {
     return {
       taskClass: "website_brand_media_production",
@@ -1204,6 +1332,34 @@ function classifyTaskForRouting(message: string): TaskClassification | null {
   }
 
   return null;
+}
+
+function assessStaticBrandSwapPath(
+  bridgeConnected: boolean,
+  capabilities?: BridgeCapabilities | null,
+): StaticBrandSwapAssessment {
+  const missingAccess: string[] = [];
+  if (!bridgeConnected) {
+    missingAccess.push("local bridge connection");
+  }
+  if (!capabilities?.static_image_edit) {
+    missingAccess.push("static image edit lane");
+  }
+
+  const executable = missingAccess.length === 0;
+  return {
+    executable,
+    selectedExecutionPath: executable
+      ? STATIC_BRAND_SWAP_EXECUTION_PATH
+      : "blocked:static_brand_swap",
+    missingAccess,
+    operatorMessage: executable
+      ? "Static brand swap lane is ready."
+      : `Static brand swap lane blocked: missing ${missingAccess.join(", ")}. This exact job needs the deterministic static proof lane, not the generative media lane.`,
+    sourceImagePath: DEFAULT_WRENCHREADY_HERO_SOURCE_PATH,
+    logoPath: DEFAULT_WRENCHREADY_TRANSPARENT_LOGO_PATH,
+    preset: "wrenchready_hero_main",
+  };
 }
 
 function assessWebsiteProductionPath(
@@ -1553,11 +1709,16 @@ const WRENCHREADY_CURSOR_REPO = "adamdez/wrenchreadymobile-com";
 const DEFAULT_COWORK_DOMAIN = "dominionhomedeals";
 const WRENCHREADY_COWORK_DOMAIN = "wrench-ready";
 const DEFAULT_SIMON_SOURCE_DIR = "C:\\Users\\adamd\\Desktop\\Simon\\simon";
+const DEFAULT_WRENCHREADY_HERO_SOURCE_PATH =
+  "C:\\Users\\adamd\\Desktop\\Simon\\wrenchreadymobile.com\\public\\hero-main-original.png";
+const DEFAULT_WRENCHREADY_TRANSPARENT_LOGO_PATH =
+  "C:\\Users\\adamd\\Desktop\\Simon\\Graphics\\03-hd-raster\\wr-logo-full-transparent@2048w.png";
 const WEBSITE_MEDIA_EXECUTION_PATH = "bridge:media_production";
 const WEBSITE_COWORK_EXECUTION_PATH = "bridge:cowork_task";
 const WEBSITE_CURSOR_EXECUTION_PATH = "cursor_agent";
 const WEBSITE_BROWSER_REVIEW_HOSTED_PATH = HOSTED_BROWSER_EXECUTION_PATH;
 const WEBSITE_BROWSER_REVIEW_LOCAL_PATH = "bridge:browser_review";
+const STATIC_BRAND_SWAP_EXECUTION_PATH = "bridge:static_brand_swap";
 
 function normalizeCoworkDomain(domain: string | undefined): string | undefined {
   const normalized = domain?.trim().toLowerCase();
@@ -1877,6 +2038,7 @@ const AUTO_FOLLOW_THROUGH_JOB_TYPES = new Set([
   "cursor_agent",
   "crew_run",
   "media_production",
+  "static_brand_swap",
   "website_brand_media_production",
   "local_pdf_merge",
 ]);
@@ -1912,6 +2074,8 @@ function accountabilityJobLabel(jobType: string) {
       return "Crew follow-through";
     case "media_production":
       return "Media follow-through";
+    case "static_brand_swap":
+      return "Proof follow-through";
     case "website_brand_media_production":
       return "Website follow-through";
     case "local_pdf_merge":
@@ -2063,6 +2227,7 @@ async function createAccountabilityJob(input: {
       "browser_commerce_design",
       "website_brand_media_production",
       "media_production",
+      "static_brand_swap",
       "cursor_agent",
       "cowork_task",
       "codex_task",
@@ -3053,6 +3218,73 @@ function parseMediaProductionBridgeResult(raw: string): MediaProductionBridgeRes
   } catch {
     return null;
   }
+}
+
+function buildStaticBrandSwapExecutionContext(input: {
+  task: string;
+  classification: TaskClassification;
+  assessment: StaticBrandSwapAssessment;
+  result?: StaticBrandSwapBridgeResult | null;
+}): Record<string, unknown> {
+  return {
+    task_class: input.classification.taskClass,
+    business_id: input.classification.businessId,
+    owner: input.classification.owner,
+    lane_id: input.classification.laneId,
+    preferred_execution_path: input.classification.preferredExecutionPath,
+    selected_execution_path:
+      input.result?.selected_execution_path || input.assessment.selectedExecutionPath,
+    missing_access: input.result?.missing_access || input.assessment.missingAccess,
+    review_checkpoint_required: input.classification.reviewCheckpointRequired,
+    source_image_path: input.assessment.sourceImagePath,
+    logo_path: input.assessment.logoPath,
+    preset: input.assessment.preset,
+    review_page_url: input.result?.review_page_url || null,
+    artifacts: input.result?.artifacts || null,
+    execution_status: input.result?.status || null,
+  };
+}
+
+function parseStaticBrandSwapBridgeResult(raw: string): StaticBrandSwapBridgeResult | null {
+  if (!raw) {
+    return null;
+  }
+
+  try {
+    const parsed = JSON.parse(raw) as StaticBrandSwapBridgeResult;
+    return parsed && typeof parsed === "object" ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
+function buildStaticBrandSwapExecutiveBrief(
+  result: StaticBrandSwapBridgeResult,
+): string {
+  const artifacts = asRecord(result.artifacts);
+  const reviewPageUrl = asBriefString(result.review_page_url);
+  const afterUrl = asBriefString(artifacts.after_url);
+  const beforeUrl = asBriefString(artifacts.before_url);
+  const logoUrl = asBriefString(artifacts.logo_url);
+
+  const lines = [
+    "Best move: review one static hero proof before swapping production.",
+    result.summary || result.operator_message || "Static logo-swap proof is ready for review.",
+    "",
+    "Review now",
+    reviewPageUrl ? `- [Open review page](${reviewPageUrl})` : "- Review page not available yet",
+    afterUrl ? `- [Open proof image](${afterUrl})` : null,
+    beforeUrl ? `- [Open original hero](${beforeUrl})` : null,
+    logoUrl ? `- [Open logo asset](${logoUrl})` : null,
+    "",
+    "Why this path",
+    "- This uses the deterministic static edit lane, so AL can review one exact proof instead of drifting into video or broad AI generation.",
+    "",
+    "Next action",
+    `- ${result.next_action || "Approve the proof or request placement tweaks before production replacement."}`,
+  ].filter(Boolean);
+
+  return lines.join("\n");
 }
 
 function buildWebsiteCodeExecutionTask(input: {
@@ -4414,7 +4646,7 @@ async function executeWebFetch(url: string): Promise<string> {
     const response = await fetch(parsed.toString(), {
       signal: AbortSignal.timeout(15_000),
       headers: {
-        "User-Agent": "AL-Boreland/1.0 (+https://al.dominionhomedeals.com)",
+                "User-Agent": `AL-Boreland/1.0 (+${AL_CANONICAL_ORIGIN})`,
       },
     });
 
@@ -4457,6 +4689,7 @@ async function runOpenAIChat(input: {
   taskClassification: TaskClassification | null;
   browserCommerceAssessment: TaskPathAssessment | null;
   websiteProductionAssessment: WebsiteProductionAssessment | null;
+  staticBrandSwapAssessment: StaticBrandSwapAssessment | null;
 }): Promise<Response> {
   const apiKey = readEnvSecret("OPENAI_API_KEY");
   if (!apiKey) {
@@ -4945,6 +5178,17 @@ async function runOpenAIChat(input: {
           controller.close();
           return;
         }
+        if (input.taskClassification?.taskClass === "static_brand_swap_proof") {
+          const usefulMessage =
+            input.staticBrandSwapAssessment?.operatorMessage ||
+            `Static brand swap routing failed before the proof lane could run. ${msg}`;
+          controller.enqueue(
+            encoder.encode(`data: ${JSON.stringify({ t: usefulMessage })}\n\n`),
+          );
+          controller.enqueue(encoder.encode("data: [DONE]\n\n"));
+          controller.close();
+          return;
+        }
         controller.enqueue(
           encoder.encode(`data: ${JSON.stringify({ error: msg })}\n\n`),
         );
@@ -5106,6 +5350,10 @@ export async function POST(request: NextRequest) {
     taskClassification?.taskClass === "website_brand_media_production"
       ? assessWebsiteProductionPath(Boolean(bridgeConnected), bridgeCapabilities)
       : null;
+  const staticBrandSwapAssessment =
+    taskClassification?.taskClass === "static_brand_swap_proof"
+      ? assessStaticBrandSwapPath(Boolean(bridgeConnected), bridgeCapabilities)
+      : null;
   const continuationBrowserClassification = continuation
     ? classifyTaskForRouting(message || "")
     : null;
@@ -5113,10 +5361,86 @@ export async function POST(request: NextRequest) {
     continuationBrowserClassification?.taskClass === "website_brand_media_production"
       ? continuationBrowserClassification
       : null;
+  const continuationStaticBrandSwapClassification =
+    continuationBrowserClassification?.taskClass === "static_brand_swap_proof"
+      ? continuationBrowserClassification
+      : null;
 
   const mediaBridgeJob = continuation?.bridgeJobs?.find(
     (job) => job.name === "media_production",
   );
+  const staticBrandSwapBridgeJob = continuation?.bridgeJobs?.find(
+    (job) => job.name === "static_brand_swap",
+  );
+
+  if (staticBrandSwapBridgeJob && continuationStaticBrandSwapClassification) {
+    const bridgeResult = (continuation?.toolResults || []).find((result) => {
+      if (!result || typeof result !== "object") {
+        return false;
+      }
+
+      if (
+        "tool_use_id" in result &&
+        String((result as { tool_use_id?: string }).tool_use_id || "") ===
+          staticBrandSwapBridgeJob.toolUseId
+      ) {
+        return true;
+      }
+
+      if (
+        "call_id" in result &&
+        String((result as { call_id?: string }).call_id || "") ===
+          staticBrandSwapBridgeJob.toolUseId
+      ) {
+        return true;
+      }
+
+      return false;
+    });
+
+    const rawBridgeText =
+      extractToolResultText(
+        bridgeResult && typeof bridgeResult === "object"
+          ? "content" in bridgeResult
+            ? (bridgeResult as { content?: unknown }).content
+            : "output" in bridgeResult
+              ? bridgeResult
+              : undefined
+          : bridgeResult,
+      ) || "Static brand swap lane returned no usable bridge result.";
+    const parsedResult = parseStaticBrandSwapBridgeResult(rawBridgeText);
+    const assessment =
+      staticBrandSwapAssessment ||
+      assessStaticBrandSwapPath(Boolean(bridgeConnected), bridgeCapabilities);
+
+    if (!parsedResult) {
+      await completeAccountabilityJob({
+        jobId: staticBrandSwapBridgeJob.jobId,
+        result: rawBridgeText,
+        isError: true,
+        context: buildStaticBrandSwapExecutionContext({
+          task: message || "",
+          classification: continuationStaticBrandSwapClassification,
+          assessment,
+        }),
+      });
+      return streamingTextResponse(rawBridgeText);
+    }
+
+    const brief = buildStaticBrandSwapExecutiveBrief(parsedResult);
+    await completeAccountabilityJob({
+      jobId: staticBrandSwapBridgeJob.jobId,
+      result: brief,
+      isError: !parsedResult.ok,
+      context: buildStaticBrandSwapExecutionContext({
+        task: message || "",
+        classification: continuationStaticBrandSwapClassification,
+        assessment,
+        result: parsedResult,
+      }),
+    });
+    return streamingTextResponse(brief);
+  }
 
   if (mediaBridgeJob && continuationWebsiteClassification) {
     const mediaBridgeResult = (continuation?.toolResults || []).find((result) => {
@@ -5430,6 +5754,15 @@ export async function POST(request: NextRequest) {
 
   if (
     taskClassification &&
+    taskClassification.taskClass === "static_brand_swap_proof" &&
+    staticBrandSwapAssessment &&
+    !staticBrandSwapAssessment.executable
+  ) {
+    return streamingTextResponse(staticBrandSwapAssessment.operatorMessage);
+  }
+
+  if (
+    taskClassification &&
     taskClassification.taskClass === "website_brand_media_production" &&
     websiteProductionAssessment &&
     !websiteProductionAssessment.executable
@@ -5595,6 +5928,62 @@ export async function POST(request: NextRequest) {
 
   if (
     taskClassification &&
+    taskClassification.taskClass === "static_brand_swap_proof" &&
+    staticBrandSwapAssessment &&
+    staticBrandSwapAssessment.executable
+  ) {
+    const accountability = await createAccountabilityJob({
+      jobType: "static_brand_swap",
+      task: message || "",
+      context: buildStaticBrandSwapExecutionContext({
+        task: message || "",
+        classification: taskClassification,
+        assessment: staticBrandSwapAssessment,
+      }),
+      status: "running",
+    });
+
+    if ("error" in accountability) {
+      return streamingTextResponse(
+        `Static brand swap lane blocked: could not create accountability for the proof (${accountability.error}).`,
+      );
+    }
+
+    return new Response(
+      `data: ${JSON.stringify({
+        vault_action: {
+          requests: [
+            {
+              id: crypto.randomUUID(),
+              name: "static_brand_swap",
+              input: {
+                preset: staticBrandSwapAssessment.preset,
+                source_image_path: staticBrandSwapAssessment.sourceImagePath,
+                logo_path: staticBrandSwapAssessment.logoPath,
+                business_id: taskClassification.businessId,
+                owner: taskClassification.owner,
+                lane_id: taskClassification.laneId,
+                review_required: true,
+                change_under_review: taskClassification.summary,
+                intended_business_outcome:
+                  "Increase website trust and brand consistency on the WrenchReady homepage hero.",
+                primary_metric: "homepage conversion rate",
+                expected_direction: "increase",
+                minimum_meaningful_delta: 0.1,
+              },
+              accountabilityJobId: accountability.jobId,
+            },
+          ],
+          assistantBlocks: [],
+          precomputedResults: [],
+        },
+      })}\n\n`,
+      { headers: sseHeaders() },
+    );
+  }
+
+  if (
+    taskClassification &&
     taskClassification.taskClass === "website_brand_media_production" &&
     websiteProductionAssessment &&
     websiteProductionAssessment.executable
@@ -5682,6 +6071,7 @@ export async function POST(request: NextRequest) {
       taskClassification,
       browserCommerceAssessment,
       websiteProductionAssessment,
+      staticBrandSwapAssessment,
     });
   }
 
@@ -6157,6 +6547,17 @@ export async function POST(request: NextRequest) {
           const usefulMessage =
             websiteProductionAssessment?.operatorMessage ||
             `Website production routing failed before media or code execution could run. ${msg}`;
+          controller.enqueue(
+            encoder.encode(`data: ${JSON.stringify({ t: usefulMessage })}\n\n`)
+          );
+          controller.enqueue(encoder.encode("data: [DONE]\n\n"));
+          controller.close();
+          return;
+        }
+        if (taskClassification?.taskClass === "static_brand_swap_proof") {
+          const usefulMessage =
+            staticBrandSwapAssessment?.operatorMessage ||
+            `Static brand swap routing failed before the proof lane could run. ${msg}`;
           controller.enqueue(
             encoder.encode(`data: ${JSON.stringify({ t: usefulMessage })}\n\n`)
           );

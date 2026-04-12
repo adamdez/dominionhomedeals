@@ -1,6 +1,11 @@
 import { buildAttentionBrief } from "@/lib/al-attention-brief";
+import {
+  buildBusinessManagerSummaries,
+  getAlBusinessModule,
+} from "@/lib/al-business-registry";
 import { buildOperationalProofReport } from "@/lib/al-operational-proof";
 import { listPlannerTasks } from "@/lib/al-planner";
+import { getAlCanonicalHost, getAlCanonicalOrigin, resolveAlOrigin } from "@/lib/al-platform";
 import {
   buildHostedBoardroomHomePath,
   buildHostedLaborLanesPath,
@@ -50,9 +55,7 @@ export interface LaborLaneReport {
   lanes: LaborLane[];
 }
 
-const CANONICAL_AL_ORIGIN =
-  process.env.AL_CANONICAL_ORIGIN?.trim().replace(/\/+$/, "") ||
-  "https://al.dominionhomedeals.com";
+const CANONICAL_AL_ORIGIN = getAlCanonicalOrigin();
 
 function absolutePath(origin: string, path: string) {
   return `${origin.replace(/\/+$/, "")}${path.startsWith("/") ? path : `/${path}`}`;
@@ -128,8 +131,8 @@ export async function buildLaborLaneReport(input?: {
   host?: string | null;
   origin?: string | null;
 }): Promise<LaborLaneReport> {
-  const host = input?.host || "al.dominionhomedeals.com";
-  const origin = input?.origin?.trim() || CANONICAL_AL_ORIGIN;
+  const host = input?.host || getAlCanonicalHost();
+  const origin = resolveAlOrigin({ host: input?.host, origin: input?.origin });
 
   const [
     operationalProof,
@@ -139,6 +142,7 @@ export async function buildLaborLaneReport(input?: {
     dominionDashboard,
     wrenchReadySummary,
     remoteBridgeHeartbeat,
+    moduleManagerSummaries,
   ] = await Promise.all([
     buildOperationalProofReport({ host, origin }),
     buildAttentionBrief({ host, origin }),
@@ -147,7 +151,21 @@ export async function buildLaborLaneReport(input?: {
     getDominionLeadDashboard(48),
     getWrenchReadyDayReadinessSummary(null, { host, origin }),
     getLatestRemoteBridgeHeartbeat(),
+    buildBusinessManagerSummaries({
+      host,
+      origin,
+      businessIds: ["dominion", "wrenchready"],
+    }),
   ]);
+
+  const dominionLeadManager = moduleManagerSummaries.find(
+    (summary) => summary.businessId === "dominion" && summary.managerId === "lead_flow",
+  );
+  const wrenchReadyReadinessManager = moduleManagerSummaries.find(
+    (summary) => summary.businessId === "wrenchready" && summary.managerId === "day_readiness",
+  );
+  const dominionModule = getAlBusinessModule("dominion");
+  const wrenchReadyModule = getAlBusinessModule("wrenchready");
 
   const executiveControl: LaborLane = {
     id: "executive_control",
@@ -316,31 +334,32 @@ export async function buildLaborLaneReport(input?: {
   const customerService: LaborLane = {
     id: "customer_service",
     title: "Customer service and follow-up",
-    owner: "Tom and Jerry, governed by AL",
+    owner: `${wrenchReadyModule?.ceoId === "wrenchready" ? "Tom" : "WrenchReady CEO"} and ${dominionModule?.ceoId === "dominion" ? "Jerry" : "Dominion CEO"}, governed by AL`,
     coverage: "Seller first touch, customer confirmations, follow-up discipline, trust protection, and next-day service readiness.",
     status:
-      wrenchReadySummary.status === "blocked" ||
-      dominionDashboard.staleLeads + dominionDashboard.untouchedLeads >= 5
+      dominionLeadManager?.status === "blocked" || wrenchReadyReadinessManager?.status === "blocked"
         ? "blocked"
-        : wrenchReadySummary.status !== "ready" ||
-            dominionDashboard.staleLeads > 0 ||
-            dominionDashboard.untouchedLeads > 0
+        : dominionLeadManager?.status === "warning" || wrenchReadyReadinessManager?.status === "warning"
           ? "warning"
           : "live",
-    summary: `Dominion has ${dominionDashboard.staleLeads} stale lead(s) and ${dominionDashboard.untouchedLeads} untouched lead(s). WrenchReady tomorrow readiness is ${wrenchReadySummary.status.replace(/_/g, " ")}.`,
+    summary: [
+      dominionLeadManager?.headline,
+      wrenchReadyReadinessManager?.headline,
+    ]
+      .filter(Boolean)
+      .join(" "),
     nextMove:
-      wrenchReadySummary.status === "blocked"
-        ? "Repair tomorrow's WrenchReady readiness before wrench time starts."
-        : dominionDashboard.untouchedLeads > 0 || dominionDashboard.staleLeads > 0
-          ? "Tighten first-touch and follow-up discipline so leads and customers do not wait on founder memory."
-          : "Keep confirmations, first touch, and trust follow-through visible in the same AL surfaces.",
+      wrenchReadyReadinessManager?.nextActions[0] ||
+      dominionLeadManager?.nextActions[0] ||
+      "Keep confirmations, first touch, and trust follow-through visible in the same AL surfaces.",
     href:
-      wrenchReadySummary.status !== "ready"
+      wrenchReadyReadinessManager?.status !== "healthy"
         ? wrenchReadySummary.href
         : absolutePath(origin, buildHostedDominionLeadsPath(host)),
     sourceOfTruth: [
       "Dominion lead dashboard",
       "WrenchReady day readiness",
+      "Business module manager summaries",
       "Planner follow-through",
     ],
     executionSurfaces: [
@@ -350,11 +369,14 @@ export async function buildLaborLaneReport(input?: {
       "Planner",
     ],
     evidence: [
-      `${dominionDashboard.openLeads} open Dominion lead(s) are currently tracked.`,
-      `WrenchReady tomorrow readiness: ${wrenchReadySummary.text}`,
-      dominionDashboard.staleLeads > 0 || dominionDashboard.untouchedLeads > 0
-        ? "Lead follow-up still has visible leakage."
-        : "No Dominion lead follow-up leakage is currently visible.",
+      dominionLeadManager
+        ? `Dominion Lead Flow Manager: ${dominionLeadManager.headline}`
+        : `${dominionDashboard.openLeads} open Dominion lead(s) are currently tracked.`,
+      wrenchReadyReadinessManager
+        ? `WrenchReady Day Readiness Manager: ${wrenchReadyReadinessManager.headline}`
+        : `WrenchReady tomorrow readiness: ${wrenchReadySummary.text}`,
+      ...(dominionLeadManager?.topRisks || []),
+      ...(wrenchReadyReadinessManager?.topRisks || []),
     ],
   };
 

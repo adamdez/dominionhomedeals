@@ -1,3 +1,4 @@
+import { getAlAppPrefixForHost } from "@/lib/al-platform";
 import { getServiceClient } from "@/lib/supabase";
 
 export const AL_SESSION_VALUE = "al_authenticated_v1";
@@ -129,8 +130,7 @@ export function isTerminalReviewState(value: unknown): boolean {
 }
 
 export function buildHostedAppPrefix(host: string | null | undefined): string {
-  const normalizedHost = String(host || "").toLowerCase();
-  return normalizedHost.startsWith("al.dominionhomedeals.com") ? "" : "/al";
+  return getAlAppPrefixForHost(host);
 }
 
 export function buildHostedReviewPath(host: string | null | undefined, jobId: number): string {

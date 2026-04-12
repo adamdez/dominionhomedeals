@@ -1,13 +1,16 @@
 import type { Metadata, Viewport } from "next";
 import { AlShellFrame } from "@/components/al/AlShellFrame";
 import { MobileDock } from "@/components/al/MobileDock";
+import { getAlCanonicalOrigin } from "@/lib/al-platform";
 
 export const dynamic = "force-dynamic";
+
+const AL_CANONICAL_ORIGIN = getAlCanonicalOrigin();
 
 export const metadata: Metadata = {
   title: "AL Boreland Command Center",
   robots: { index: false, follow: false },
-  alternates: { canonical: "https://al.dominionhomedeals.com/" },
+  alternates: { canonical: `${AL_CANONICAL_ORIGIN}/` },
   manifest: "/manifest.webmanifest",
   icons: {
     icon: [

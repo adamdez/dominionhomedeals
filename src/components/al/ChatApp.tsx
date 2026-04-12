@@ -26,6 +26,7 @@ import {
   Users,
   Bot,
 } from "lucide-react";
+import { isCanonicalAlHost } from "@/lib/al-platform";
 import { withAlAppPrefix } from "@/lib/al-app-path";
 import { AuthScreen } from "./AuthScreen";
 import { Sidebar } from "./Sidebar";
@@ -87,6 +88,7 @@ interface BridgeCapabilities {
   media_generation?: boolean;
   media_runway?: boolean;
   media_gif_export?: boolean;
+  static_image_edit?: boolean;
 }
 
 interface BridgeHealthResponse {
@@ -595,7 +597,7 @@ function fileNameFromBridgePath(value: unknown): string | null {
 }
 
 function buildHostedReviewPath(jobId: number): string {
-  if (typeof window !== "undefined" && window.location.hostname === "al.dominionhomedeals.com") {
+  if (typeof window !== "undefined" && isCanonicalAlHost(window.location.hostname)) {
     return `/boardroom/${jobId}`;
   }
   return `/al/boardroom/${jobId}`;
@@ -924,11 +926,11 @@ async function executeBridgeAction(req: VaultToolRequest): Promise<BridgeResult>
           }
         );
       }
-      case "media_production": {
-        const res = await fetch(`${url}/media/brand-assets`, {
-          method: "POST",
-          headers: { ...headers, "Content-Type": "application/json" },
-          body: JSON.stringify(req.input || {}),
+    case "media_production": {
+      const res = await fetch(`${url}/media/brand-assets`, {
+        method: "POST",
+        headers: { ...headers, "Content-Type": "application/json" },
+        body: JSON.stringify(req.input || {}),
         });
         const data = await res.json().catch(() => null);
         return JSON.stringify(
@@ -938,6 +940,23 @@ async function executeBridgeAction(req: VaultToolRequest): Promise<BridgeResult>
             operator_message: `Media production lane failed with HTTP ${res.status}.`,
             next_action:
               "Verify local bridge media worker, source photo path, and RUNWAY_API_KEY, then retry.",
+          },
+        );
+      }
+      case "static_brand_swap": {
+        const res = await fetch(`${url}/image/static-brand-swap`, {
+          method: "POST",
+          headers: { ...headers, "Content-Type": "application/json" },
+          body: JSON.stringify(req.input || {}),
+        });
+        const data = await res.json().catch(() => null);
+        return JSON.stringify(
+          data || {
+            ok: false,
+            status: "static_brand_swap_bridge_request_failed",
+            operator_message: `Static brand swap lane failed with HTTP ${res.status}.`,
+            next_action:
+              "Verify the local static image edit helper, hero source image, and transparent logo asset, then retry.",
           },
         );
       }
@@ -2906,6 +2925,8 @@ function vaultActionLabel(name: string): string {
       return "Check crew run status";
     case "media_production":
       return "Generate brand media";
+    case "static_brand_swap":
+      return "Create static logo proof";
     case "codex_task":
       return "Run Codex task";
     case "local_pdf_merge":
@@ -2937,6 +2958,13 @@ function bridgeRequestDetail(req: VaultToolRequest): string {
       inputString(req.input.asset_goal) ||
       inputString(req.input.source_dir) ||
       "(default source dir)"
+    );
+  }
+  if (req.name === "static_brand_swap") {
+    return (
+      inputString(req.input.source_image_path) ||
+      inputString(req.input.preset) ||
+      "(static proof)"
     );
   }
   if (req.name === "crew_list") return "—";

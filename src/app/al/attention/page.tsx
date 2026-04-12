@@ -1,6 +1,7 @@
 import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { AttentionPage } from "@/components/al/AttentionPage";
+import { resolveAlOrigin } from "@/lib/al-platform";
 import { buildAttentionBrief } from "@/lib/al-attention-brief";
 import { buildHostedAppPrefix, isAuthenticatedAlSession } from "@/lib/al-review";
 
@@ -15,7 +16,7 @@ export default async function AlAttentionPage() {
   const headerStore = await headers();
   const host = headerStore.get("host");
   const proto = headerStore.get("x-forwarded-proto") || "http";
-  const origin = host ? `${proto}://${host}` : "https://al.dominionhomedeals.com";
+  const origin = resolveAlOrigin({ host, proto });
   const brief = await buildAttentionBrief({ host, origin });
 
   return (
