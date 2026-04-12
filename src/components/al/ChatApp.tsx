@@ -20,6 +20,7 @@ import {
   FileText,
   Globe,
   FolderOpen,
+  Receipt,
   ShieldCheck,
   BookUp,
   Users,
@@ -186,6 +187,17 @@ interface DashboardSummary {
     blockedSystems: number;
   };
   spotlight: DashboardSummarySpotlight[];
+}
+
+interface LaborLaneReport {
+  generatedAt: string;
+  headline: string;
+  topNextMove: string;
+  summary: {
+    live: number;
+    warning: number;
+    blocked: number;
+  };
 }
 
 /* ------------------------------------------------------------------ */
@@ -1088,6 +1100,7 @@ export function ChatApp() {
   const [hostedHealth, setHostedHealth] = useState<HostedHealthResponse | null>(null);
   const [operationalProof, setOperationalProof] = useState<OperationalProofReport | null>(null);
   const [dashboardSummary, setDashboardSummary] = useState<DashboardSummary | null>(null);
+  const [laborLanes, setLaborLanes] = useState<LaborLaneReport | null>(null);
   const [pendingVaultAction, setPendingVaultAction] = useState<VaultAction | null>(null);
   const [executingVault, setExecutingVault] = useState(false);
 
@@ -1155,9 +1168,11 @@ export function ChatApp() {
     if (authed) {
       checkOperationalProof();
       checkDashboardSummary();
+      checkLaborLanes();
     } else if (authed === false) {
       setOperationalProof(null);
       setDashboardSummary(null);
+      setLaborLanes(null);
     }
   }, [authed]);
 
@@ -1207,6 +1222,17 @@ export function ChatApp() {
       })
       .catch(() => {
         setDashboardSummary(null);
+      });
+  }
+
+  function checkLaborLanes() {
+    fetch("/api/al/labor-lanes", { credentials: "same-origin" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d: { ok?: boolean; report?: LaborLaneReport } | null) => {
+        setLaborLanes(d?.ok && d.report ? d.report : null);
+      })
+      .catch(() => {
+        setLaborLanes(null);
       });
   }
 
@@ -1936,6 +1962,12 @@ export function ChatApp() {
                 Operational Proof
               </Link>
               <Link
+                href={withAlAppPrefix(pathname, "/labor-lanes")}
+                className="rounded-full border border-emerald-900/25 bg-[#101714] px-3 py-1.5 text-xs font-semibold text-emerald-100/80"
+              >
+                Labor Lanes
+              </Link>
+              <Link
                 href={withAlAppPrefix(pathname, "/attention")}
                 className="rounded-full border border-emerald-900/25 bg-[#101714] px-3 py-1.5 text-xs font-semibold text-emerald-100/80"
               >
@@ -1960,6 +1992,13 @@ export function ChatApp() {
             >
               <ShieldCheck className="h-3 w-3" />
               <span>System Health</span>
+            </Link>
+            <Link
+              href={withAlAppPrefix(pathname, "/labor-lanes")}
+              className="hidden items-center gap-1.5 rounded-full border border-emerald-900/25 bg-[#101714] px-3 py-1.5 text-[10px] font-semibold text-emerald-100/80 xl:inline-flex"
+            >
+              <Receipt className="h-3 w-3" />
+              <span>Labor Lanes</span>
             </Link>
             {bridgeConnected && (
               <div className="flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-2.5 py-1">
@@ -2069,6 +2108,62 @@ export function ChatApp() {
                     })}
                   </div>
                 ) : null}
+              </div>
+              <div className="mt-8 w-full max-w-2xl rounded-3xl border border-emerald-900/20 bg-[#101714] p-5 text-left shadow-[0_18px_60px_rgba(0,0,0,0.22)]">
+                <div className="flex flex-wrap items-start justify-between gap-4">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-[0.22em] text-emerald-300/45">
+                      Labor Lanes
+                    </p>
+                    <h3 className="mt-2 text-xl font-semibold text-[#f3faf6]">
+                      Can AL actually replace labor here?
+                    </h3>
+                    <p className="mt-2 max-w-xl text-sm leading-6 text-emerald-100/65">
+                      This is the shared labor map for AL. It answers whether executive control, IT, marketing, customer service, and accounting are truly live operating lanes or still leaning on founder memory.
+                    </p>
+                  </div>
+                  <Link
+                    href={withAlAppPrefix(pathname, "/labor-lanes")}
+                    className="inline-flex items-center gap-2 rounded-2xl bg-emerald-500 px-4 py-3 text-sm font-semibold text-[#05110b] transition hover:bg-emerald-400"
+                  >
+                    <Receipt className="h-4 w-4" />
+                    Open Labor Lanes
+                  </Link>
+                </div>
+                <div className="mt-5 grid gap-3 sm:grid-cols-3">
+                  <div className="rounded-2xl border border-emerald-500/18 bg-[#0b110e] p-4">
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-200/65">
+                      Live
+                    </p>
+                    <p className="mt-2 text-3xl font-semibold text-emerald-100">
+                      {laborLanes?.summary.live ?? "-"}
+                    </p>
+                  </div>
+                  <div className="rounded-2xl border border-amber-500/18 bg-[#0b110e] p-4">
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-amber-200/70">
+                      Warning
+                    </p>
+                    <p className="mt-2 text-3xl font-semibold text-amber-100">
+                      {laborLanes?.summary.warning ?? "-"}
+                    </p>
+                  </div>
+                  <div className="rounded-2xl border border-red-500/18 bg-[#0b110e] p-4">
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-red-200/70">
+                      Blocked
+                    </p>
+                    <p className="mt-2 text-3xl font-semibold text-red-100">
+                      {laborLanes?.summary.blocked ?? "-"}
+                    </p>
+                  </div>
+                </div>
+                <div className="mt-5 rounded-2xl border border-emerald-900/20 bg-[#0b110e] p-4">
+                  <p className="text-sm font-semibold text-[#f3faf6]">
+                    {laborLanes?.headline || "Checking whether the shared labor lanes are real yet."}
+                  </p>
+                  <p className="mt-2 text-sm leading-6 text-emerald-100/70">
+                    {laborLanes?.topNextMove || "Pulling the lane bottlenecks into view."}
+                  </p>
+                </div>
               </div>
               <div className="mt-8 w-full max-w-2xl rounded-3xl border border-emerald-500/18 bg-[#101714] p-5 text-left shadow-[0_18px_60px_rgba(0,0,0,0.22)]">
                 <div className="flex flex-wrap items-start justify-between gap-4">

@@ -8,6 +8,7 @@ import {
   CalendarDays,
   LayoutPanelTop,
   MessageCircle,
+  Receipt,
   ShieldCheck,
   Wrench,
 } from "lucide-react";
@@ -17,6 +18,7 @@ const sectionLinks = [
   { href: "/", label: "Command Center", icon: MessageCircle, note: "Talk to AL" },
   { href: "/attention", label: "Attention", icon: Activity, note: "What needs action" },
   { href: "/operational-proof", label: "Operational Proof", icon: ShieldCheck, note: "Are the loops healthy?" },
+  { href: "/labor-lanes", label: "Labor Lanes", icon: Receipt, note: "Can AL replace labor here?" },
   { href: "/boardroom", label: "Board Room", icon: LayoutPanelTop, note: "Approvals and packages" },
   { href: "/planner", label: "Planner", icon: CalendarDays, note: "Task truth" },
   { href: "/dominion/leads", label: "Dominion Leads", icon: Building2, note: "First touch and follow-up" },

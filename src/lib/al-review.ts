@@ -153,6 +153,10 @@ export function buildHostedOperationalProofPath(host: string | null | undefined)
   return `${buildHostedAppPrefix(host)}/operational-proof`;
 }
 
+export function buildHostedLaborLanesPath(host: string | null | undefined): string {
+  return `${buildHostedAppPrefix(host)}/labor-lanes`;
+}
+
 export function buildHostedReviewUrl(
   origin: string,
   host: string | null | undefined,

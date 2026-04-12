@@ -1,11 +1,13 @@
 import { createPlannerTask, listPlannerTasks } from "@/lib/al-planner";
 import { buildAttentionBrief } from "@/lib/al-attention-brief";
+import { buildLaborLaneReport } from "@/lib/al-labor-lanes";
 import { buildOperationalProofReport } from "@/lib/al-operational-proof";
 import {
   buildHostedDominionLeadsPath,
   buildDominionLeadAttentionSummary,
 } from "@/lib/dominion-leads";
 import {
+  buildHostedLaborLanesPath,
   buildHostedOperationalProofPath,
   fetchBoardroomPresentations,
 } from "@/lib/al-review";
@@ -22,7 +24,8 @@ export type OpenClawCommand =
   | "boardroom_waiting_on_me"
   | "wrenchready_day_readiness"
   | "dominion_lead_attention"
-  | "operational_proof";
+  | "operational_proof"
+  | "labor_lanes";
 
 const OPENCLAW_COMMANDS: OpenClawCommand[] = [
   "command_catalog",
@@ -33,6 +36,7 @@ const OPENCLAW_COMMANDS: OpenClawCommand[] = [
   "wrenchready_day_readiness",
   "dominion_lead_attention",
   "operational_proof",
+  "labor_lanes",
 ];
 
 export interface OpenClawEnvelope {
@@ -80,7 +84,8 @@ function hostedPath(
     | "boardroom"
     | "wrenchready"
     | "dominion_leads"
-    | "operational_proof",
+    | "operational_proof"
+    | "labor_lanes",
 ) {
   switch (target) {
     case "attention":
@@ -95,6 +100,8 @@ function hostedPath(
       return absolutePath(buildHostedDominionLeadsPath(CANONICAL_AL_HOST));
     case "operational_proof":
       return absolutePath(buildHostedOperationalProofPath(CANONICAL_AL_HOST));
+    case "labor_lanes":
+      return absolutePath(buildHostedLaborLanesPath(CANONICAL_AL_HOST));
     default:
       return CANONICAL_AL_ORIGIN;
   }
@@ -133,6 +140,10 @@ export function getOpenClawCommandCatalog() {
     {
       command: "operational_proof",
       summary: "Score the core AL control loops so you can see what is healthy, warning, or failing.",
+    },
+    {
+      command: "labor_lanes",
+      summary: "Show whether AL can actually replace labor in IT, marketing, customer service, accounting, and executive control.",
     },
   ];
 }
@@ -207,6 +218,19 @@ export function inferOpenClawEnvelope(input: OpenClawEnvelope): OpenClawEnvelope
   }
 
   if (
+    lowered.includes("labor lane") ||
+    lowered.includes("labour lane") ||
+    lowered.includes("replace labor") ||
+    lowered.includes("replace outsourcing") ||
+    lowered.includes("marketing lane") ||
+    lowered.includes("customer service lane") ||
+    lowered.includes("accounting lane") ||
+    lowered.includes("it lane")
+  ) {
+    return { ...input, command: "labor_lanes" };
+  }
+
+  if (
     lowered.includes("attention") ||
     lowered.includes("what needs my attention") ||
     lowered.includes("what needs attention")
@@ -278,6 +302,7 @@ export async function runOpenClawCommand(input: OpenClawEnvelope): Promise<OpenC
         { label: "Dominion Leads", href: hostedPath("dominion_leads") },
         { label: "Day Readiness", href: hostedPath("wrenchready") },
         { label: "Operational Proof", href: hostedPath("operational_proof") },
+        { label: "Labor Lanes", href: hostedPath("labor_lanes") },
       ],
       data: { commands },
     };
@@ -387,6 +412,27 @@ export async function runOpenClawCommand(input: OpenClawEnvelope): Promise<OpenC
         `Failing: ${report.summary.failing}`,
       ].join("\n"),
       links: [{ label: "Open operational proof", href: hostedPath("operational_proof") }],
+      data: report as unknown as Record<string, unknown>,
+    };
+  }
+
+  if (resolved.command === "labor_lanes") {
+    const report = await buildLaborLaneReport({
+      host: CANONICAL_AL_HOST,
+      origin: CANONICAL_AL_ORIGIN,
+    });
+    return {
+      ok: true,
+      text: [
+        report.headline,
+        `Top next move: ${report.topNextMove}`,
+        ...report.lanes.map((lane) => `- ${lane.title}: ${lane.status} - ${lane.summary}`),
+      ].join("\n"),
+      links: [
+        { label: "Labor Lanes", href: hostedPath("labor_lanes") },
+        { label: "Operational Proof", href: hostedPath("operational_proof") },
+        { label: "Attention", href: hostedPath("attention") },
+      ],
       data: report as unknown as Record<string, unknown>,
     };
   }
