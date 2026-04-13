@@ -25,6 +25,9 @@ import {
   BookUp,
   Users,
   Bot,
+  Building2,
+  Wrench,
+  ArrowUpRight,
 } from "lucide-react";
 import { isCanonicalAlHost } from "@/lib/al-platform";
 import { withAlAppPrefix } from "@/lib/al-app-path";
@@ -189,6 +192,16 @@ interface DashboardSummary {
     blockedSystems: number;
   };
   spotlight: DashboardSummarySpotlight[];
+  businesses: Array<{
+    businessId: "dominion" | "wrenchready";
+    businessLabel: string;
+    ceoId: string;
+    operatorHomePath: string;
+    scorecardSummary: string;
+    status: "healthy" | "warning" | "blocked";
+    headline: string;
+    nextAction: string;
+  }>;
 }
 
 interface LaborLaneReport {
@@ -241,15 +254,22 @@ const ACCEPTED_TYPES = [
 
 const DEFAULT_BRIDGE_URL = "http://localhost:3141";
 
+function isLocalBrowserHost() {
+  if (typeof window === "undefined") {
+    return false;
+  }
+  const host = window.location.hostname;
+  return host === "127.0.0.1" || host === "localhost";
+}
+
 function defaultBridgeUrl() {
   if (typeof window === "undefined") {
     return DEFAULT_BRIDGE_URL;
   }
-  const host = window.location.hostname;
-  if (host === "127.0.0.1" || host === "localhost") {
-    return `${window.location.protocol}//${host}:3141`;
+  if (isLocalBrowserHost()) {
+    return `${window.location.protocol}//${window.location.hostname}:3141`;
   }
-  return DEFAULT_BRIDGE_URL;
+  return "";
 }
 
 /* ------------------------------------------------------------------ */
@@ -716,6 +736,9 @@ async function maybePromoteBrowserVendorReviewResult(
 
 async function executeBridgeAction(req: VaultToolRequest): Promise<BridgeResult> {
   const { url } = getBridgeConfig();
+  if (!url) {
+    return "Local bridge is not configured in this browser session yet.";
+  }
   const headers = bridgeHeaders();
 
   async function runCodexFallbackForCowork(reason: string): Promise<string> {
@@ -1218,6 +1241,11 @@ export function ChatApp() {
 
   function checkBridge() {
     const { url, token } = getBridgeConfig();
+    if (!url) {
+      setBridgeHealth(null);
+      setBridgeConnected(false);
+      return;
+    }
     const headers: Record<string, string> = {};
     if (token) headers["Authorization"] = `Bearer ${token}`;
     fetch(`${url}/health`, { headers })
@@ -2421,6 +2449,73 @@ export function ChatApp() {
                 <div className="flex flex-wrap items-start justify-between gap-4">
                   <div>
                     <p className="text-xs font-semibold uppercase tracking-[0.22em] text-emerald-300/45">
+                      Businesses
+                    </p>
+                    <h3 className="mt-2 text-xl font-semibold text-[#f3faf6]">
+                      Who runs what, and where is the friction?
+                    </h3>
+                    <p className="mt-2 max-w-xl text-sm leading-6 text-emerald-100/65">
+                      AL should feel like a neutral operating platform over businesses, not one long chat. These module cards show the CEO lane, the top operating signal, and the next move for each business plugged into AL.
+                    </p>
+                  </div>
+                </div>
+                {dashboardSummary?.businesses?.length ? (
+                  <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                    {dashboardSummary.businesses.map((business) => {
+                      const badgeClass =
+                        business.status === "blocked"
+                          ? "border-red-500/20 bg-red-500/10 text-red-100"
+                          : business.status === "warning"
+                            ? "border-amber-500/20 bg-amber-500/10 text-amber-100"
+                            : "border-emerald-500/20 bg-emerald-500/10 text-emerald-100";
+                      const Icon = business.businessId === "dominion" ? Building2 : Wrench;
+                      const ceoName = business.ceoId === "dominion" ? "Jerry" : business.ceoId === "wrenchready" ? "Tom" : business.ceoId;
+
+                      return (
+                        <a
+                          key={business.businessId}
+                          href={business.operatorHomePath}
+                          className="rounded-2xl border border-emerald-900/20 bg-[#0b110e] p-4 text-left transition hover:border-emerald-500/35"
+                        >
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="flex items-center gap-3">
+                              <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#111916] text-emerald-200/70">
+                                <Icon className="h-4 w-4" />
+                              </span>
+                              <div>
+                                <p className="text-base font-semibold text-[#f3faf6]">{business.businessLabel}</p>
+                                <p className="text-xs text-emerald-100/45">CEO lane: {ceoName}</p>
+                              </div>
+                            </div>
+                            <span className={`inline-flex rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.15em] ${badgeClass}`}>
+                              {business.status}
+                            </span>
+                          </div>
+                          <p className="mt-4 text-sm font-semibold text-emerald-100">{business.headline}</p>
+                          <p className="mt-2 text-sm leading-6 text-emerald-100/70">{business.nextAction}</p>
+                          <div className="mt-4 flex items-center justify-between gap-3 text-xs text-emerald-100/45">
+                            <span>{business.scorecardSummary}</span>
+                            <span className="inline-flex items-center gap-1 text-emerald-200/60">
+                              Open
+                              <ArrowUpRight className="h-3 w-3" />
+                            </span>
+                          </div>
+                        </a>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="mt-5 rounded-2xl border border-emerald-900/20 bg-[#0b110e] p-4">
+                    <p className="text-sm text-emerald-100/70">
+                      No business modules are registered yet.
+                    </p>
+                  </div>
+                )}
+              </div>
+              <div className="mt-8 w-full max-w-2xl rounded-3xl border border-emerald-900/20 bg-[#101714] p-5 text-left shadow-[0_18px_60px_rgba(0,0,0,0.22)]">
+                <div className="flex flex-wrap items-start justify-between gap-4">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-[0.22em] text-emerald-300/45">
                       Labor Lanes
                     </p>
                     <h3 className="mt-2 text-xl font-semibold text-[#f3faf6]">
@@ -3284,7 +3379,7 @@ function SettingsModal({
                   value={bridgeUrl}
                   onChange={(e) => setBridgeUrl(e.target.value)}
                   className="w-full rounded-lg border border-emerald-900/25 bg-[#0a0f0d] px-3 py-2 text-xs text-[#e2ede8] placeholder-emerald-200/20 focus:border-emerald-500/40 focus:outline-none"
-                  placeholder="http://localhost:3141"
+                  placeholder={isLocalBrowserHost() ? "http://localhost:3141" : "http://your-machine:3141"}
                 />
               </div>
               <div>

@@ -51,10 +51,18 @@ export function AuthScreen({ onAuthenticated }: AuthScreenProps) {
             Al Boreland
           </h1>
           <p className="mt-1.5 text-center text-sm text-emerald-200/40">
-            Autonomous CEO &mdash; Command Center
+            Private operating system &mdash; Command Center
           </p>
 
           <form onSubmit={handleSubmit} className="mt-8 space-y-4">
+            <input
+              type="text"
+              name="username"
+              autoComplete="username"
+              className="sr-only"
+              tabIndex={-1}
+              aria-hidden="true"
+            />
             <div className="relative">
               <Lock className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-emerald-200/25" />
               <input
@@ -84,7 +92,7 @@ export function AuthScreen({ onAuthenticated }: AuthScreenProps) {
                 <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
               ) : (
                 <>
-                  Enter the boardroom
+                  Enter command center
                   <ArrowRight className="h-4 w-4" />
                 </>
               )}

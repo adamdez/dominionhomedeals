@@ -1,5 +1,9 @@
 import { getAlCanonicalHost, getAlCanonicalOrigin, resolveAlOrigin } from "@/lib/al-platform";
 import {
+  buildBusinessManagerSummaries,
+  getAlBusinessRegistrySnapshot,
+} from "@/lib/al-business-registry";
+import {
   buildHostedAttentionPath,
   buildHostedBoardroomHomePath,
   buildHostedOperationalProofPath,
@@ -14,6 +18,17 @@ export interface DashboardSummarySpotlight {
   tone: "emerald" | "amber" | "red" | "sky";
 }
 
+export interface DashboardBusinessModuleSummary {
+  businessId: string;
+  businessLabel: string;
+  ceoId: string;
+  operatorHomePath: string;
+  scorecardSummary: string;
+  status: "healthy" | "warning" | "blocked";
+  headline: string;
+  nextAction: string;
+}
+
 export interface DashboardSummary {
   generatedAt: string;
   headline: string;
@@ -26,6 +41,7 @@ export interface DashboardSummary {
     blockedSystems: number;
   };
   spotlight: DashboardSummarySpotlight[];
+  businesses: DashboardBusinessModuleSummary[];
 }
 
 const CANONICAL_AL_ORIGIN = getAlCanonicalOrigin();
@@ -56,6 +72,10 @@ export async function buildDashboardSummary(input?: {
   const [attentionBrief, boardroomSnapshot] = await Promise.all([
     buildAttentionBrief({ host, origin }),
     fetchBoardroomQueueSnapshot(host, 12),
+  ]);
+  const [modules, managerSummaries] = await Promise.all([
+    getAlBusinessRegistrySnapshot(),
+    buildBusinessManagerSummaries({ host, origin }),
   ]);
 
   const spotlight: DashboardSummarySpotlight[] = [
@@ -88,6 +108,30 @@ export async function buildDashboardSummary(input?: {
             } buried from the live queue`
           : "The command center is quiet enough to start fresh work cleanly.";
 
+  const businesses = modules.map((module) => {
+    const matchingManagers = managerSummaries.filter(
+      (summary) => summary.businessId === module.businessId,
+    );
+    const rank = { healthy: 1, warning: 2, blocked: 3 } as const;
+    const primaryManager =
+      matchingManagers.sort((a, b) => rank[b.status] - rank[a.status])[0] || null;
+
+    return {
+      businessId: module.businessId,
+      businessLabel: module.businessLabel,
+      ceoId: module.ceoId,
+      operatorHomePath: absolutePath(origin, module.operatorHomePath),
+      scorecardSummary: module.scorecardSummary,
+      status: primaryManager?.status || "healthy",
+      headline:
+        primaryManager?.headline ||
+        `${module.businessLabel} has no registered manager summary yet.`,
+      nextAction:
+        primaryManager?.nextActions[0] ||
+        "Register a manager summary before trusting this business module.",
+    } satisfies DashboardBusinessModuleSummary;
+  });
+
   return {
     generatedAt: new Date().toISOString(),
     headline,
@@ -101,6 +145,7 @@ export async function buildDashboardSummary(input?: {
       blockedSystems: attentionBrief.blockedSystems.length,
     },
     spotlight: spotlight.slice(0, 4),
+    businesses,
   };
 }
 
