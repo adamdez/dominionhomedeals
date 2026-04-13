@@ -2583,6 +2583,17 @@ function extractCursorMonitorUrl(value: string): string | null {
   return match?.[1] || urlFromText(value);
 }
 
+function extractCursorAgentId(value: string | null | undefined): string | null {
+  const text = value?.trim();
+  if (!text) return null;
+  const match =
+    text.match(/cursor\.com\/agents\/([A-Za-z0-9-]+)/i) ||
+    text.match(/cursor\.com\/agents\?id=([A-Za-z0-9-]+)/i) ||
+    text.match(/\bID:\s*([A-Za-z0-9-]+)/i) ||
+    text.match(/Cursor agent dispatched \(([A-Za-z0-9-]+)\)/i);
+  return match?.[1] || null;
+}
+
 type CursorAuthScheme = "bearer" | "basic";
 
 interface CursorAgentSnapshot {
@@ -4473,6 +4484,7 @@ async function executeJobStatus(jobId?: number): Promise<string> {
           task: data.task,
           status: data.status,
           context: storedContext,
+          result: data.result,
         });
         if (refreshed) {
           return refreshed;
@@ -4713,8 +4725,14 @@ async function refreshCursorAccountabilityJob(input: {
   task: string;
   status: string;
   context: Record<string, unknown>;
+  result?: string | null;
 }): Promise<string | null> {
-  const agentId = asBriefString(input.context.cursor_agent_id);
+  const agentId =
+    asBriefString(input.context.cursor_agent_id) ||
+    extractCursorAgentId(asBriefString(input.context.cursor_monitor_url)) ||
+    extractCursorAgentId(asBriefString(input.context.presentation_body)) ||
+    extractCursorAgentId(asBriefString(input.context.result_snapshot)) ||
+    extractCursorAgentId(input.result || null);
   if (!agentId || !process.env.CURSOR_AGENTS_API_KEY?.trim()) {
     return null;
   }

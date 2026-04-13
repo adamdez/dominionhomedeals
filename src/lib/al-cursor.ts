@@ -20,6 +20,7 @@ interface CursorOpenJobRow {
   task: string;
   status: string;
   context: unknown;
+  result?: string | null;
 }
 
 function asRecord(value: unknown): JsonRecord {
@@ -65,6 +66,17 @@ function normalizeCursorRepositoryUrl(value: string | null | undefined): string 
   if (/^https?:\/\//i.test(normalized)) return normalized;
   if (normalized.startsWith("github.com/")) return `https://${normalized}`;
   return `https://github.com/${normalized.replace(/^github\.com\//i, "")}`;
+}
+
+function extractCursorAgentIdFromText(value: string | null | undefined): string | null {
+  const text = value?.trim();
+  if (!text) return null;
+  const directMatch =
+    text.match(/cursor\.com\/agents\/([A-Za-z0-9-]+)/i) ||
+    text.match(/cursor\.com\/agents\?id=([A-Za-z0-9-]+)/i) ||
+    text.match(/\bID:\s*([A-Za-z0-9-]+)/i) ||
+    text.match(/Cursor agent dispatched \(([A-Za-z0-9-]+)\)/i);
+  return directMatch?.[1] || null;
 }
 
 function cursorAuthSchemes(): CursorAuthScheme[] {
@@ -471,7 +483,12 @@ export async function refreshManagedCursorJob(
   error?: string;
 }> {
   const context = parseContext(row.context);
-  const agentId = asText(context.cursor_agent_id);
+  const agentId =
+    asText(context.cursor_agent_id) ||
+    extractCursorAgentIdFromText(asText(context.cursor_monitor_url)) ||
+    extractCursorAgentIdFromText(asText(context.presentation_body)) ||
+    extractCursorAgentIdFromText(asText(context.result_snapshot)) ||
+    extractCursorAgentIdFromText(row.result || null);
   if (!agentId || !process.env.CURSOR_AGENTS_API_KEY?.trim()) {
     return { refreshed: false, lifecycle: "unknown", statusMessage: null };
   }
@@ -581,7 +598,7 @@ export async function refreshOpenCursorJobs(options?: {
   const limit = options?.limit ?? 12;
   const { data, error } = await supabase
     .from("al_jobs")
-    .select("id, task, status, context")
+    .select("id, task, status, context, result")
     .eq("job_type", "cursor_agent")
     .in("status", ["pending", "running", "launched"])
     .order("started_at", { ascending: false })
