@@ -255,6 +255,18 @@ Think one step ahead for Dez:
 - what should be reviewed
 If async work is launched, make sure there is visible follow-through instead of relying on Dez to remember it later.
 
+FEEDBACK CAPTURE RULE:
+When Dez gives a durable correction, operating preference, standard, or "never again" instruction, capture it before the turn ends.
+- Use memory_save for preferences, durable corrections, process rules, and anything that should survive the next session.
+- Do not make Dez repeat standards you should already remember.
+- If the feedback changes operating doctrine or would matter outside the current chat, prefer saving it.
+
+KNOWLEDGE CAPTURE RULE:
+Do not confuse chat output with durable knowledge.
+- Use vault_publish for real markdown notes that belong in the vault: decisions, true-north notes, playbooks, review packages, or durable operating docs.
+- Use memory_save for shorter durable facts, preferences, corrections, and current business context.
+- If a meaningful outcome, blocker, or lesson would matter later, capture it somewhere durable instead of leaving it only in chat.
+
 HUMAN STANDARD RULE:
 Judge output by whether a sharp human founder, operator, or paying customer would accept it.
 If something is generic, low-trust, awkward, incomplete, or below human standard, it is not done.
@@ -544,7 +556,7 @@ const SERVER_TOOLS: Anthropic.Tool[] = [
   {
     name: "vault_publish",
     description:
-      "Write a markdown file to the Obsidian knowledge base. The file is committed to GitHub via n8n and synced to Obsidian automatically. Folders are created on first file commit. Use for decisions, notes, trajectories, project docs, or any knowledge worth persisting.",
+      "Write a markdown file into AL's durable vault pipeline. This posts to the n8n/GitHub publish path and upserts vault_documents for runtime recall. Local Obsidian availability depends on downstream sync and should not be assumed instantly. Use for decisions, notes, trajectories, project docs, or any knowledge worth persisting.",
     input_schema: {
       type: "object" as const,
       properties: {
@@ -1945,6 +1957,69 @@ async function logTrajectory(action: string, outcome: string) {
     });
   } catch (err) {
     console.error("[Al] trajectory log failed:", err);
+  }
+}
+
+type AutoMemoryCandidate = {
+  category: string;
+  content: string;
+};
+
+function buildAutoMemoryCandidate(message: string | null | undefined): AutoMemoryCandidate | null {
+  const raw = asNonEmptyString(message);
+  if (!raw) return null;
+
+  const normalized = raw.replace(/\s+/g, " ").trim();
+  const lower = normalized.toLowerCase();
+  const looksDurable =
+    lower.includes("remember this") ||
+    lower.includes("from now on") ||
+    lower.includes("never again") ||
+    lower.includes("do not ") ||
+    lower.includes("don't ") ||
+    lower.includes("must ") ||
+    lower.includes("i need al to") ||
+    lower.includes("i need you to") ||
+    lower.includes("not acceptable") ||
+    lower.includes("can't have") ||
+    lower.includes("cannot have") ||
+    lower.includes("standard") ||
+    lower.includes("preference");
+
+  if (!looksDurable) return null;
+
+  let category = "preference";
+  if (
+    lower.includes("never again") ||
+    lower.includes("do not ") ||
+    lower.includes("must ") ||
+    lower.includes("not acceptable") ||
+    lower.includes("can't have") ||
+    lower.includes("cannot have") ||
+    lower.includes("standard")
+  ) {
+    category = "policy";
+  } else if (lower.includes("from now on")) {
+    category = "decision";
+  }
+
+  return {
+    category,
+    content: `Founder feedback (${new Date().toISOString().slice(0, 10)}): ${normalized.slice(0, 900)}`,
+  };
+}
+
+async function maybeAutoCaptureTurnMemory(input: {
+  message: string | null | undefined;
+  alreadyCaptured: boolean;
+}) {
+  if (input.alreadyCaptured) return;
+  const candidate = buildAutoMemoryCandidate(input.message);
+  if (!candidate) return;
+  try {
+    await executeMemorySave(candidate.category, candidate.content);
+  } catch (err) {
+    console.error("[Al] auto memory capture failed:", err);
   }
 }
 
@@ -4727,6 +4802,7 @@ async function runOpenAIChat(input: {
   const readable = new ReadableStream({
     async start(controller) {
       let fullResponse = "";
+      let durableCaptureThisTurn = false;
       let previousResponseId = input.continuation?.previousResponseId;
       const recoveredContinuation =
         input.continuation && !previousResponseId
@@ -4778,6 +4854,10 @@ async function runOpenAIChat(input: {
               input.attachments && input.attachments.length > 0
                 ? `[${input.attachments.map((a) => a.name).join(", ")}] ${input.message}`
                 : input.message;
+            await maybeAutoCaptureTurnMemory({
+              message: input.message,
+              alreadyCaptured: durableCaptureThisTurn,
+            });
             logTrajectory(actionSummary, fullResponse).catch(() => {});
             controller.enqueue(encoder.encode("data: [DONE]\n\n"));
             controller.close();
@@ -4807,6 +4887,7 @@ async function runOpenAIChat(input: {
             }
 
             if (call.name === "vault_publish") {
+              durableCaptureThisTurn = true;
               const publishPath = asNonEmptyString(parsedInput.path) || "";
               const publishContent =
                 typeof parsedInput.content === "string" ? parsedInput.content : "";
@@ -4821,6 +4902,7 @@ async function runOpenAIChat(input: {
             }
 
             if (call.name === "memory_save") {
+              durableCaptureThisTurn = true;
               const result = await executeMemorySave(
                 asNonEmptyString(parsedInput.category) || "general",
                 asNonEmptyString(parsedInput.content) || "",
@@ -6125,6 +6207,7 @@ export async function POST(request: NextRequest) {
   const readable = new ReadableStream({
     async start(controller) {
       let fullResponse = "";
+      let durableCaptureThisTurn = false;
       const convo: Anthropic.MessageParam[] = [...messages];
 
       const fullSystemPrompt =
@@ -6173,6 +6256,7 @@ export async function POST(request: NextRequest) {
           for (const sb of serverBlocks) {
             const inp = sb.input as Record<string, unknown>;
             if (sb.name === "vault_publish") {
+              durableCaptureThisTurn = true;
               const publishPath = asNonEmptyString(inp.path) || "";
               const publishContent = typeof inp.content === "string" ? inp.content : "";
               controller.enqueue(
@@ -6183,6 +6267,7 @@ export async function POST(request: NextRequest) {
               const result = await executeVaultPublish(publishPath, publishContent);
               precomputed.push({ type: "tool_result", tool_use_id: sb.id, content: result });
             } else if (sb.name === "memory_save") {
+              durableCaptureThisTurn = true;
               const result = await executeMemorySave(
                 asNonEmptyString(inp.category) || "general",
                 asNonEmptyString(inp.content) || "",
@@ -6495,6 +6580,10 @@ export async function POST(request: NextRequest) {
             );
             controller.enqueue(encoder.encode("data: [DONE]\n\n"));
             controller.close();
+            await maybeAutoCaptureTurnMemory({
+              message,
+              alreadyCaptured: durableCaptureThisTurn,
+            });
             logTrajectory(
               message || "vault tool request",
               fullResponse + " [awaiting bridge tool execution]"
@@ -6511,6 +6600,10 @@ export async function POST(request: NextRequest) {
           attachments && attachments.length > 0
             ? `[${attachments.map((a) => a.name).join(", ")}] ${message}`
             : message;
+        await maybeAutoCaptureTurnMemory({
+          message,
+          alreadyCaptured: durableCaptureThisTurn,
+        });
         logTrajectory(actionSummary, fullResponse).catch(() => {});
 
         controller.enqueue(encoder.encode("data: [DONE]\n\n"));
