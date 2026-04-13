@@ -28,6 +28,7 @@ import {
   Building2,
   Wrench,
   ArrowUpRight,
+  Sparkles,
 } from "lucide-react";
 import { isCanonicalAlHost } from "@/lib/al-platform";
 import { withAlAppPrefix } from "@/lib/al-app-path";
@@ -2152,6 +2153,12 @@ export function ChatApp() {
   const isBusy = loading || executingVault || !!pendingVaultAction;
   const queuedInboxCount = inboxItems.filter((item) => item.status === "queued").length;
   const runningInboxCount = inboxItems.filter((item) => item.status === "running").length;
+  const waitingOnDezCount = dashboardSummary?.counts.waitingOnDez ?? 0;
+  const blockedSystemsCount = dashboardSummary?.counts.blockedSystems ?? 0;
+  const reviewReadyCount = dashboardSummary?.counts.reviewReady ?? 0;
+  const systemHealthyCount = operationalProof?.summary.healthy ?? 0;
+  const systemWarningCount = operationalProof?.summary.warning ?? 0;
+  const systemFailingCount = operationalProof?.summary.failing ?? 0;
 
   /* ── Render gates ── */
 
@@ -2231,28 +2238,10 @@ export function ChatApp() {
           <div className="flex items-center gap-2 flex-shrink-0">
             <div className="hidden items-center gap-2 sm:flex lg:hidden">
               <Link
-                href={withAlAppPrefix(pathname, "/operational-proof")}
+                href={withAlAppPrefix(pathname, "/attention")}
                 className="rounded-full border border-emerald-500/25 bg-emerald-500/10 px-3 py-1.5 text-xs font-semibold text-emerald-100"
               >
-                Operational Proof
-              </Link>
-              <Link
-                href={withAlAppPrefix(pathname, "/labor-lanes")}
-                className="rounded-full border border-emerald-900/25 bg-[#101714] px-3 py-1.5 text-xs font-semibold text-emerald-100/80"
-              >
-                Labor Lanes
-              </Link>
-              <Link
-                href={withAlAppPrefix(pathname, "/attention")}
-                className="rounded-full border border-emerald-900/25 bg-[#101714] px-3 py-1.5 text-xs font-semibold text-emerald-100/80"
-              >
                 Attention
-              </Link>
-              <Link
-                href={withAlAppPrefix(pathname, "/boardroom")}
-                className="rounded-full border border-emerald-900/25 bg-[#101714] px-3 py-1.5 text-xs font-semibold text-emerald-100/80"
-              >
-                Board Room
               </Link>
               <Link
                 href={withAlAppPrefix(pathname, "/inbox")}
@@ -2261,32 +2250,32 @@ export function ChatApp() {
                 Inbox
               </Link>
               <Link
-                href={withAlAppPrefix(pathname, "/planner")}
+                href={withAlAppPrefix(pathname, "/operational-proof")}
                 className="rounded-full border border-emerald-900/25 bg-[#101714] px-3 py-1.5 text-xs font-semibold text-emerald-100/80"
               >
-                Planner
+                System Health
               </Link>
             </div>
             <Link
+              href={withAlAppPrefix(pathname, "/attention")}
+              className="hidden items-center gap-1.5 rounded-full border border-emerald-500/25 bg-emerald-500/10 px-3 py-1.5 text-[10px] font-semibold text-emerald-100 lg:inline-flex"
+            >
+              <Sparkles className="h-3 w-3" />
+              <span>Attention</span>
+            </Link>
+            <Link
               href={withAlAppPrefix(pathname, "/inbox")}
-              className="hidden items-center gap-1.5 rounded-full border border-emerald-900/25 bg-[#101714] px-3 py-1.5 text-[10px] font-semibold text-emerald-100/80 lg:inline-flex"
+              className="hidden items-center gap-1.5 rounded-full border border-emerald-900/25 bg-[#101714] px-3 py-1.5 text-[10px] font-semibold text-emerald-100/80 md:inline-flex"
             >
               <BookUp className="h-3 w-3" />
               <span>Inbox</span>
             </Link>
             <Link
               href={withAlAppPrefix(pathname, "/operational-proof")}
-              className="hidden items-center gap-1.5 rounded-full border border-emerald-500/25 bg-emerald-500/10 px-3 py-1.5 text-[10px] font-semibold text-emerald-100 sm:hidden md:inline-flex"
+              className="hidden items-center gap-1.5 rounded-full border border-emerald-900/25 bg-[#101714] px-3 py-1.5 text-[10px] font-semibold text-emerald-100/80 lg:inline-flex"
             >
               <ShieldCheck className="h-3 w-3" />
               <span>System Health</span>
-            </Link>
-            <Link
-              href={withAlAppPrefix(pathname, "/labor-lanes")}
-              className="hidden items-center gap-1.5 rounded-full border border-emerald-900/25 bg-[#101714] px-3 py-1.5 text-[10px] font-semibold text-emerald-100/80 xl:inline-flex"
-            >
-              <Receipt className="h-3 w-3" />
-              <span>Labor Lanes</span>
             </Link>
             {bridgeConnected && (
               <div className="flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-2.5 py-1">
@@ -2326,78 +2315,65 @@ export function ChatApp() {
                 <div className="flex flex-wrap items-start justify-between gap-4">
                   <div>
                     <p className="text-xs font-semibold uppercase tracking-[0.22em] text-emerald-300/45">
-                      Inbox Queue
-                    </p>
-                    <h3 className="mt-2 text-xl font-semibold text-[#f3faf6]">
-                      Keep asking without waiting on one lane
-                    </h3>
-                    <p className="mt-2 max-w-xl text-sm leading-6 text-emerald-100/65">
-                      Queue new asks for AL while something else is already running. This is the cross-business intake lane so Dominion and WrenchReady work do not have to fight over one chat turn.
-                    </p>
-                  </div>
-                  <Link
-                    href={withAlAppPrefix(pathname, "/inbox")}
-                    className="inline-flex items-center gap-2 rounded-2xl bg-emerald-500 px-4 py-3 text-sm font-semibold text-[#05110b] transition hover:bg-emerald-400"
-                  >
-                    <BookUp className="h-4 w-4" />
-                    Open Inbox
-                  </Link>
-                </div>
-                <div className="mt-5 grid gap-3 sm:grid-cols-3">
-                  <div className="rounded-2xl border border-amber-500/18 bg-[#0b110e] p-4">
-                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-amber-200/70">
-                      Queued
-                    </p>
-                    <p className="mt-2 text-3xl font-semibold text-amber-100">
-                      {queuedInboxCount}
-                    </p>
-                  </div>
-                  <div className="rounded-2xl border border-sky-500/18 bg-[#0b110e] p-4">
-                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-sky-200/70">
-                      Running
-                    </p>
-                    <p className="mt-2 text-3xl font-semibold text-sky-100">
-                      {runningInboxCount}
-                    </p>
-                  </div>
-                  <div className="rounded-2xl border border-emerald-500/18 bg-[#0b110e] p-4">
-                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-200/65">
-                      Chat lane
-                    </p>
-                    <p className="mt-2 text-sm font-semibold text-emerald-100">
-                      {isBusy ? "Busy, queue stays open" : "Clear, draining inbox"}
-                    </p>
-                  </div>
-                </div>
-              </div>
-              <div className="mt-8 w-full max-w-2xl rounded-3xl border border-emerald-900/20 bg-[#101714] p-5 text-left shadow-[0_18px_60px_rgba(0,0,0,0.22)]">
-                <div className="flex flex-wrap items-start justify-between gap-4">
-                  <div>
-                    <p className="text-xs font-semibold uppercase tracking-[0.22em] text-emerald-300/45">
-                      Today
+                      Attention Now
                     </p>
                     <h3 className="mt-2 text-xl font-semibold text-[#f3faf6]">
                       {dashboardSummary?.headline || "Pulling the real queue into focus."}
                     </h3>
                     <p className="mt-2 max-w-xl text-sm leading-6 text-emerald-100/65">
-                      The command center now buries stale junk by default and shows the live queue,
-                      cleanup load, and what is actually waiting on you.
+                      This should answer the founder question first: what needs action now, what is waiting on you, and where the next move belongs.
                     </p>
                   </div>
-                  <Link
-                    href={withAlAppPrefix(pathname, "/attention")}
-                    className="inline-flex items-center gap-2 rounded-2xl bg-emerald-500 px-4 py-3 text-sm font-semibold text-[#05110b] transition hover:bg-emerald-400"
-                  >
-                    Open Attention
-                  </Link>
+                  <div className="flex flex-wrap gap-3">
+                    <Link
+                      href={withAlAppPrefix(pathname, "/attention")}
+                      className="inline-flex items-center gap-2 rounded-2xl bg-emerald-500 px-4 py-3 text-sm font-semibold text-[#05110b] transition hover:bg-emerald-400"
+                    >
+                      <Sparkles className="h-4 w-4" />
+                      Open Attention
+                    </Link>
+                    <Link
+                      href={withAlAppPrefix(pathname, "/inbox")}
+                      className="inline-flex items-center gap-2 rounded-2xl border border-emerald-900/25 bg-[#0b110e] px-4 py-3 text-sm font-semibold text-emerald-100 transition hover:border-emerald-500/40"
+                    >
+                      <BookUp className="h-4 w-4" />
+                      Open Inbox
+                    </Link>
+                  </div>
                 </div>
                 <div className="mt-5 grid gap-3 sm:grid-cols-3">
+                  <div className="rounded-2xl border border-emerald-500/18 bg-[#0b110e] p-4">
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-200/65">
+                      Waiting on Dez
+                    </p>
+                    <p className="mt-2 text-3xl font-semibold text-emerald-100">
+                      {waitingOnDezCount}
+                    </p>
+                  </div>
+                  <div className="rounded-2xl border border-red-500/18 bg-[#0b110e] p-4">
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-red-200/70">
+                      Blocked Systems
+                    </p>
+                    <p className="mt-2 text-3xl font-semibold text-red-100">
+                      {blockedSystemsCount}
+                    </p>
+                  </div>
+                  <div className="rounded-2xl border border-amber-500/18 bg-[#0b110e] p-4">
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-amber-200/70">
+                      Inbox Queue
+                    </p>
+                    <p className="mt-2 text-3xl font-semibold text-amber-100">
+                      {queuedInboxCount + runningInboxCount}
+                    </p>
+                  </div>
+                </div>
+                <div className="mt-3 grid gap-3 sm:grid-cols-3">
                   <div className="rounded-2xl border border-emerald-500/18 bg-[#0b110e] p-4">
                     <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-200/65">
                       Review ready
                     </p>
                     <p className="mt-2 text-3xl font-semibold text-emerald-100">
-                      {dashboardSummary?.counts.reviewReady ?? "-"}
+                      {reviewReadyCount}
                     </p>
                   </div>
                   <div className="rounded-2xl border border-amber-500/18 bg-[#0b110e] p-4">
@@ -2452,10 +2428,10 @@ export function ChatApp() {
                       Businesses
                     </p>
                     <h3 className="mt-2 text-xl font-semibold text-[#f3faf6]">
-                      Who runs what, and where is the friction?
+                      Who owns the work and where is the friction?
                     </h3>
                     <p className="mt-2 max-w-xl text-sm leading-6 text-emerald-100/65">
-                      AL should feel like a neutral operating platform over businesses, not one long chat. These module cards show the CEO lane, the top operating signal, and the next move for each business plugged into AL.
+                      This is the operating strip for the businesses plugged into AL. Each card should make the owner, the top signal, and the next move obvious.
                     </p>
                   </div>
                 </div>
@@ -2516,92 +2492,31 @@ export function ChatApp() {
                 <div className="flex flex-wrap items-start justify-between gap-4">
                   <div>
                     <p className="text-xs font-semibold uppercase tracking-[0.22em] text-emerald-300/45">
-                      Labor Lanes
+                      System Trust
                     </p>
                     <h3 className="mt-2 text-xl font-semibold text-[#f3faf6]">
-                      Can AL actually replace labor here?
+                      Can we trust the system underneath the work?
                     </h3>
                     <p className="mt-2 max-w-xl text-sm leading-6 text-emerald-100/65">
-                      This is the shared labor map for AL. It answers whether executive control, IT, marketing, customer service, and accounting are truly live operating lanes or still leaning on founder memory.
+                      Keep the framework in the background. This is where you check whether AL is healthy enough to trust, and whether the labor lanes are actually live.
                     </p>
                   </div>
-                  <Link
-                    href={withAlAppPrefix(pathname, "/labor-lanes")}
-                    className="inline-flex items-center gap-2 rounded-2xl bg-emerald-500 px-4 py-3 text-sm font-semibold text-[#05110b] transition hover:bg-emerald-400"
-                  >
-                    <Receipt className="h-4 w-4" />
-                    Open Labor Lanes
-                  </Link>
-                </div>
-                <div className="mt-5 grid gap-3 sm:grid-cols-3">
-                  <div className="rounded-2xl border border-emerald-500/18 bg-[#0b110e] p-4">
-                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-200/65">
-                      Live
-                    </p>
-                    <p className="mt-2 text-3xl font-semibold text-emerald-100">
-                      {laborLanes?.summary.live ?? "-"}
-                    </p>
+                  <div className="flex flex-wrap gap-3">
+                    <Link
+                      href={withAlAppPrefix(pathname, "/operational-proof")}
+                      className="inline-flex items-center gap-2 rounded-2xl bg-emerald-500 px-4 py-3 text-sm font-semibold text-[#05110b] transition hover:bg-emerald-400"
+                    >
+                      <ShieldCheck className="h-4 w-4" />
+                      Open System Health
+                    </Link>
+                    <Link
+                      href={withAlAppPrefix(pathname, "/labor-lanes")}
+                      className="inline-flex items-center gap-2 rounded-2xl border border-emerald-900/25 bg-[#0b110e] px-4 py-3 text-sm font-semibold text-emerald-100 transition hover:border-emerald-500/40"
+                    >
+                      <Receipt className="h-4 w-4" />
+                      Open Labor Lanes
+                    </Link>
                   </div>
-                  <div className="rounded-2xl border border-amber-500/18 bg-[#0b110e] p-4">
-                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-amber-200/70">
-                      Warning
-                    </p>
-                    <p className="mt-2 text-3xl font-semibold text-amber-100">
-                      {laborLanes?.summary.warning ?? "-"}
-                    </p>
-                  </div>
-                  <div className="rounded-2xl border border-red-500/18 bg-[#0b110e] p-4">
-                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-red-200/70">
-                      Blocked
-                    </p>
-                    <p className="mt-2 text-3xl font-semibold text-red-100">
-                      {laborLanes?.summary.blocked ?? "-"}
-                    </p>
-                  </div>
-                </div>
-                <div className="mt-5 rounded-2xl border border-emerald-900/20 bg-[#0b110e] p-4">
-                  <p className="text-sm font-semibold text-[#f3faf6]">
-                    {laborLanes?.headline || "Checking whether the shared labor lanes are real yet."}
-                  </p>
-                  <p className="mt-2 text-sm leading-6 text-emerald-100/70">
-                    {laborLanes?.topNextMove || "Pulling the lane bottlenecks into view."}
-                  </p>
-                </div>
-              </div>
-              <div className="mt-8 w-full max-w-2xl rounded-3xl border border-emerald-500/18 bg-[#101714] p-5 text-left shadow-[0_18px_60px_rgba(0,0,0,0.22)]">
-                <div className="flex flex-wrap items-start justify-between gap-4">
-                  <div>
-                    <p className="text-xs font-semibold uppercase tracking-[0.22em] text-emerald-300/45">
-                      Operational Proof
-                    </p>
-                    <h3 className="mt-2 text-xl font-semibold text-[#f3faf6]">
-                      Can we trust the loops?
-                    </h3>
-                    <p className="mt-2 max-w-xl text-sm leading-6 text-emerald-100/65">
-                      This is the trust panel for AL. It scores Board Room follow-through, Dominion lead control, WrenchReady day-readiness, OpenClaw ingress, and the attention brief.
-                    </p>
-                  </div>
-                  <Link
-                    href={withAlAppPrefix(pathname, "/operational-proof")}
-                    className="inline-flex items-center gap-2 rounded-2xl bg-emerald-500 px-4 py-3 text-sm font-semibold text-[#05110b] transition hover:bg-emerald-400"
-                  >
-                    <ShieldCheck className="h-4 w-4" />
-                    Open Operational Proof
-                  </Link>
-                </div>
-                <div className="mt-3 flex flex-wrap gap-3">
-                  <Link
-                    href={withAlAppPrefix(pathname, "/wrenchready/day-readiness")}
-                    className="inline-flex items-center gap-2 rounded-2xl border border-emerald-900/25 bg-[#0b110e] px-4 py-3 text-sm font-semibold text-emerald-100 transition hover:border-emerald-500/40"
-                  >
-                    Open Tomorrow Readiness
-                  </Link>
-                  <Link
-                    href={withAlAppPrefix(pathname, "/attention")}
-                    className="inline-flex items-center gap-2 rounded-2xl border border-emerald-900/25 bg-[#0b110e] px-4 py-3 text-sm font-semibold text-emerald-100 transition hover:border-emerald-500/40"
-                  >
-                    Open Attention
-                  </Link>
                 </div>
                 <div className="mt-5 grid gap-3 sm:grid-cols-3">
                   <div className="rounded-2xl border border-emerald-500/18 bg-[#0b110e] p-4">
@@ -2609,7 +2524,7 @@ export function ChatApp() {
                       Healthy
                     </p>
                     <p className="mt-2 text-3xl font-semibold text-emerald-100">
-                      {operationalProof?.summary.healthy ?? "-"}
+                      {systemHealthyCount}
                     </p>
                   </div>
                   <div className="rounded-2xl border border-amber-500/18 bg-[#0b110e] p-4">
@@ -2617,7 +2532,7 @@ export function ChatApp() {
                       Warning
                     </p>
                     <p className="mt-2 text-3xl font-semibold text-amber-100">
-                      {operationalProof?.summary.warning ?? "-"}
+                      {systemWarningCount}
                     </p>
                   </div>
                   <div className="rounded-2xl border border-red-500/18 bg-[#0b110e] p-4">
@@ -2625,17 +2540,27 @@ export function ChatApp() {
                       Failing
                     </p>
                     <p className="mt-2 text-3xl font-semibold text-red-100">
-                      {operationalProof?.summary.failing ?? "-"}
+                      {systemFailingCount}
+                    </p>
+                    </div>
+                </div>
+                <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                  <div className="rounded-2xl border border-emerald-900/20 bg-[#0b110e] p-4">
+                    <p className="text-sm font-semibold text-[#f3faf6]">
+                      {operationalProof?.topNextMove || "Checking the control-loop health now."}
+                    </p>
+                    <p className="mt-2 text-sm leading-6 text-emerald-100/70">
+                      Operational proof is the truth panel behind the command center. Use it when you need to verify whether the loops can be trusted.
                     </p>
                   </div>
-                </div>
-                <div className="mt-4 rounded-2xl border border-emerald-900/20 bg-[#0b110e] p-4">
-                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-300/45">
-                    Top next move
-                  </p>
-                  <p className="mt-2 text-sm leading-6 text-emerald-100/75">
-                    {operationalProof?.topNextMove || "Checking the control-loop health now."}
-                  </p>
+                  <div className="rounded-2xl border border-emerald-900/20 bg-[#0b110e] p-4">
+                    <p className="text-sm font-semibold text-[#f3faf6]">
+                      {laborLanes?.headline || "Checking whether the shared labor lanes are real yet."}
+                    </p>
+                    <p className="mt-2 text-sm leading-6 text-emerald-100/70">
+                      {laborLanes?.topNextMove || "Pulling the lane bottlenecks into view."}
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
