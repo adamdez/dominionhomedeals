@@ -1,6 +1,10 @@
 import type { NextConfig } from "next";
 import path from "node:path";
 
+const AL_CANONICAL_HOST = (process.env.AL_CANONICAL_HOST || "app.borelandops.com")
+  .trim()
+  .toLowerCase();
+
 const nextConfig: NextConfig = {
     outputFileTracingRoot: path.resolve(__dirname),
     images: {
@@ -12,17 +16,6 @@ const nextConfig: NextConfig = {
           dangerouslyAllowSVG: true,
           contentDispositionType: "attachment",
           contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
-    },
-    async rewrites() {
-          return {
-            beforeFiles: [
-              {
-                source: "/:path((?!api/|_next/).*)",
-                has: [{ type: "host", value: "al.dominionhomedeals.com" }],
-                destination: "/al/:path*",
-              },
-            ],
-          };
     },
     async redirects() {
           return [
@@ -39,7 +32,13 @@ const nextConfig: NextConfig = {
             {
                       source: "/al/:path*",
                       has: [{ type: "host", value: "(?:www\\.)?dominionhomedeals\\.com" }],
-                      destination: "https://al.dominionhomedeals.com/:path*",
+                      destination: `https://${AL_CANONICAL_HOST}/:path*`,
+                      permanent: true,
+            },
+            {
+                      source: "/:path*",
+                      has: [{ type: "host", value: "al.dominionhomedeals.com" }],
+                      destination: `https://${AL_CANONICAL_HOST}/:path*`,
                       permanent: true,
             },
                 ];

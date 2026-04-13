@@ -39,6 +39,12 @@ function shouldBlockByCountry(request: NextRequest): boolean {
 function blockedCountryResponse(request: NextRequest): NextResponse {
   const country = request.headers.get("x-vercel-ip-country")?.toUpperCase() ?? "UNKNOWN";
   const acceptsHtml = (request.headers.get("accept") ?? "").includes("text/html");
+  const host = normalizeHost(request.headers.get("host"));
+  const isPrivateHost = isPrivateAlSurfaceHost(host);
+  const brandName = isPrivateHost ? "Boreland Ops" : "Dominion Homes";
+  const contactLine = isPrivateHost
+    ? "This private operating system is restricted to approved access."
+    : "If you believe this is a mistake, please call or text 509-822-5460.";
 
   if (acceptsHtml) {
     return new NextResponse(
@@ -47,7 +53,7 @@ function blockedCountryResponse(request: NextRequest): NextResponse {
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Access Restricted | Dominion Homes</title>
+    <title>Access Restricted | ${brandName}</title>
     <style>
       body {
         margin: 0;
@@ -83,8 +89,8 @@ function blockedCountryResponse(request: NextRequest): NextResponse {
   <body>
     <main>
       <h1>Access Restricted</h1>
-      <p>Dominion Homes currently serves visitors located in the United States only.</p>
-      <p>If you believe this is a mistake, please call or text <strong>509-822-5460</strong>.</p>
+      <p>${brandName} currently serves visitors located in the United States only.</p>
+      <p>${contactLine}</p>
       <p>Request country: <strong>${country}</strong></p>
     </main>
   </body>
@@ -100,7 +106,7 @@ function blockedCountryResponse(request: NextRequest): NextResponse {
   }
 
   return NextResponse.json(
-    { error: "Access restricted to United States traffic", country },
+    { error: "Access restricted to United States traffic", country, brand: brandName },
     { status: 403, headers: { "Cache-Control": "no-store" } },
   );
 }

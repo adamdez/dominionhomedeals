@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 const AL_CANONICAL_ORIGIN = getAlCanonicalOrigin();
 
 export const metadata: Metadata = {
-  title: "AL Boreland Command Center",
+  title: "Command Center",
   robots: { index: false, follow: false },
   alternates: { canonical: `${AL_CANONICAL_ORIGIN}/` },
   manifest: "/manifest.webmanifest",
