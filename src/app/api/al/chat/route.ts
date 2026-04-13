@@ -327,8 +327,17 @@ LOCAL CODING EXECUTION RULE:
 If the user needs local coding, refactors, file edits, implementation work, or repo-level execution on Dez's machine, prefer codex_task first.
 For local coding execution:
 - Treat codex_task as the primary local OpenAI-native coding lane.
+- Use cursor_agent when the work should run asynchronously on a GitHub repo and the desired review artifact is a branch or PR, especially for landing pages, multi-file repo work, and ad/marketing assets that belong in code.
+- Use codex_task when tight local control, local files, immediate supervised iteration, or machine-side access on Dez's computer matters more than async cloud execution.
 - Use cowork_task only as a secondary legacy backup when Codex is not the right fit or when a specific Claude-only local behavior is required.
 - If cowork_task is degraded by auth or credit issues, say that plainly and keep work moving through Codex when possible.
+
+CURSOR FOLLOW-THROUGH RULE:
+Cursor is not fire-and-forget.
+- When you dispatch cursor_agent, treat the Cursor run as a managed worker with follow-through.
+- Refresh live Cursor status before presenting it as done.
+- If Cursor returns a PR, branch, or finished result, surface that as the real review artifact.
+- Capture meaningful success or failure outcomes so the same execution lessons do not disappear after the run ends.
 
 LOCAL PDF TASK RULE:
 If the user asks to merge, combine, or assemble existing local PDF files into one printable packet, prefer the local_pdf_merge bridge lane first.
@@ -682,7 +691,7 @@ const SERVER_TOOLS: Anthropic.Tool[] = [
   {
     name: "cowork_task",
     description:
-      "Legacy local execution lane backed by the older Claude executor on Dez's machine. Use only when codex_task is not the better local fit and when a true local file or code task cannot be handled by a dedicated bridge tool. Domains: 'dominionhomedeals' (default), canonical WrenchReady website target 'wrenchreadymobile-com' with legacy executor alias 'wrench-ready', and 'sentinel'. This is a secondary backup lane and not the preferred lane for local PDF/document assembly.",
+      "Legacy local execution lane backed by the older Claude executor on Dez's machine. Use only when codex_task is not the better local fit and when a true local file or code task cannot be handled by a dedicated bridge tool. Domains: 'dominionhomedeals' (default), canonical WrenchReady website target 'wrenchreadymobile-com' with legacy executor alias 'wrench-ready', and 'sentinel'. This is a secondary backup lane for specific local Claude-only behavior, not the preferred lane for general coding, landing-page work, or local PDF/document assembly.",
     input_schema: {
       type: "object" as const,
       properties: {
@@ -895,7 +904,7 @@ const BRIDGE_TOOLS: Anthropic.Tool[] = [
   {
     name: "cursor_agent",
     description:
-      "Send a coding task to Cursor's Cloud Agent (Composer 2) to execute autonomously on the appropriate GitHub repository. Defaults to dominionhomedeals, but WrenchReady website work should route to adamdez/wrenchreadymobile-com. Use this for: building or improving pages, UX/front-end work, React/Next.js/Tailwind changes, multi-file refactors, or any code task that requires the full IDE context. The agent runs in the background on the GitHub repo and opens a PR when done. Returns a job ID you can use to check status.",
+      "Send a coding task to Cursor's Cloud Agent (Composer 2) to execute autonomously on the appropriate GitHub repository. Defaults to dominionhomedeals, but WrenchReady website work should route to adamdez/wrenchreadymobile-com. Use this when the best artifact is a branch or PR on the repo: landing pages, UX/front-end work, React/Next.js/Tailwind changes, ad/marketing assets that live in code, and multi-file refactors that do not require Dez's local machine. The agent runs in the background on the GitHub repo and should be followed through until AL can surface a real review artifact.",
     input_schema: {
       type: "object" as const,
       properties: {

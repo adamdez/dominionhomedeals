@@ -1,4 +1,5 @@
 import { getAlAppPrefixForHost } from "@/lib/al-platform";
+import { refreshOpenCursorJobs } from "@/lib/al-cursor";
 import { getServiceClient } from "@/lib/supabase";
 
 export const AL_SESSION_VALUE = "al_authenticated_v1";
@@ -500,6 +501,7 @@ export async function fetchBoardroomQueueSnapshot(
   host: string | null | undefined,
   limit = 12,
 ): Promise<BoardroomQueueSnapshot> {
+  await refreshOpenCursorJobs({ limit: Math.max(limit, 8) });
   const candidates = await fetchBoardroomPresentationCandidates(host, Math.max(limit * 4, 24));
   const visible = candidates.filter((presentation) => !shouldBuryPresentation(presentation));
   const buried = candidates.filter((presentation) => shouldBuryPresentation(presentation));
