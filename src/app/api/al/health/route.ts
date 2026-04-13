@@ -37,9 +37,16 @@ export async function GET() {
   try {
     const url = process.env.N8N_WEBHOOK_URL;
     if (!url) throw new Error("N8N_WEBHOOK_URL not set");
-    // HEAD check — n8n returns 404 on HEAD but that confirms it's reachable
+    // This is only a reachability probe. n8n webhook endpoints commonly return 404 on HEAD.
+    // That means the host answered, not that a publish succeeded end to end.
     const res = await fetch(url, { method: "HEAD", signal: AbortSignal.timeout(5000) });
-    results.n8n = { ok: res.status < 500, detail: `HTTP ${res.status}` };
+    results.n8n = {
+      ok: res.status < 500,
+      detail:
+        res.status === 404
+          ? "Webhook host is reachable (HEAD returned 404). This confirms reachability only, not a successful publish."
+          : `Webhook reachability check returned HTTP ${res.status}.`,
+    };
   } catch (e) {
     results.n8n = { ok: false, detail: String(e) };
   }
