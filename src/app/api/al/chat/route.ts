@@ -2574,6 +2574,288 @@ function extractCursorMonitorUrl(value: string): string | null {
   return match?.[1] || urlFromText(value);
 }
 
+type CursorAuthScheme = "bearer" | "basic";
+
+interface CursorAgentSnapshot {
+  id: string | null;
+  status: string | null;
+  repositoryUrl: string | null;
+  branchName: string | null;
+  monitorUrl: string | null;
+  prUrl: string | null;
+  createdAt: string | null;
+  name: string | null;
+}
+
+interface CursorAgentDispatchResult {
+  ok: boolean;
+  isError: boolean;
+  message: string;
+  context: Record<string, unknown>;
+}
+
+function normalizeCursorRepositoryUrl(value: string | null | undefined): string | null {
+  const normalized = value?.trim();
+  if (!normalized) return null;
+  if (/^https?:\/\//i.test(normalized)) return normalized;
+  if (normalized.startsWith("github.com/")) return `https://${normalized}`;
+  return `https://github.com/${normalized.replace(/^github\.com\//i, "")}`;
+}
+
+function cursorAuthSchemes(): CursorAuthScheme[] {
+  const preferred = process.env.CURSOR_AGENTS_AUTH_SCHEME?.trim().toLowerCase();
+  if (preferred === "bearer" || preferred === "basic") {
+    return [preferred];
+  }
+  return ["bearer", "basic"];
+}
+
+function buildCursorAuthHeader(apiKey: string, scheme: CursorAuthScheme): string {
+  if (scheme === "basic") {
+    return `Basic ${Buffer.from(`${apiKey}:`).toString("base64")}`;
+  }
+  return `Bearer ${apiKey}`;
+}
+
+async function parseCursorApiBody(res: Response): Promise<{
+  raw: string;
+  json: unknown;
+}> {
+  const raw = await res.text().catch(() => "");
+  if (!raw) {
+    return { raw: "", json: null };
+  }
+  try {
+    return { raw, json: JSON.parse(raw) };
+  } catch {
+    return { raw, json: null };
+  }
+}
+
+async function cursorApiRequest(
+  path: string,
+  init: RequestInit = {},
+): Promise<{
+  response: Response;
+  authScheme: CursorAuthScheme;
+  raw: string;
+  json: unknown;
+}> {
+  const apiKey = process.env.CURSOR_AGENTS_API_KEY?.trim();
+  if (!apiKey) {
+    throw new Error(
+      "Cursor agent unavailable: CURSOR_AGENTS_API_KEY not set. Dez needs to add this to Vercel environment variables (Settings -> Environment Variables). Get the key from cursor.com/dashboard/cloud-agents -> User API Keys.",
+    );
+  }
+
+  let lastResponse: {
+    response: Response;
+    authScheme: CursorAuthScheme;
+    raw: string;
+    json: unknown;
+  } | null = null;
+
+  for (const authScheme of cursorAuthSchemes()) {
+    const response = await fetch(`https://api.cursor.com/v0${path}`, {
+      ...init,
+      headers: {
+        Accept: "application/json",
+        ...(init.body ? { "Content-Type": "application/json" } : {}),
+        ...(init.headers || {}),
+        Authorization: buildCursorAuthHeader(apiKey, authScheme),
+      },
+    });
+    const body = await parseCursorApiBody(response);
+    lastResponse = { response, authScheme, ...body };
+    if (response.status !== 401) {
+      return lastResponse;
+    }
+  }
+
+  if (!lastResponse) {
+    throw new Error("Cursor agent request failed before any response was received.");
+  }
+  return lastResponse;
+}
+
+function explainCursorApiError(status: number, raw: string): string {
+  if (status === 401) {
+    return "Cursor agent error: API key rejected. Check CURSOR_AGENTS_API_KEY in Vercel env vars.";
+  }
+  if (status === 402) {
+    return "Cursor agent error: Account requires a paid Cursor plan to use the Cloud Agents API.";
+  }
+  return `Cursor agent error ${status}: ${raw || "Unknown Cursor API error."}`;
+}
+
+function normalizeCursorSnapshot(raw: unknown): CursorAgentSnapshot {
+  const record = raw && typeof raw === "object" && !Array.isArray(raw)
+    ? (raw as Record<string, unknown>)
+    : {};
+  const source = asRecord(record.source);
+  const target = asRecord(record.target);
+  return {
+    id: asBriefString(record.id),
+    status: asBriefString(record.status),
+    repositoryUrl:
+      normalizeCursorRepositoryUrl(
+        asBriefString(record.repositoryUrl) ||
+          asBriefString(source.repository) ||
+          asBriefString(record.repo) ||
+          asBriefString(record.repository),
+      ),
+    branchName: asBriefString(target.branchName) || asBriefString(record.branchName),
+    monitorUrl:
+      asBriefString(target.url) ||
+      asBriefString(record.monitorUrl) ||
+      (asBriefString(record.id) ? `https://cursor.com/agents/${asBriefString(record.id)}` : null),
+    prUrl: asBriefString(target.prUrl) || asBriefString(record.prUrl),
+    createdAt: asBriefString(record.createdAt) || asBriefString(record.created_at),
+    name: asBriefString(record.name) || asBriefString(record.title),
+  };
+}
+
+function cursorLifecycleStatus(status: string | null | undefined): "running" | "finished" | "failed" | "unknown" {
+  const normalized = status?.trim().toUpperCase();
+  if (!normalized) return "unknown";
+  if (
+    normalized.includes("FINISH") ||
+    normalized.includes("SUCCESS") ||
+    normalized.includes("COMPLETE")
+  ) {
+    return "finished";
+  }
+  if (
+    normalized.includes("FAIL") ||
+    normalized.includes("ERROR") ||
+    normalized.includes("CANCEL") ||
+    normalized.includes("ABORT")
+  ) {
+    return "failed";
+  }
+  if (
+    normalized.includes("RUN") ||
+    normalized.includes("QUEUE") ||
+    normalized.includes("PEND") ||
+    normalized.includes("START")
+  ) {
+    return "running";
+  }
+  return "unknown";
+}
+
+function latestCursorAssistantMessage(messages: unknown): string | null {
+  if (!Array.isArray(messages)) return null;
+  for (let index = messages.length - 1; index >= 0; index -= 1) {
+    const entry = messages[index];
+    if (!entry || typeof entry !== "object" || Array.isArray(entry)) continue;
+    const record = entry as Record<string, unknown>;
+    if (asBriefString(record.type) !== "assistant_message") continue;
+    const text = asBriefString(record.text);
+    if (text) return text;
+  }
+  return null;
+}
+
+function buildCursorStatusMessage(input: {
+  snapshot: CursorAgentSnapshot;
+  task: string;
+  latestAssistantText?: string | null;
+}): string {
+  const lifecycle = cursorLifecycleStatus(input.snapshot.status);
+  const lines = [
+    `Cursor agent ${input.snapshot.id ? `#${input.snapshot.id}` : ""} — ${input.snapshot.status || lifecycle.toUpperCase()}`.trim(),
+    input.snapshot.name ? `Run: ${input.snapshot.name}` : "",
+    input.snapshot.repositoryUrl ? `Repo: ${input.snapshot.repositoryUrl}` : "",
+    input.snapshot.branchName ? `Branch: ${input.snapshot.branchName}` : "",
+    input.snapshot.prUrl ? `PR: ${input.snapshot.prUrl}` : "",
+    input.snapshot.monitorUrl ? `Monitor: ${input.snapshot.monitorUrl}` : "",
+    input.task ? `Task: ${shortText(input.task, 200)}` : "",
+    input.latestAssistantText
+      ? `Latest update: ${shortText(stripMarkdown(input.latestAssistantText).replace(/\s+/g, " "), 280)}`
+      : "",
+  ].filter(Boolean);
+
+  if (lifecycle === "finished") {
+    lines.push(
+      input.snapshot.prUrl
+        ? "Cursor finished. Review the PR and decide whether it is ready for Board Room or needs changes."
+        : "Cursor finished. Open the monitor and inspect the final outcome before treating this as ready.",
+    );
+  } else if (lifecycle === "failed") {
+    lines.push("Cursor failed. Repair the blocked execution lane or reroute the work before asking for review.");
+  } else {
+    lines.push("Cursor is still running. Let it finish or check the monitor before escalating.");
+  }
+
+  return lines.join("\n");
+}
+
+async function fetchCursorAgentRuntime(input: {
+  agentId: string;
+  task: string;
+}): Promise<
+  | {
+      ok: true;
+      snapshot: CursorAgentSnapshot;
+      latestAssistantText: string | null;
+      authScheme: CursorAuthScheme;
+      statusMessage: string;
+    }
+  | { ok: false; error: string }
+> {
+  try {
+    const listing = await cursorApiRequest("/agents", { method: "GET" });
+    if (!listing.response.ok) {
+      return { ok: false, error: explainCursorApiError(listing.response.status, listing.raw) };
+    }
+
+    const listingJson = listing.json;
+    const agents = Array.isArray(listingJson)
+      ? listingJson
+      : Array.isArray(asRecord(listingJson).agents)
+        ? (asRecord(listingJson).agents as unknown[])
+        : [];
+    const match = agents.find((entry) => normalizeCursorSnapshot(entry).id === input.agentId);
+    if (!match) {
+      return {
+        ok: false,
+        error: `Cursor agent ${input.agentId} was not found in the recent agent list.`,
+      };
+    }
+
+    const snapshot = normalizeCursorSnapshot(match);
+    const conversation = await cursorApiRequest(
+      `/agents/${encodeURIComponent(input.agentId)}/conversation`,
+      { method: "GET" },
+    );
+    const conversationJson = conversation.json;
+    const messages = Array.isArray(conversationJson)
+      ? conversationJson
+      : Array.isArray(asRecord(conversationJson).messages)
+        ? (asRecord(conversationJson).messages as unknown[])
+        : [];
+    const latestAssistantText = latestCursorAssistantMessage(messages);
+
+    return {
+      ok: true,
+      snapshot,
+      latestAssistantText,
+      authScheme: listing.authScheme,
+      statusMessage: buildCursorStatusMessage({
+        snapshot,
+        task: input.task,
+        latestAssistantText,
+      }),
+    };
+  } catch (error) {
+    return {
+      ok: false,
+      error: error instanceof Error ? error.message : "Cursor runtime lookup failed.",
+    };
+  }
+}
+
 function extractEmbeddedJsonObject(value: string): Record<string, unknown> | null {
   const trimmed = value.trim();
   const start = trimmed.indexOf("{");
@@ -2929,11 +3211,22 @@ function buildBoardroomPromotionContext(input: {
   }
 
   if (input.jobType === "cursor_agent") {
-    const monitorUrl = extractCursorMonitorUrl(cleanResult);
-    const repoUrl = asBriefString(context.repo);
-    const summary = input.isError
+    const cursorStatus = asBriefString(context.cursor_agent_status);
+    const cursorLifecycle = cursorLifecycleStatus(cursorStatus);
+    const monitorUrl =
+      asBriefString(context.cursor_monitor_url) || extractCursorMonitorUrl(cleanResult);
+    const repoUrl =
+      asBriefString(context.cursor_repository_url) || asBriefString(context.repo);
+    const prUrl = asBriefString(context.cursor_pr_url);
+    const branchName = asBriefString(context.cursor_branch_name);
+    const latestSummary = asBriefString(context.cursor_latest_summary);
+    const summary = input.isError || cursorLifecycle === "failed"
       ? firstMeaningfulParagraph(cleanResult) || "Cursor execution is blocked."
-      : "Cursor execution was launched and is waiting on the agent to complete the website work and return a review-ready result.";
+      : cursorLifecycle === "finished"
+        ? latestSummary ||
+          firstMeaningfulParagraph(cleanResult) ||
+          "Cursor execution finished and is ready for founder review."
+        : "Cursor execution was launched and is waiting on the agent to complete the work and return a reviewable outcome.";
     return {
       ...context,
       owner,
@@ -2941,29 +3234,55 @@ function buildBoardroomPromotionContext(input: {
       presentation_type: "execution_update",
       presentation_title:
         businessName ? `${businessName} Execution Update` : "Execution Update",
-      presentation_status_label: input.isError ? "blocked" : "execution launched",
+      presentation_status_label:
+        input.isError || cursorLifecycle === "failed"
+          ? "blocked"
+          : cursorLifecycle === "finished"
+            ? "ready for review"
+            : "execution launched",
       presentation_recommendation: summary,
       summary,
       presentation_body: cleanResult,
       presentation_highlights: uniqueStrings(
         [
           repoUrl ? `Repo: ${repoUrl}` : "",
+          branchName ? `Branch: ${branchName}` : "",
+          prUrl ? "Cursor PR link is attached." : "",
           monitorUrl ? "Cursor monitor link is attached." : "",
+          cursorStatus ? `Cursor status: ${cursorStatus}` : "",
+          latestSummary ? shortText(stripMarkdown(latestSummary).replace(/\s+/g, " "), 140) : "",
           input.task ? `Task: ${shortText(input.task, 140)}` : "",
         ].filter(Boolean),
       ),
       operator_links: [
+        ...(prUrl
+          ? [{ label: "Open Cursor PR", url: prUrl, priority: "primary" }]
+          : []),
         ...(monitorUrl
-          ? [{ label: "Open Cursor monitor", url: monitorUrl, priority: "primary" }]
+          ? [{ label: "Open Cursor monitor", url: monitorUrl, priority: prUrl ? "secondary" : "primary" }]
           : []),
         ...(repoUrl ? [{ label: "Open repo", url: repoUrl, priority: "secondary" }] : []),
       ],
       result_snapshot: cleanResult,
-      review_state: input.isError ? "needs_attention" : "execution_launched",
-      job_completion_status: input.isError ? "error" : "launched",
+      review_state:
+        input.isError || cursorLifecycle === "failed"
+          ? "needs_attention"
+          : cursorLifecycle === "finished"
+            ? "ready_for_review"
+            : "execution_launched",
+      job_completion_status:
+        input.isError || cursorLifecycle === "failed"
+          ? "error"
+          : cursorLifecycle === "finished"
+            ? "done"
+            : "launched",
       next_action:
         asBriefString(context.next_action) ||
-        "Wait for the Cursor agent to finish, then publish the actual design/code review package into Board Room.",
+        (cursorLifecycle === "finished"
+          ? prUrl
+            ? "Open the Cursor PR, inspect the real code diff, and decide whether it is ready for review or needs changes."
+            : "Open the Cursor monitor and inspect the finished outcome before treating this as ready."
+          : "Wait for the Cursor agent to finish, then pull the latest Cursor status before asking for review."),
     };
   }
 
@@ -4129,11 +4448,27 @@ async function executeJobStatus(jobId?: number): Promise<string> {
       // Single job lookup
       const { data, error } = await supabase
         .from("al_jobs")
-        .select("id, job_type, ceo_id, ceo_name, task, status, result, error_msg, created_at, started_at, completed_at")
+        .select("id, job_type, ceo_id, ceo_name, task, status, result, error_msg, created_at, started_at, completed_at, context")
         .eq("id", jobId)
         .single();
 
       if (error || !data) return `Job #${jobId} not found.`;
+
+      const storedContext = parseStoredAccountabilityContext(data.context);
+      if (
+        data.job_type === "cursor_agent" &&
+        ["pending", "running", "launched", "done"].includes(String(data.status || ""))
+      ) {
+        const refreshed = await refreshCursorAccountabilityJob({
+          jobId: data.id,
+          task: data.task,
+          status: data.status,
+          context: storedContext,
+        });
+        if (refreshed) {
+          return refreshed;
+        }
+      }
 
       const duration = data.completed_at && data.started_at
         ? `${Math.round((new Date(data.completed_at).getTime() - new Date(data.started_at).getTime()) / 1000)}s`
@@ -4164,7 +4499,7 @@ async function executeJobStatus(jobId?: number): Promise<string> {
       const lines = data.map((j) => {
         const age = Math.round((Date.now() - new Date(j.created_at).getTime()) / 1000);
         const ageStr = age < 60 ? `${age}s ago` : `${Math.round(age / 60)}m ago`;
-        const statusIcon = ({ pending: "⏳", running: "🔄", done: "✅", error: "❌" } as Record<string, string>)[j.status] ?? "?";
+        const statusIcon = ({ pending: "⏳", running: "🔄", launched: "🚀", done: "✅", error: "❌" } as Record<string, string>)[j.status] ?? "?";
         const ceoDisplay = normalizeCeoDisplayName(j.ceo_id, j.ceo_name);
         return `${statusIcon} #${j.id} [${ceoDisplay ?? j.job_type}] ${j.status} — ${j.task.slice(0, 80)} (${ageStr})`;
       });
@@ -4285,31 +4620,16 @@ async function executeCursorAgent(
   task: string,
   repo?: string,
   model?: string
-): Promise<string> {
-  const apiKey = process.env.CURSOR_AGENTS_API_KEY?.trim();
-  if (!apiKey) {
-    return "Cursor agent unavailable: CURSOR_AGENTS_API_KEY not set. Dez needs to add this to Vercel environment variables (Settings → Environment Variables). Get the key from cursor.com/dashboard/cloud-agents → User API Keys.";
-  }
-
-  // Accept "owner/repo" shorthand or full URL — normalize to full GitHub URL
-  const repoRaw = resolveCursorRepository(repo, task);
-  const repositoryUrl = repoRaw.startsWith("https://")
-    ? repoRaw
-    : `https://github.com/${repoRaw}`;
-
-  // "default" uses the model configured in Cursor dashboard (currently gpt-5.4)
-  const targetModel = model || "default";
-
-  // Cursor Cloud Agents API v0 — Basic Auth: base64(apiKey + ":")
-  const authToken = Buffer.from(`${apiKey}:`).toString("base64");
-
+): Promise<CursorAgentDispatchResult> {
   try {
-    const res = await fetch("https://api.cursor.com/v0/agents", {
+    const repoRaw = resolveCursorRepository(repo, task);
+    const repositoryUrl = repoRaw.startsWith("https://")
+      ? repoRaw
+      : `https://github.com/${repoRaw}`;
+    const targetModel = model || "default";
+
+    const result = await cursorApiRequest("/agents", {
       method: "POST",
-      headers: {
-        Authorization: `Basic ${authToken}`,
-        "Content-Type": "application/json",
-      },
       body: JSON.stringify({
         prompt: { text: task },
         model: targetModel,
@@ -4318,21 +4638,130 @@ async function executeCursorAgent(
       }),
     });
 
-    if (!res.ok) {
-      const errText = await res.text().catch(() => res.status.toString());
-      if (res.status === 401) return "Cursor agent error: API key rejected. Check CURSOR_AGENTS_API_KEY in Vercel env vars.";
-      if (res.status === 402) return "Cursor agent error: Account requires a paid Cursor plan to use the Cloud Agents API.";
-      return `Cursor agent error ${res.status}: ${errText}`;
+    if (!result.response.ok) {
+      return {
+        ok: false,
+        isError: true,
+        message: explainCursorApiError(result.response.status, result.raw),
+        context: {
+          repo: repoRaw,
+          cursor_repository_url: repositoryUrl,
+          cursor_model: targetModel,
+          cursor_auth_scheme: result.authScheme,
+        },
+      };
     }
 
-    const data = await res.json() as { id?: string; status?: string; target?: { url?: string; prUrl?: string } };
-    const agentId = data.id || "unknown";
-    const agentUrl = data.target?.url || `https://cursor.com/agents?id=${agentId}`;
+    const snapshot = normalizeCursorSnapshot({
+      ...(asRecord(result.json) || {}),
+      source: { repository: repositoryUrl },
+      model: targetModel,
+    });
+    const message = [
+      `Cursor agent dispatched (${snapshot.id || "unknown"}).`,
+      `Model: ${targetModel}`,
+      `Repo: ${repositoryUrl}`,
+      snapshot.branchName ? `Branch: ${snapshot.branchName}` : "",
+      snapshot.monitorUrl ? `Monitor: ${snapshot.monitorUrl}` : "",
+      snapshot.prUrl ? `PR: ${snapshot.prUrl}` : "",
+      `Task: ${shortText(task, 200)}`,
+      "The agent is running autonomously. Check job status later to pull the latest Cursor progress into AL.",
+    ]
+      .filter(Boolean)
+      .join("\n");
 
-    return `✓ Cursor agent dispatched (ID: ${agentId})\nModel: ${targetModel} | Repo: ${repositoryUrl}\nTask: ${task.slice(0, 200)}\nMonitor: ${agentUrl}\n\nThe agent is running autonomously. It will open a PR on ${repositoryUrl} when done — Dez reviews and merges.`;
+    return {
+      ok: true,
+      isError: false,
+      message,
+      context: {
+        repo: repoRaw,
+        model: targetModel,
+        cursor_agent_id: snapshot.id,
+        cursor_agent_status: snapshot.status,
+        cursor_repository_url: repositoryUrl,
+        cursor_monitor_url: snapshot.monitorUrl,
+        cursor_pr_url: snapshot.prUrl,
+        cursor_branch_name: snapshot.branchName,
+        cursor_created_at: snapshot.createdAt,
+        cursor_name: snapshot.name,
+        cursor_auth_scheme: result.authScheme,
+        cursor_last_checked_at: new Date().toISOString(),
+      },
+    };
   } catch (err) {
-    return `Cursor agent failed: ${err instanceof Error ? err.message : "network error"}`;
+    return {
+      ok: false,
+      isError: true,
+      message: `Cursor agent failed: ${err instanceof Error ? err.message : "network error"}`,
+      context: {},
+    };
   }
+}
+
+async function refreshCursorAccountabilityJob(input: {
+  jobId: number;
+  task: string;
+  status: string;
+  context: Record<string, unknown>;
+}): Promise<string | null> {
+  const agentId = asBriefString(input.context.cursor_agent_id);
+  if (!agentId || !process.env.CURSOR_AGENTS_API_KEY?.trim()) {
+    return null;
+  }
+
+  const runtime = await fetchCursorAgentRuntime({ agentId, task: input.task });
+  if (!runtime.ok) {
+    return `Cursor tracking update failed for agent ${agentId}: ${runtime.error}`;
+  }
+
+  const mergedContext = {
+    ...input.context,
+    cursor_agent_status: runtime.snapshot.status,
+    cursor_repository_url: runtime.snapshot.repositoryUrl || asBriefString(input.context.cursor_repository_url),
+    cursor_monitor_url: runtime.snapshot.monitorUrl || asBriefString(input.context.cursor_monitor_url),
+    cursor_pr_url: runtime.snapshot.prUrl || asBriefString(input.context.cursor_pr_url),
+    cursor_branch_name: runtime.snapshot.branchName || asBriefString(input.context.cursor_branch_name),
+    cursor_created_at: runtime.snapshot.createdAt || asBriefString(input.context.cursor_created_at),
+    cursor_name: runtime.snapshot.name || asBriefString(input.context.cursor_name),
+    cursor_auth_scheme: runtime.authScheme,
+    cursor_latest_summary: runtime.latestAssistantText,
+    cursor_last_checked_at: new Date().toISOString(),
+  };
+
+  const lifecycle = cursorLifecycleStatus(runtime.snapshot.status);
+  if (lifecycle === "finished") {
+    await completeAccountabilityJob({
+      jobId: input.jobId,
+      result: runtime.statusMessage,
+      isError: false,
+      context: mergedContext,
+    });
+    return runtime.statusMessage;
+  }
+
+  if (lifecycle === "failed") {
+    await completeAccountabilityJob({
+      jobId: input.jobId,
+      result: runtime.statusMessage,
+      isError: true,
+      context: mergedContext,
+    });
+    return runtime.statusMessage;
+  }
+
+  const supabase = getServiceClient();
+  if (supabase) {
+    await supabase
+      .from("al_jobs")
+      .update({
+        result: runtime.statusMessage,
+        context: JSON.stringify(mergedContext),
+      })
+      .eq("id", input.jobId);
+  }
+
+  return runtime.statusMessage;
 }
 
 async function executeWebSearch(query: string): Promise<string> {
@@ -5148,10 +5577,11 @@ async function runOpenAIChat(input: {
               );
               await completeAccountabilityJob({
                 jobId: accountability.jobId,
-                result,
-                isError: /^Cursor agent (unavailable|error|failed)/i.test(result),
+                result: result.message,
+                isError: result.isError,
+                context: result.context,
               });
-              precomputed.push(buildOpenAIFunctionOutput(call.callId, result));
+              precomputed.push(buildOpenAIFunctionOutput(call.callId, result.message));
               continue;
             }
 
@@ -6499,10 +6929,11 @@ export async function POST(request: NextRequest) {
               );
               await completeAccountabilityJob({
                 jobId: accountability.jobId,
-                result,
-                isError: /^Cursor agent (unavailable|error|failed)/i.test(result),
+                result: result.message,
+                isError: result.isError,
+                context: result.context,
               });
-              precomputed.push({ type: "tool_result", tool_use_id: sb.id, content: result });
+              precomputed.push({ type: "tool_result", tool_use_id: sb.id, content: result.message });
             }
           }
 
