@@ -260,6 +260,7 @@ When Dez gives a durable correction, operating preference, standard, or "never a
 - Use memory_save for preferences, durable corrections, process rules, and anything that should survive the next session.
 - Do not make Dez repeat standards you should already remember.
 - If the feedback changes operating doctrine or would matter outside the current chat, prefer saving it.
+- Founder feedback training is mission critical to your role. Failing to absorb repeated correction is an operating failure, not a cosmetic miss.
 
 KNOWLEDGE CAPTURE RULE:
 Do not confuse chat output with durable knowledge.
@@ -1965,6 +1966,16 @@ type AutoMemoryCandidate = {
   content: string;
 };
 
+function normalizeFounderFeedbackForMatch(value: string): string {
+  return value
+    .toLowerCase()
+    .replace(/^founder feedback \(\d{4}-\d{2}-\d{2}\):\s*/i, "")
+    .replace(/^dez (preference|policy|decision) \(\d{4}-\d{2}-\d{2}\):\s*/i, "")
+    .replace(/\(user instruction received \d{4}-\d{2}-\d{2}\)/gi, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 function buildAutoMemoryCandidate(message: string | null | undefined): AutoMemoryCandidate | null {
   const raw = asNonEmptyString(message);
   if (!raw) return null;
@@ -1988,7 +1999,7 @@ function buildAutoMemoryCandidate(message: string | null | undefined): AutoMemor
 
   if (!looksDurable) return null;
 
-  let category = "preference";
+  let category = "founder_feedback";
   if (
     lower.includes("never again") ||
     lower.includes("do not ") ||
@@ -1998,15 +2009,69 @@ function buildAutoMemoryCandidate(message: string | null | undefined): AutoMemor
     lower.includes("cannot have") ||
     lower.includes("standard")
   ) {
-    category = "policy";
+    category = "founder_policy";
   } else if (lower.includes("from now on")) {
-    category = "decision";
+    category = "founder_decision";
   }
 
   return {
     category,
     content: `Founder feedback (${new Date().toISOString().slice(0, 10)}): ${normalized.slice(0, 900)}`,
   };
+}
+
+async function saveFounderFeedbackMemory(candidate: AutoMemoryCandidate): Promise<string> {
+  const supabase = getServiceClient();
+  if (!supabase) return "Founder feedback save failed: no database connection.";
+
+  const normalized = normalizeFounderFeedbackForMatch(candidate.content);
+
+  try {
+    const { data, error } = await supabase
+      .from("al_memories")
+      .select("id, category, content")
+      .in("category", [
+        "founder_feedback",
+        "founder_policy",
+        "founder_decision",
+        "preference",
+        "policy",
+        "decision",
+      ])
+      .order("updated_at", { ascending: false })
+      .limit(100);
+
+    if (error) return `Founder feedback save failed: ${error.message}`;
+
+    const existing = (data || []).find(
+      (entry) => normalizeFounderFeedbackForMatch(asNonEmptyString(entry.content) || "") === normalized,
+    );
+
+    if (existing) {
+      const { error: updateError } = await supabase
+        .from("al_memories")
+        .update({
+          category: candidate.category,
+          content: candidate.content,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", existing.id);
+
+      if (updateError) return `Founder feedback update failed: ${updateError.message}`;
+      return `Updated founder feedback memory (id:${existing.id}, category:${candidate.category})`;
+    }
+
+    const { data: inserted, error: insertError } = await supabase
+      .from("al_memories")
+      .insert({ category: candidate.category, content: candidate.content })
+      .select("id")
+      .single();
+
+    if (insertError) return `Founder feedback save failed: ${insertError.message}`;
+    return `Saved founder feedback memory (id:${inserted.id}, category:${candidate.category})`;
+  } catch (err) {
+    return `Founder feedback save error: ${err instanceof Error ? err.message : "unknown"}`;
+  }
 }
 
 async function maybeAutoCaptureTurnMemory(input: {
@@ -2017,7 +2082,7 @@ async function maybeAutoCaptureTurnMemory(input: {
   const candidate = buildAutoMemoryCandidate(input.message);
   if (!candidate) return;
   try {
-    await executeMemorySave(candidate.category, candidate.content);
+    await saveFounderFeedbackMemory(candidate);
   } catch (err) {
     console.error("[Al] auto memory capture failed:", err);
   }
@@ -4342,10 +4407,25 @@ async function loadMemories(): Promise<string> {
       .order("category")
       .order("updated_at", { ascending: false });
     if (!data || data.length === 0) return "";
-    const lines = data.map(
+
+    const founderFirst = [...data].sort((a, b) => {
+      const aFounder = a.category.startsWith("founder_") ? 0 : 1;
+      const bFounder = b.category.startsWith("founder_") ? 0 : 1;
+      if (aFounder !== bFounder) return aFounder - bFounder;
+      return a.category.localeCompare(b.category);
+    });
+
+    const founderLines = founderFirst
+      .filter((m) => m.category.startsWith("founder_"))
+      .map((m) => `[${m.category}] (id:${m.id}) ${m.content}`);
+    const lines = founderFirst.map(
       (m) => `[${m.category}] (id:${m.id}) ${m.content}`
     );
-    return `\n\nPERSISTENT MEMORY (${data.length} entries):\n${lines.join("\n")}`;
+    const founderBlock =
+      founderLines.length > 0
+        ? `\n\nMISSION-CRITICAL FOUNDER FEEDBACK (${founderLines.length} entries):\n${founderLines.join("\n")}`
+        : "";
+    return `${founderBlock}\n\nPERSISTENT MEMORY (${founderFirst.length} entries):\n${lines.join("\n")}`;
   } catch {
     return "";
   }
@@ -4903,10 +4983,13 @@ async function runOpenAIChat(input: {
 
             if (call.name === "memory_save") {
               durableCaptureThisTurn = true;
-              const result = await executeMemorySave(
-                asNonEmptyString(parsedInput.category) || "general",
-                asNonEmptyString(parsedInput.content) || "",
-              );
+              const founderCandidate = buildAutoMemoryCandidate(input.message);
+              const result = founderCandidate
+                ? await saveFounderFeedbackMemory(founderCandidate)
+                : await executeMemorySave(
+                    asNonEmptyString(parsedInput.category) || "general",
+                    asNonEmptyString(parsedInput.content) || "",
+                  );
               precomputed.push(buildOpenAIFunctionOutput(call.callId, result));
               continue;
             }
@@ -6268,10 +6351,13 @@ export async function POST(request: NextRequest) {
               precomputed.push({ type: "tool_result", tool_use_id: sb.id, content: result });
             } else if (sb.name === "memory_save") {
               durableCaptureThisTurn = true;
-              const result = await executeMemorySave(
-                asNonEmptyString(inp.category) || "general",
-                asNonEmptyString(inp.content) || "",
-              );
+              const founderCandidate = buildAutoMemoryCandidate(message);
+              const result = founderCandidate
+                ? await saveFounderFeedbackMemory(founderCandidate)
+                : await executeMemorySave(
+                    asNonEmptyString(inp.category) || "general",
+                    asNonEmptyString(inp.content) || "",
+                  );
               precomputed.push({ type: "tool_result", tool_use_id: sb.id, content: result });
             } else if (sb.name === "planner_task") {
               const result = await executePlannerTask(inp);
