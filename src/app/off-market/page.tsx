@@ -40,7 +40,7 @@ export default function OffMarketHubPage() {
         <div className="mx-auto max-w-6xl px-5 sm:px-6 lg:px-8">
           <h2 className="font-display text-heading text-ink-600 mb-10 text-center">Current offerings</h2>
           <div className="grid gap-8 sm:grid-cols-2 lg:gap-10">
-            {listings.map((l) => (
+            {listings.map((l, index) => (
               <Link
                 key={l.slug}
                 href={`/off-market/${l.slug}`}
@@ -53,6 +53,8 @@ export default function OffMarketHubPage() {
                     fill
                     sizes="(max-width: 640px) 100vw, 50vw"
                     className="object-cover transition duration-500 group-hover:scale-[1.03]"
+                    quality={72}
+                    priority={index === 0}
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-80" />
                   <div className="absolute bottom-0 left-0 right-0 p-5 text-white">

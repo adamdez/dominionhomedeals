@@ -8,3 +8,7 @@ tmp-*
 al-bridge/output/
 al-bridge/.bridge*.log
 al-bridge/watchdog.log
+.playwright-cli/
+output/
+.tmp_route_prev.ts
+source-assets/

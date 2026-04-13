@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
+import { BreadcrumbJsonLd } from '@/components/seo/BreadcrumbJsonLd'
 
 export const metadata: Metadata = {
   title: 'Areas We Serve — Spokane County & Kootenai County',
@@ -35,7 +36,8 @@ const spokaneCounty = [
 
 const kootenaiCounty = [
   { name: 'Coeur d\'Alene', slug: 'coeur-d-alene', tagline: 'Lake city cash offers' },
-  { name: 'Post Falls', slug: 'post-falls', tagline: 'Our home base' },
+  { name: 'Post Falls', slug: 'post-falls', tagline: 'Strong North Idaho service area' },
+  
   { name: 'Hayden', slug: 'hayden', tagline: 'Growing north shore community' },
   { name: 'Rathdrum', slug: 'rathdrum', tagline: 'Prairie corridor' },
   { name: 'Dalton Gardens', slug: 'dalton-gardens', tagline: 'Quiet residential area' },
@@ -49,6 +51,12 @@ const kootenaiCounty = [
 export default function NeighborhoodsPage() {
   return (
     <>
+      <BreadcrumbJsonLd
+        items={[
+          { name: 'Home', url: 'https://dominionhomedeals.com' },
+          { name: 'Areas We Serve', url: 'https://dominionhomedeals.com/neighborhoods' },
+        ]}
+      />
       {/* JSON-LD */}
       <script
         type="application/ld+json"
@@ -62,8 +70,8 @@ export default function NeighborhoodsPage() {
             url: 'https://dominionhomedeals.com',
             address: {
               '@type': 'PostalAddress',
-              addressLocality: 'Post Falls',
-              addressRegion: 'ID',
+              addressLocality: 'Spokane',
+              addressRegion: 'WA',
               addressCountry: 'US',
             },
             areaServed: [
@@ -200,7 +208,7 @@ export default function NeighborhoodsPage() {
             We Know These Neighborhoods Because We Live&nbsp;Here
           </h2>
           <p className="mx-auto mt-4 max-w-xl text-lg text-forest-200">
-            Adam and Logan are based in Post Falls. We drive these streets
+            Adam and Logan are based in Spokane. We drive these streets
             every day. Let us make you a fair cash offer on your property.
           </p>
           <div className="mt-8 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">

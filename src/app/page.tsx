@@ -1,13 +1,18 @@
-// src/app/page.tsx
+﻿// src/app/page.tsx
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import { LeadForm } from "@/components/forms/LeadForm";
 import { FadeIn } from "@/components/animations/FadeIn";
 import { Testimonials } from "@/components/sections/Testimonials";
 import { Situations } from "@/components/sections/Situations";
+import { SellerPaths } from "@/components/sections/SellerPaths";
+import { SellerGuideCta } from "@/components/sections/SellerGuideCta";
+import { BuyerChecklist } from "@/components/sections/BuyerChecklist";
+import { CommonSellerScenarios } from "@/components/sections/CommonSellerScenarios";
 import { SITE, PROCESS_STEPS, TRUST_STATS, TEAM } from "@/lib/constants";
 
-/** Display name → slug map for homepage neighborhood links */
+/** Display name -> slug map for homepage neighborhood links */
 const HOMEPAGE_AREAS: { name: string; slug: string }[] = [
   { name: "Spokane Valley", slug: "spokane-valley" },
   { name: "North Spokane", slug: "north-spokane" },
@@ -51,7 +56,7 @@ export default function HomePage() {
                   <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-forest-500 opacity-75" />
                   <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-forest-500" />
                 </span>
-                Local Spokane & CDA Team · Based in Post Falls
+                Local Spokane & CDA Team · Based in Spokane
               </div>
 
               <h1 className="font-display text-hero text-ink-700 text-balance">
@@ -63,7 +68,7 @@ export default function HomePage() {
               </h1>
 
               <p className="mt-5 max-w-lg text-lg leading-relaxed text-ink-400">
-                We&apos;re Adam and Logan — a local team that buys houses
+                We&apos;re Adam and Logan - a local team that buys houses
                 for cash across Spokane County and North Idaho. No agents,
                 no commissions, no repairs. Just a fair offer and a
                 handshake.
@@ -112,7 +117,7 @@ export default function HomePage() {
             {/* Form */}
             <div id="get-offer" className="scroll-mt-24">
               <p className="mb-3 text-center text-sm font-medium text-forest-600">
-                Takes about 60 seconds — no obligation
+                Takes about 60 seconds - no obligation
               </p>
               <LeadForm />
             </div>
@@ -174,7 +179,7 @@ export default function HomePage() {
         <FadeIn delay={400}>
           <div className="mt-10 text-center">
             <a href="#get-offer" className="btn-primary">
-              Start Step 1 — It&apos;s Free
+              Start Step 1 - It&apos;s Free
             </a>
           </div>
         </FadeIn>
@@ -202,15 +207,15 @@ export default function HomePage() {
                 <p className="mt-3 text-base leading-relaxed text-ink-400">
                   We live here. We raise our families here. When we say
                   we&apos;ll meet you at your kitchen table to talk through
-                  your options — we mean it. We&apos;re both based in Post
-                  Falls. We know the neighborhoods because we drive through
+                  your options - we mean it. We&apos;re based in Spokane.
+                  We know the neighborhoods because we drive through
                   them every day.
                 </p>
                 <ul className="mt-5 space-y-2.5">
                   {[
-                    "Based in Post Falls, ID — not a national call center",
+                    "Based in Spokane, WA - not a national call center",
                     "We meet every seller face-to-face",
-                    "We close through WFG Title — a name you know",
+                    "We close through WFG Title - a name you know",
                     "No bait-and-switch. The offer we make is the offer you get.",
                   ].map((item) => (
                     <li key={item} className="flex items-start gap-2.5">
@@ -224,14 +229,19 @@ export default function HomePage() {
               </div>
             </FadeIn>
             <FadeIn delay={200} direction="left">
-              {/* Team preview — this will be photos once uploaded */}
+              {/* Team preview */}
               <div className="grid grid-cols-2 gap-4 max-w-xs mx-auto lg:mx-0">
                 {TEAM.map((member) => (
                   <div key={member.name} className="rounded-2xl bg-white p-5 shadow-soft text-center">
-                    <div className="mx-auto mb-3 flex h-16 w-16 items-center justify-center rounded-full bg-forest-100 text-forest-600">
-                      <span className="font-display text-lg">
-                        {member.name.split(" ")[0]}
-                      </span>
+                    <div className="relative mx-auto mb-3 h-16 w-16 overflow-hidden rounded-full ring-4 ring-forest-50">
+                      <Image
+                        src={member.image}
+                        alt={`${member.name} headshot`}
+                        fill
+                        sizes="64px"
+                        className="object-cover"
+                        quality={72}
+                      />
                     </div>
                     <p className="text-sm font-semibold text-ink-600">
                       {member.name.split(" ")[0]}
@@ -245,8 +255,20 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* ======== BUYER CHECKLIST ======== */}
+      <BuyerChecklist />
+
+      {/* ======== COMMON SELLER SCENARIOS ======== */}
+      <CommonSellerScenarios />
+
       {/* ======== SITUATIONS ======== */}
       <Situations />
+
+      {/* ======== SELLER PATHS ======== */}
+      <SellerPaths />
+
+      {/* ======== SELLER GUIDE CTA ======== */}
+      <SellerGuideCta />
 
       {/* ======== TESTIMONIALS ======== */}
       <Testimonials />
@@ -263,7 +285,7 @@ export default function HomePage() {
             </h2>
             <p className="mx-auto mt-3 max-w-xl text-base text-ink-400">
               From Spokane Valley to Coeur d&apos;Alene and everywhere in
-              between — if it&apos;s in our area, we want to hear about it.
+              between - if it&apos;s in our area, we want to hear about it.
             </p>
           </div>
         </FadeIn>
@@ -285,7 +307,7 @@ export default function HomePage() {
               href="/neighborhoods"
               className="text-sm font-medium text-forest-600 transition-colors hover:text-forest-700"
             >
-              View all areas we serve →
+              View all areas we serve {"->"}
             </Link>
           </div>
         </FadeIn>
@@ -303,7 +325,7 @@ export default function HomePage() {
             </h2>
             <p className="mx-auto mt-3 max-w-lg text-base text-stone-400">
               No obligation. No pressure. Fill out the form or reach out
-              directly — one of us will get back to you.
+              directly - one of us will get back to you.
             </p>
             <div className="mt-7 flex flex-wrap items-center justify-center gap-3">
               <a href="#get-offer" className="btn-primary !bg-white !text-ink-600 hover:!bg-stone-100">
@@ -322,3 +344,4 @@ export default function HomePage() {
     </>
   );
 }
+

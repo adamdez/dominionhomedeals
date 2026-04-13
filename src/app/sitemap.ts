@@ -1,4 +1,5 @@
 import type { MetadataRoute } from 'next'
+import { SELLER_STORIES } from '@/lib/seller-stories'
 
 // ─── Single source of truth for neighborhood slugs ───────────────────────────
 // Must match exactly the keys in src/app/neighborhoods/[slug]/page.tsx
@@ -39,6 +40,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
   const staticPages = [
     { url: baseUrl, lastModified: new Date(), changeFrequency: 'weekly' as const, priority: 1.0 },
     { url: `${baseUrl}/sell`, lastModified: new Date(), changeFrequency: 'weekly' as const, priority: 0.9 },
+    { url: `${baseUrl}/sell/guide`, lastModified: new Date(), changeFrequency: 'monthly' as const, priority: 0.85 },
+    { url: `${baseUrl}/stories`, lastModified: new Date(), changeFrequency: 'monthly' as const, priority: 0.8 },
     { url: `${baseUrl}/sell/as-is`, lastModified: new Date(), changeFrequency: 'monthly' as const, priority: 0.9 },
     { url: `${baseUrl}/sell/foreclosure`, lastModified: new Date(), changeFrequency: 'monthly' as const, priority: 0.9 },
     { url: `${baseUrl}/sell/inherited`, lastModified: new Date(), changeFrequency: 'monthly' as const, priority: 0.9 },
@@ -57,5 +60,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority: 0.8,
   }))
 
-  return [...staticPages, ...neighborhoodPages]
+  const storyPages = SELLER_STORIES.map((story) => ({
+    url: `${baseUrl}/stories/${story.slug}`,
+    lastModified: new Date(),
+    changeFrequency: 'monthly' as const,
+    priority: 0.7,
+  }))
+
+  return [...staticPages, ...storyPages, ...neighborhoodPages]
 }

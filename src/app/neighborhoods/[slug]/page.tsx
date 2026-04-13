@@ -91,14 +91,14 @@ const neighborhoods: Record<string, NeighborhoodData> = {
     name: "Coeur d'Alene",
     state: 'ID',
     county: 'Kootenai County',
-    tagline: "Sell Your CDA Home for Cash — Local Buyers Based in Post Falls",
+    tagline: "Sell Your CDA Home for Cash — Local Buyers Serving The Spokane-CDA Corridor",
     description:
-      "Coeur d'Alene is one of North Idaho's hottest markets, but that doesn't mean selling is always easy. Whether you own a lakeside property, a midtown ranch, or a home in the neighborhoods around CDA, we buy houses for cash — no agents, no staging, no open houses. We're based right next door in Post Falls.",
+      "Coeur d'Alene is one of North Idaho's hottest markets, but that doesn't mean selling is always easy. Whether you own a lakeside property, a midtown ranch, or a home in the neighborhoods around CDA, we buy houses for cash — no agents, no staging, no open houses. We work this corridor constantly from our Spokane base.",
     highlights: [
       'Idaho\'s #1 tourism and lifestyle destination',
       'Strong property values but high market competition',
       'Diverse housing stock from lakefront to suburban',
-      'We\'re based 10 minutes away in Post Falls',
+      'We work the Spokane-CDA corridor every week',
     ],
     situations: ['Vacation homes you want to unload', 'Properties needing major repairs', 'Behind on mortgage payments', 'Inherited a CDA property from out of state'],
     zipCodes: ['83814', '83815'],
@@ -108,9 +108,9 @@ const neighborhoods: Record<string, NeighborhoodData> = {
     name: 'Post Falls',
     state: 'ID',
     county: 'Kootenai County',
-    tagline: 'Cash Home Buyers in Post Falls — We Live Here',
+    tagline: 'Cash Home Buyers in Post Falls — Strong North Idaho Coverage',
     description:
-      'Post Falls is our home base. The Dominion Homes office is right here, and we know every street, subdivision, and development in town. From older homes near the falls to newer builds in Prairie, we buy houses in any condition across all of Post Falls. No one knows this market like we do.',
+      'Post Falls is a core part of our North Idaho service area. We know the neighborhoods, subdivisions, and traffic patterns well, and we buy houses in any condition across Post Falls. From older homes near the river to newer builds in Prairie, we keep the process direct and practical.',
     highlights: [
       'Our office is here — this is our home turf',
       'One of the fastest-growing cities in Idaho',
@@ -461,7 +461,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const location = `${data.name}, ${data.state}`
   return {
     title: `Cash for Houses ${location} — Sell Fast`,
-    description: `Get a fair cash offer on your ${location} home. No agents, no commissions, no repairs. Local team based in Post Falls, ID. Call 509-822-5460.`,
+    description: `Get a fair cash offer on your ${location} home. No agents, no commissions, no repairs. Local Spokane-based team serving the full Spokane-CDA corridor. Call 509-822-5460.`,
     alternates: { canonical: `https://dominionhomedeals.com/neighborhoods/${slug}` },
     openGraph: {
       title: `Sell Your ${data.name} Home for Cash`,
@@ -498,8 +498,8 @@ export default async function NeighborhoodPage({ params }: { params: Promise<{ s
             url: `https://dominionhomedeals.com/neighborhoods/${slug}`,
             address: {
               '@type': 'PostalAddress',
-              addressLocality: 'Post Falls',
-              addressRegion: 'ID',
+              addressLocality: 'Spokane',
+              addressRegion: 'WA',
               addressCountry: 'US',
             },
             areaServed: {

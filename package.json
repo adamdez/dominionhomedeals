@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "next lint",
     "photos:torrens": "node scripts/convert-torrens-heic.cjs",
+    "images:optimize": "node scripts/optimize-public-images.cjs",
     "al:bench": "node scripts/al-benchmark-runner.cjs run",
     "al:bench:compare": "node scripts/al-benchmark-runner.cjs compare",
     "al:smoke": "node scripts/al-smoke-check.cjs"

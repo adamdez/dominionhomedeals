@@ -38,7 +38,7 @@ function publicMetadata(): Metadata {
       template: "%s | Dominion Homes",
     },
     description:
-      "Local Spokane and Coeur d'Alene team that buys houses for cash in any condition. No commissions, no repairs, close on your timeline. Based in Post Falls, ID.",
+      "Local Spokane and Coeur d'Alene team that buys houses for cash in any condition. No commissions, no repairs, close on your timeline. Based in Spokane, WA.",
     keywords: [
       "sell my house fast Spokane",
       "cash home buyers Spokane",
@@ -46,7 +46,7 @@ function publicMetadata(): Metadata {
       "sell house fast CDA",
       "cash for houses Coeur d'Alene",
       "sell house as-is Spokane",
-      "home buyers Post Falls",
+      "home buyers Spokane",
     ],
     robots: { index: true, follow: true },
     openGraph: {
@@ -55,8 +55,7 @@ function publicMetadata(): Metadata {
       url: SITE.url,
       siteName: SITE.name,
       title: "Sell Your House Fast for Cash - Spokane & CDA",
-      description:
-        "Get a fair cash offer from your local team. No repairs, no fees, close on your schedule.",
+      description: "Get a fair cash offer from your local team. No repairs, no fees, close on your schedule.",
       images: [{ url: "/images/og-image.jpg", width: 1200, height: 630 }],
     },
     alternates: { canonical: SITE.url },
@@ -87,18 +86,16 @@ function privateRootMetadata(): Metadata {
   };
 }
 
+function isPrivateAppPath(pathname: string): boolean {
+  return /^(\/al(\/|$)|\/boardroom(\/|$)|\/planner(\/|$)|\/reviews(\/|$)|\/borelandops-root(\/|$))/.test(pathname);
+}
+
 export async function generateMetadata(): Promise<Metadata> {
   const headerStore = await headers();
   const host = normalizeHost(headerStore.get("host"));
 
-  if (isCanonicalAlHost(host)) {
-    return privateAppMetadata();
-  }
-
-  if (isBorelandRootHost(host)) {
-    return privateRootMetadata();
-  }
-
+  if (isCanonicalAlHost(host)) return privateAppMetadata();
+  if (isBorelandRootHost(host)) return privateRootMetadata();
   return publicMetadata();
 }
 
@@ -132,7 +129,7 @@ function JsonLd() {
           postalCode: SITE.address.zip,
           addressCountry: "US",
         },
-        geo: { "@type": "GeoCoordinates", latitude: 47.7182, longitude: -116.9516 },
+        geo: { "@type": "GeoCoordinates", latitude: 47.6588, longitude: -117.426 },
         areaServed: [
           { "@type": "AdministrativeArea", name: "Spokane County, WA" },
           { "@type": "AdministrativeArea", name: "Kootenai County, ID" },
@@ -155,25 +152,18 @@ function JsonLd() {
     ],
   };
 
-  return (
-    <script
-      type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
-    />
-  );
+  return <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }} />;
 }
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const headerStore = await headers();
   const host = normalizeHost(headerStore.get("host"));
+  const pathname = headerStore.get("x-pathname") || "";
   const isPrivateHost = isCanonicalAlHost(host) || isBorelandRootHost(host);
+  const usePublicChrome = !isPrivateHost && !isPrivateAppPath(pathname);
 
   return (
-    <html
-      lang="en"
-      className={`${playfair.variable} ${sourceSans.variable}`}
-      suppressHydrationWarning
-    >
+    <html lang="en" className={`${playfair.variable} ${sourceSans.variable}`} suppressHydrationWarning>
       <head>
         {!isPrivateHost ? <JsonLd /> : null}
         {isPrivateHost ? (
@@ -198,7 +188,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           Skip to main content
         </a>
         {!isPrivateHost ? <GoogleAnalytics /> : null}
-        {isPrivateHost ? <main id="main-content">{children}</main> : <SiteChrome>{children}</SiteChrome>}
+        {usePublicChrome ? <SiteChrome>{children}</SiteChrome> : <main id="main-content">{children}</main>}
       </body>
     </html>
   );

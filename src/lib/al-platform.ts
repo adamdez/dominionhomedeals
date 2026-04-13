@@ -68,7 +68,7 @@ export function getAlCanonicalHost(): string {
     }
   }
 
-  return "app.borelandops.com";
+  return "borelandops.com";
 }
 
 export function getAlCanonicalOrigin(): string {

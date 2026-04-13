@@ -9,15 +9,15 @@ export function LocalBusinessSchema() {
     email: 'offers@dominionhomedeals.com',
     address: {
       '@type': 'PostalAddress',
-      addressLocality: 'Post Falls',
-      addressRegion: 'ID',
-      postalCode: '83854',
+      addressLocality: 'Spokane',
+      addressRegion: 'WA',
+      postalCode: '99201',
       addressCountry: 'US',
     },
     geo: {
       '@type': 'GeoCoordinates',
-      latitude: 47.7182,
-      longitude: -116.9516,
+      latitude: 47.6588,
+      longitude: -117.4260,
     },
     areaServed: [
       { '@type': 'County', name: 'Spokane County, WA' },
@@ -51,7 +51,7 @@ export function FAQSchema() {
         name: 'How fast can you close on my house in Spokane?',
         acceptedAnswer: {
           '@type': 'Answer',
-          text: 'We can close in as fast as 2 weeks. Some sellers prefer a longer timeline, and we work on your schedule. We are local principals based in Post Falls, ID.',
+          text: 'We can close in as fast as 2 weeks. Some sellers prefer a longer timeline, and we work on your schedule. We are local principals based in Spokane, WA.',
         },
       },
       {

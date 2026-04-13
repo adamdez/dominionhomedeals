@@ -22,6 +22,20 @@ const ALLOWED_BOT_PATTERNS = [
   /WhatsApp/i,
 ];
 
+function withPathHeader(request: NextRequest) {
+  const headers = new Headers(request.headers);
+  headers.set("x-pathname", request.nextUrl.pathname);
+  return headers;
+}
+
+function nextWithPath(request: NextRequest) {
+  return NextResponse.next({ request: { headers: withPathHeader(request) } });
+}
+
+function rewriteWithPath(request: NextRequest, url: URL) {
+  return NextResponse.rewrite(url, { request: { headers: withPathHeader(request) } });
+}
+
 function isAllowedBot(userAgent: string): boolean {
   return ALLOWED_BOT_PATTERNS.some((pattern) => pattern.test(userAgent));
 }
@@ -143,7 +157,7 @@ function rewriteCanonicalAlHost(request: NextRequest): NextResponse | null {
   if (pathname === "/robots.txt") {
     const nextUrl = request.nextUrl.clone();
     nextUrl.pathname = "/private-robots.txt";
-    return NextResponse.rewrite(nextUrl);
+    return rewriteWithPath(request, nextUrl);
   }
 
   if (pathname === "/sitemap.xml") {
@@ -155,13 +169,11 @@ function rewriteCanonicalAlHost(request: NextRequest): NextResponse | null {
   }
 
   const redirect = redirectToCanonicalAlPath(request);
-  if (redirect) {
-    return redirect;
-  }
+  if (redirect) return redirect;
 
   const nextUrl = request.nextUrl.clone();
   nextUrl.pathname = pathname === "/" ? "/al" : `/al${pathname}`;
-  return NextResponse.rewrite(nextUrl);
+  return rewriteWithPath(request, nextUrl);
 }
 
 function rewriteBorelandRootHost(request: NextRequest): NextResponse | null {
@@ -170,7 +182,7 @@ function rewriteBorelandRootHost(request: NextRequest): NextResponse | null {
   if (pathname === "/robots.txt") {
     const nextUrl = request.nextUrl.clone();
     nextUrl.pathname = "/private-robots.txt";
-    return NextResponse.rewrite(nextUrl);
+    return rewriteWithPath(request, nextUrl);
   }
 
   if (pathname === "/sitemap.xml") {
@@ -194,7 +206,7 @@ function rewriteBorelandRootHost(request: NextRequest): NextResponse | null {
 
   const nextUrl = request.nextUrl.clone();
   nextUrl.pathname = "/borelandops-root";
-  return NextResponse.rewrite(nextUrl);
+  return rewriteWithPath(request, nextUrl);
 }
 
 export function middleware(request: NextRequest) {
@@ -221,7 +233,7 @@ export function middleware(request: NextRequest) {
     }
   }
 
-  const response = NextResponse.next();
+  const response = nextWithPath(request);
   if (isPrivateAlSurfaceHost(host)) {
     response.headers.set("X-Robots-Tag", "noindex, nofollow, noarchive");
   }
