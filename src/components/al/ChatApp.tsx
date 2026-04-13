@@ -2299,7 +2299,7 @@ export function ChatApp() {
         {/* Messages */}
         <div className="flex-1 overflow-y-auto px-4 py-6 al-scrollbar lg:px-6">
           {messages.length === 0 ? (
-            <div className="flex h-full flex-col items-center justify-center text-center px-4">
+            <div className="flex min-h-full flex-col items-center justify-start px-4 pb-6 pt-8 text-center lg:pt-10">
               <div className="al-avatar-badge relative mb-6 flex h-20 w-20 items-center justify-center overflow-hidden rounded-2xl">
                 <span className="relative z-10 text-2xl font-display text-[#f3faf6]">AB</span>
                 <div className="al-avatar-beard absolute inset-x-3 bottom-2 h-5 rounded-b-full" />
@@ -2311,7 +2311,7 @@ export function ChatApp() {
                 I&apos;ll help you sort what matters, route the work, and keep the next move clear.
                 Measure twice, move once.
               </p>
-              <div className="mt-8 w-full max-w-2xl rounded-3xl border border-emerald-900/20 bg-[#101714] p-5 text-left shadow-[0_18px_60px_rgba(0,0,0,0.22)]">
+              <div className="mt-8 w-full max-w-3xl rounded-3xl border border-emerald-900/20 bg-[#101714] p-5 text-left shadow-[0_18px_60px_rgba(0,0,0,0.22)]">
                 <div className="flex flex-wrap items-start justify-between gap-4">
                   <div>
                     <p className="text-xs font-semibold uppercase tracking-[0.22em] text-emerald-300/45">
@@ -2421,7 +2421,7 @@ export function ChatApp() {
                   </div>
                 ) : null}
               </div>
-              <div className="mt-8 w-full max-w-2xl rounded-3xl border border-emerald-900/20 bg-[#101714] p-5 text-left shadow-[0_18px_60px_rgba(0,0,0,0.22)]">
+              <div className="mt-8 w-full max-w-3xl rounded-3xl border border-emerald-900/20 bg-[#101714] p-5 text-left shadow-[0_18px_60px_rgba(0,0,0,0.22)]">
                 <div className="flex flex-wrap items-start justify-between gap-4">
                   <div>
                     <p className="text-xs font-semibold uppercase tracking-[0.22em] text-emerald-300/45">
@@ -2488,7 +2488,7 @@ export function ChatApp() {
                   </div>
                 )}
               </div>
-              <div className="mt-8 w-full max-w-2xl rounded-3xl border border-emerald-900/20 bg-[#101714] p-5 text-left shadow-[0_18px_60px_rgba(0,0,0,0.22)]">
+              <div className="mt-8 w-full max-w-3xl rounded-3xl border border-emerald-900/20 bg-[#101714] p-5 text-left shadow-[0_18px_60px_rgba(0,0,0,0.22)]">
                 <div className="flex flex-wrap items-start justify-between gap-4">
                   <div>
                     <p className="text-xs font-semibold uppercase tracking-[0.22em] text-emerald-300/45">
