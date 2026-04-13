@@ -17,7 +17,6 @@ import {
   Wrench,
   BookUp,
   Receipt,
-  Heart,
   Bot,
   ChevronDown,
   ChevronRight,
@@ -177,8 +176,78 @@ export function Sidebar({
   bridgeHealth,
 }: SidebarProps) {
   const [showRuntime, setShowRuntime] = useState(false);
+  const [showQuickActions, setShowQuickActions] = useState(false);
   const pathname = usePathname();
   const categories = [...new Set(quickActions.map((a) => a.category))];
+  const featuredQuickActionIds = new Set([
+    "morning-brief",
+    "board-meeting",
+    "new-project",
+    "ask-anything",
+  ]);
+  const coreLinks = [
+    {
+      href: "/",
+      label: "Command Center",
+      detail: "Start here",
+      icon: <Sparkles className="h-4 w-4 text-emerald-400/65" />,
+    },
+    {
+      href: "/attention",
+      label: "Attention",
+      detail: "What needs action",
+      icon: <Activity className="h-4 w-4 text-emerald-400/65" />,
+    },
+    {
+      href: "/inbox",
+      label: "Inbox",
+      detail: "Queue asks without blocking chat",
+      icon: <BookUp className="h-4 w-4 text-emerald-400/65" />,
+    },
+    {
+      href: "/boardroom",
+      label: "Board Room",
+      detail: "Approvals and packages",
+      icon: <Users className="h-4 w-4 text-emerald-400/65" />,
+    },
+    {
+      href: "/planner",
+      label: "Planner",
+      detail: "Task truth",
+      icon: <CalendarDays className="h-4 w-4 text-emerald-400/65" />,
+    },
+    {
+      href: "/operational-proof",
+      label: "System Health",
+      detail: "Can we trust the loops?",
+      icon: <ShieldCheck className="h-4 w-4 text-emerald-400/65" />,
+    },
+  ] as const;
+  const businessLinks = [
+    {
+      href: "/dominion/leads",
+      label: "Dominion Leads",
+      detail: "First touch and follow-up",
+      icon: <Building2 className="h-4 w-4 text-emerald-400/65" />,
+    },
+    {
+      href: "/wrenchready/day-readiness",
+      label: "Day Readiness",
+      detail: "Protect wrench time",
+      icon: <Wrench className="h-4 w-4 text-emerald-400/65" />,
+    },
+    {
+      href: "/labor-lanes",
+      label: "Labor Lanes",
+      detail: "Can AL replace labor here?",
+      icon: <Receipt className="h-4 w-4 text-emerald-400/65" />,
+    },
+  ] as const;
+  const extendedQuickActionCategories = categories.filter((category) =>
+    quickActions.some(
+      (action) => action.category === category && !featuredQuickActionIds.has(action.id),
+    ),
+  );
   const localLaneRows = [
     {
       label: "Local bridge",
@@ -238,6 +307,14 @@ export function Sidebar({
     return "border-red-500/20 bg-red-500/10 text-red-200/70";
   }
 
+  function navItemClasses(href: string) {
+    const target = withAlAppPrefix(pathname, href);
+    const active = pathname === target;
+    return active
+      ? "border-emerald-500/30 bg-emerald-500/10 text-[#f2f6f3]"
+      : "border-emerald-900/15 bg-[#111916]/70 text-[#f2f6f3] hover:border-amber-400/30 hover:bg-amber-500/5";
+  }
+
   return (
     <>
       {isOpen && (
@@ -268,15 +345,12 @@ export function Sidebar({
             </div>
             <div>
               <p className="text-[10px] font-semibold uppercase al-brass-label">
-                Straight Answer
+                AL operator
               </p>
               <h2 className="text-sm font-semibold text-[#f2f6f3]">
                 Al Boreland
               </h2>
-              <div className="flex items-center gap-1.5">
-                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse-soft" />
-                <span className="text-xs text-emerald-100/50">Steady hand online</span>
-              </div>
+              <p className="text-xs text-emerald-100/50">Command and follow-through</p>
             </div>
           </div>
           <button
@@ -290,92 +364,48 @@ export function Sidebar({
 
         <nav className="flex-1 overflow-y-auto px-3 py-4 al-scrollbar">
           <div className="mb-5 px-2">
-            <div className="space-y-2">
-              <Link
-                href={withAlAppPrefix(pathname, "/boardroom")}
-                className="al-shop-card flex items-center justify-between rounded-xl px-3 py-3 text-sm font-semibold text-[#f2f6f3] transition hover:border-amber-400/35 hover:bg-amber-500/5 active:scale-[0.99]"
-                onClick={onClose}
-              >
-                <span>Board Room</span>
-                <span className="text-xs uppercase tracking-[0.18em] text-amber-300/55">Open</span>
-              </Link>
-              <Link
-                href={withAlAppPrefix(pathname, "/inbox")}
-                className="al-shop-card flex items-center justify-between rounded-xl px-3 py-3 text-sm font-semibold text-[#f2f6f3] transition hover:border-amber-400/35 hover:bg-amber-500/5 active:scale-[0.99]"
-                onClick={onClose}
-              >
-                <span className="flex items-center gap-2">
-                  <BookUp className="h-4 w-4 text-emerald-400/65" />
-                  Inbox
-                </span>
-                <span className="text-xs uppercase tracking-[0.18em] text-amber-300/55">Open</span>
-              </Link>
-              <Link
-                href={withAlAppPrefix(pathname, "/attention")}
-                className="al-shop-card flex items-center justify-between rounded-xl px-3 py-3 text-sm font-semibold text-[#f2f6f3] transition hover:border-amber-400/35 hover:bg-amber-500/5 active:scale-[0.99]"
-                onClick={onClose}
-              >
-                <span className="flex items-center gap-2">
-                  <Activity className="h-4 w-4 text-emerald-400/65" />
-                  Attention
-                </span>
-                <span className="text-xs uppercase tracking-[0.18em] text-amber-300/55">Open</span>
-              </Link>
-              <Link
-                href={withAlAppPrefix(pathname, "/planner")}
-                className="al-shop-card flex items-center justify-between rounded-xl px-3 py-3 text-sm font-semibold text-[#f2f6f3] transition hover:border-amber-400/35 hover:bg-amber-500/5 active:scale-[0.99]"
-                onClick={onClose}
-              >
-                <span className="flex items-center gap-2">
-                  <CalendarDays className="h-4 w-4 text-emerald-400/65" />
-                  Planner
-                </span>
-                <span className="text-xs uppercase tracking-[0.18em] text-amber-300/55">Open</span>
-              </Link>
-              <Link
-                href={withAlAppPrefix(pathname, "/operational-proof")}
-                className="al-shop-card flex items-center justify-between rounded-xl px-3 py-3 text-sm font-semibold text-[#f2f6f3] transition hover:border-amber-400/35 hover:bg-amber-500/5 active:scale-[0.99]"
-                onClick={onClose}
-              >
-                <span className="flex items-center gap-2">
-                  <ShieldCheck className="h-4 w-4 text-emerald-400/65" />
-                  Operational Proof
-                </span>
-                <span className="text-xs uppercase tracking-[0.18em] text-amber-300/55">Open</span>
-              </Link>
-              <Link
-                href={withAlAppPrefix(pathname, "/labor-lanes")}
-                className="al-shop-card flex items-center justify-between rounded-xl px-3 py-3 text-sm font-semibold text-[#f2f6f3] transition hover:border-amber-400/35 hover:bg-amber-500/5 active:scale-[0.99]"
-                onClick={onClose}
-              >
-                <span className="flex items-center gap-2">
-                  <Receipt className="h-4 w-4 text-emerald-400/65" />
-                  Labor Lanes
-                </span>
-                <span className="text-xs uppercase tracking-[0.18em] text-amber-300/55">Open</span>
-              </Link>
-              <Link
-                href={withAlAppPrefix(pathname, "/dominion/leads")}
-                className="al-shop-card flex items-center justify-between rounded-xl px-3 py-3 text-sm font-semibold text-[#f2f6f3] transition hover:border-amber-400/35 hover:bg-amber-500/5 active:scale-[0.99]"
-                onClick={onClose}
-              >
-                <span className="flex items-center gap-2">
-                  <Building2 className="h-4 w-4 text-emerald-400/65" />
-                  Dominion Leads
-                </span>
-                <span className="text-xs uppercase tracking-[0.18em] text-amber-300/55">Open</span>
-              </Link>
-              <Link
-                href={withAlAppPrefix(pathname, "/wrenchready/day-readiness")}
-                className="al-shop-card flex items-center justify-between rounded-xl px-3 py-3 text-sm font-semibold text-[#f2f6f3] transition hover:border-amber-400/35 hover:bg-amber-500/5 active:scale-[0.99]"
-                onClick={onClose}
-              >
-                <span className="flex items-center gap-2">
-                  <Wrench className="h-4 w-4 text-emerald-400/65" />
-                  Day Readiness
-                </span>
-                <span className="text-xs uppercase tracking-[0.18em] text-amber-300/55">Open</span>
-              </Link>
+            <div className="mb-3">
+              <p className="px-2 text-[11px] font-semibold uppercase tracking-wider text-amber-300/45">
+                Core
+              </p>
+              <div className="mt-2 space-y-2">
+                {coreLinks.map((link) => (
+                  <Link
+                    key={link.href}
+                    href={withAlAppPrefix(pathname, link.href)}
+                    className={`flex items-start gap-3 rounded-xl border px-3 py-3 text-left transition active:scale-[0.99] ${navItemClasses(link.href)}`}
+                    onClick={onClose}
+                  >
+                    <span className="mt-0.5 flex-shrink-0">{link.icon}</span>
+                    <span className="min-w-0">
+                      <span className="block text-sm font-semibold">{link.label}</span>
+                      <span className="mt-0.5 block text-[11px] text-emerald-100/45">{link.detail}</span>
+                    </span>
+                  </Link>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <p className="px-2 text-[11px] font-semibold uppercase tracking-wider text-amber-300/45">
+                Business lanes
+              </p>
+              <div className="mt-2 space-y-2">
+                {businessLinks.map((link) => (
+                  <Link
+                    key={link.href}
+                    href={withAlAppPrefix(pathname, link.href)}
+                    className={`flex items-start gap-3 rounded-xl border px-3 py-3 text-left transition active:scale-[0.99] ${navItemClasses(link.href)}`}
+                    onClick={onClose}
+                  >
+                    <span className="mt-0.5 flex-shrink-0">{link.icon}</span>
+                    <span className="min-w-0">
+                      <span className="block text-sm font-semibold">{link.label}</span>
+                      <span className="mt-0.5 block text-[11px] text-emerald-100/45">{link.detail}</span>
+                    </span>
+                  </Link>
+                ))}
+              </div>
             </div>
           </div>
 
@@ -472,14 +502,14 @@ export function Sidebar({
             </div>
           </div>
 
-          {categories.map((category) => (
-            <div key={category} className="mb-5">
-              <h3 className="mb-2 px-2 text-[11px] font-semibold uppercase tracking-wider text-amber-300/45">
-                {category}
-              </h3>
-              <div className="space-y-0.5">
+          <div className="mb-5">
+            <div className="px-2">
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-amber-300/45">
+                Start here
+              </p>
+              <div className="mt-2 space-y-0.5">
                 {quickActions
-                  .filter((a) => a.category === category)
+                  .filter((action) => featuredQuickActionIds.has(action.id))
                   .map((action) => (
                     <button
                       key={action.id}
@@ -491,10 +521,58 @@ export function Sidebar({
                       </span>
                       {action.label}
                     </button>
-                  ))}
+                ))}
               </div>
+              <button
+                type="button"
+                onClick={() => setShowQuickActions((value) => !value)}
+                className="mt-2 flex w-full items-center justify-between rounded-xl border border-emerald-900/15 bg-[#111916]/70 px-3 py-3 text-left transition hover:border-amber-400/30 hover:bg-amber-500/5"
+              >
+                <div>
+                  <p className="text-sm font-semibold text-[#f2f6f3]">More quick asks</p>
+                  <p className="mt-0.5 text-[11px] text-emerald-100/45">
+                    Specialist prompts and CEO shortcuts
+                  </p>
+                </div>
+                {showQuickActions ? (
+                  <ChevronDown className="h-4 w-4 text-emerald-200/45" />
+                ) : (
+                  <ChevronRight className="h-4 w-4 text-emerald-200/45" />
+                )}
+              </button>
             </div>
-          ))}
+
+            {showQuickActions ? (
+              <div className="mt-3">
+                {extendedQuickActionCategories.map((category) => (
+                  <div key={category} className="mb-4">
+                    <h3 className="mb-2 px-2 text-[11px] font-semibold uppercase tracking-wider text-amber-300/45">
+                      {category}
+                    </h3>
+                    <div className="space-y-0.5">
+                      {quickActions
+                        .filter(
+                          (action) =>
+                            action.category === category && !featuredQuickActionIds.has(action.id),
+                        )
+                        .map((action) => (
+                          <button
+                            key={action.id}
+                            onClick={() => onQuickAction(action.prompt)}
+                            className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm text-emerald-100/60 transition-all hover:bg-emerald-500/10 hover:text-emerald-50 active:scale-[0.98]"
+                          >
+                            <span className="flex-shrink-0 text-emerald-400/50">
+                              {action.icon}
+                            </span>
+                            {action.label}
+                          </button>
+                        ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : null}
+          </div>
         </nav>
 
         <div className="border-t border-emerald-900/20 p-3">
