@@ -3,6 +3,14 @@ import { getServiceClient } from "@/lib/supabase";
 
 type JsonRecord = Record<string, unknown>;
 type CursorAuthScheme = "bearer" | "basic";
+export type CursorTaskType =
+  | "landing_page"
+  | "google_ads_copy"
+  | "meta_ads_copy"
+  | "marketing_copy"
+  | "repo_implementation"
+  | "bugfix"
+  | "unknown";
 
 interface CursorAgentSnapshot {
   id: string | null;
@@ -60,12 +68,144 @@ function stripMarkdown(value: string): string {
     .trim();
 }
 
+function normalizeForMatch(value: string): string {
+  return value.toLowerCase().replace(/\s+/g, " ").trim();
+}
+
+function uniqueLines(values: Array<string | null | undefined>, limit = 4): string[] {
+  const output: string[] = [];
+  const seen = new Set<string>();
+  for (const value of values) {
+    const text = asText(value);
+    if (!text) continue;
+    const normalized = normalizeForMatch(text);
+    if (seen.has(normalized)) continue;
+    seen.add(normalized);
+    output.push(text);
+    if (output.length >= limit) break;
+  }
+  return output;
+}
+
+function normalizePlaybookContent(value: string): string {
+  return normalizeForMatch(
+    value
+      .replace(/^cursor playbook lesson \([^)]+\)\s*\d{4}-\d{2}-\d{2}:\s*/i, "")
+      .replace(/^founder feedback \(\d{4}-\d{2}-\d{2}\):\s*/i, "")
+      .replace(/^dez (preference|policy|decision) \(\d{4}-\d{2}-\d{2}\):\s*/i, ""),
+  );
+}
+
 function normalizeCursorRepositoryUrl(value: string | null | undefined): string | null {
   const normalized = value?.trim();
   if (!normalized) return null;
   if (/^https?:\/\//i.test(normalized)) return normalized;
   if (normalized.startsWith("github.com/")) return `https://${normalized}`;
   return `https://github.com/${normalized.replace(/^github\.com\//i, "")}`;
+}
+
+function cursorTaskTypeKeywords(taskType: CursorTaskType): string[] {
+  switch (taskType) {
+    case "landing_page":
+      return ["landing page", "hero", "headline", "conversion", "cta", "website"];
+    case "google_ads_copy":
+      return ["google ads", "google ad", "search ad", "rsa", "headline", "description"];
+    case "meta_ads_copy":
+      return ["meta ads", "facebook ads", "instagram ad", "primary text", "ad creative"];
+    case "marketing_copy":
+      return ["ad copy", "copy", "campaign", "offer", "message", "marketing"];
+    case "repo_implementation":
+      return ["repo", "component", "page", "implementation", "branch", "pr"];
+    case "bugfix":
+      return ["bug", "fix", "error", "issue", "regression"];
+    default:
+      return ["cursor"];
+  }
+}
+
+function cursorTaskTypeLabel(taskType: CursorTaskType): string {
+  switch (taskType) {
+    case "landing_page":
+      return "Landing page build";
+    case "google_ads_copy":
+      return "Google Ads copy";
+    case "meta_ads_copy":
+      return "Meta ads copy";
+    case "marketing_copy":
+      return "Marketing copy";
+    case "repo_implementation":
+      return "Repo implementation";
+    case "bugfix":
+      return "Bugfix";
+    default:
+      return "General Cursor work";
+  }
+}
+
+function inferCursorTaskType(task: string, repo?: string | null): CursorTaskType {
+  const haystack = `${task} ${repo || ""}`.toLowerCase();
+  if (/google\s*ads|search\s*ads|rsa|responsive search/i.test(haystack)) return "google_ads_copy";
+  if (/meta\s*ads|facebook\s*ads|instagram\s*ads|primary text|ad creative/i.test(haystack)) return "meta_ads_copy";
+  if (/landing page|homepage|hero section|sales page|squeeze page/i.test(haystack)) return "landing_page";
+  if (/ad copy|campaign copy|marketing copy|offer messaging/i.test(haystack)) return "marketing_copy";
+  if (/bug|fix|error|issue|regression|broken/i.test(haystack)) return "bugfix";
+  if (/repo|component|refactor|implement|page|branch|pull request|pr\b|website/i.test(haystack)) return "repo_implementation";
+  return "unknown";
+}
+
+function buildCursorTaskTemplate(taskType: CursorTaskType): string[] {
+  switch (taskType) {
+    case "landing_page":
+      return [
+        "Build for real conversion, not just pretty layout.",
+        "Keep the value proposition obvious above the fold.",
+        "Use specific proof, CTA clarity, and mobile-respectful structure.",
+        "Leave a reviewable artifact in the repo and summarize what changed.",
+      ];
+    case "google_ads_copy":
+      return [
+        "Write concrete, high-intent Google ad copy instead of generic slogans.",
+        "Favor clarity, service fit, and commercial intent over fluff.",
+        "Return structured ad assets that a human can review quickly.",
+        "Surface any missing offer, geo, or trust details that weaken the ads.",
+      ];
+    case "meta_ads_copy":
+      return [
+        "Write direct-response Meta copy with a clear hook, offer, and next step.",
+        "Do not rely on vague inspirational language.",
+        "Make the copy feel human, specific, and scroll-stopping without sounding spammy.",
+        "Return review-ready creative copy grouped clearly for fast approval.",
+      ];
+    case "marketing_copy":
+      return [
+        "Prioritize clarity, specificity, and believable offers.",
+        "Do not produce generic AI-sounding marketing language.",
+        "Return the copy in a reviewable format with obvious sections and variants.",
+      ];
+    case "bugfix":
+      return [
+        "Fix the concrete issue with minimal drift.",
+        "Call out the root cause, the exact fix, and residual risk.",
+        "Prefer reviewable diffs over broad unrelated cleanup.",
+      ];
+    case "repo_implementation":
+      return [
+        "Make the requested repo change directly and keep the branch reviewable.",
+        "Summarize what changed, what remains, and what should be reviewed next.",
+        "Avoid broad speculative refactors unless they are necessary for the task.",
+      ];
+    default:
+      return [
+        "Deliver a reviewable result, not a vague status update.",
+        "Summarize what changed, what still needs review, and any blocker plainly.",
+      ];
+  }
+}
+
+function looksRelevantToCursorTaskType(content: string, taskType: CursorTaskType): boolean {
+  const normalized = content.toLowerCase();
+  if (normalized.includes("cursor")) return true;
+  return cursorTaskTypeKeywords(taskType).some((keyword) => normalized.includes(keyword));
 }
 
 function extractCursorAgentIdFromText(value: string | null | undefined): string | null {
@@ -302,6 +442,160 @@ async function fetchCursorRuntime(agentId: string, task: string): Promise<{
   };
 }
 
+async function loadRelevantCursorLessons(taskType: CursorTaskType): Promise<string[]> {
+  const supabase = getServiceClient();
+  if (!supabase) return [];
+
+  const { data, error } = await supabase
+    .from("al_memories")
+    .select("category, content, updated_at")
+    .in("category", [
+      "cursor_playbook",
+      "founder_feedback",
+      "founder_policy",
+      "founder_decision",
+      "cursor_outcome_success",
+      "cursor_outcome_failure",
+    ])
+    .order("updated_at", { ascending: false })
+    .limit(120);
+
+  if (error || !data) return [];
+
+  const relevant = data
+    .filter((entry) => looksRelevantToCursorTaskType(asText(entry.content) || "", taskType))
+    .map((entry) => {
+      const content = asText(entry.content) || "";
+      if (entry.category === "cursor_outcome_success" || entry.category === "cursor_outcome_failure") {
+        try {
+          const parsed = JSON.parse(content) as JsonRecord;
+          return asText(parsed.playbookSignal) || asText(parsed.summary) || content;
+        } catch {
+          return content;
+        }
+      }
+      return content;
+    });
+
+  return uniqueLines(relevant, 5);
+}
+
+export async function buildCursorDispatchPrompt(input: {
+  task: string;
+  repo?: string | null;
+}): Promise<{
+  prompt: string;
+  taskType: CursorTaskType;
+  taskTypeLabel: string;
+  appliedLessons: string[];
+}> {
+  const taskType = inferCursorTaskType(input.task, input.repo);
+  const taskTypeLabel = cursorTaskTypeLabel(taskType);
+  const baseRules = buildCursorTaskTemplate(taskType);
+  const appliedLessons = await loadRelevantCursorLessons(taskType);
+
+  const sections = [
+    "You are a managed Cursor worker running under AL Boreland.",
+    `Task class: ${taskTypeLabel}.`,
+    "",
+    "Primary assignment:",
+    input.task.trim(),
+    "",
+    "Execution standard:",
+    ...baseRules.map((line) => `- ${line}`),
+    "",
+    "Required final behavior:",
+    "- Leave a reviewable repo artifact if code changes are made.",
+    "- In your final assistant update, say what changed, what still needs review, and any blockers.",
+    "- Do not pretend work is done if the artifact is weak or incomplete.",
+  ];
+
+  if (appliedLessons.length > 0) {
+    sections.push("", "Founder and AL lessons for this class of Cursor work:");
+    for (const lesson of appliedLessons) {
+      sections.push(`- ${shortText(stripMarkdown(lesson), 260)}`);
+    }
+  }
+
+  return {
+    prompt: sections.join("\n"),
+    taskType,
+    taskTypeLabel,
+    appliedLessons,
+  };
+}
+
+export async function captureCursorFounderLearning(input: {
+  message: string;
+}): Promise<{ saved: boolean; memoryId?: number; taskType?: CursorTaskType }> {
+  const raw = asText(input.message);
+  if (!raw) return { saved: false };
+
+  const lower = raw.toLowerCase();
+  const durable =
+    lower.includes("remember this") ||
+    lower.includes("from now on") ||
+    lower.includes("never again") ||
+    lower.includes("must ") ||
+    lower.includes("do not ") ||
+    lower.includes("don't ") ||
+    lower.includes("not acceptable") ||
+    lower.includes("i need al to") ||
+    lower.includes("i need you to");
+  const cursorRelevant =
+    lower.includes("cursor") ||
+    /landing page|google ads|meta ads|facebook ads|instagram ads|ad copy|marketing copy|repo/i.test(lower);
+
+  if (!durable || !cursorRelevant) {
+    return { saved: false };
+  }
+
+  const taskType = inferCursorTaskType(raw);
+  const supabase = getServiceClient();
+  if (!supabase) return { saved: false, taskType };
+
+  const content = `Cursor playbook lesson (${taskType}) ${new Date().toISOString().slice(0, 10)}: ${raw
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 900)}`;
+  const normalized = normalizePlaybookContent(content);
+
+  const { data: existingRows, error: existingError } = await supabase
+    .from("al_memories")
+    .select("id, content")
+    .eq("category", "cursor_playbook")
+    .order("updated_at", { ascending: false })
+    .limit(80);
+
+  if (existingError) {
+    return { saved: false, taskType };
+  }
+
+  const existing = (existingRows || []).find(
+    (entry) => normalizePlaybookContent(asText(entry.content) || "") === normalized,
+  );
+
+  if (existing) {
+    await supabase
+      .from("al_memories")
+      .update({ content, updated_at: new Date().toISOString() })
+      .eq("id", existing.id);
+    return { saved: true, memoryId: existing.id, taskType };
+  }
+
+  const { data: inserted, error: insertError } = await supabase
+    .from("al_memories")
+    .insert({ category: "cursor_playbook", content })
+    .select("id")
+    .single();
+
+  if (insertError || !inserted?.id) {
+    return { saved: false, taskType };
+  }
+
+  return { saved: true, memoryId: inserted.id, taskType };
+}
+
 function buildCursorOperatorLinks(snapshot: CursorAgentSnapshot, repositoryUrl: string | null) {
   return [
     ...(snapshot.prUrl
@@ -408,21 +702,31 @@ async function captureCursorOutcome(input: {
     asText(input.context.cursor_repository_url) ||
     normalizeCursorRepositoryUrl(asText(input.context.repo));
   const prUrl = asText(input.context.cursor_pr_url);
+  const taskType = inferCursorTaskType(
+    input.task,
+    asText(input.context.cursor_repository_url) || asText(input.context.repo),
+  );
   const summary =
     asText(input.context.cursor_latest_summary) ||
     asText(input.context.summary) ||
     asText(input.context.presentation_recommendation) ||
     input.task;
+  const playbookSignal =
+    input.lifecycle === "finished"
+      ? `For ${cursorTaskTypeLabel(taskType).toLowerCase()} work, keep asking Cursor for review-ready artifacts and a plain final summary instead of treating launch alone as progress.`
+      : `For ${cursorTaskTypeLabel(taskType).toLowerCase()} work, AL should inspect Cursor status early and reroute quickly when the run blocks or stalls.`;
 
   const content = JSON.stringify(
     {
       source: "cursor_agent",
       jobId: input.jobId,
       lifecycle: input.lifecycle,
+      taskType,
       task: input.task,
       repositoryUrl,
       prUrl,
       summary,
+      playbookSignal,
       capturedAt: new Date().toISOString(),
     },
     null,
@@ -444,6 +748,7 @@ async function captureCursorOutcome(input: {
 
   return {
     ...input.context,
+    cursor_task_type: taskType,
     cursor_outcome_memory_id: data.id,
     cursor_outcome_captured_at: new Date().toISOString(),
   };

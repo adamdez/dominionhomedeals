@@ -10,6 +10,10 @@ import { getAlCanonicalOrigin } from "@/lib/al-platform";
 import { getServiceClient } from "@/lib/supabase";
 import { syncBrowserCommerceReviewJob } from "@/lib/al-review";
 import {
+  buildCursorDispatchPrompt,
+  captureCursorFounderLearning,
+} from "@/lib/al-cursor";
+import {
   HOSTED_BROWSER_EXECUTION_PATH,
   LOCAL_BROWSER_EXECUTION_PATH,
   inspectHostedBrowserVendorCartReviewStack,
@@ -338,6 +342,12 @@ Cursor is not fire-and-forget.
 - Refresh live Cursor status before presenting it as done.
 - If Cursor returns a PR, branch, or finished result, surface that as the real review artifact.
 - Capture meaningful success or failure outcomes so the same execution lessons do not disappear after the run ends.
+
+CURSOR LEARNING RULE:
+ Learn how to use Cursor from outcomes and founder correction.
+ - Reuse Cursor playbook lessons when briefing similar work such as landing pages, ad copy, and repo implementation.
+ - If Dez gives durable feedback about how Cursor should be used or judged, capture it as a Cursor playbook lesson.
+ - Judge Cursor by artifact quality, clarity, and review readiness, not by whether a run merely started.
 
 LOCAL PDF TASK RULE:
 If the user asks to merge, combine, or assemble existing local PDF files into one printable packet, prefer the local_pdf_merge bridge lane first.
@@ -2092,6 +2102,9 @@ async function maybeAutoCaptureTurnMemory(input: {
   if (!candidate) return;
   try {
     await saveFounderFeedbackMemory(candidate);
+    if (input.message) {
+      await captureCursorFounderLearning({ message: input.message });
+    }
   } catch (err) {
     console.error("[Al] auto memory capture failed:", err);
   }
@@ -4648,11 +4661,15 @@ async function executeCursorAgent(
       ? repoRaw
       : `https://github.com/${repoRaw}`;
     const targetModel = model || "default";
+    const dispatchPrompt = await buildCursorDispatchPrompt({
+      task,
+      repo: repositoryUrl,
+    });
 
     const result = await cursorApiRequest("/agents", {
       method: "POST",
       body: JSON.stringify({
-        prompt: { text: task },
+        prompt: { text: dispatchPrompt.prompt },
         model: targetModel,
         source: { repository: repositoryUrl },
         target: { autoCreatePr: true },
@@ -4666,6 +4683,10 @@ async function executeCursorAgent(
         message: explainCursorApiError(result.response.status, result.raw),
         context: {
           repo: repoRaw,
+          cursor_task_type: dispatchPrompt.taskType,
+          cursor_task_type_label: dispatchPrompt.taskTypeLabel,
+          cursor_dispatch_prompt_version: "v1",
+          cursor_playbook_applied: dispatchPrompt.appliedLessons,
           cursor_repository_url: repositoryUrl,
           cursor_model: targetModel,
           cursor_auth_scheme: result.authScheme,
@@ -4681,11 +4702,15 @@ async function executeCursorAgent(
     const message = [
       `Cursor agent dispatched (${snapshot.id || "unknown"}).`,
       `Model: ${targetModel}`,
+      `Task class: ${dispatchPrompt.taskTypeLabel}`,
       `Repo: ${repositoryUrl}`,
       snapshot.branchName ? `Branch: ${snapshot.branchName}` : "",
       snapshot.monitorUrl ? `Monitor: ${snapshot.monitorUrl}` : "",
       snapshot.prUrl ? `PR: ${snapshot.prUrl}` : "",
       `Task: ${shortText(task, 200)}`,
+      dispatchPrompt.appliedLessons.length > 0
+        ? `Applied playbook lessons: ${dispatchPrompt.appliedLessons.length}`
+        : "",
       "The agent is running autonomously. Check job status later to pull the latest Cursor progress into AL.",
     ]
       .filter(Boolean)
@@ -4698,6 +4723,11 @@ async function executeCursorAgent(
       context: {
         repo: repoRaw,
         model: targetModel,
+        cursor_task_type: dispatchPrompt.taskType,
+        cursor_task_type_label: dispatchPrompt.taskTypeLabel,
+        cursor_dispatch_prompt_version: "v1",
+        cursor_dispatch_task: task,
+        cursor_playbook_applied: dispatchPrompt.appliedLessons,
         cursor_agent_id: snapshot.id,
         cursor_agent_status: snapshot.status,
         cursor_repository_url: repositoryUrl,
@@ -4865,14 +4895,23 @@ async function loadMemories(): Promise<string> {
     if (!data || data.length === 0) return "";
 
     const founderFirst = [...data].sort((a, b) => {
-      const aFounder = a.category.startsWith("founder_") ? 0 : 1;
-      const bFounder = b.category.startsWith("founder_") ? 0 : 1;
+      const priority = (category: string) => {
+        if (category.startsWith("founder_")) return 0;
+        if (category === "cursor_playbook") return 1;
+        if (category.startsWith("cursor_outcome_")) return 2;
+        return 3;
+      };
+      const aFounder = priority(a.category);
+      const bFounder = priority(b.category);
       if (aFounder !== bFounder) return aFounder - bFounder;
       return a.category.localeCompare(b.category);
     });
 
     const founderLines = founderFirst
       .filter((m) => m.category.startsWith("founder_"))
+      .map((m) => `[${m.category}] (id:${m.id}) ${m.content}`);
+    const cursorPlaybookLines = founderFirst
+      .filter((m) => m.category === "cursor_playbook")
       .map((m) => `[${m.category}] (id:${m.id}) ${m.content}`);
     const lines = founderFirst.map(
       (m) => `[${m.category}] (id:${m.id}) ${m.content}`
@@ -4881,7 +4920,11 @@ async function loadMemories(): Promise<string> {
       founderLines.length > 0
         ? `\n\nMISSION-CRITICAL FOUNDER FEEDBACK (${founderLines.length} entries):\n${founderLines.join("\n")}`
         : "";
-    return `${founderBlock}\n\nPERSISTENT MEMORY (${founderFirst.length} entries):\n${lines.join("\n")}`;
+    const cursorBlock =
+      cursorPlaybookLines.length > 0
+        ? `\n\nCURSOR PLAYBOOK (${cursorPlaybookLines.length} entries):\n${cursorPlaybookLines.join("\n")}`
+        : "";
+    return `${founderBlock}${cursorBlock}\n\nPERSISTENT MEMORY (${founderFirst.length} entries):\n${lines.join("\n")}`;
   } catch {
     return "";
   }
@@ -5446,6 +5489,9 @@ async function runOpenAIChat(input: {
                     asNonEmptyString(parsedInput.category) || "general",
                     asNonEmptyString(parsedInput.content) || "",
                   );
+              if (input.message) {
+                await captureCursorFounderLearning({ message: input.message });
+              }
               precomputed.push(buildOpenAIFunctionOutput(call.callId, result));
               continue;
             }
@@ -6815,6 +6861,9 @@ export async function POST(request: NextRequest) {
                     asNonEmptyString(inp.category) || "general",
                     asNonEmptyString(inp.content) || "",
                   );
+              if (message) {
+                await captureCursorFounderLearning({ message });
+              }
               precomputed.push({ type: "tool_result", tool_use_id: sb.id, content: result });
             } else if (sb.name === "planner_task") {
               const result = await executePlannerTask(inp);
