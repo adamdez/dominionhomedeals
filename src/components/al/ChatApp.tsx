@@ -558,7 +558,7 @@ function renderAutoLinkedTextSegment(text: string, keyPrefix: string): ReactNode
         href={part}
         target="_blank"
         rel="noreferrer"
-        className="underline decoration-emerald-400/40 underline-offset-4 transition-colors hover:text-emerald-300"
+        className="underline decoration-[var(--al-cyan)]/30 underline-offset-4 transition-colors hover:text-[var(--al-cyan)]"
       >
         {part}
       </a>
@@ -584,7 +584,7 @@ function renderLinkedText(text: string) {
         href={url}
         target="_blank"
         rel="noreferrer"
-        className="underline decoration-emerald-400/40 underline-offset-4 transition-colors hover:text-emerald-300"
+        className="underline decoration-[var(--al-cyan)]/30 underline-offset-4 transition-colors hover:text-[var(--al-cyan)]"
       >
         {label}
       </a>,
@@ -2317,24 +2317,24 @@ export function ChatApp() {
         <div className="flex-1 overflow-y-auto px-4 py-6 al-scrollbar lg:px-6">
           {messages.length === 0 ? (
             <div className="flex min-h-full flex-col items-center justify-start px-4 pb-6 pt-6 text-left lg:pt-8">
-              <div className="al-glass-card al-gradient-border w-full max-w-3xl rounded-2xl px-5 py-4">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--al-cyan-muted)] font-mono">
+              <div className="al-glass-elevated al-specular al-gradient-border w-full max-w-3xl rounded-2xl px-8 py-6">
+                <p className="al-text-mono-label text-[var(--al-cyan-muted)]">
                   Command Focus
                 </p>
-                <h2 className="mt-2 font-display text-lg text-[var(--al-text-primary)] al-glow-text">
+                <h2 className="mt-3 al-text-heading al-glow-text">
                   {dashboardSummary?.headline || "What needs attention now?"}
                 </h2>
-                <p className="mt-1.5 text-sm text-[var(--al-text-secondary)]">
+                <p className="mt-2 text-sm leading-6 text-[var(--al-text-secondary)]">
                   Founder-first view: priority, blockers, and the next move without dashboard noise.
                 </p>
               </div>
-              <div className="mt-4 w-full max-w-3xl al-glass-card al-gradient-border rounded-3xl p-5 text-left">
+              <div className="mt-4 w-full max-w-3xl al-glass-card al-specular al-gradient-border rounded-3xl p-6 text-left">
                 <div className="flex flex-wrap items-start justify-between gap-4">
                   <div>
-                    <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--al-cyan-muted)] font-mono">
+                    <p className="al-text-mono-label text-[var(--al-cyan-muted)]">
                       Attention Now
                     </p>
-                    <h3 className="mt-2 text-xl font-semibold text-[var(--al-text-primary)]">
+                    <h3 className="mt-3 text-xl font-semibold text-[var(--al-text-primary)]">
                       {dashboardSummary?.headline || "Pulling the real queue into focus."}
                     </h3>
                     <p className="mt-2 max-w-xl text-sm leading-6 text-[var(--al-text-secondary)]">
@@ -2344,14 +2344,14 @@ export function ChatApp() {
                   <div className="flex flex-wrap gap-3">
                     <Link
                       href={withAlAppPrefix(pathname, "/attention")}
-                      className="inline-flex items-center gap-2 rounded-2xl bg-[var(--al-cyan)] px-4 py-3 text-sm font-semibold text-[var(--al-void)] transition hover:shadow-[var(--al-cyan-glow-strong)]"
+                      className="al-specular-button inline-flex items-center gap-2 rounded-2xl bg-[var(--al-cyan)] px-5 py-3 text-sm font-semibold text-[var(--al-void)] transition hover:shadow-[var(--al-cyan-glow-strong)]"
                     >
                       <Sparkles className="h-4 w-4" />
                       Open Attention
                     </Link>
                     <Link
                       href={withAlAppPrefix(pathname, "/inbox")}
-                      className="inline-flex items-center gap-2 rounded-2xl al-glass-subtle px-4 py-3 text-sm font-semibold text-[var(--al-text-primary)] transition hover:border-[var(--al-border-hover)]"
+                      className="inline-flex items-center gap-2 rounded-2xl al-glass-subtle px-5 py-3 text-sm font-semibold text-[var(--al-text-primary)] transition hover:border-[var(--al-border-hover)]"
                     >
                       <BookUp className="h-4 w-4" />
                       Open Inbox
@@ -2417,10 +2417,10 @@ export function ChatApp() {
                   </div>
                 ) : null}
               </div>
-              <div className="mt-8 w-full max-w-3xl al-glass-card al-gradient-border rounded-3xl p-5 text-left">
+              <div className="mt-8 w-full max-w-3xl al-glass-card al-specular al-gradient-border rounded-3xl p-6 text-left">
                 <div className="flex flex-wrap items-start justify-between gap-4">
                   <div>
-                    <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--al-cyan-muted)] font-mono">
+                    <p className="al-text-mono-label text-[var(--al-cyan-muted)]">
                       Businesses
                     </p>
                     <h3 className="mt-2 text-xl font-semibold text-[var(--al-text-primary)]">
@@ -2775,8 +2775,8 @@ function InboxQueueCard({ item }: { item: InboxItemRecord }) {
   });
   const tone =
     item.status === "running"
-      ? "border-sky-500/20 bg-sky-500/10 text-sky-100"
-      : "border-amber-500/20 bg-amber-500/10 text-amber-100";
+      ? "al-gemstone-cyan"
+      : "al-gemstone-amber";
 
   return (
     <div className="rounded-2xl al-glass-subtle p-4">

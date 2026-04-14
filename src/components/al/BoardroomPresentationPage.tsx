@@ -53,7 +53,7 @@ function renderLinkedText(text: string) {
         href={part}
         target="_blank"
         rel="noreferrer"
-        className="underline decoration-emerald-400/40 underline-offset-4 transition-colors hover:text-emerald-300"
+        className="underline decoration-[var(--al-cyan)]/30 underline-offset-4 transition-colors hover:text-[var(--al-cyan)]"
       >
         {part}
       </a>
@@ -234,80 +234,80 @@ function GenericPresentation({
         blockedSignals.includes("do not know a repo")));
 
   return (
-    <main className="h-full w-full overflow-y-auto bg-[#07100b] px-4 py-5 pb-28 text-[#eaf4ef] sm:px-6 lg:px-8 lg:pb-8">
+    <main className="h-full w-full overflow-y-auto px-4 py-5 pb-28 sm:px-6 lg:px-8 lg:pb-8">
       <div className="mx-auto flex max-w-7xl flex-col gap-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-emerald-300/45">Board Room</p>
-            <h1 className="mt-2 text-3xl font-semibold text-[#f3faf6] sm:text-4xl">{title}</h1>
-            <p className="mt-3 max-w-3xl text-sm leading-6 text-emerald-100/70 sm:text-base">{summary}</p>
+            <p className="al-text-mono-label text-[var(--al-cyan-muted)]">Board Room</p>
+            <h1 className="mt-3 text-3xl font-semibold text-[var(--al-text-primary)] sm:text-4xl">{title}</h1>
+            <p className="mt-3 max-w-3xl text-sm leading-6 text-[var(--al-text-secondary)] sm:text-base">{summary}</p>
           </div>
-          <Link href={boardroomHomePath} className="hidden rounded-2xl border border-emerald-900/25 bg-[#101714] px-4 py-3 text-sm font-semibold text-emerald-100 transition hover:border-emerald-500/40 sm:inline-flex">Back to Board Room</Link>
+          <Link href={boardroomHomePath} className="hidden rounded-2xl al-glass-subtle px-4 py-3 text-sm font-semibold text-[var(--al-text-primary)] transition hover:border-[var(--al-border-hover)] sm:inline-flex">Back to Board Room</Link>
         </div>
 
         <section className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
-          <div className="rounded-3xl border border-emerald-900/20 bg-[#101714] p-6 shadow-[0_18px_60px_rgba(0,0,0,0.22)]">
+          <div className="al-glass-card al-specular rounded-3xl p-6">
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.24em] text-emerald-300/45">Recommendation</p>
-                <h2 className="mt-2 text-2xl font-semibold text-[#f3faf6]">
+                <p className="al-text-mono-label text-[var(--al-cyan-muted)]">Recommendation</p>
+                <h2 className="mt-3 text-2xl font-semibold text-[var(--al-text-primary)]">
                   {isBlockedPresentation ? "Blocked execution item" : recommendation}
                 </h2>
               </div>
-              <div className="rounded-full border border-emerald-500/20 bg-emerald-500/10 px-4 py-2 text-sm font-semibold text-emerald-200">
+              <div className="al-gemstone-cyan rounded-full px-4 py-2 text-sm font-semibold">
                 {(isBlockedPresentation ? "blocked" : rawState).replace(/_/g, " ")}
               </div>
             </div>
 
-            <div className="mt-6 rounded-2xl border border-emerald-900/20 bg-[#0b110e] p-5">
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-300/45">
+            <div className="mt-6 al-glass-subtle al-inner-light rounded-2xl p-5">
+              <p className="al-text-mono-label text-[var(--al-cyan-muted)]">
                 {isBlockedPresentation ? "What broke" : "Why this won"}
               </p>
-              <p className="mt-2 text-sm leading-6 text-emerald-100/75">
+              <p className="mt-2 text-sm leading-6 text-[var(--al-text-secondary)]">
                 {isBlockedPresentation ? recommendation : whySelected}
               </p>
             </div>
 
               <div className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-                <div className="rounded-2xl border border-emerald-900/20 bg-[#0b110e] p-4">
-                  <p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-300/45">Owner</p>
-                <p className="mt-2 text-lg font-semibold text-[#f3faf6]">{asDisplayString(context.owner, "AL team")}</p>
+                <div className="al-glass-recessed rounded-2xl p-4">
+                  <p className="al-text-mono-label text-[var(--al-cyan-muted)]">Owner</p>
+                <p className="mt-2 text-lg font-semibold text-[var(--al-text-primary)]">{asDisplayString(context.owner, "AL team")}</p>
               </div>
-              <div className="rounded-2xl border border-emerald-900/20 bg-[#0b110e] p-4">
-                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-300/45">Business</p>
-                <p className="mt-2 text-lg font-semibold text-[#f3faf6]">{asDisplayString(context.business_name, "Business context pending")}</p>
+              <div className="al-glass-recessed rounded-2xl p-4">
+                <p className="al-text-mono-label text-[var(--al-cyan-muted)]">Business</p>
+                <p className="mt-2 text-lg font-semibold text-[var(--al-text-primary)]">{asDisplayString(context.business_name, "Business context pending")}</p>
               </div>
-              <div className="rounded-2xl border border-emerald-900/20 bg-[#0b110e] p-4">
-                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-300/45">Next action</p>
-                  <p className="mt-2 text-sm leading-6 text-emerald-100/70">{nextAction}</p>
+              <div className="al-glass-recessed rounded-2xl p-4">
+                <p className="al-text-mono-label text-[var(--al-cyan-muted)]">Next action</p>
+                  <p className="mt-2 text-sm leading-6 text-[var(--al-text-secondary)]">{nextAction}</p>
                 </div>
               </div>
 
               {creativeGuard ? (
-                <div className="mt-6 rounded-2xl border border-rose-500/20 bg-rose-500/10 p-5">
-                  <p className="text-xs font-semibold uppercase tracking-[0.2em] text-rose-200/70">
+                <div className="mt-6 al-gemstone-red rounded-2xl p-5">
+                  <p className="al-text-mono-label text-[var(--al-red)]">
                     Creative proof check
                   </p>
                   <div className="mt-3 grid gap-4 sm:grid-cols-3">
-                    <div className="rounded-2xl bg-[#101714] p-4">
-                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-300/45">Job class</p>
-                      <p className="mt-2 text-sm font-semibold text-[#f3faf6]">{creativeGuard.jobClass.replace(/_/g, " ")}</p>
+                    <div className="al-glass-recessed rounded-2xl p-4">
+                      <p className="al-text-mono-label">Job class</p>
+                      <p className="mt-2 text-sm font-semibold text-[var(--al-text-primary)]">{creativeGuard.jobClass.replace(/_/g, " ")}</p>
                     </div>
-                    <div className="rounded-2xl bg-[#101714] p-4">
-                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-300/45">Artifact proof</p>
-                      <p className="mt-2 text-sm font-semibold text-[#f3faf6]">{creativeGuard.artifactProofStatus}</p>
+                    <div className="al-glass-recessed rounded-2xl p-4">
+                      <p className="al-text-mono-label">Artifact proof</p>
+                      <p className="mt-2 text-sm font-semibold text-[var(--al-text-primary)]">{creativeGuard.artifactProofStatus}</p>
                     </div>
-                    <div className="rounded-2xl bg-[#101714] p-4">
-                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-300/45">Reviewability</p>
-                      <p className="mt-2 text-sm font-semibold text-[#f3faf6]">{creativeGuard.reviewable ? "reviewable" : "not reviewable"}</p>
+                    <div className="al-glass-recessed rounded-2xl p-4">
+                      <p className="al-text-mono-label">Reviewability</p>
+                      <p className="mt-2 text-sm font-semibold text-[var(--al-text-primary)]">{creativeGuard.reviewable ? "reviewable" : "not reviewable"}</p>
                     </div>
                   </div>
                   {creativeGuard.deliveredSignals.length > 0 ? (
-                    <div className="mt-4 rounded-2xl bg-[#101714] p-4">
-                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-300/45">Delivered proof</p>
+                    <div className="mt-4 al-glass-recessed rounded-2xl p-4">
+                      <p className="al-text-mono-label">Delivered proof</p>
                       <div className="mt-3 flex flex-wrap gap-2">
                         {creativeGuard.deliveredSignals.map((signal) => (
-                          <span key={signal} className="rounded-full border border-emerald-900/25 bg-[#0b110e] px-3 py-1 text-xs font-semibold text-emerald-100/80">
+                          <span key={signal} className="al-gemstone-green rounded-full px-3 py-1 text-xs font-semibold">
                             {signal}
                           </span>
                         ))}
@@ -315,11 +315,11 @@ function GenericPresentation({
                     </div>
                   ) : null}
                   {creativeGuard.missingDeliverables.length > 0 ? (
-                    <div className="mt-4 rounded-2xl bg-[#101714] p-4">
-                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-rose-200/70">Missing deliverables</p>
+                    <div className="mt-4 al-glass-recessed rounded-2xl p-4">
+                      <p className="al-text-mono-label text-[var(--al-red)]">Missing deliverables</p>
                       <div className="mt-3 flex flex-wrap gap-2">
                         {creativeGuard.missingDeliverables.map((item) => (
-                          <span key={item} className="rounded-full border border-rose-500/20 bg-rose-500/10 px-3 py-1 text-xs font-semibold text-rose-100/85">
+                          <span key={item} className="al-gemstone-red rounded-full px-3 py-1 text-xs font-semibold">
                             {item}
                           </span>
                         ))}
@@ -330,47 +330,47 @@ function GenericPresentation({
               ) : null}
 
               {followUpTitle ? (
-                <div className="mt-6 rounded-2xl border border-sky-500/25 bg-sky-500/10 p-5">
-                  <p className="text-xs font-semibold uppercase tracking-[0.2em] text-sky-200/70">Live follow-up</p>
-                  <p className="mt-2 text-lg font-semibold text-sky-50">{followUpTitle}</p>
-                  <p className="mt-2 text-sm leading-6 text-sky-100/80">{followUpDetails || "A follow-up task has been created from the latest Board Room decision."}</p>
-                  <p className="mt-3 text-xs uppercase tracking-[0.16em] text-sky-200/70">
+                <div className="mt-6 al-gemstone-indigo rounded-2xl p-5">
+                  <p className="al-text-mono-label text-[var(--al-indigo)]">Live follow-up</p>
+                  <p className="mt-2 text-lg font-semibold text-[var(--al-text-primary)]">{followUpTitle}</p>
+                  <p className="mt-2 text-sm leading-6 text-[var(--al-text-secondary)]">{followUpDetails || "A follow-up task has been created from the latest Board Room decision."}</p>
+                  <p className="mt-3 al-text-mono-label text-[var(--al-text-tertiary)]">
                     Assigned to {followUpAssignee}
                     {lastOperatorResponseAt ? ` • last operator response ${lastOperatorResponseAt}` : ""}
                   </p>
                 </div>
               ) : lastOperatorResponseAt ? (
-                <div className="mt-6 rounded-2xl border border-amber-500/20 bg-amber-500/10 p-5">
-                  <p className="text-xs font-semibold uppercase tracking-[0.2em] text-amber-200/70">Latest operator response</p>
-                  <p className="mt-2 text-sm leading-6 text-amber-100/80">
+                <div className="mt-6 al-gemstone-amber rounded-2xl p-5">
+                  <p className="al-text-mono-label text-[var(--al-amber)]">Latest operator response</p>
+                  <p className="mt-2 text-sm leading-6 text-[var(--al-text-secondary)]">
                     Last response was recorded at {lastOperatorResponseAt}, but no accountable follow-up task is attached to this item.
                   </p>
                 </div>
               ) : null}
 
-            <div className="mt-6 rounded-2xl border border-emerald-900/20 bg-[#0b110e] p-5">
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-300/45">
+            <div className="mt-6 al-glass-subtle al-inner-light rounded-2xl p-5">
+              <p className="al-text-mono-label text-[var(--al-cyan-muted)]">
                 {isBlockedPresentation ? "Review status" : "Review now"}
               </p>
               {primaryLinks.length > 0 && !isBlockedPresentation ? (
                 <div className="mt-4 grid gap-3 sm:flex sm:flex-wrap">
                   {primaryLinks.map((link) => (
-                    <a key={`${link.label}-${link.url}`} href={link.url} target="_blank" rel="noreferrer" className="rounded-2xl bg-emerald-500 px-4 py-3 text-sm font-semibold text-[#05110b] transition hover:bg-emerald-400">{link.label}</a>
+                    <a key={`${link.label}-${link.url}`} href={link.url} target="_blank" rel="noreferrer" className="al-specular-button rounded-2xl bg-[var(--al-cyan)] px-4 py-3 text-sm font-semibold text-[var(--al-void)] transition hover:shadow-[var(--al-cyan-glow-strong)]">{link.label}</a>
                   ))}
                 </div>
               ) : localOnlyPrimaryLinks.length > 0 && !isBlockedPresentation ? (
                 <div className="mt-3 space-y-3">
-                  <p className="text-sm leading-6 text-emerald-100/65">
+                  <p className="text-sm leading-6 text-[var(--al-text-tertiary)]">
                     This package is real, but its review link still depends on Dez&apos;s local bridge machine.
                   </p>
                   <div className="grid gap-3 sm:flex sm:flex-wrap">
                     {localOnlyPrimaryLinks.map((link) => (
-                      <a key={`${link.label}-${link.url}`} href={link.url} target="_blank" rel="noreferrer" className="rounded-2xl border border-sky-500/25 bg-sky-500/10 px-4 py-3 text-sm font-semibold text-sky-100 transition hover:bg-sky-500/15">{link.label}</a>
+                      <a key={`${link.label}-${link.url}`} href={link.url} target="_blank" rel="noreferrer" className="al-gemstone-indigo rounded-2xl px-4 py-3 text-sm font-semibold transition hover:brightness-110">{link.label}</a>
                     ))}
                   </div>
                 </div>
               ) : (
-                <p className="mt-3 text-sm leading-6 text-emerald-100/65">
+                <p className="mt-3 text-sm leading-6 text-[var(--al-text-tertiary)]">
                   {isBlockedPresentation
                     ? "No review artifact is attached because this item is blocked upstream and needs repair before review."
                     : "No direct review links were attached to this presentation yet."}
@@ -398,34 +398,34 @@ function GenericPresentation({
             </div>
           </div>
 
-          <div className="rounded-3xl border border-emerald-900/20 bg-[#101714] p-6 shadow-[0_18px_60px_rgba(0,0,0,0.22)]">
-            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-emerald-300/45">Fast brief</p>
-            <h2 className="mt-2 text-2xl font-semibold text-[#f3faf6]">What matters most</h2>
+          <div className="al-glass-card al-specular rounded-3xl p-6">
+            <p className="al-text-mono-label text-[var(--al-cyan-muted)]">Fast brief</p>
+            <h2 className="mt-3 text-2xl font-semibold text-[var(--al-text-primary)]">What matters most</h2>
             <div className="mt-5 space-y-3">
               {(highlights.length > 0 ? highlights : bodyParagraphs.slice(0, 2)).map((entry, index) => (
-                <div key={`${index}-${entry}`} className="rounded-2xl border border-emerald-900/20 bg-[#0b110e] p-4 text-sm leading-6 text-emerald-100/75">
+                <div key={`${index}-${entry}`} className="al-glass-recessed rounded-2xl p-4 text-sm leading-6 text-[var(--al-text-secondary)]">
                   {renderLinkedText(entry)}
                 </div>
               ))}
               {alternatives.length > 0 ? (
-                <div className="rounded-2xl border border-emerald-900/20 bg-[#0b110e] p-4">
-                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-300/45">Alternatives</p>
+                <div className="al-glass-subtle al-inner-light rounded-2xl p-4">
+                  <p className="al-text-mono-label text-[var(--al-cyan-muted)]">Alternatives</p>
                   <div className="mt-3 space-y-3">
                     {alternatives.map((alternative) => (
-                      <div key={alternative.title} className="rounded-2xl bg-[#101714] p-3">
-                        <p className="text-sm font-semibold text-[#f3faf6]">{alternative.title}</p>
-                        <p className="mt-1 text-sm leading-6 text-emerald-100/65">{alternative.note}</p>
+                      <div key={alternative.title} className="al-glass-recessed rounded-2xl p-3">
+                        <p className="text-sm font-semibold text-[var(--al-text-primary)]">{alternative.title}</p>
+                        <p className="mt-1 text-sm leading-6 text-[var(--al-text-tertiary)]">{alternative.note}</p>
                       </div>
                     ))}
                   </div>
                 </div>
               ) : null}
               {secondaryLinks.length > 0 ? (
-                <div className="rounded-2xl border border-emerald-900/20 bg-[#0b110e] p-4">
-                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-300/45">Supporting links</p>
+                <div className="al-glass-subtle al-inner-light rounded-2xl p-4">
+                  <p className="al-text-mono-label text-[var(--al-cyan-muted)]">Supporting links</p>
                   <div className="mt-3 grid gap-3 sm:flex sm:flex-wrap">
                     {secondaryLinks.map((link) => (
-                      <a key={`${link.label}-${link.url}`} href={link.url} target="_blank" rel="noreferrer" className="rounded-2xl border border-emerald-900/25 bg-[#101714] px-4 py-3 text-sm font-semibold text-emerald-100 transition hover:border-emerald-500/40">{link.label}</a>
+                      <a key={`${link.label}-${link.url}`} href={link.url} target="_blank" rel="noreferrer" className="al-glass-subtle rounded-2xl px-4 py-3 text-sm font-semibold text-[var(--al-text-primary)] transition hover:border-[var(--al-border-hover)]">{link.label}</a>
                     ))}
                   </div>
                 </div>
@@ -434,11 +434,11 @@ function GenericPresentation({
           </div>
         </section>
 
-        <details className="rounded-3xl border border-emerald-900/20 bg-[#101714] p-6 shadow-[0_18px_60px_rgba(0,0,0,0.22)]">
-          <summary className="cursor-pointer list-none text-sm font-semibold uppercase tracking-[0.24em] text-emerald-300/55">Full brief and evidence</summary>
+        <details className="al-glass-card rounded-3xl p-6">
+          <summary className="cursor-pointer list-none al-text-mono-label text-[var(--al-cyan-muted)]">Full brief and evidence</summary>
           <div className="mt-4 space-y-4">
             {bodyParagraphs.map((paragraph, index) => (
-              <p key={`paragraph-${index}`} className="text-sm leading-7 text-emerald-100/75">{renderLinkedText(paragraph)}</p>
+              <p key={`paragraph-${index}`} className="text-sm leading-7 text-[var(--al-text-secondary)]">{renderLinkedText(paragraph)}</p>
             ))}
           </div>
         </details>
@@ -482,47 +482,47 @@ function BrowserCommercePresentation({ context, task, jobId, boardroomHomePath }
       .filter(Boolean);
 
     return (
-      <main className="h-full w-full overflow-y-auto bg-[#07100b] px-4 py-5 pb-28 text-[#eaf4ef] sm:px-6 lg:px-8 lg:pb-8">
+      <main className="h-full w-full overflow-y-auto px-4 py-5 pb-28 sm:px-6 lg:px-8 lg:pb-8">
         <div className="mx-auto flex max-w-7xl flex-col gap-6">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-emerald-300/45">Board Room</p>
-              <h1 className="mt-2 text-3xl font-semibold text-[#f3faf6] sm:text-4xl">{presentationTitle}</h1>
-              <p className="mt-3 max-w-3xl text-sm leading-6 text-emerald-100/70 sm:text-base">{presentationSummary}</p>
+              <p className="al-text-mono-label text-[var(--al-cyan-muted)]">Board Room</p>
+              <h1 className="mt-3 text-3xl font-semibold text-[var(--al-text-primary)] sm:text-4xl">{presentationTitle}</h1>
+              <p className="mt-3 max-w-3xl text-sm leading-6 text-[var(--al-text-secondary)] sm:text-base">{presentationSummary}</p>
             </div>
-            <Link href={boardroomHomePath} className="hidden rounded-2xl border border-emerald-900/25 bg-[#101714] px-4 py-3 text-sm font-semibold text-emerald-100 transition hover:border-emerald-500/40 sm:inline-flex">Back to Board Room</Link>
+            <Link href={boardroomHomePath} className="hidden rounded-2xl al-glass-subtle px-4 py-3 text-sm font-semibold text-[var(--al-text-primary)] transition hover:border-[var(--al-border-hover)] sm:inline-flex">Back to Board Room</Link>
           </div>
 
           <section className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
-            <div className="rounded-3xl border border-emerald-900/20 bg-[#101714] p-6 shadow-[0_18px_60px_rgba(0,0,0,0.22)]">
+            <div className="al-glass-card al-specular rounded-3xl p-6">
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.24em] text-emerald-300/45">Recommendation</p>
-                  <h2 className="mt-2 text-2xl font-semibold text-[#f3faf6]">{asDisplayString(chosenOption.vendor, "Recommended option")}</h2>
-                  <p className="mt-2 text-sm leading-6 text-emerald-100/65">{asDisplayString(chosenDesign.title, "Ready for operator review")}</p>
+                  <p className="al-text-mono-label text-[var(--al-cyan-muted)]">Recommendation</p>
+                  <h2 className="mt-3 text-2xl font-semibold text-[var(--al-text-primary)]">{asDisplayString(chosenOption.vendor, "Recommended option")}</h2>
+                  <p className="mt-2 text-sm leading-6 text-[var(--al-text-tertiary)]">{asDisplayString(chosenDesign.title, "Ready for operator review")}</p>
                 </div>
-                <div className="rounded-full border border-emerald-500/20 bg-emerald-500/10 px-4 py-2 text-sm font-semibold text-emerald-200">{currentState}</div>
+                <div className="al-gemstone-cyan rounded-full px-4 py-2 text-sm font-semibold">{currentState}</div>
               </div>
 
               <div className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-                <div className="rounded-2xl border border-emerald-900/20 bg-[#0b110e] p-4"><p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-300/45">Estimated total</p><p className="mt-2 text-xl font-semibold text-[#f3faf6]">{asDisplayString(chosenOption.estimated_total, "Pending")}</p></div>
-                <div className="rounded-2xl border border-emerald-900/20 bg-[#0b110e] p-4"><p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-300/45">Specs</p><p className="mt-2 text-lg font-semibold text-[#f3faf6]">{asDisplayString(chosenOption.dimensions, "Specs pending")}</p><p className="mt-1 text-sm text-emerald-100/60">{asDisplayString(chosenOption.quantity, "Quantity pending")}</p></div>
-                <div className="rounded-2xl border border-emerald-900/20 bg-[#0b110e] p-4"><p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-300/45">Material</p><p className="mt-2 text-lg font-semibold text-[#f3faf6]">{asDisplayString(chosenOption.material, "Material pending")}</p></div>
+                <div className="al-glass-recessed rounded-2xl p-4"><p className="al-text-mono-label">Estimated total</p><p className="mt-2 text-xl font-semibold text-[var(--al-text-primary)]">{asDisplayString(chosenOption.estimated_total, "Pending")}</p></div>
+                <div className="al-glass-recessed rounded-2xl p-4"><p className="al-text-mono-label">Specs</p><p className="mt-2 text-lg font-semibold text-[var(--al-text-primary)]">{asDisplayString(chosenOption.dimensions, "Specs pending")}</p><p className="mt-1 text-sm text-[var(--al-text-tertiary)]">{asDisplayString(chosenOption.quantity, "Quantity pending")}</p></div>
+                <div className="al-glass-recessed rounded-2xl p-4"><p className="al-text-mono-label">Material</p><p className="mt-2 text-lg font-semibold text-[var(--al-text-primary)]">{asDisplayString(chosenOption.material, "Material pending")}</p></div>
               </div>
 
-              <div className="mt-6 rounded-2xl border border-emerald-900/20 bg-[#0b110e] p-5">
-                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-300/45">Why this won</p>
-                <p className="mt-2 text-sm leading-6 text-emerald-100/75">{asDisplayString(chosenOption.why_best, "This is the strongest current path based on the review package that made it to a real operator checkpoint.")}</p>
+              <div className="mt-6 al-glass-subtle al-inner-light rounded-2xl p-5">
+                <p className="al-text-mono-label text-[var(--al-cyan-muted)]">Why this won</p>
+                <p className="mt-2 text-sm leading-6 text-[var(--al-text-secondary)]">{asDisplayString(chosenOption.why_best, "This is the strongest current path based on the review package that made it to a real operator checkpoint.")}</p>
               </div>
 
               <div className="mt-6 grid gap-3 sm:flex sm:flex-wrap">
-                {typeof context.review_page_url === "string" ? <a href={String(context.review_page_url)} className="rounded-2xl bg-emerald-500 px-4 py-3 text-sm font-semibold text-[#05110b] transition hover:bg-emerald-400">Open presentation</a> : null}
-                {typeof context.proof_url === "string" ? <a href={String(context.proof_url)} target="_blank" rel="noreferrer" className="rounded-2xl border border-emerald-900/25 bg-[#101714] px-4 py-3 text-sm font-semibold text-emerald-100 transition hover:border-emerald-500/40">Open proof</a> : null}
-                {typeof reviewSurface.hosted_debugger_fullscreen_url === "string" ? <a href={String(reviewSurface.hosted_debugger_fullscreen_url)} target="_blank" rel="noreferrer" className="rounded-2xl border border-emerald-900/25 bg-[#101714] px-4 py-3 text-sm font-semibold text-emerald-100 transition hover:border-emerald-500/40">Open hosted replay</a> : typeof reviewSurface.hosted_session_url === "string" ? <a href={String(reviewSurface.hosted_session_url)} target="_blank" rel="noreferrer" className="rounded-2xl border border-emerald-900/25 bg-[#101714] px-4 py-3 text-sm font-semibold text-emerald-100 transition hover:border-emerald-500/40">Open hosted session</a> : null}
-                {typeof context.resume_cart_url === "string" ? <a href={String(context.resume_cart_url)} target="_blank" rel="noreferrer" className="rounded-2xl border border-emerald-900/25 bg-[#101714] px-4 py-3 text-sm font-semibold text-emerald-100 transition hover:border-emerald-500/40">Resume locally</a> : null}
+                {typeof context.review_page_url === "string" ? <a href={String(context.review_page_url)} className="al-specular-button rounded-2xl bg-[var(--al-cyan)] px-4 py-3 text-sm font-semibold text-[var(--al-void)] transition hover:shadow-[var(--al-cyan-glow-strong)]">Open presentation</a> : null}
+                {typeof context.proof_url === "string" ? <a href={String(context.proof_url)} target="_blank" rel="noreferrer" className="al-glass-subtle rounded-2xl px-4 py-3 text-sm font-semibold text-[var(--al-text-primary)] transition hover:border-[var(--al-border-hover)]">Open proof</a> : null}
+                {typeof reviewSurface.hosted_debugger_fullscreen_url === "string" ? <a href={String(reviewSurface.hosted_debugger_fullscreen_url)} target="_blank" rel="noreferrer" className="al-glass-subtle rounded-2xl px-4 py-3 text-sm font-semibold text-[var(--al-text-primary)] transition hover:border-[var(--al-border-hover)]">Open hosted replay</a> : typeof reviewSurface.hosted_session_url === "string" ? <a href={String(reviewSurface.hosted_session_url)} target="_blank" rel="noreferrer" className="al-glass-subtle rounded-2xl px-4 py-3 text-sm font-semibold text-[var(--al-text-primary)] transition hover:border-[var(--al-border-hover)]">Open hosted session</a> : null}
+                {typeof context.resume_cart_url === "string" ? <a href={String(context.resume_cart_url)} target="_blank" rel="noreferrer" className="al-glass-subtle rounded-2xl px-4 py-3 text-sm font-semibold text-[var(--al-text-primary)] transition hover:border-[var(--al-border-hover)]">Resume locally</a> : null}
               </div>
 
-              <p className="mt-4 text-sm leading-6 text-emerald-100/60">
+              <p className="mt-4 text-sm leading-6 text-[var(--al-text-tertiary)]">
                 {typeof context.link_support === "object" && context.link_support && !Array.isArray(context.link_support) && (context.link_support as Record<string, unknown>).cart_url_usable_cross_session === false
                   ? typeof (context.link_support as Record<string, unknown>).cart_url_note === "string"
                     ? String((context.link_support as Record<string, unknown>).cart_url_note)
@@ -531,23 +531,23 @@ function BrowserCommercePresentation({ context, task, jobId, boardroomHomePath }
               </p>
             </div>
 
-            <div className="rounded-3xl border border-emerald-900/20 bg-[#101714] p-6 shadow-[0_18px_60px_rgba(0,0,0,0.22)]">
-              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-emerald-300/45">Supporting artifacts</p>
-              <h2 className="mt-2 text-2xl font-semibold text-[#f3faf6]">Preview, proof, and execution state</h2>
+            <div className="al-glass-card al-specular rounded-3xl p-6">
+              <p className="al-text-mono-label text-[var(--al-cyan-muted)]">Supporting artifacts</p>
+              <h2 className="mt-3 text-2xl font-semibold text-[var(--al-text-primary)]">Preview, proof, and execution state</h2>
               <div className="mt-5 grid gap-4">
-                {chosenDesignPreviewUrl ? <figure className="overflow-hidden rounded-2xl border border-emerald-900/20 bg-[#0b110e]"><img src={chosenDesignPreviewUrl} alt="Chosen design preview" className="block w-full" /><figcaption className="px-4 py-3 text-sm text-emerald-100/70">{asDisplayString(chosenDesign.title, "Chosen design preview")}</figcaption></figure> : null}
-                {proofImageUrl ? <figure className="overflow-hidden rounded-2xl border border-emerald-900/20 bg-[#0b110e]"><img src={proofImageUrl} alt="Vendor proof screenshot" className="block w-full" /><figcaption className="px-4 py-3 text-sm text-emerald-100/70">Vendor proof screenshot</figcaption></figure> : null}
-                {cartImageUrl ? <figure className="overflow-hidden rounded-2xl border border-emerald-900/20 bg-[#0b110e]"><img src={cartImageUrl} alt="Cart screenshot" className="block w-full" /><figcaption className="px-4 py-3 text-sm text-emerald-100/70">Cart screenshot</figcaption></figure> : null}
+                {chosenDesignPreviewUrl ? <figure className="overflow-hidden rounded-2xl al-glass-recessed"><img src={chosenDesignPreviewUrl} alt="Chosen design preview" className="block w-full" /><figcaption className="px-4 py-3 text-sm text-[var(--al-text-secondary)]">{asDisplayString(chosenDesign.title, "Chosen design preview")}</figcaption></figure> : null}
+                {proofImageUrl ? <figure className="overflow-hidden rounded-2xl al-glass-recessed"><img src={proofImageUrl} alt="Vendor proof screenshot" className="block w-full" /><figcaption className="px-4 py-3 text-sm text-[var(--al-text-secondary)]">Vendor proof screenshot</figcaption></figure> : null}
+                {cartImageUrl ? <figure className="overflow-hidden rounded-2xl al-glass-recessed"><img src={cartImageUrl} alt="Cart screenshot" className="block w-full" /><figcaption className="px-4 py-3 text-sm text-[var(--al-text-secondary)]">Cart screenshot</figcaption></figure> : null}
               </div>
             </div>
           </section>
 
           {followUpTitle ? (
-            <section className="rounded-3xl border border-sky-500/25 bg-sky-500/10 p-6 shadow-[0_18px_60px_rgba(0,0,0,0.22)]">
-              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-sky-200/70">Live follow-up</p>
-              <h2 className="mt-2 text-2xl font-semibold text-sky-50">{followUpTitle}</h2>
-              <p className="mt-3 text-sm leading-6 text-sky-100/80">{followUpDetails || "A follow-up task has been created from the latest Board Room decision."}</p>
-              <p className="mt-3 text-xs uppercase tracking-[0.16em] text-sky-200/70">
+            <section className="al-gemstone-indigo rounded-3xl p-6">
+              <p className="al-text-mono-label text-[var(--al-indigo)]">Live follow-up</p>
+              <h2 className="mt-3 text-2xl font-semibold text-[var(--al-text-primary)]">{followUpTitle}</h2>
+              <p className="mt-3 text-sm leading-6 text-[var(--al-text-secondary)]">{followUpDetails || "A follow-up task has been created from the latest Board Room decision."}</p>
+              <p className="mt-3 al-text-mono-label text-[var(--al-text-tertiary)]">
                 Assigned to {followUpTask.assigned_to === "al" ? "AL" : "Dez"}
                 {lastOperatorResponseAt ? ` • last operator response ${lastOperatorResponseAt}` : ""}
               </p>
@@ -564,19 +564,19 @@ function BrowserCommercePresentation({ context, task, jobId, boardroomHomePath }
             details: followUpDetails,
           } : null} mode="browser_commerce" />
 
-          <section className="rounded-3xl border border-emerald-900/20 bg-[#101714] p-6 shadow-[0_18px_60px_rgba(0,0,0,0.22)]">
-            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-emerald-300/45">Alternatives</p>
+          <section className="al-glass-card rounded-3xl p-6">
+            <p className="al-text-mono-label text-[var(--al-cyan-muted)]">Alternatives</p>
             <div className="mt-4 grid gap-4 lg:grid-cols-3">
               {vendorOptions.map((option) => {
                 const priceSignals = asStringArray(option.price_signals).slice(0, 3);
                 const sizeSignals = asStringArray(option.size_signals).slice(0, 4);
                 const materialSignals = asStringArray(option.material_signals).slice(0, 3);
                 return (
-                  <article key={`${String(option.vendor || "vendor")}-${String(option.url || "")}`} className="rounded-2xl border border-emerald-900/20 bg-[#0b110e] p-5">
-                    <h3 className="text-lg font-semibold text-[#f3faf6]">{asDisplayString(option.vendor, "Vendor")}</h3>
-                    <p className="mt-3 text-sm leading-6 text-emerald-100/70"><strong className="text-emerald-100">Price:</strong> {priceSignals.length > 0 ? priceSignals.join(", ") : "Pricing still inside vendor flow"}</p>
-                    <p className="mt-2 text-sm leading-6 text-emerald-100/70"><strong className="text-emerald-100">Specs:</strong> {sizeSignals.length > 0 ? sizeSignals.join(", ") : "Details incomplete"}</p>
-                    <p className="mt-2 text-sm leading-6 text-emerald-100/70"><strong className="text-emerald-100">Material:</strong> {materialSignals.length > 0 ? materialSignals.join(", ") : "Details incomplete"}</p>
+                  <article key={`${String(option.vendor || "vendor")}-${String(option.url || "")}`} className="al-glass-subtle al-inner-light rounded-2xl p-5">
+                    <h3 className="text-lg font-semibold text-[var(--al-text-primary)]">{asDisplayString(option.vendor, "Vendor")}</h3>
+                    <p className="mt-3 text-sm leading-6 text-[var(--al-text-secondary)]"><strong className="text-[var(--al-text-primary)]">Price:</strong> {priceSignals.length > 0 ? priceSignals.join(", ") : "Pricing still inside vendor flow"}</p>
+                    <p className="mt-2 text-sm leading-6 text-[var(--al-text-secondary)]"><strong className="text-[var(--al-text-primary)]">Specs:</strong> {sizeSignals.length > 0 ? sizeSignals.join(", ") : "Details incomplete"}</p>
+                    <p className="mt-2 text-sm leading-6 text-[var(--al-text-secondary)]"><strong className="text-[var(--al-text-primary)]">Material:</strong> {materialSignals.length > 0 ? materialSignals.join(", ") : "Details incomplete"}</p>
                   </article>
                 );
               })}
@@ -584,14 +584,14 @@ function BrowserCommercePresentation({ context, task, jobId, boardroomHomePath }
           </section>
 
           {reviewDecisions.length > 0 ? (
-            <section className="rounded-3xl border border-emerald-900/20 bg-[#101714] p-6 shadow-[0_18px_60px_rgba(0,0,0,0.22)]">
-              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-emerald-300/45">Decision log</p>
+            <section className="al-glass-card rounded-3xl p-6">
+              <p className="al-text-mono-label text-[var(--al-cyan-muted)]">Decision log</p>
               <div className="mt-4 space-y-3">
                 {reviewDecisions.slice().reverse().map((entry, index) => (
-                  <div key={`${String(entry.at || "decision")}-${index}`} className="rounded-2xl border border-emerald-900/20 bg-[#0b110e] p-4">
-                    <p className="text-sm font-semibold text-[#f3faf6]">{asDisplayString(entry.action, "review_update")}</p>
-                    <p className="mt-1 text-xs uppercase tracking-[0.18em] text-emerald-300/45">{asDisplayString(entry.at, "timestamp unavailable")}</p>
-                    {typeof entry.note === "string" && entry.note ? <p className="mt-3 text-sm leading-6 text-emerald-100/70">{entry.note}</p> : null}
+                  <div key={`${String(entry.at || "decision")}-${index}`} className="al-glass-recessed rounded-2xl p-4">
+                    <p className="text-sm font-semibold text-[var(--al-text-primary)]">{asDisplayString(entry.action, "review_update")}</p>
+                    <p className="mt-1 al-text-mono-label text-[var(--al-text-tertiary)]">{asDisplayString(entry.at, "timestamp unavailable")}</p>
+                    {typeof entry.note === "string" && entry.note ? <p className="mt-3 text-sm leading-6 text-[var(--al-text-secondary)]">{entry.note}</p> : null}
                   </div>
                 ))}
               </div>

@@ -7,21 +7,12 @@ import type {
 
 function toneForStatus(status: OperationalProofStatus) {
   if (status === "failing") {
-    return {
-      card: "border-red-500/20 bg-red-500/10 text-red-100",
-      pill: "border-red-500/25 bg-red-500/10 text-red-100",
-    };
+    return { card: "al-gemstone-red", pill: "al-gemstone-red" };
   }
   if (status === "warning") {
-    return {
-      card: "border-amber-500/20 bg-amber-500/10 text-amber-100",
-      pill: "border-amber-500/25 bg-amber-500/10 text-amber-100",
-    };
+    return { card: "al-gemstone-amber", pill: "al-gemstone-amber" };
   }
-  return {
-    card: "border-emerald-500/20 bg-emerald-500/10 text-emerald-100",
-    pill: "border-emerald-500/25 bg-emerald-500/10 text-emerald-100",
-  };
+  return { card: "al-gemstone-green", pill: "al-gemstone-green" };
 }
 
 function formatTimestamp(value: string) {
@@ -46,77 +37,77 @@ export function OperationalProofPage({
   );
 
   return (
-    <main className="h-full w-full overflow-y-auto bg-[#07100b] px-4 py-6 text-[#eaf4ef] sm:px-6 lg:px-8">
+    <main className="h-full w-full overflow-y-auto px-4 py-6 sm:px-6 lg:px-8">
       <div className="mx-auto flex max-w-7xl flex-col gap-6">
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-emerald-300/45">
+            <p className="al-text-mono-label text-[var(--al-cyan-muted)]">
               Operational Proof
             </p>
-            <h1 className="mt-2 text-3xl font-semibold text-[#f3faf6] sm:text-4xl">
+            <h1 className="mt-3 text-3xl font-semibold text-[var(--al-text-primary)] sm:text-4xl">
               Prove the loops before we widen the system
             </h1>
-            <p className="mt-3 max-w-3xl text-sm leading-6 text-emerald-100/70 sm:text-base">
+            <p className="mt-3 max-w-3xl text-sm leading-6 text-[var(--al-text-secondary)] sm:text-base">
               This view scores the live AL control loops. It is here to answer whether the system is actually moving work, not whether it has more features.
             </p>
           </div>
           <div className="flex flex-wrap gap-3">
             <Link
               href={commandCenterPath}
-              className="rounded-2xl border border-emerald-900/25 bg-[#101714] px-4 py-3 text-sm font-semibold text-emerald-100 transition hover:border-emerald-500/40"
+              className="rounded-2xl al-glass-subtle px-4 py-3 text-sm font-semibold text-[var(--al-text-primary)] transition hover:border-[var(--al-border-hover)]"
             >
               Back to Command Center
             </Link>
           </div>
         </div>
 
-        <section className="rounded-3xl border border-emerald-900/20 bg-[#101714] p-6 shadow-[0_18px_60px_rgba(0,0,0,0.22)]">
+        <section className="al-glass-card al-specular rounded-3xl p-6">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-emerald-300/45">
+              <p className="al-text-mono-label text-[var(--al-cyan-muted)]">
                 Top next move
               </p>
-              <h2 className="mt-2 text-2xl font-semibold text-[#f3faf6]">
+              <h2 className="mt-3 text-2xl font-semibold text-[var(--al-text-primary)]">
                 {report.topNextMove}
               </h2>
             </div>
-            <span className="rounded-full border border-emerald-500/20 bg-emerald-500/10 px-4 py-2 text-sm font-semibold text-emerald-200">
+            <span className="al-gemstone-cyan rounded-full px-4 py-2 text-sm font-semibold">
               Built {formatTimestamp(report.generatedAt)}
             </span>
           </div>
         </section>
 
         <section className="grid gap-4 md:grid-cols-3">
-          <div className="rounded-3xl border border-emerald-500/15 bg-[#101714] p-5 shadow-[0_18px_60px_rgba(0,0,0,0.22)]">
-            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-emerald-200/70">
+          <div className="al-glass-card al-specular rounded-3xl p-5">
+            <p className="al-text-mono-label text-[var(--al-green)]">
               Healthy loops
             </p>
-            <p className="mt-3 text-3xl font-semibold text-emerald-100">
+            <p className="mt-3 text-3xl font-semibold text-[var(--al-text-primary)] al-glow-metric">
               {report.summary.healthy}
             </p>
-            <p className="mt-2 text-sm text-emerald-100/65">
+            <p className="mt-2 text-sm text-[var(--al-text-secondary)]">
               These are presently doing what they should.
             </p>
           </div>
-          <div className="rounded-3xl border border-amber-500/15 bg-[#101714] p-5 shadow-[0_18px_60px_rgba(0,0,0,0.22)]">
-            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-amber-200/70">
+          <div className="al-glass-card al-inner-light rounded-3xl p-5">
+            <p className="al-text-mono-label text-[var(--al-amber)]">
               Warning loops
             </p>
-            <p className="mt-3 text-3xl font-semibold text-amber-100">
+            <p className="mt-3 text-3xl font-semibold text-[var(--al-text-primary)]">
               {report.summary.warning}
             </p>
-            <p className="mt-2 text-sm text-amber-100/70">
+            <p className="mt-2 text-sm text-[var(--al-text-secondary)]">
               These are alive, but they still need tightening.
             </p>
           </div>
-          <div className="rounded-3xl border border-red-500/15 bg-[#101714] p-5 shadow-[0_18px_60px_rgba(0,0,0,0.22)]">
-            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-red-200/70">
+          <div className="al-glass-card al-inner-light rounded-3xl p-5">
+            <p className="al-text-mono-label text-[var(--al-red)]">
               Failing loops
             </p>
-            <p className="mt-3 text-3xl font-semibold text-red-100">
+            <p className="mt-3 text-3xl font-semibold text-[var(--al-text-primary)]">
               {report.summary.failing}
             </p>
-            <p className="mt-2 text-sm text-red-100/70">
+            <p className="mt-2 text-sm text-[var(--al-text-secondary)]">
               These need repair before we should trust more automation or volume.
             </p>
           </div>
@@ -129,25 +120,25 @@ export function OperationalProofPage({
             return (
               <article
                 key={check.id}
-                className="rounded-3xl border border-emerald-900/20 bg-[#101714] p-6 shadow-[0_18px_60px_rgba(0,0,0,0.22)]"
+                className="al-glass-card al-inner-light rounded-3xl p-6"
               >
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
-                    <p className="text-xs font-semibold uppercase tracking-[0.24em] text-emerald-300/45">
+                    <p className="al-text-mono-label text-[var(--al-cyan-muted)]">
                       Control loop
                     </p>
-                    <h2 className="mt-2 text-2xl font-semibold text-[#f3faf6]">
+                    <h2 className="mt-3 text-2xl font-semibold text-[var(--al-text-primary)]">
                       {check.title}
                     </h2>
                   </div>
                   <span
-                    className={`rounded-full border px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.15em] ${tone.pill}`}
+                    className={`rounded-full px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.15em] ${tone.pill}`}
                   >
                     {check.status}
                   </span>
                 </div>
 
-                <div className={`mt-5 rounded-2xl border p-4 ${tone.card}`}>
+                <div className={`mt-5 rounded-2xl p-4 ${tone.card}`}>
                   <p className="text-sm font-semibold leading-6">{check.summary}</p>
                 </div>
 
@@ -155,7 +146,7 @@ export function OperationalProofPage({
                   {check.evidence.map((line) => (
                     <div
                       key={`${check.id}-${line}`}
-                      className="rounded-2xl border border-emerald-900/20 bg-[#0b110e] p-4 text-sm leading-6 text-emerald-100/75"
+                      className="al-glass-recessed rounded-2xl p-4 text-sm leading-6 text-[var(--al-text-secondary)]"
                     >
                       {line}
                     </div>
@@ -165,7 +156,7 @@ export function OperationalProofPage({
                 <div className="mt-5">
                   <a
                     href={check.href}
-                    className="inline-flex rounded-2xl bg-emerald-500 px-4 py-3 text-sm font-semibold text-[#05110b] transition hover:bg-emerald-400"
+                    className="al-specular-button inline-flex rounded-2xl bg-[var(--al-cyan)] px-4 py-3 text-sm font-semibold text-[var(--al-void)] transition hover:shadow-[var(--al-cyan-glow-strong)]"
                   >
                     Open control surface
                   </a>

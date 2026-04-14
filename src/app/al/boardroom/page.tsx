@@ -25,13 +25,9 @@ function relativeTimeLabel(value: string | null): string {
 }
 
 function ownerTone(value: "AL" | "Dez" | "System" | null) {
-  if (value === "Dez") {
-    return "border-amber-500/20 bg-amber-500/10 text-amber-100";
-  }
-  if (value === "System") {
-    return "border-red-500/20 bg-red-500/10 text-red-100";
-  }
-  return "border-sky-500/20 bg-sky-500/10 text-sky-100";
+  if (value === "Dez") return "al-gemstone-amber";
+  if (value === "System") return "al-gemstone-red";
+  return "al-gemstone-cyan";
 }
 
 function queueMaintenancePriority(input: {
@@ -111,58 +107,58 @@ export default async function AlBoardroomIndexPage() {
         {items.map((presentation) => (
           <article
             key={presentation.id}
-            className="rounded-2xl border border-emerald-900/20 bg-[#0b110e] p-5"
+            className="al-glass-subtle al-inner-light al-specular rounded-2xl p-5"
           >
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-300/45">
+                <p className="al-text-mono-label text-[var(--al-cyan-muted)]">
                   {presentation.jobType.replace(/_/g, " ")}
                 </p>
-                <h3 className="mt-2 text-xl font-semibold text-[#f3faf6]">
+                <h3 className="mt-2 text-xl font-semibold text-[var(--al-text-primary)]">
                   {presentation.title}
                 </h3>
               </div>
-              <span className="rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.15em] text-emerald-200">
+              <span className="al-gemstone-cyan rounded-full px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.15em]">
                 {presentation.state}
               </span>
             </div>
-            <p className="mt-4 text-sm leading-6 text-emerald-100/70">
+            <p className="mt-4 text-sm leading-6 text-[var(--al-text-secondary)]">
               {presentation.summary}
             </p>
             <div className="mt-4 flex flex-wrap gap-2">
-              <span className={`rounded-full border px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.15em] ${ownerTone(presentation.followUpOwner)}`}>
+              <span className={`rounded-full px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.15em] ${ownerTone(presentation.followUpOwner)}`}>
                 Waiting on {presentation.waitingOn}
               </span>
               {presentation.followUpOwner ? (
-                <span className={`rounded-full border px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.15em] ${ownerTone(presentation.followUpOwner)}`}>
+                <span className={`rounded-full px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.15em] ${ownerTone(presentation.followUpOwner)}`}>
                   Owner {presentation.followUpOwner}
                 </span>
               ) : null}
               {presentation.followUpStatus ? (
-                <span className="rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.15em] text-emerald-200">
+                <span className="al-gemstone-green rounded-full px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.15em]">
                   Follow-up {presentation.followUpStatus}
                 </span>
               ) : null}
               {presentation.isStale ? (
-                <span className="rounded-full border border-red-500/20 bg-red-500/10 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.15em] text-red-100">
+                <span className="al-gemstone-red rounded-full px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.15em]">
                   Stale
                 </span>
               ) : null}
             </div>
             <div className="mt-4 grid gap-3 sm:grid-cols-2">
-              <div className="rounded-xl border border-emerald-900/20 bg-[#101714] px-4 py-3">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-300/40">
+              <div className="al-glass-recessed rounded-xl px-4 py-3">
+                <p className="al-text-mono-label">
                   Last movement
                 </p>
-                <p className="mt-2 text-sm text-emerald-100/80">
+                <p className="mt-2 text-sm text-[var(--al-text-secondary)]">
                   {relativeTimeLabel(presentation.updatedAt)}
                 </p>
               </div>
-              <div className="rounded-xl border border-emerald-900/20 bg-[#101714] px-4 py-3">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-300/40">
+              <div className="al-glass-recessed rounded-xl px-4 py-3">
+                <p className="al-text-mono-label">
                   Last operator response
                 </p>
-                <p className="mt-2 text-sm text-emerald-100/80">
+                <p className="mt-2 text-sm text-[var(--al-text-secondary)]">
                   {presentation.lastOperatorResponseAt
                     ? relativeTimeLabel(presentation.lastOperatorResponseAt)
                     : "No operator response yet"}
@@ -170,12 +166,12 @@ export default async function AlBoardroomIndexPage() {
               </div>
             </div>
             {presentation.staleReason ? (
-              <p className="mt-4 text-sm leading-6 text-red-100/80">
+              <p className="mt-4 text-sm leading-6 text-[var(--al-red)]">
                 {presentation.staleReason}.
               </p>
             ) : null}
             <div className="mt-5 flex flex-wrap items-center justify-between gap-3">
-              <p className="text-xs uppercase tracking-[0.18em] text-emerald-300/35">
+              <p className="al-text-mono-label text-[var(--al-text-ghost)]">
                 Updated {relativeTimeLabel(presentation.updatedAt)}
               </p>
             </div>
@@ -190,46 +186,46 @@ export default async function AlBoardroomIndexPage() {
   }
 
   return (
-    <main className="h-full w-full overflow-y-auto bg-[#07100b] px-4 py-6 text-[#eaf4ef] sm:px-6 lg:px-8">
+    <main className="h-full w-full overflow-y-auto px-4 py-6 sm:px-6 lg:px-8">
       <div className="mx-auto flex max-w-7xl flex-col gap-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-emerald-300/45">
+            <p className="al-text-mono-label text-[var(--al-cyan-muted)]">
               Board Room
             </p>
-            <h1 className="mt-2 text-3xl font-semibold text-[#f3faf6] sm:text-4xl">
+            <h1 className="mt-3 text-3xl font-semibold text-[var(--al-text-primary)] sm:text-4xl">
               Presentations and approvals
             </h1>
-            <p className="mt-3 max-w-3xl text-sm leading-6 text-emerald-100/70 sm:text-base">
+            <p className="mt-3 max-w-3xl text-sm leading-6 text-[var(--al-text-secondary)] sm:text-base">
               Review the live queue only. Older stale, no-proof, or dead-end packages are buried
               from the default view so this page stays useful again.
             </p>
           </div>
           <Link
             href="/al"
-            className="rounded-2xl border border-emerald-900/25 bg-[#101714] px-4 py-3 text-sm font-semibold text-emerald-100 transition hover:border-emerald-500/40"
+            className="rounded-2xl al-glass-subtle px-4 py-3 text-sm font-semibold text-[var(--al-text-primary)] transition hover:border-[var(--al-border-hover)]"
           >
             Back to Command Center
           </Link>
         </div>
 
-        <section className="rounded-3xl border border-emerald-900/20 bg-[#101714] p-6 shadow-[0_18px_60px_rgba(0,0,0,0.22)]">
+        <section className="al-glass-card al-specular rounded-3xl p-6">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-emerald-300/45">
+              <p className="al-text-mono-label text-[var(--al-cyan-muted)]">
                 Active packages
               </p>
-              <h2 className="mt-2 text-2xl font-semibold text-[#f3faf6]">
+              <h2 className="mt-3 text-2xl font-semibold text-[var(--al-text-primary)]">
                 Latest Board Room presentations
               </h2>
             </div>
-            <span className="rounded-full border border-emerald-500/20 bg-emerald-500/10 px-4 py-2 text-sm font-semibold text-emerald-200">
+            <span className="al-gemstone-cyan rounded-full px-4 py-2 text-sm font-semibold">
               {queueSnapshot.counts.visible} active
             </span>
           </div>
 
           {presentations.length === 0 ? (
-            <div className="mt-6 rounded-2xl border border-emerald-900/20 bg-[#0b110e] p-5 text-sm leading-6 text-emerald-100/70">
+            <div className="mt-6 al-glass-recessed rounded-2xl p-5 text-sm leading-6 text-[var(--al-text-secondary)]">
               Nothing is active enough to deserve Board Room space right now. New review-ready
               work will appear here, and older stale packages stay buried until they are revived
               or cleaned up.
@@ -237,7 +233,7 @@ export default async function AlBoardroomIndexPage() {
           ) : (
             <div className="mt-6 space-y-8">
               {queueSnapshot.counts.buried > 0 ? (
-                <div className="rounded-2xl border border-slate-700/30 bg-[#0b110e] p-5 text-sm leading-6 text-emerald-100/70">
+                <div className="al-glass-recessed rounded-2xl p-5 text-sm leading-6 text-[var(--al-text-secondary)]">
                   {queueSnapshot.counts.buried} older stale or no-proof package
                   {queueSnapshot.counts.buried === 1 ? "" : "s"} are buried from the live queue by
                   default. The audit trail still exists, but the active Board Room is now focused
@@ -249,18 +245,18 @@ export default async function AlBoardroomIndexPage() {
                 <div>
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <div>
-                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-amber-300/55">
+                      <p className="al-text-mono-label text-[var(--al-amber)]">
                         Queue maintenance
                       </p>
-                      <h3 className="mt-2 text-xl font-semibold text-[#f3faf6]">
+                      <h3 className="mt-2 text-xl font-semibold text-[var(--al-text-primary)]">
                         Fast bulk controls
                       </h3>
                     </div>
-                    <span className="rounded-full border border-amber-500/20 bg-amber-500/10 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.15em] text-amber-100">
+                    <span className="al-gemstone-amber rounded-full px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.15em]">
                       {queueMaintenanceItems.length}
                     </span>
                   </div>
-                  <div className="mt-4 rounded-2xl border border-amber-900/20 bg-[#0b110e] p-5 text-sm leading-6 text-emerald-100/70">
+                  <div className="mt-4 al-glass-recessed rounded-2xl p-5 text-sm leading-6 text-[var(--al-text-secondary)]">
                     Close, reject, or delete the packages most likely to need cleanup without opening each presentation first. Delete removes the package from the live queue but keeps the audit trail intact.
                   </div>
                   <div className="mt-4">
@@ -272,19 +268,19 @@ export default async function AlBoardroomIndexPage() {
               <div>
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div>
-                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-300/45">
+                    <p className="al-text-mono-label text-[var(--al-cyan-muted)]">
                       Review now
                     </p>
-                    <h3 className="mt-2 text-xl font-semibold text-[#f3faf6]">
+                    <h3 className="mt-2 text-xl font-semibold text-[var(--al-text-primary)]">
                       Ready for a fast decision
                     </h3>
                   </div>
-                  <span className="rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.15em] text-emerald-200">
+                  <span className="al-gemstone-green rounded-full px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.15em]">
                     {reviewNowRemaining.length}
                   </span>
                 </div>
                 {reviewNowRemaining.length > 0 ? renderPresentationCards(reviewNowRemaining) : (
-                  <div className="mt-4 rounded-2xl border border-emerald-900/20 bg-[#0b110e] p-5 text-sm leading-6 text-emerald-100/70">
+                  <div className="mt-4 al-glass-recessed rounded-2xl p-5 text-sm leading-6 text-[var(--al-text-secondary)]">
                     Nothing is fully review-ready right now.
                   </div>
                 )}
@@ -294,14 +290,14 @@ export default async function AlBoardroomIndexPage() {
                 <div>
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <div>
-                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-amber-300/55">
+                      <p className="al-text-mono-label text-[var(--al-amber)]">
                         Needs attention
                       </p>
-                      <h3 className="mt-2 text-xl font-semibold text-[#f3faf6]">
+                      <h3 className="mt-2 text-xl font-semibold text-[var(--al-text-primary)]">
                         Execution items that still need repair
                       </h3>
                     </div>
-                    <span className="rounded-full border border-amber-500/20 bg-amber-500/10 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.15em] text-amber-100">
+                    <span className="al-gemstone-amber rounded-full px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.15em]">
                       {needsAttention.length}
                     </span>
                   </div>
@@ -313,18 +309,18 @@ export default async function AlBoardroomIndexPage() {
                 <div>
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <div>
-                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-sky-300/55">
+                      <p className="al-text-mono-label text-[var(--al-indigo)]">
                         Local-only
                       </p>
-                      <h3 className="mt-2 text-xl font-semibold text-[#f3faf6]">
+                      <h3 className="mt-2 text-xl font-semibold text-[var(--al-text-primary)]">
                         Review packages that still depend on Dez&apos;s machine
                       </h3>
                     </div>
-                    <span className="rounded-full border border-sky-500/20 bg-sky-500/10 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.15em] text-sky-100">
+                    <span className="al-gemstone-indigo rounded-full px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.15em]">
                       {localOnly.length}
                     </span>
                   </div>
-                  <div className="mt-4 rounded-2xl border border-sky-900/20 bg-[#0b110e] p-5 text-sm leading-6 text-emerald-100/70">
+                  <div className="mt-4 al-glass-recessed rounded-2xl p-5 text-sm leading-6 text-[var(--al-text-secondary)]">
                     These packages are real, but their primary review links still point to local bridge output instead of a fully hosted review surface.
                   </div>
                   {renderPresentationCards(localOnly)}
@@ -334,32 +330,32 @@ export default async function AlBoardroomIndexPage() {
           )}
         </section>
 
-        <section className="rounded-3xl border border-emerald-900/20 bg-[#101714] p-6 shadow-[0_18px_60px_rgba(0,0,0,0.22)]">
-          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-emerald-300/45">
+        <section className="al-glass-card al-inner-light rounded-3xl p-6">
+          <p className="al-text-mono-label text-[var(--al-cyan-muted)]">
             How to use it
           </p>
           <div className="mt-4 grid gap-4 md:grid-cols-3">
-            <div className="rounded-2xl border border-emerald-900/20 bg-[#0b110e] p-5">
-              <h3 className="text-lg font-semibold text-[#f3faf6]">1. Open the package</h3>
-              <p className="mt-2 text-sm leading-6 text-emerald-100/70">
+            <div className="al-glass-subtle al-inner-light rounded-2xl p-5">
+              <h3 className="text-lg font-semibold text-[var(--al-text-primary)]">1. Open the package</h3>
+              <p className="mt-2 text-sm leading-6 text-[var(--al-text-secondary)]">
                 Start with the presentation, not the underlying runtime details.
               </p>
             </div>
-            <div className="rounded-2xl border border-emerald-900/20 bg-[#0b110e] p-5">
-              <h3 className="text-lg font-semibold text-[#f3faf6]">2. Review the evidence</h3>
-              <p className="mt-2 text-sm leading-6 text-emerald-100/70">
+            <div className="al-glass-subtle al-inner-light rounded-2xl p-5">
+              <h3 className="text-lg font-semibold text-[var(--al-text-primary)]">2. Review the evidence</h3>
+              <p className="mt-2 text-sm leading-6 text-[var(--al-text-secondary)]">
                 Use proof links, previews, and alternatives to confirm the recommendation quickly.
               </p>
             </div>
-            <div className="rounded-2xl border border-emerald-900/20 bg-[#0b110e] p-5">
-              <h3 className="text-lg font-semibold text-[#f3faf6]">3. Record the decision</h3>
-              <p className="mt-2 text-sm leading-6 text-emerald-100/70">
+            <div className="al-glass-subtle al-inner-light rounded-2xl p-5">
+              <h3 className="text-lg font-semibold text-[var(--al-text-primary)]">3. Record the decision</h3>
+              <p className="mt-2 text-sm leading-6 text-[var(--al-text-secondary)]">
                 Approve, request changes, or flag a blocked execution path without losing the audit trail.
               </p>
             </div>
           </div>
           {homePath !== "/al/boardroom" ? (
-            <p className="mt-4 text-xs uppercase tracking-[0.18em] text-emerald-300/35">
+            <p className="mt-4 al-text-mono-label text-[var(--al-text-ghost)]">
               Hosted path active at {homePath}
             </p>
           ) : null}

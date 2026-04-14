@@ -140,7 +140,7 @@ export function GlassMetricTile({
 
   return (
     <div
-      className="al-glass-subtle al-inner-light rounded-2xl p-4 relative overflow-hidden group"
+      className="al-glass-subtle al-specular al-inner-light rounded-2xl p-4 relative overflow-hidden group"
       style={{ borderColor: `color-mix(in srgb, ${color} 12%, transparent)` }}
     >
       <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"

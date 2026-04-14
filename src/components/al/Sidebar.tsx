@@ -190,37 +190,37 @@ export function Sidebar({
       href: "/",
       label: "Command Center",
       detail: "Start here",
-      icon: <Sparkles className="h-4 w-4 text-sky-300/75" />,
+      icon: <Sparkles className="h-4 w-4 text-[var(--al-cyan-muted)]" />,
     },
     {
       href: "/attention",
       label: "Attention",
       detail: "What needs action",
-      icon: <Activity className="h-4 w-4 text-sky-300/75" />,
+      icon: <Activity className="h-4 w-4 text-[var(--al-cyan-muted)]" />,
     },
     {
       href: "/inbox",
       label: "Inbox",
       detail: "Queue asks without blocking chat",
-      icon: <BookUp className="h-4 w-4 text-sky-300/75" />,
+      icon: <BookUp className="h-4 w-4 text-[var(--al-cyan-muted)]" />,
     },
     {
       href: "/boardroom",
       label: "Board Room",
       detail: "Approvals and packages",
-      icon: <Users className="h-4 w-4 text-sky-300/75" />,
+      icon: <Users className="h-4 w-4 text-[var(--al-cyan-muted)]" />,
     },
     {
       href: "/planner",
       label: "Planner",
       detail: "Task truth",
-      icon: <CalendarDays className="h-4 w-4 text-sky-300/75" />,
+      icon: <CalendarDays className="h-4 w-4 text-[var(--al-cyan-muted)]" />,
     },
     {
       href: "/operational-proof",
       label: "System Health",
       detail: "Can we trust the loops?",
-      icon: <ShieldCheck className="h-4 w-4 text-sky-300/75" />,
+      icon: <ShieldCheck className="h-4 w-4 text-[var(--al-cyan-muted)]" />,
     },
   ] as const;
   const businessLinks = [
@@ -228,19 +228,19 @@ export function Sidebar({
       href: "/dominion/leads",
       label: "Dominion Leads",
       detail: "First touch and follow-up",
-      icon: <Building2 className="h-4 w-4 text-sky-300/75" />,
+      icon: <Building2 className="h-4 w-4 text-[var(--al-cyan-muted)]" />,
     },
     {
       href: "/wrenchready/day-readiness",
       label: "Day Readiness",
       detail: "Protect wrench time",
-      icon: <Wrench className="h-4 w-4 text-sky-300/75" />,
+      icon: <Wrench className="h-4 w-4 text-[var(--al-cyan-muted)]" />,
     },
     {
       href: "/labor-lanes",
       label: "Labor Lanes",
       detail: "Can AL replace labor here?",
-      icon: <Receipt className="h-4 w-4 text-sky-300/75" />,
+      icon: <Receipt className="h-4 w-4 text-[var(--al-cyan-muted)]" />,
     },
   ] as const;
   const extendedQuickActionCategories = categories.filter((category) =>

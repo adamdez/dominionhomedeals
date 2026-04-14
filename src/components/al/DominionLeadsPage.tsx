@@ -25,19 +25,11 @@ function formatTimestamp(value: string | null) {
 }
 
 function statusTone(status: DominionLeadStatus, isStale: boolean) {
-  if (status === "won") {
-    return "border-emerald-500/25 bg-emerald-500/10 text-emerald-100";
-  }
-  if (status === "lost") {
-    return "border-zinc-500/25 bg-zinc-500/10 text-zinc-100";
-  }
-  if (isStale) {
-    return "border-red-500/25 bg-red-500/10 text-red-100";
-  }
-  if (status === "under_contract") {
-    return "border-sky-500/25 bg-sky-500/10 text-sky-100";
-  }
-  return "border-amber-500/25 bg-amber-500/10 text-amber-100";
+  if (status === "won") return "al-gemstone-green";
+  if (status === "lost") return "al-gemstone-neutral";
+  if (isStale) return "al-gemstone-red";
+  if (status === "under_contract") return "al-gemstone-cyan";
+  return "al-gemstone-amber";
 }
 
 function statusLabel(status: DominionLeadStatus) {
@@ -196,30 +188,30 @@ export function DominionLeadsPage({
   }
 
   return (
-    <main className="h-full w-full overflow-y-auto bg-[#07100b] px-4 py-5 pb-28 text-[#eaf4ef] sm:px-6 lg:px-8 lg:pb-8">
+    <main className="h-full w-full overflow-y-auto px-4 py-5 pb-28 sm:px-6 lg:px-8 lg:pb-8">
       <div className="mx-auto flex max-w-7xl flex-col gap-6">
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-emerald-300/45">
+            <p className="al-text-mono-label text-[var(--al-cyan-muted)]">
               Dominion Control
             </p>
-            <h1 className="mt-2 text-3xl font-semibold text-[#f3faf6] sm:text-4xl">
+            <h1 className="mt-3 text-3xl font-semibold text-[var(--al-text-primary)] sm:text-4xl">
               Keep lead follow-up real
             </h1>
-            <p className="mt-3 max-w-3xl text-sm leading-6 text-emerald-100/70 sm:text-base">
+            <p className="mt-3 max-w-3xl text-sm leading-6 text-[var(--al-text-secondary)] sm:text-base">
               Website leads should not die in inboxes, text threads, or someone&apos;s memory. This view keeps first touch, next action, and ownership visible inside the same AL truth system.
             </p>
           </div>
           <div className="flex flex-wrap gap-3">
             <Link
               href={withAlAppPrefix(pathname, "/attention")}
-              className="rounded-2xl border border-emerald-900/25 bg-[#101714] px-4 py-3 text-sm font-semibold text-emerald-100 transition hover:border-emerald-500/40"
+              className="rounded-2xl al-glass-subtle px-4 py-3 text-sm font-semibold text-[var(--al-text-primary)] transition hover:border-[var(--al-border-hover)]"
             >
               Open Attention
             </Link>
             <Link
               href={withAlAppPrefix(pathname, "/planner")}
-              className="rounded-2xl border border-emerald-900/25 bg-[#101714] px-4 py-3 text-sm font-semibold text-emerald-100 transition hover:border-emerald-500/40"
+              className="rounded-2xl al-glass-subtle px-4 py-3 text-sm font-semibold text-[var(--al-text-primary)] transition hover:border-[var(--al-border-hover)]"
             >
               Open Planner
             </Link>
@@ -227,39 +219,39 @@ export function DominionLeadsPage({
         </div>
 
         <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          <div className="rounded-3xl border border-emerald-900/20 bg-[#101714] p-5 shadow-[0_18px_60px_rgba(0,0,0,0.22)]">
-            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-emerald-300/45">Open leads</p>
-            <p className="mt-3 text-3xl font-semibold text-[#f3faf6]">{counts.open}</p>
-            <p className="mt-2 text-sm text-emerald-100/65">Leads still needing active follow-through.</p>
+          <div className="al-glass-card al-specular rounded-3xl p-5">
+            <p className="al-text-mono-label text-[var(--al-cyan-muted)]">Open leads</p>
+            <p className="mt-3 text-3xl font-semibold text-[var(--al-text-primary)] al-glow-metric">{counts.open}</p>
+            <p className="mt-2 text-sm text-[var(--al-text-secondary)]">Leads still needing active follow-through.</p>
           </div>
-          <div className="rounded-3xl border border-red-500/15 bg-[#101714] p-5 shadow-[0_18px_60px_rgba(0,0,0,0.22)]">
-            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-red-200/70">Stale leads</p>
-            <p className="mt-3 text-3xl font-semibold text-red-100">{counts.stale}</p>
-            <p className="mt-2 text-sm text-red-100/70">These need a human move, not another notification.</p>
+          <div className="al-glass-card al-inner-light rounded-3xl p-5">
+            <p className="al-text-mono-label text-[var(--al-red)]">Stale leads</p>
+            <p className="mt-3 text-3xl font-semibold text-[var(--al-text-primary)]">{counts.stale}</p>
+            <p className="mt-2 text-sm text-[var(--al-text-secondary)]">These need a human move, not another notification.</p>
           </div>
-          <div className="rounded-3xl border border-amber-500/15 bg-[#101714] p-5 shadow-[0_18px_60px_rgba(0,0,0,0.22)]">
-            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-amber-200/70">Untouched</p>
-            <p className="mt-3 text-3xl font-semibold text-amber-100">{counts.untouched}</p>
-            <p className="mt-2 text-sm text-amber-100/70">New leads with no first touch logged yet.</p>
+          <div className="al-glass-card al-inner-light rounded-3xl p-5">
+            <p className="al-text-mono-label text-[var(--al-amber)]">Untouched</p>
+            <p className="mt-3 text-3xl font-semibold text-[var(--al-text-primary)]">{counts.untouched}</p>
+            <p className="mt-2 text-sm text-[var(--al-text-secondary)]">New leads with no first touch logged yet.</p>
           </div>
-          <div className="rounded-3xl border border-sky-500/15 bg-[#101714] p-5 shadow-[0_18px_60px_rgba(0,0,0,0.22)]">
-            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-sky-200/70">Working</p>
-            <p className="mt-3 text-3xl font-semibold text-sky-100">{counts.working}</p>
-            <p className="mt-2 text-sm text-sky-100/70">Leads still in motion after first contact.</p>
+          <div className="al-glass-card al-inner-light rounded-3xl p-5">
+            <p className="al-text-mono-label text-[var(--al-indigo)]">Working</p>
+            <p className="mt-3 text-3xl font-semibold text-[var(--al-text-primary)]">{counts.working}</p>
+            <p className="mt-2 text-sm text-[var(--al-text-secondary)]">Leads still in motion after first contact.</p>
           </div>
         </section>
 
-        <section className="rounded-3xl border border-emerald-900/20 bg-[#101714] p-5 shadow-[0_18px_60px_rgba(0,0,0,0.22)] sm:p-6">
+        <section className="al-glass-card al-specular rounded-3xl p-5 sm:p-6">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-emerald-300/45">
+              <p className="al-text-mono-label text-[var(--al-cyan-muted)]">
                 Lead queue
               </p>
-              <p className="mt-2 text-sm leading-6 text-emerald-100/65">
+              <p className="mt-2 text-sm leading-6 text-[var(--al-text-secondary)]">
                 Most recent leads first, with stale and untouched items pushed to the surface.
               </p>
             </div>
-            <span className="rounded-full border border-emerald-500/20 bg-emerald-500/10 px-4 py-2 text-sm font-semibold text-emerald-100">
+            <span className="al-gemstone-cyan rounded-full px-4 py-2 text-sm font-semibold">
               Built {formatTimestamp(dashboard.generatedAt)}
             </span>
           </div>
@@ -276,39 +268,39 @@ export function DominionLeadsPage({
                   <article
                     key={record.id}
                     id={`lead-${record.id}`}
-                    className="rounded-3xl border border-emerald-900/20 bg-[#0b110e] p-5"
+                    className="al-glass-subtle al-inner-light rounded-3xl p-5"
                   >
                     <div className="flex flex-wrap items-start justify-between gap-4">
                       <div>
                         <div className="flex flex-wrap items-center gap-2">
-                          <span className={`rounded-full border px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.15em] ${tone}`}>
+                          <span className={`rounded-full px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.15em] ${tone}`}>
                             {statusLabel(record.status)}
                           </span>
-                          <span className="rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.15em] text-emerald-100">
+                          <span className="al-gemstone-cyan rounded-full px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.15em]">
                             {ownerLabel(record.owner)}
                           </span>
                           {health.isStale ? (
-                            <span className="rounded-full border border-red-500/20 bg-red-500/10 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.15em] text-red-100">
+                            <span className="al-gemstone-red rounded-full px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.15em]">
                               Stale
                             </span>
                           ) : null}
                         </div>
-                        <h2 className="mt-3 text-2xl font-semibold text-[#f3faf6]">
+                        <h2 className="mt-3 text-2xl font-semibold text-[var(--al-text-primary)]">
                           {record.fullName}
                         </h2>
-                        <p className="mt-2 text-sm leading-6 text-emerald-100/70">
+                        <p className="mt-2 text-sm leading-6 text-[var(--al-text-secondary)]">
                           {record.address}
                           {record.city ? ` - ${record.city}, ${record.state} ${record.zip}` : ""}
                         </p>
-                        <div className="mt-3 flex flex-wrap gap-3 text-sm text-emerald-100/70">
+                        <div className="mt-3 flex flex-wrap gap-3 text-sm text-[var(--al-text-secondary)]">
                           {record.phone ? (
-                            <a href={`tel:${record.phone}`} className="inline-flex items-center gap-2 hover:text-emerald-50">
+                            <a href={`tel:${record.phone}`} className="inline-flex items-center gap-2 hover:text-[var(--al-text-primary)]">
                               <Phone className="h-4 w-4" />
                               {record.phone}
                             </a>
                           ) : null}
                           {record.email ? (
-                            <a href={`mailto:${record.email}`} className="inline-flex items-center gap-2 hover:text-emerald-50">
+                            <a href={`mailto:${record.email}`} className="inline-flex items-center gap-2 hover:text-[var(--al-text-primary)]">
                               <Mail className="h-4 w-4" />
                               {record.email}
                             </a>
@@ -316,15 +308,15 @@ export function DominionLeadsPage({
                         </div>
                       </div>
 
-                      <div className="rounded-2xl border border-emerald-900/20 bg-[#101714] px-4 py-3 text-sm text-emerald-100/70">
-                        <p><strong className="text-emerald-100">Submitted:</strong> {formatTimestamp(record.submittedAt)}</p>
-                        <p className="mt-2"><strong className="text-emerald-100">Timeline:</strong> {record.timeline || "Not captured"}</p>
-                        <p className="mt-2"><strong className="text-emerald-100">Condition:</strong> {record.condition || "Not captured"}</p>
+                      <div className="al-glass-recessed rounded-2xl px-4 py-3 text-sm text-[var(--al-text-secondary)]">
+                        <p><strong className="text-[var(--al-text-primary)]">Submitted:</strong> {formatTimestamp(record.submittedAt)}</p>
+                        <p className="mt-2"><strong className="text-[var(--al-text-primary)]">Timeline:</strong> {record.timeline || "Not captured"}</p>
+                        <p className="mt-2"><strong className="text-[var(--al-text-primary)]">Condition:</strong> {record.condition || "Not captured"}</p>
                       </div>
                     </div>
 
                     {health.staleReason ? (
-                      <div className="mt-4 rounded-2xl border border-red-500/20 bg-red-500/10 p-4 text-sm leading-6 text-red-100/85">
+                      <div className="mt-4 al-gemstone-red rounded-2xl p-4 text-sm leading-6">
                         <div className="flex items-start gap-2">
                           <TriangleAlert className="mt-1 h-4 w-4 shrink-0" />
                           <p>{health.staleReason}</p>
@@ -334,14 +326,14 @@ export function DominionLeadsPage({
 
                     <div className="mt-4 grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
                       <div className="grid gap-4 sm:grid-cols-2">
-                        <div className="rounded-2xl border border-emerald-900/20 bg-[#101714] p-4">
-                          <label className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-300/45">
+                        <div className="al-glass-recessed rounded-2xl p-4">
+                          <label className="al-text-mono-label text-[var(--al-cyan-muted)]">
                             Owner
                           </label>
                           <select
                             value={draft.owner}
                             onChange={(event) => setDraftValue(record.id, "owner", event.target.value)}
-                            className="mt-3 w-full rounded-2xl border border-emerald-900/25 bg-[#0b110e] px-4 py-3 text-sm text-[#f3faf6] outline-none"
+                            className="mt-3 w-full rounded-2xl al-glass-recessed px-4 py-3 text-sm text-[var(--al-text-primary)] outline-none focus:border-[var(--al-border-active)]"
                           >
                             <option value="unassigned">Unassigned</option>
                             <option value="dez">Dez</option>
@@ -350,14 +342,14 @@ export function DominionLeadsPage({
                           </select>
                         </div>
 
-                        <div className="rounded-2xl border border-emerald-900/20 bg-[#101714] p-4">
-                          <label className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-300/45">
+                        <div className="al-glass-recessed rounded-2xl p-4">
+                          <label className="al-text-mono-label text-[var(--al-cyan-muted)]">
                             Status
                           </label>
                           <select
                             value={draft.status}
                             onChange={(event) => setDraftValue(record.id, "status", event.target.value)}
-                            className="mt-3 w-full rounded-2xl border border-emerald-900/25 bg-[#0b110e] px-4 py-3 text-sm text-[#f3faf6] outline-none"
+                            className="mt-3 w-full rounded-2xl al-glass-recessed px-4 py-3 text-sm text-[var(--al-text-primary)] outline-none focus:border-[var(--al-border-active)]"
                           >
                             <option value="new">New</option>
                             <option value="working">Working</option>
@@ -367,32 +359,32 @@ export function DominionLeadsPage({
                           </select>
                         </div>
 
-                        <div className="rounded-2xl border border-emerald-900/20 bg-[#101714] p-4">
-                          <label className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-300/45">
+                        <div className="al-glass-recessed rounded-2xl p-4">
+                          <label className="al-text-mono-label text-[var(--al-cyan-muted)]">
                             Next action due
                           </label>
                           <input
                             type="date"
                             value={draft.nextActionDueDate}
                             onChange={(event) => setDraftValue(record.id, "nextActionDueDate", event.target.value)}
-                            className="mt-3 w-full rounded-2xl border border-emerald-900/25 bg-[#0b110e] px-4 py-3 text-sm text-[#f3faf6] outline-none"
+                            className="mt-3 w-full rounded-2xl al-glass-recessed px-4 py-3 text-sm text-[var(--al-text-primary)] outline-none focus:border-[var(--al-border-active)]"
                           />
                         </div>
 
-                        <div className="rounded-2xl border border-emerald-900/20 bg-[#101714] p-4">
-                          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-300/45">
+                        <div className="al-glass-recessed rounded-2xl p-4">
+                          <p className="al-text-mono-label text-[var(--al-cyan-muted)]">
                             Logged movement
                           </p>
-                          <div className="mt-3 space-y-2 text-sm text-emerald-100/70">
-                            <p><strong className="text-emerald-100">First touch:</strong> {formatTimestamp(record.firstTouchAt)}</p>
-                            <p><strong className="text-emerald-100">Last action:</strong> {formatTimestamp(record.lastActionAt)}</p>
-                            <p><strong className="text-emerald-100">Planner trail:</strong> {record.plannerTaskId ? `Task #${record.plannerTaskId}` : "Will be created automatically while lead stays open."}</p>
+                          <div className="mt-3 space-y-2 text-sm text-[var(--al-text-secondary)]">
+                            <p><strong className="text-[var(--al-text-primary)]">First touch:</strong> {formatTimestamp(record.firstTouchAt)}</p>
+                            <p><strong className="text-[var(--al-text-primary)]">Last action:</strong> {formatTimestamp(record.lastActionAt)}</p>
+                            <p><strong className="text-[var(--al-text-primary)]">Planner trail:</strong> {record.plannerTaskId ? `Task #${record.plannerTaskId}` : "Will be created automatically while lead stays open."}</p>
                           </div>
                         </div>
                       </div>
 
-                      <div className="rounded-2xl border border-emerald-900/20 bg-[#101714] p-4">
-                        <label className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-300/45">
+                      <div className="al-glass-recessed rounded-2xl p-4">
+                        <label className="al-text-mono-label text-[var(--al-cyan-muted)]">
                           Notes
                         </label>
                         <textarea
@@ -400,7 +392,7 @@ export function DominionLeadsPage({
                           onChange={(event) => setDraftValue(record.id, "notes", event.target.value)}
                           rows={8}
                           placeholder="What happened, what is next, and what should the team know?"
-                          className="mt-3 w-full rounded-2xl border border-emerald-900/25 bg-[#0b110e] px-4 py-3 text-sm leading-6 text-[#f3faf6] outline-none"
+                          className="mt-3 w-full rounded-2xl al-glass-recessed px-4 py-3 text-sm leading-6 text-[var(--al-text-primary)] placeholder-[var(--al-text-ghost)] outline-none focus:border-[var(--al-border-active)]"
                         />
                       </div>
                     </div>
@@ -411,7 +403,7 @@ export function DominionLeadsPage({
                           type="button"
                           onClick={() => saveLead(record.id, true)}
                           disabled={isSaving}
-                          className="rounded-2xl bg-emerald-500 px-5 py-3 text-sm font-semibold text-[#05110b] transition hover:bg-emerald-400 disabled:opacity-60"
+                          className="al-specular-button rounded-2xl bg-[var(--al-cyan)] px-5 py-3 text-sm font-semibold text-[var(--al-void)] transition hover:shadow-[var(--al-cyan-glow-strong)] disabled:opacity-60"
                         >
                           {isSaving ? "Saving..." : "Mark first touch now"}
                         </button>
@@ -420,30 +412,30 @@ export function DominionLeadsPage({
                         type="button"
                         onClick={() => saveLead(record.id)}
                         disabled={isSaving}
-                        className="rounded-2xl border border-emerald-900/25 bg-[#101714] px-5 py-3 text-sm font-semibold text-emerald-100 transition hover:border-emerald-500/40 disabled:opacity-60"
+                        className="rounded-2xl al-glass-subtle px-5 py-3 text-sm font-semibold text-[var(--al-text-primary)] transition hover:border-[var(--al-border-hover)] disabled:opacity-60"
                       >
                         {isSaving ? "Saving..." : "Save lead control"}
                       </button>
                       <a
                         href={withAlAppPrefix(pathname, "/planner")}
-                        className="rounded-2xl border border-emerald-900/25 bg-[#101714] px-5 py-3 text-sm font-semibold text-emerald-100 transition hover:border-emerald-500/40"
+                        className="rounded-2xl al-glass-subtle px-5 py-3 text-sm font-semibold text-[var(--al-text-primary)] transition hover:border-[var(--al-border-hover)]"
                       >
                         Open Planner
                       </a>
                       {messages[record.id] ? (
-                        <p className="text-sm text-emerald-100/75">{messages[record.id]}</p>
+                        <p className="text-sm text-[var(--al-text-secondary)]">{messages[record.id]}</p>
                       ) : null}
                     </div>
                   </article>
                 );
               })
             ) : (
-              <div className="rounded-3xl border border-emerald-900/20 bg-[#0b110e] p-8 text-center">
-                <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-500/10 text-emerald-100">
+              <div className="al-glass-subtle rounded-3xl p-8 text-center">
+                <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-[var(--al-surface-0)] text-[var(--al-cyan-muted)]">
                   <Building2 className="h-6 w-6" />
                 </div>
-                <h2 className="mt-4 text-2xl font-semibold text-[#f3faf6]">No Dominion leads recorded yet</h2>
-                <p className="mt-3 text-sm leading-6 text-emerald-100/65">
+                <h2 className="mt-4 text-2xl font-semibold text-[var(--al-text-primary)]">No Dominion leads recorded yet</h2>
+                <p className="mt-3 text-sm leading-6 text-[var(--al-text-secondary)]">
                   New website submissions will land here automatically once the lead route records them into AL memory.
                 </p>
               </div>

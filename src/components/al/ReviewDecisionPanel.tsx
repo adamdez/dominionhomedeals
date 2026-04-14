@@ -170,28 +170,28 @@ export function ReviewDecisionPanel({
   }
 
   return (
-    <section className="rounded-3xl border border-emerald-900/20 bg-[#101714] p-6 shadow-[0_18px_60px_rgba(0,0,0,0.22)]">
+    <section className="al-glass-card al-specular rounded-3xl p-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-emerald-300/45">
+          <p className="al-text-mono-label text-[var(--al-cyan-muted)]">
             Decision
           </p>
-          <h2 className="mt-2 text-2xl font-semibold text-[#eaf4ef]">
+          <h2 className="mt-3 text-2xl font-semibold text-[var(--al-text-primary)]">
             Quick call
           </h2>
-          <p className="mt-3 max-w-3xl text-sm leading-6 text-emerald-100/70">{nextAction}</p>
+          <p className="mt-3 max-w-3xl text-sm leading-6 text-[var(--al-text-secondary)]">{nextAction}</p>
         </div>
-        <div className="rounded-full border border-emerald-500/20 bg-emerald-500/10 px-4 py-2 text-sm font-semibold text-emerald-200">
+        <div className="al-gemstone-cyan rounded-full px-4 py-2 text-sm font-semibold">
           {humanizeState(reviewState)}
         </div>
       </div>
 
       {terminalState ? (
-        <div className="mt-5 rounded-2xl border border-slate-500/20 bg-slate-500/10 p-4">
-          <p className="text-sm font-semibold text-slate-100">
+        <div className="mt-5 al-gemstone-neutral rounded-2xl p-4">
+          <p className="text-sm font-semibold text-[var(--al-text-primary)]">
             This presentation is no longer active in the Board Room queue.
           </p>
-          <p className="mt-2 text-sm leading-6 text-slate-200/75">
+          <p className="mt-2 text-sm leading-6 text-[var(--al-text-secondary)]">
             Approvals and change requests are locked once an item has been closed, rejected, or removed.
           </p>
         </div>
@@ -202,7 +202,7 @@ export function ReviewDecisionPanel({
               type="button"
               onClick={() => submitDecision("approved_for_checkout")}
               disabled={saving}
-              className="rounded-2xl bg-emerald-500 px-4 py-3.5 text-sm font-semibold text-[#05110b] transition hover:bg-emerald-400 disabled:cursor-not-allowed disabled:opacity-60"
+              className="al-specular-button rounded-2xl bg-[var(--al-cyan)] px-4 py-3.5 text-sm font-semibold text-[var(--al-void)] transition hover:shadow-[var(--al-cyan-glow-strong)] disabled:cursor-not-allowed disabled:opacity-60"
             >
               {actionLabels.approve}
             </button>
@@ -212,7 +212,7 @@ export function ReviewDecisionPanel({
               type="button"
               onClick={() => submitDecision("changes_requested")}
               disabled={saving}
-              className="rounded-2xl border border-emerald-800/40 bg-[#0b110e] px-4 py-3.5 text-sm font-semibold text-emerald-100 transition hover:border-emerald-500/45 disabled:cursor-not-allowed disabled:opacity-60"
+              className="al-glass-subtle rounded-2xl px-4 py-3.5 text-sm font-semibold text-[var(--al-text-primary)] transition hover:border-[var(--al-border-hover)] disabled:cursor-not-allowed disabled:opacity-60"
             >
               {actionLabels.changes}
             </button>
@@ -222,7 +222,7 @@ export function ReviewDecisionPanel({
               type="button"
               onClick={() => submitDecision("blocked_vendor_session")}
               disabled={saving}
-              className="rounded-2xl border border-red-500/30 bg-red-500/10 px-4 py-3.5 text-sm font-semibold text-red-200 transition hover:bg-red-500/15 disabled:cursor-not-allowed disabled:opacity-60"
+              className="al-gemstone-red rounded-2xl px-4 py-3.5 text-sm font-semibold transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {actionLabels.blocked}
             </button>
@@ -232,7 +232,7 @@ export function ReviewDecisionPanel({
               type="button"
               onClick={() => submitDecision("resume_local_session_required")}
               disabled={saving}
-              className="rounded-2xl border border-emerald-800/40 bg-[#0b110e] px-4 py-3.5 text-sm font-semibold text-emerald-100 transition hover:border-emerald-500/45 disabled:cursor-not-allowed disabled:opacity-60"
+              className="al-glass-subtle rounded-2xl px-4 py-3.5 text-sm font-semibold text-[var(--al-text-primary)] transition hover:border-[var(--al-border-hover)] disabled:cursor-not-allowed disabled:opacity-60"
             >
               {actionLabels.resume}
             </button>
@@ -242,7 +242,7 @@ export function ReviewDecisionPanel({
               type="button"
               onClick={() => submitDecision("close_presentation")}
               disabled={saving}
-              className="col-span-2 rounded-2xl border border-slate-600/40 bg-slate-500/10 px-4 py-3.5 text-sm font-semibold text-slate-200 transition hover:bg-slate-500/15 disabled:cursor-not-allowed disabled:opacity-60 sm:col-auto"
+              className="al-gemstone-neutral col-span-2 rounded-2xl px-4 py-3.5 text-sm font-semibold transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60 sm:col-auto"
             >
               {actionLabels.close}
             </button>
@@ -252,7 +252,7 @@ export function ReviewDecisionPanel({
               type="button"
               onClick={() => submitDecision("reject_presentation")}
               disabled={saving}
-              className="rounded-2xl border border-amber-500/30 bg-amber-500/10 px-4 py-3.5 text-sm font-semibold text-amber-100 transition hover:bg-amber-500/15 disabled:cursor-not-allowed disabled:opacity-60"
+              className="al-gemstone-amber rounded-2xl px-4 py-3.5 text-sm font-semibold transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {actionLabels.reject}
             </button>
@@ -262,7 +262,7 @@ export function ReviewDecisionPanel({
               type="button"
               onClick={() => submitDecision("delete_presentation")}
               disabled={saving}
-              className="rounded-2xl border border-red-500/30 bg-red-500/10 px-4 py-3.5 text-sm font-semibold text-red-100 transition hover:bg-red-500/15 disabled:cursor-not-allowed disabled:opacity-60"
+              className="al-gemstone-red rounded-2xl px-4 py-3.5 text-sm font-semibold transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {actionLabels.remove}
             </button>
@@ -271,13 +271,13 @@ export function ReviewDecisionPanel({
       )}
 
       {showAlternatives && !terminalState ? (
-        <div className="mt-6 rounded-2xl border border-emerald-900/20 bg-[#0b110e] p-4">
-          <p className="text-sm font-semibold text-emerald-100">Alternate option</p>
+        <div className="mt-6 al-glass-subtle al-inner-light rounded-2xl p-4">
+          <p className="text-sm font-semibold text-[var(--al-text-primary)]">Alternate option</p>
           <div className="mt-3 flex flex-wrap gap-3">
             <select
               value={selectedAlternative}
               onChange={(event) => setSelectedAlternative(event.target.value)}
-              className="min-w-[240px] rounded-xl border border-emerald-900/25 bg-[#111916] px-3 py-2 text-sm text-[#eaf4ef] outline-none"
+              className="al-glass-recessed min-w-[240px] rounded-xl px-3 py-2 text-sm text-[var(--al-text-primary)] outline-none"
             >
               {alternatives.map((alternative) => (
                 <option key={alternative} value={alternative}>
@@ -289,7 +289,7 @@ export function ReviewDecisionPanel({
               type="button"
               onClick={() => submitDecision("select_alternative_option")}
               disabled={saving || !selectedAlternative}
-              className="rounded-xl border border-emerald-800/40 bg-[#111916] px-4 py-2 text-sm font-semibold text-emerald-100 transition hover:border-emerald-500/45 disabled:cursor-not-allowed disabled:opacity-60"
+              className="al-glass-subtle rounded-xl px-4 py-2 text-sm font-semibold text-[var(--al-text-primary)] transition hover:border-[var(--al-border-hover)] disabled:cursor-not-allowed disabled:opacity-60"
             >
               {actionLabels.alternate}
             </button>
@@ -298,33 +298,33 @@ export function ReviewDecisionPanel({
       ) : null}
 
       {!terminalState ? (
-        <label className="mt-6 block text-sm font-medium text-emerald-100/85">
+        <label className="mt-6 block text-sm font-medium text-[var(--al-text-secondary)]">
           {actionLabels.note}
           <textarea
             value={note}
             onChange={(event) => setNote(event.target.value)}
             rows={2}
             placeholder={actionLabels.notePlaceholder}
-            className="mt-2 w-full rounded-2xl border border-emerald-900/25 bg-[#0b110e] px-4 py-3 text-sm text-[#eaf4ef] outline-none transition focus:border-emerald-500/50"
+            className="al-glass-recessed mt-2 w-full rounded-2xl px-4 py-3 text-sm text-[var(--al-text-primary)] outline-none transition focus:border-[var(--al-border-active)]"
           />
         </label>
       ) : null}
 
       {followUp ? (
-        <div className="mt-6 rounded-2xl border border-sky-500/25 bg-sky-500/10 p-4">
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-sky-200/70">
+        <div className="mt-6 al-gemstone-indigo rounded-2xl p-4">
+          <p className="al-text-mono-label text-[var(--al-indigo)]">
             Follow-up created
           </p>
-          <p className="mt-2 text-sm font-semibold text-sky-50">{followUp.title}</p>
-          <p className="mt-2 text-sm leading-6 text-sky-100/80">{followUp.details}</p>
-          <p className="mt-3 text-xs uppercase tracking-[0.16em] text-sky-200/65">
+          <p className="mt-2 text-sm font-semibold text-[var(--al-text-primary)]">{followUp.title}</p>
+          <p className="mt-2 text-sm leading-6 text-[var(--al-text-secondary)]">{followUp.details}</p>
+          <p className="mt-3 al-text-mono-label text-[var(--al-text-tertiary)]">
             Assigned to {followUp.assigned_to === "al" ? "AL" : "Dez"}{followUp.created_at ? ` • ${new Date(followUp.created_at).toLocaleString()}` : ""}
           </p>
         </div>
       ) : null}
 
       {statusMessage ? (
-        <p className="mt-4 text-sm text-emerald-200/80">{statusMessage}</p>
+        <p className="mt-4 text-sm text-[var(--al-text-secondary)]">{statusMessage}</p>
       ) : null}
     </section>
   );

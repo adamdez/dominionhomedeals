@@ -40,17 +40,17 @@ export function AuthScreen({ onAuthenticated }: AuthScreenProps) {
   return (
     <div className="flex h-full w-full items-center justify-center p-4">
       <div className="relative w-full max-w-sm">
-        <div className="absolute -inset-1 rounded-2xl bg-gradient-to-b from-sky-500/25 via-blue-500/10 to-transparent blur-xl" />
+        <div className="absolute -inset-1 rounded-2xl bg-gradient-to-b from-[var(--al-cyan)]/20 via-[var(--al-cyan)]/5 to-transparent blur-xl" />
 
-        <div className="relative rounded-2xl border border-slate-700/50 bg-[#0b1120] p-8 shadow-2xl">
-          <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-sky-500/15 ring-1 ring-sky-400/35">
-            <span className="text-2xl font-display text-sky-300">A</span>
+        <div className="relative al-glass-elevated al-specular rounded-2xl p-8">
+          <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-[var(--al-cyan-dim)] ring-1 ring-[var(--al-cyan)]/25">
+            <span className="text-2xl font-display text-[var(--al-cyan)]">A</span>
           </div>
 
-          <h1 className="text-center font-display text-2xl text-[#edf4ff]">
+          <h1 className="text-center font-display text-2xl text-[var(--al-text-primary)]">
             Al Boreland
           </h1>
-          <p className="mt-1.5 text-center text-sm text-slate-300/70">
+          <p className="mt-1.5 text-center text-sm text-[var(--al-text-secondary)]">
             Private operating system &mdash; Command Center
           </p>
 
@@ -64,7 +64,7 @@ export function AuthScreen({ onAuthenticated }: AuthScreenProps) {
               aria-hidden="true"
             />
             <div className="relative">
-              <Lock className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400/65" />
+              <Lock className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--al-text-ghost)]" />
               <input
                 type="password"
                 value={password}
@@ -72,12 +72,12 @@ export function AuthScreen({ onAuthenticated }: AuthScreenProps) {
                 placeholder="Enter password"
                 autoComplete="current-password"
                 autoFocus
-                className="w-full rounded-xl border border-slate-700/50 bg-[#060b17] py-3 pl-10 pr-4 text-sm text-[#eaf2ff] placeholder-slate-400/60 transition-colors focus:border-sky-400/60 focus:outline-none focus:ring-1 focus:ring-sky-400/35"
+                className="al-glass-recessed w-full rounded-xl py-3 pl-10 pr-4 text-sm text-[var(--al-text-primary)] placeholder-[var(--al-text-ghost)] transition-colors focus:border-[var(--al-border-active)] focus:outline-none focus:ring-1 focus:ring-[var(--al-cyan)]/25"
               />
             </div>
 
             {error && (
-              <div className="flex items-center gap-2 rounded-lg bg-red-500/10 px-3 py-2 text-sm text-red-400">
+              <div className="al-gemstone-red flex items-center gap-2 rounded-lg px-3 py-2 text-sm">
                 <AlertCircle className="h-4 w-4 flex-shrink-0" />
                 {error}
               </div>
@@ -86,7 +86,7 @@ export function AuthScreen({ onAuthenticated }: AuthScreenProps) {
             <button
               type="submit"
               disabled={loading || !password}
-              className="flex w-full items-center justify-center gap-2 rounded-xl bg-sky-500 py-3 text-sm font-semibold text-slate-950 transition-all hover:bg-sky-400 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40"
+              className="al-specular-button flex w-full items-center justify-center gap-2 rounded-xl bg-[var(--al-cyan)] py-3 text-sm font-semibold text-[var(--al-void)] transition-all hover:shadow-[var(--al-cyan-glow-strong)] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40"
             >
               {loading ? (
                 <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />

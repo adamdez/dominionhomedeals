@@ -23,13 +23,9 @@ function relativeTimeLabel(value: string | null): string {
 }
 
 function ownerTone(value: "AL" | "Dez" | "System" | null) {
-  if (value === "Dez") {
-    return "border-amber-500/20 bg-amber-500/10 text-amber-100";
-  }
-  if (value === "System") {
-    return "border-red-500/20 bg-red-500/10 text-red-100";
-  }
-  return "border-sky-500/20 bg-sky-500/10 text-sky-100";
+  if (value === "Dez") return "al-gemstone-amber";
+  if (value === "System") return "al-gemstone-red";
+  return "al-gemstone-cyan";
 }
 
 const BULK_ACTIONS: Array<{
@@ -46,7 +42,7 @@ const BULK_ACTIONS: Array<{
     confirmText:
       "Close the selected presentations and remove them from the active Board Room queue?",
     className:
-      "rounded-xl border border-slate-600/40 bg-slate-500/10 px-4 py-2.5 text-sm font-semibold text-slate-200 transition hover:bg-slate-500/15 disabled:cursor-not-allowed disabled:opacity-60",
+      "al-gemstone-neutral rounded-xl px-4 py-2.5 text-sm font-semibold transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60",
   },
   {
     action: "reject_presentation",
@@ -55,7 +51,7 @@ const BULK_ACTIONS: Array<{
     confirmText:
       "Reject the selected presentations and remove them from the active Board Room queue?",
     className:
-      "rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-2.5 text-sm font-semibold text-amber-100 transition hover:bg-amber-500/15 disabled:cursor-not-allowed disabled:opacity-60",
+      "al-gemstone-amber rounded-xl px-4 py-2.5 text-sm font-semibold transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60",
   },
   {
     action: "delete_presentation",
@@ -64,7 +60,7 @@ const BULK_ACTIONS: Array<{
     confirmText:
       "Delete the selected presentations from the active Board Room queue? The job records will remain for audit.",
     className:
-      "rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-2.5 text-sm font-semibold text-red-100 transition hover:bg-red-500/15 disabled:cursor-not-allowed disabled:opacity-60",
+      "al-gemstone-red rounded-xl px-4 py-2.5 text-sm font-semibold transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60",
   },
 ];
 
@@ -216,24 +212,24 @@ export function BoardroomWaitingQueue({ items }: BoardroomWaitingQueueProps) {
 
   return (
     <div className="space-y-4">
-      <div className="rounded-2xl border border-amber-900/20 bg-[#0b110e] p-5">
+      <div className="al-glass-subtle al-inner-light rounded-2xl p-5">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <p className="text-sm font-semibold text-[#f3faf6]">Bulk actions</p>
-            <p className="mt-1 text-sm leading-6 text-emerald-100/70">
+            <p className="text-sm font-semibold text-[var(--al-text-primary)]">Bulk actions</p>
+            <p className="mt-1 text-sm leading-6 text-[var(--al-text-secondary)]">
               Select multiple packages and clear the queue in one pass.
             </p>
-            <p className="mt-2 text-xs uppercase tracking-[0.16em] text-emerald-200/55">
+            <p className="mt-2 al-text-mono-label">
               {staleItems.length} stale | {dezOwnedItems.length} Dez-dependent | {localOnlyItems.length} local-only | {blockedItems.length} blocked/system
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
-            <label className="inline-flex items-center gap-2 rounded-xl border border-emerald-900/20 bg-[#101714] px-3 py-2 text-sm text-emerald-100/80">
+            <label className="inline-flex items-center gap-2 al-glass-recessed rounded-xl px-3 py-2 text-sm text-[var(--al-text-secondary)] cursor-pointer">
               <input
                 type="checkbox"
                 checked={allSelected}
                 onChange={toggleAll}
-                className="h-4 w-4 rounded border-emerald-800/50 bg-[#101714] text-emerald-500"
+                className="h-4 w-4 rounded border-[var(--al-border)] bg-[var(--al-void)] text-[var(--al-cyan)] accent-[var(--al-cyan)]"
               />
               Select all
             </label>
@@ -241,7 +237,7 @@ export function BoardroomWaitingQueue({ items }: BoardroomWaitingQueueProps) {
               type="button"
               onClick={() => selectOnly(staleItems.map((item) => item.id))}
               disabled={staleItems.length === 0 || Boolean(pendingAction) || isRefreshing}
-              className="rounded-xl border border-red-500/20 bg-red-500/10 px-3 py-2 text-sm font-semibold text-red-100 transition hover:bg-red-500/15 disabled:cursor-not-allowed disabled:opacity-60"
+              className="al-gemstone-red rounded-xl px-3 py-2 text-sm font-semibold transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
             >
               Select stale
             </button>
@@ -249,7 +245,7 @@ export function BoardroomWaitingQueue({ items }: BoardroomWaitingQueueProps) {
               type="button"
               onClick={() => selectOnly(dezOwnedItems.map((item) => item.id))}
               disabled={dezOwnedItems.length === 0 || Boolean(pendingAction) || isRefreshing}
-              className="rounded-xl border border-amber-500/20 bg-amber-500/10 px-3 py-2 text-sm font-semibold text-amber-100 transition hover:bg-amber-500/15 disabled:cursor-not-allowed disabled:opacity-60"
+              className="al-gemstone-amber rounded-xl px-3 py-2 text-sm font-semibold transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
             >
               Select Dez
             </button>
@@ -257,7 +253,7 @@ export function BoardroomWaitingQueue({ items }: BoardroomWaitingQueueProps) {
               type="button"
               onClick={() => selectOnly(localOnlyItems.map((item) => item.id))}
               disabled={localOnlyItems.length === 0 || Boolean(pendingAction) || isRefreshing}
-              className="rounded-xl border border-violet-500/20 bg-violet-500/10 px-3 py-2 text-sm font-semibold text-violet-100 transition hover:bg-violet-500/15 disabled:cursor-not-allowed disabled:opacity-60"
+              className="al-gemstone-indigo rounded-xl px-3 py-2 text-sm font-semibold transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
             >
               Select local
             </button>
@@ -265,7 +261,7 @@ export function BoardroomWaitingQueue({ items }: BoardroomWaitingQueueProps) {
               type="button"
               onClick={() => selectOnly(blockedItems.map((item) => item.id))}
               disabled={blockedItems.length === 0 || Boolean(pendingAction) || isRefreshing}
-              className="rounded-xl border border-sky-500/20 bg-sky-500/10 px-3 py-2 text-sm font-semibold text-sky-100 transition hover:bg-sky-500/15 disabled:cursor-not-allowed disabled:opacity-60"
+              className="al-gemstone-cyan rounded-xl px-3 py-2 text-sm font-semibold transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
             >
               Select blocked
             </button>
@@ -273,7 +269,7 @@ export function BoardroomWaitingQueue({ items }: BoardroomWaitingQueueProps) {
               type="button"
               onClick={() => setSelectedIds([])}
               disabled={selectedCount === 0 || Boolean(pendingAction) || isRefreshing}
-              className="rounded-xl border border-emerald-900/20 bg-[#101714] px-3 py-2 text-sm font-semibold text-emerald-100 transition hover:border-emerald-500/35 disabled:cursor-not-allowed disabled:opacity-60"
+              className="al-glass-subtle rounded-xl px-3 py-2 text-sm font-semibold text-[var(--al-text-primary)] transition hover:border-[var(--al-border-hover)] disabled:cursor-not-allowed disabled:opacity-60"
             >
               Clear
             </button>
@@ -295,7 +291,7 @@ export function BoardroomWaitingQueue({ items }: BoardroomWaitingQueueProps) {
         </div>
 
         {statusMessage ? (
-          <p className="mt-3 text-sm text-emerald-100/75">{statusMessage}</p>
+          <p className="mt-3 text-sm text-[var(--al-text-secondary)]">{statusMessage}</p>
         ) : null}
       </div>
 
@@ -303,37 +299,37 @@ export function BoardroomWaitingQueue({ items }: BoardroomWaitingQueueProps) {
         {items.map((presentation) => (
           <article
             key={presentation.id}
-            className="rounded-2xl border border-emerald-900/20 bg-[#0b110e] p-5"
+            className="al-glass-subtle al-inner-light rounded-2xl p-5"
           >
             <div className="flex flex-wrap items-start justify-between gap-3">
-              <label className="inline-flex items-start gap-3">
+              <label className="inline-flex items-start gap-3 cursor-pointer">
                 <input
                   type="checkbox"
                   checked={selectedSet.has(presentation.id)}
                   onChange={() => toggleItem(presentation.id)}
-                  className="mt-1 h-4 w-4 rounded border-emerald-800/50 bg-[#101714] text-emerald-500"
+                  className="mt-1 h-4 w-4 rounded border-[var(--al-border)] bg-[var(--al-void)] text-[var(--al-cyan)] accent-[var(--al-cyan)]"
                 />
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-300/45">
+                  <p className="al-text-mono-label text-[var(--al-cyan-muted)]">
                     {presentation.jobType.replace(/_/g, " ")}
                   </p>
-                  <h3 className="mt-2 text-xl font-semibold text-[#f3faf6]">
+                  <h3 className="mt-2 text-xl font-semibold text-[var(--al-text-primary)]">
                     {presentation.title}
                   </h3>
                 </div>
               </label>
-              <span className="rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.15em] text-emerald-200">
+              <span className="al-gemstone-cyan rounded-full px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.15em]">
                 {presentation.state}
               </span>
             </div>
 
-            <p className="mt-4 text-sm leading-6 text-emerald-100/70">
+            <p className="mt-4 text-sm leading-6 text-[var(--al-text-secondary)]">
               {presentation.summary}
             </p>
 
             <div className="mt-4 flex flex-wrap gap-2">
               <span
-                className={`rounded-full border px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.15em] ${ownerTone(
+                className={`rounded-full px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.15em] ${ownerTone(
                   presentation.followUpOwner,
                 )}`}
               >
@@ -341,7 +337,7 @@ export function BoardroomWaitingQueue({ items }: BoardroomWaitingQueueProps) {
               </span>
               {presentation.followUpOwner ? (
                 <span
-                  className={`rounded-full border px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.15em] ${ownerTone(
+                  className={`rounded-full px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.15em] ${ownerTone(
                     presentation.followUpOwner,
                   )}`}
                 >
@@ -349,31 +345,31 @@ export function BoardroomWaitingQueue({ items }: BoardroomWaitingQueueProps) {
                 </span>
               ) : null}
               {presentation.followUpStatus ? (
-                <span className="rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.15em] text-emerald-200">
+                <span className="al-gemstone-green rounded-full px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.15em]">
                   Follow-up {presentation.followUpStatus}
                 </span>
               ) : null}
               {presentation.isStale ? (
-                <span className="rounded-full border border-red-500/20 bg-red-500/10 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.15em] text-red-100">
+                <span className="al-gemstone-red rounded-full px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.15em]">
                   Stale
                 </span>
               ) : null}
             </div>
 
             <div className="mt-4 grid gap-3 sm:grid-cols-2">
-              <div className="rounded-xl border border-emerald-900/20 bg-[#101714] px-4 py-3">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-300/40">
+              <div className="al-glass-recessed rounded-xl px-4 py-3">
+                <p className="al-text-mono-label">
                   Last movement
                 </p>
-                <p className="mt-2 text-sm text-emerald-100/80">
+                <p className="mt-2 text-sm text-[var(--al-text-secondary)]">
                   {relativeTimeLabel(presentation.updatedAt)}
                 </p>
               </div>
-              <div className="rounded-xl border border-emerald-900/20 bg-[#101714] px-4 py-3">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-300/40">
+              <div className="al-glass-recessed rounded-xl px-4 py-3">
+                <p className="al-text-mono-label">
                   Last operator response
                 </p>
-                <p className="mt-2 text-sm text-emerald-100/80">
+                <p className="mt-2 text-sm text-[var(--al-text-secondary)]">
                   {presentation.lastOperatorResponseAt
                     ? relativeTimeLabel(presentation.lastOperatorResponseAt)
                     : "No operator response yet"}
@@ -382,13 +378,13 @@ export function BoardroomWaitingQueue({ items }: BoardroomWaitingQueueProps) {
             </div>
 
             {presentation.staleReason ? (
-              <p className="mt-4 text-sm leading-6 text-red-100/80">
+              <p className="mt-4 text-sm leading-6 text-[var(--al-red)]">
                 {presentation.staleReason}.
               </p>
             ) : null}
 
             <div className="mt-5 flex flex-wrap items-center justify-between gap-3">
-              <p className="text-xs uppercase tracking-[0.18em] text-emerald-300/35">
+              <p className="al-text-mono-label text-[var(--al-text-ghost)]">
                 Updated {relativeTimeLabel(presentation.updatedAt)}
               </p>
             </div>

@@ -61,15 +61,15 @@ function formatTimestamp(value: string | null) {
 function statusTone(status: InboxItem["status"]) {
   switch (status) {
     case "running":
-      return "border-sky-500/25 bg-sky-500/10 text-sky-100";
+      return "al-gemstone-cyan";
     case "done":
-      return "border-emerald-500/25 bg-emerald-500/10 text-emerald-100";
+      return "al-gemstone-green";
     case "blocked":
-      return "border-red-500/25 bg-red-500/10 text-red-100";
+      return "al-gemstone-red";
     case "cancelled":
-      return "border-slate-500/25 bg-slate-500/10 text-slate-100";
+      return "al-gemstone-neutral";
     default:
-      return "border-amber-500/25 bg-amber-500/10 text-amber-100";
+      return "al-gemstone-amber";
   }
 }
 
@@ -150,22 +150,22 @@ export function InboxPage({ initialItems }: { initialItems: InboxItem[] }) {
   }
 
   return (
-    <main className="h-full w-full overflow-y-auto bg-[#07100b] px-4 py-5 pb-28 text-[#eaf4ef] sm:px-6 lg:px-8 lg:pb-8">
+    <main className="h-full w-full overflow-y-auto px-4 py-5 pb-28 sm:px-6 lg:px-8 lg:pb-8">
       <div className="mx-auto flex max-w-7xl flex-col gap-6">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-emerald-300/45">
+          <p className="al-text-mono-label text-[var(--al-cyan-muted)]">
             AL inbox
           </p>
-          <h1 className="mt-2 text-3xl font-semibold text-[#f3faf6] sm:text-4xl">
+          <h1 className="mt-3 text-3xl font-semibold text-[var(--al-text-primary)] sm:text-4xl">
             Queue asks without jamming the chat
           </h1>
-          <p className="mt-3 max-w-3xl text-sm leading-6 text-emerald-100/70 sm:text-base">
+          <p className="mt-3 max-w-3xl text-sm leading-6 text-[var(--al-text-secondary)] sm:text-base">
             This is the intake queue for AL. Use it when multiple asks are flying at once across Dominion, WrenchReady, and the shared operating lanes, then let the command center drain them one by one instead of forcing you to wait on a single long turn.
           </p>
         </div>
 
-        <section className="rounded-3xl border border-emerald-900/20 bg-[#101714] p-4 shadow-[0_18px_60px_rgba(0,0,0,0.22)] sm:p-6">
-          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-emerald-300/45">
+        <section className="al-glass-card al-specular rounded-3xl p-4 sm:p-6">
+          <p className="al-text-mono-label text-[var(--al-cyan-muted)]">
             Add an ask
           </p>
           <div className="mt-4 grid gap-3 lg:grid-cols-[1fr_auto]">
@@ -174,18 +174,18 @@ export function InboxPage({ initialItems }: { initialItems: InboxItem[] }) {
               onChange={(event) => setBody(event.target.value)}
               rows={3}
               placeholder="Queue something for AL without blocking the current turn..."
-              className="min-h-[108px] resize-y rounded-2xl border border-emerald-900/25 bg-[#0b110e] px-4 py-3.5 text-sm text-[#eaf4ef] outline-none"
+              className="min-h-[108px] resize-y rounded-2xl al-glass-recessed px-4 py-3.5 text-sm text-[var(--al-text-primary)] placeholder-[var(--al-text-ghost)] outline-none focus:border-[var(--al-border-active)]"
             />
             <button
               type="button"
               onClick={createItem}
               disabled={saving}
-              className="rounded-2xl bg-emerald-500 px-5 py-3.5 text-sm font-semibold text-[#05110b] transition hover:bg-emerald-400 disabled:opacity-60"
+              className="al-specular-button rounded-2xl bg-[var(--al-cyan)] px-5 py-3.5 text-sm font-semibold text-[var(--al-void)] transition hover:shadow-[var(--al-cyan-glow-strong)] disabled:opacity-60"
             >
               Queue ask
             </button>
           </div>
-          {message ? <p className="mt-4 text-sm text-emerald-200/80">{message}</p> : null}
+          {message ? <p className="mt-4 text-sm text-[var(--al-text-secondary)]">{message}</p> : null}
         </section>
 
         <section className="grid gap-6 xl:grid-cols-[1.2fr_1fr]">
@@ -205,34 +205,34 @@ export function InboxPage({ initialItems }: { initialItems: InboxItem[] }) {
           />
         </section>
 
-        <section className="rounded-3xl border border-emerald-900/20 bg-[#101714] p-4 shadow-[0_18px_60px_rgba(0,0,0,0.22)] sm:p-6">
-          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-emerald-300/45">
+        <section className="al-glass-card al-inner-light rounded-3xl p-4 sm:p-6">
+          <p className="al-text-mono-label text-[var(--al-cyan-muted)]">
             Recent outcomes
           </p>
           <div className="mt-4 grid gap-3 lg:grid-cols-2">
             {recent.length > 0 ? (
               recent.map((item) => (
-                <div key={item.id} className="rounded-2xl border border-emerald-900/20 bg-[#0b110e] p-4">
+                <div key={item.id} className="al-glass-subtle al-inner-light rounded-2xl p-4">
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className={`rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] ${statusTone(item.status)}`}>
+                    <span className={`rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] ${statusTone(item.status)}`}>
                       {item.status}
                     </span>
-                    <span className="text-[11px] uppercase tracking-[0.16em] text-emerald-300/45">
+                    <span className="al-text-mono-label">
                       {labelBusiness(item.business)} · {labelLane(item.lane)}
                     </span>
                   </div>
-                  <p className="mt-3 text-base font-semibold text-[#f3faf6]">{item.title}</p>
-                  <p className="mt-2 text-sm leading-6 text-emerald-100/70">{item.body}</p>
-                  <p className="mt-3 text-xs text-emerald-100/45">
+                  <p className="mt-3 text-base font-semibold text-[var(--al-text-primary)]">{item.title}</p>
+                  <p className="mt-2 text-sm leading-6 text-[var(--al-text-secondary)]">{item.body}</p>
+                  <p className="mt-3 text-xs text-[var(--al-text-tertiary)]">
                     {item.status === "done" ? "Completed" : item.status === "blocked" ? "Blocked" : "Updated"} {formatTimestamp(item.completedAt || item.updatedAt)}
                   </p>
                   {item.lastError ? (
-                    <p className="mt-2 text-sm leading-6 text-red-200/80">{item.lastError}</p>
+                    <p className="mt-2 text-sm leading-6 text-[var(--al-red)]">{item.lastError}</p>
                   ) : null}
                 </div>
               ))
             ) : (
-              <div className="rounded-2xl border border-emerald-900/20 bg-[#0b110e] p-4 text-sm text-emerald-100/45">
+              <div className="al-glass-recessed rounded-2xl p-4 text-sm text-[var(--al-text-tertiary)]">
                 Nothing has been closed from the inbox yet.
               </div>
             )}
@@ -257,36 +257,36 @@ function QueueColumn({
   onCancel: (id: number) => void;
 }) {
   return (
-    <section className="rounded-3xl border border-emerald-900/20 bg-[#101714] p-4 shadow-[0_18px_60px_rgba(0,0,0,0.22)] sm:p-6">
-      <p className="text-xs font-semibold uppercase tracking-[0.24em] text-emerald-300/45">
+    <section className="al-glass-card al-inner-light rounded-3xl p-4 sm:p-6">
+      <p className="al-text-mono-label text-[var(--al-cyan-muted)]">
         {title}
       </p>
-      <p className="mt-2 text-sm leading-6 text-emerald-100/65">{description}</p>
+      <p className="mt-2 text-sm leading-6 text-[var(--al-text-secondary)]">{description}</p>
       <div className="mt-4 space-y-3">
         {items.length > 0 ? (
           items.map((item) => (
-            <div key={item.id} className="rounded-2xl border border-emerald-900/20 bg-[#0b110e] p-4">
+            <div key={item.id} className="al-glass-subtle al-inner-light rounded-2xl p-4">
               <div className="flex flex-wrap items-center gap-2">
-                <span className={`rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] ${statusTone(item.status)}`}>
+                <span className={`rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] ${statusTone(item.status)}`}>
                   {item.status}
                 </span>
-                <span className="text-[11px] uppercase tracking-[0.16em] text-emerald-300/45">
+                <span className="al-text-mono-label">
                   {labelBusiness(item.business)} · {labelLane(item.lane)}
                 </span>
               </div>
-              <p className="mt-3 text-base font-semibold text-[#f3faf6]">{item.title}</p>
-              <p className="mt-2 text-sm leading-6 text-emerald-100/70">{item.body}</p>
-              <p className="mt-3 text-xs text-emerald-100/45">
+              <p className="mt-3 text-base font-semibold text-[var(--al-text-primary)]">{item.title}</p>
+              <p className="mt-2 text-sm leading-6 text-[var(--al-text-secondary)]">{item.body}</p>
+              <p className="mt-3 text-xs text-[var(--al-text-tertiary)]">
                 Queued {formatTimestamp(item.createdAt)} · Updated {formatTimestamp(item.updatedAt)}
               </p>
               {item.lastError ? (
-                <p className="mt-2 text-sm leading-6 text-red-200/80">{item.lastError}</p>
+                <p className="mt-2 text-sm leading-6 text-[var(--al-red)]">{item.lastError}</p>
               ) : null}
               <div className="mt-4 flex flex-wrap gap-2">
                 <button
                   type="button"
                   onClick={() => onCancel(item.id)}
-                  className="rounded-xl border border-slate-600/40 bg-slate-500/10 px-3 py-2 text-xs font-semibold text-slate-100"
+                  className="al-gemstone-neutral rounded-xl px-3 py-2 text-xs font-semibold"
                 >
                   Cancel
                 </button>
@@ -294,7 +294,7 @@ function QueueColumn({
             </div>
           ))
         ) : (
-          <div className="rounded-2xl border border-emerald-900/20 bg-[#0b110e] p-4 text-sm text-emerald-100/45">
+          <div className="al-glass-recessed rounded-2xl p-4 text-sm text-[var(--al-text-tertiary)]">
             {empty}
           </div>
         )}

@@ -118,22 +118,22 @@ export function PlannerPage({ initialTasks }: { initialTasks: PlannerTask[] }) {
   }
 
   return (
-    <main className="h-full w-full overflow-y-auto bg-[#07100b] px-4 py-5 pb-28 text-[#eaf4ef] sm:px-6 lg:px-8 lg:pb-8">
+    <main className="h-full w-full overflow-y-auto px-4 py-5 pb-28 sm:px-6 lg:px-8 lg:pb-8">
       <div className="mx-auto flex max-w-7xl flex-col gap-6">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-emerald-300/45">
+          <p className="al-text-mono-label text-[var(--al-cyan-muted)]">
             Punch list
           </p>
-          <h1 className="mt-2 text-3xl font-semibold text-[#f3faf6] sm:text-4xl">
+          <h1 className="mt-3 text-3xl font-semibold text-[var(--al-text-primary)] sm:text-4xl">
             Shared due dates and next moves
           </h1>
-          <p className="mt-3 max-w-3xl text-sm leading-6 text-emerald-100/70 sm:text-base">
+          <p className="mt-3 max-w-3xl text-sm leading-6 text-[var(--al-text-secondary)] sm:text-base">
             This is the shared punch list. Put the next actions here instead of losing them in chat, and AL will keep the screws tight on what is due, what is done, and what still needs a hand.
           </p>
         </div>
 
-        <section className="rounded-3xl border border-emerald-900/20 bg-[#101714] p-4 shadow-[0_18px_60px_rgba(0,0,0,0.22)] sm:p-6">
-          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-emerald-300/45">
+        <section className="al-glass-card al-specular rounded-3xl p-4 sm:p-6">
+          <p className="al-text-mono-label text-[var(--al-cyan-muted)]">
             Add to the list
           </p>
           <div className="mt-4 grid gap-3 lg:grid-cols-[1.4fr_1fr_1fr_1fr_auto]">
@@ -141,18 +141,18 @@ export function PlannerPage({ initialTasks }: { initialTasks: PlannerTask[] }) {
               value={title}
               onChange={(event) => setTitle(event.target.value)}
               placeholder="Add a task title"
-              className="rounded-2xl border border-emerald-900/25 bg-[#0b110e] px-4 py-3.5 text-sm text-[#eaf4ef] outline-none"
+              className="rounded-2xl al-glass-recessed px-4 py-3.5 text-sm text-[var(--al-text-primary)] placeholder-[var(--al-text-ghost)] outline-none focus:border-[var(--al-border-active)]"
             />
             <input
               value={dueDate}
               onChange={(event) => setDueDate(event.target.value)}
               type="date"
-              className="rounded-2xl border border-emerald-900/25 bg-[#0b110e] px-4 py-3.5 text-sm text-[#eaf4ef] outline-none"
+              className="rounded-2xl al-glass-recessed px-4 py-3.5 text-sm text-[var(--al-text-primary)] outline-none focus:border-[var(--al-border-active)]"
             />
             <select
               value={assignedTo}
               onChange={(event) => setAssignedTo(event.target.value as "dez" | "al")}
-              className="rounded-2xl border border-emerald-900/25 bg-[#0b110e] px-4 py-3.5 text-sm text-[#eaf4ef] outline-none"
+              className="rounded-2xl al-glass-recessed px-4 py-3.5 text-sm text-[var(--al-text-primary)] outline-none focus:border-[var(--al-border-active)]"
             >
               <option value="dez">Due for Dez</option>
               <option value="al">Due for AL</option>
@@ -161,42 +161,42 @@ export function PlannerPage({ initialTasks }: { initialTasks: PlannerTask[] }) {
               value={details}
               onChange={(event) => setDetails(event.target.value)}
               placeholder="Short note or handoff"
-              className="rounded-2xl border border-emerald-900/25 bg-[#0b110e] px-4 py-3.5 text-sm text-[#eaf4ef] outline-none"
+              className="rounded-2xl al-glass-recessed px-4 py-3.5 text-sm text-[var(--al-text-primary)] placeholder-[var(--al-text-ghost)] outline-none focus:border-[var(--al-border-active)]"
             />
             <button
               type="button"
               onClick={createTask}
               disabled={saving}
-              className="rounded-2xl bg-emerald-500 px-4 py-3.5 text-sm font-semibold text-[#05110b] transition hover:bg-emerald-400 disabled:opacity-60"
+              className="al-specular-button rounded-2xl bg-[var(--al-cyan)] px-4 py-3.5 text-sm font-semibold text-[var(--al-void)] transition hover:shadow-[var(--al-cyan-glow-strong)] disabled:opacity-60"
             >
               Add task
             </button>
           </div>
-          {message ? <p className="mt-4 text-sm text-emerald-200/80">{message}</p> : null}
+          {message ? <p className="mt-4 text-sm text-[var(--al-text-secondary)]">{message}</p> : null}
         </section>
 
-        <section className="rounded-3xl border border-emerald-900/20 bg-[#101714] p-4 shadow-[0_18px_60px_rgba(0,0,0,0.22)] sm:p-6">
-          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-emerald-300/45">
+        <section className="al-glass-card al-inner-light rounded-3xl p-4 sm:p-6">
+          <p className="al-text-mono-label text-[var(--al-cyan-muted)]">
             This week on the bench
           </p>
           <div className="mt-4 flex gap-3 overflow-x-auto pb-2 al-scrollbar lg:grid lg:overflow-visible lg:pb-0 lg:grid-cols-7">
             {weekBuckets.map((bucket) => (
-              <div key={bucket.key} className="min-w-[180px] rounded-2xl border border-emerald-900/20 bg-[#0b110e] p-4 lg:min-w-0">
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-300/45">
+              <div key={bucket.key} className="min-w-[180px] al-glass-subtle al-inner-light rounded-2xl p-4 lg:min-w-0">
+                <p className="al-text-mono-label">
                   {bucket.label}
                 </p>
                 <div className="mt-3 space-y-2">
                   {bucket.tasks.length > 0 ? (
                     bucket.tasks.map((task) => (
-                      <div key={task.id} className="rounded-xl bg-[#101714] p-3 text-sm text-emerald-100/80">
-                        <p className="font-semibold text-[#f3faf6]">{task.title}</p>
-                        <p className="mt-1 text-xs uppercase tracking-[0.14em] text-emerald-300/40">
+                      <div key={task.id} className="rounded-xl bg-[var(--al-surface-1)] p-3 text-sm text-[var(--al-text-secondary)]">
+                        <p className="font-semibold text-[var(--al-text-primary)]">{task.title}</p>
+                        <p className="mt-1 al-text-mono-label">
                           {task.assignedTo === "dez" ? "Dez" : "AL"}
                         </p>
                       </div>
                     ))
                   ) : (
-                    <p className="text-sm text-emerald-100/35">No tasks</p>
+                    <p className="text-sm text-[var(--al-text-ghost)]">No tasks</p>
                   )}
                 </div>
               </div>
@@ -211,23 +211,23 @@ export function PlannerPage({ initialTasks }: { initialTasks: PlannerTask[] }) {
           ].map((column) => (
             <div
               key={column.title}
-              className="rounded-3xl border border-emerald-900/20 bg-[#101714] p-4 shadow-[0_18px_60px_rgba(0,0,0,0.22)] sm:p-6"
+              className="al-glass-card al-inner-light rounded-3xl p-4 sm:p-6"
             >
-              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-emerald-300/45">
+              <p className="al-text-mono-label text-[var(--al-cyan-muted)]">
                 {column.title}
               </p>
               <div className="mt-4 space-y-3">
                 {column.tasks.length > 0 ? (
                   column.tasks.map((task) => (
-                    <div key={task.id} className="rounded-2xl border border-emerald-900/20 bg-[#0b110e] p-4">
+                    <div key={task.id} className="al-glass-subtle al-inner-light rounded-2xl p-4">
                       <div className="flex flex-wrap items-start justify-between gap-3">
                         <div>
-                          <p className="text-base font-semibold text-[#f3faf6]">{task.title}</p>
+                          <p className="text-base font-semibold text-[var(--al-text-primary)]">{task.title}</p>
                           {task.details ? (
-                            <p className="mt-2 text-sm leading-6 text-emerald-100/70">{task.details}</p>
+                            <p className="mt-2 text-sm leading-6 text-[var(--al-text-secondary)]">{task.details}</p>
                           ) : null}
                         </div>
-                        <p className="text-xs uppercase tracking-[0.18em] text-emerald-300/45">
+                        <p className="al-text-mono-label">
                           {formatDueLabel(task.dueDate)}
                         </p>
                       </div>
@@ -236,7 +236,7 @@ export function PlannerPage({ initialTasks }: { initialTasks: PlannerTask[] }) {
                           type="button"
                           onClick={() => updateTask(task.id, { status: "done" })}
                           disabled={saving}
-                          className="rounded-xl bg-emerald-500 px-3 py-3 text-xs font-semibold text-[#05110b]"
+                          className="al-specular-button rounded-xl bg-[var(--al-cyan)] px-3 py-3 text-xs font-semibold text-[var(--al-void)]"
                         >
                           Mark done
                         </button>
@@ -248,7 +248,7 @@ export function PlannerPage({ initialTasks }: { initialTasks: PlannerTask[] }) {
                             })
                           }
                           disabled={saving}
-                          className="rounded-xl border border-emerald-800/40 bg-[#111916] px-3 py-3 text-xs font-semibold text-emerald-100"
+                          className="al-glass-subtle rounded-xl px-3 py-3 text-xs font-semibold text-[var(--al-text-primary)]"
                         >
                           Send to {task.assignedTo === "dez" ? "AL" : "Dez"}
                         </button>
@@ -256,7 +256,7 @@ export function PlannerPage({ initialTasks }: { initialTasks: PlannerTask[] }) {
                           type="button"
                           onClick={() => updateTask(task.id, { status: "cancelled" })}
                           disabled={saving}
-                          className="col-span-2 rounded-xl border border-slate-600/40 bg-slate-500/10 px-3 py-3 text-xs font-semibold text-slate-200 sm:col-auto"
+                          className="al-gemstone-neutral col-span-2 rounded-xl px-3 py-3 text-xs font-semibold sm:col-auto"
                         >
                           Cancel
                         </button>
@@ -264,7 +264,7 @@ export function PlannerPage({ initialTasks }: { initialTasks: PlannerTask[] }) {
                     </div>
                   ))
                 ) : (
-                  <div className="rounded-2xl border border-emerald-900/20 bg-[#0b110e] p-4 text-sm text-emerald-100/45">
+                  <div className="al-glass-recessed rounded-2xl p-4 text-sm text-[var(--al-text-tertiary)]">
                     No open tasks here.
                   </div>
                 )}
@@ -273,22 +273,22 @@ export function PlannerPage({ initialTasks }: { initialTasks: PlannerTask[] }) {
           ))}
         </section>
 
-        <section className="rounded-3xl border border-emerald-900/20 bg-[#101714] p-4 shadow-[0_18px_60px_rgba(0,0,0,0.22)] sm:p-6">
-          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-emerald-300/45">
+        <section className="al-glass-card al-inner-light rounded-3xl p-4 sm:p-6">
+          <p className="al-text-mono-label text-[var(--al-cyan-muted)]">
             Recently buttoned up
           </p>
           <div className="mt-4 grid gap-3 lg:grid-cols-2">
             {closedTasks.length > 0 ? (
               closedTasks.map((task) => (
-                <div key={task.id} className="rounded-2xl border border-emerald-900/20 bg-[#0b110e] p-4">
-                  <p className="font-semibold text-[#f3faf6]">{task.title}</p>
-                  <p className="mt-1 text-sm text-emerald-100/55">
+                <div key={task.id} className="al-glass-subtle al-inner-light rounded-2xl p-4">
+                  <p className="font-semibold text-[var(--al-text-primary)]">{task.title}</p>
+                  <p className="mt-1 text-sm text-[var(--al-text-tertiary)]">
                     {task.status} · {task.assignedTo === "dez" ? "Dez" : "AL"} · {formatDueLabel(task.dueDate)}
                   </p>
                 </div>
               ))
             ) : (
-              <p className="text-sm text-emerald-100/45">No completed or cancelled tasks yet.</p>
+              <p className="text-sm text-[var(--al-text-tertiary)]">No completed or cancelled tasks yet.</p>
             )}
           </div>
         </section>

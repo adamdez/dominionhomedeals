@@ -25,21 +25,21 @@ const ACTION_META: Record<
     confirmText: "Close this presentation and remove it from the active Board Room queue?",
     pendingText: "Closing...",
     className:
-      "rounded-xl border border-slate-600/40 bg-slate-500/10 px-3 py-2 text-xs font-semibold text-slate-200 transition hover:bg-slate-500/15 disabled:cursor-not-allowed disabled:opacity-60",
+      "al-gemstone-neutral rounded-xl px-3 py-2 text-xs font-semibold transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60",
   },
   reject_presentation: {
     label: "Reject",
     confirmText: "Reject this package and remove it from the active Board Room queue?",
     pendingText: "Rejecting...",
     className:
-      "rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs font-semibold text-amber-100 transition hover:bg-amber-500/15 disabled:cursor-not-allowed disabled:opacity-60",
+      "al-gemstone-amber rounded-xl px-3 py-2 text-xs font-semibold transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60",
   },
   delete_presentation: {
     label: "Delete",
     confirmText: "Delete this package from the active Board Room queue? The job record will be kept for audit.",
     pendingText: "Deleting...",
     className:
-      "rounded-xl border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs font-semibold text-red-100 transition hover:bg-red-500/15 disabled:cursor-not-allowed disabled:opacity-60",
+      "al-gemstone-red rounded-xl px-3 py-2 text-xs font-semibold transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60",
   },
 };
 
@@ -103,7 +103,7 @@ export function BoardroomQueueActions({
       <div className="flex flex-wrap gap-2">
         <Link
           href={boardroomPath}
-          className="rounded-xl bg-emerald-500 px-3 py-2 text-xs font-semibold text-[#05110b] transition hover:bg-emerald-400"
+          className="al-specular-button rounded-xl bg-[var(--al-cyan)] px-3 py-2 text-xs font-semibold text-[var(--al-void)] transition hover:shadow-[var(--al-cyan-glow-strong)]"
         >
           Open
         </Link>
@@ -126,7 +126,7 @@ export function BoardroomQueueActions({
         )}
       </div>
       {statusMessage ? (
-        <p className="mt-2 text-xs text-emerald-100/70">{statusMessage}</p>
+        <p className="mt-2 text-xs text-[var(--al-text-secondary)]">{statusMessage}</p>
       ) : null}
     </div>
   );
