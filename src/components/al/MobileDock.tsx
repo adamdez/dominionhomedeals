@@ -24,9 +24,9 @@ export function MobileDock() {
   return (
     <nav
       className="pointer-events-auto fixed inset-x-0 bottom-0 z-[260] px-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] pt-2 lg:hidden"
-      style={{ background: "rgba(5,9,17,0.85)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)" }}
+      style={{ background: "rgba(5,9,17,0.88)", backdropFilter: "blur(28px)", WebkitBackdropFilter: "blur(28px)" }}
     >
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[var(--al-cyan)]/15 to-transparent" />
+      <div className="pointer-events-none absolute inset-x-0 top-0 al-separator-h" />
       <div className="mx-auto grid max-w-md grid-cols-9 gap-1.5">
         {navItems.map((item) => {
           const Icon = item.icon;

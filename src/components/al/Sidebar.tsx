@@ -338,15 +338,15 @@ export function Sidebar({
           lg:pb-0
           ${isOpen ? "translate-x-0" : "-translate-x-full"}
         `}
-        style={{ background: "var(--al-glass-bg)", backdropFilter: "blur(24px)", WebkitBackdropFilter: "blur(24px)" }}
+        style={{ background: "var(--al-glass-bg-elevated)", backdropFilter: "blur(28px)", WebkitBackdropFilter: "blur(28px)" }}
       >
-        <div className="pointer-events-none absolute inset-y-0 right-0 w-px bg-gradient-to-b from-transparent via-[var(--al-cyan)]/15 to-transparent" />
+        <div className="pointer-events-none absolute inset-y-0 right-0 al-separator-v" />
 
         <div
           className="relative flex items-center justify-between px-5 pb-5 pt-6"
           style={{ paddingTop: "max(env(safe-area-inset-top), 1.25rem)", background: "var(--al-surface-0)" }}
         >
-          <div className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-[var(--al-cyan)]/12 to-transparent" />
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 al-separator-h" />
           <div className="flex items-center gap-3">
             <div className="al-avatar-ring flex h-10 w-10 items-center justify-center rounded-lg bg-[var(--al-cyan-dim)]">
               <Sparkles className="h-4 w-4 text-[var(--al-cyan)]" />
@@ -590,7 +590,7 @@ export function Sidebar({
         </nav>
 
         <div className="relative p-3">
-          <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[var(--al-cyan)]/10 to-transparent" />
+          <div className="pointer-events-none absolute inset-x-0 top-0 al-separator-h" />
           <button
             onClick={onOpenSettings}
             className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-[var(--al-text-secondary)] transition-all hover:bg-[var(--al-cyan-dim)] hover:text-[var(--al-cyan)]"

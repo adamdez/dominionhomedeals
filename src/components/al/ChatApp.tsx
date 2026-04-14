@@ -35,6 +35,8 @@ import { isCanonicalAlHost } from "@/lib/al-platform";
 import { withAlAppPrefix } from "@/lib/al-app-path";
 import { AuthScreen } from "./AuthScreen";
 import { Sidebar } from "./Sidebar";
+import { useCursorSpotlight } from "./hooks";
+import { AnimatedNumber, GlassMetricTile } from "./MetricWidgets";
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -2163,10 +2165,14 @@ export function ChatApp() {
 
   /* ── Render gates ── */
 
+  const spotlightRef = useCursorSpotlight();
+
   if (authed === null) {
     return (
       <div className="flex h-full w-full items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-sky-500/20 border-t-sky-400" />
+        <div className="al-avatar-ring flex h-12 w-12 items-center justify-center rounded-full bg-[var(--al-surface-1)]">
+          <Sparkles className="h-5 w-5 text-[var(--al-cyan)] animate-al-breath" />
+        </div>
       </div>
     );
   }
@@ -2179,6 +2185,7 @@ export function ChatApp() {
 
   return (
     <div className="flex h-full w-full">
+      <div ref={spotlightRef} className="al-cursor-spotlight hidden lg:block" aria-hidden="true" />
       <Sidebar
         isOpen={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
@@ -2193,7 +2200,7 @@ export function ChatApp() {
       />
 
       <div
-        className="al-workshop-bg relative flex min-w-0 flex-1 flex-col pb-24 lg:pb-0"
+        className="relative flex min-w-0 flex-1 flex-col pb-24 lg:pb-0"
         onDragEnter={handleDragEnter}
         onDragLeave={handleDragLeave}
         onDragOver={handleDragOver}
@@ -2216,10 +2223,15 @@ export function ChatApp() {
 
         {/* Top bar */}
         <header
-          className="al-glass-subtle relative flex items-center gap-3 px-4 pb-3 pt-4 lg:px-6 lg:py-3"
-          style={{ paddingTop: "max(env(safe-area-inset-top), 1rem)", borderBottom: "1px solid transparent", backgroundClip: "padding-box" }}
+          className="relative flex items-center gap-3 px-4 pb-3 pt-4 lg:px-6 lg:py-3"
+          style={{
+            paddingTop: "max(env(safe-area-inset-top), 1rem)",
+            background: "var(--al-glass-bg-elevated)",
+            backdropFilter: "blur(28px)",
+            WebkitBackdropFilter: "blur(28px)",
+          }}
         >
-          <div className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-[var(--al-cyan)]/20 to-transparent" />
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 al-separator-h" />
           <button
             onClick={() => setSidebarOpen(true)}
             className="rounded-xl p-3 text-[var(--al-text-secondary)] transition-colors hover:bg-[var(--al-cyan-dim)] hover:text-[var(--al-cyan)] lg:hidden"
@@ -2260,21 +2272,24 @@ export function ChatApp() {
             </div>
             <Link
               href={withAlAppPrefix(pathname, "/attention")}
-              className="hidden items-center gap-1.5 rounded-full al-glass-subtle px-3 py-1.5 text-[10px] font-semibold text-[var(--al-cyan)] shadow-[0_0_12px_rgba(0,229,255,0.10)] lg:inline-flex"
+              className="hidden items-center gap-1.5 rounded-full px-3 py-1.5 text-[10px] font-semibold font-mono tracking-wide text-[var(--al-cyan)] lg:inline-flex transition-all hover:shadow-[var(--al-cyan-glow)]"
+              style={{ background: "rgba(0,229,255,0.06)", border: "1px solid rgba(0,229,255,0.10)" }}
             >
               <Sparkles className="h-3 w-3" />
               <span>Attention</span>
             </Link>
             <Link
               href={withAlAppPrefix(pathname, "/inbox")}
-              className="hidden items-center gap-1.5 rounded-full al-glass-subtle px-3 py-1.5 text-[10px] font-semibold text-[var(--al-text-primary)] md:inline-flex"
+              className="hidden items-center gap-1.5 rounded-full px-3 py-1.5 text-[10px] font-semibold font-mono tracking-wide text-[var(--al-text-secondary)] md:inline-flex transition-all hover:text-[var(--al-text-primary)] hover:bg-[var(--al-surface-1)]"
+              style={{ border: "1px solid var(--al-border-faint)" }}
             >
               <BookUp className="h-3 w-3" />
               <span>Inbox</span>
             </Link>
             <Link
               href={withAlAppPrefix(pathname, "/operational-proof")}
-              className="hidden items-center gap-1.5 rounded-full al-glass-subtle px-3 py-1.5 text-[10px] font-semibold text-[var(--al-text-primary)] lg:inline-flex"
+              className="hidden items-center gap-1.5 rounded-full px-3 py-1.5 text-[10px] font-semibold font-mono tracking-wide text-[var(--al-text-secondary)] lg:inline-flex transition-all hover:text-[var(--al-text-primary)] hover:bg-[var(--al-surface-1)]"
+              style={{ border: "1px solid var(--al-border-faint)" }}
             >
               <ShieldCheck className="h-3 w-3" />
               <span>System Health</span>
@@ -2343,58 +2358,36 @@ export function ChatApp() {
                     </Link>
                   </div>
                 </div>
-                <div className="mt-5 grid gap-3 sm:grid-cols-3">
-                  <div className="rounded-2xl al-glass-subtle p-4" style={{ borderColor: "rgba(0,229,255,0.12)" }}>
-                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--al-cyan-muted)] font-mono">
-                      Waiting on Dez
-                    </p>
-                    <p className={`mt-2 text-3xl font-semibold font-mono text-[var(--al-text-primary)] ${waitingOnDezCount > 0 ? "al-glow-metric" : ""}`}>
-                      {waitingOnDezCount}
-                    </p>
-                  </div>
-                  <div className="rounded-2xl al-glass-subtle p-4" style={{ borderColor: "rgba(255,77,106,0.15)" }}>
-                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--al-red)]/70 font-mono">
-                      Blocked Systems
-                    </p>
-                    <p className={`mt-2 text-3xl font-semibold font-mono ${blockedSystemsCount > 0 ? "text-[var(--al-red)]" : "text-[var(--al-text-primary)]"}`}>
-                      {blockedSystemsCount}
-                    </p>
-                  </div>
-                  <div className="rounded-2xl al-glass-subtle p-4" style={{ borderColor: "rgba(255,176,32,0.12)" }}>
-                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--al-amber)]/70 font-mono">
-                      Inbox Queue
-                    </p>
-                    <p className="mt-2 text-3xl font-semibold font-mono text-[var(--al-text-primary)]">
-                      {queuedInboxCount + runningInboxCount}
-                    </p>
-                  </div>
-                </div>
-                <div className="mt-3 grid gap-3 sm:grid-cols-3">
-                  <div className="rounded-2xl al-glass-subtle p-4" style={{ borderColor: "rgba(0,229,255,0.12)" }}>
-                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--al-cyan-muted)] font-mono">
-                      Review ready
-                    </p>
-                    <p className="mt-2 text-3xl font-semibold font-mono text-[var(--al-text-primary)]">
-                      {reviewReadyCount}
-                    </p>
-                  </div>
-                  <div className="rounded-2xl al-glass-subtle p-4" style={{ borderColor: "rgba(255,176,32,0.12)" }}>
-                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--al-amber)]/70 font-mono">
-                      Cleanup live
-                    </p>
-                    <p className="mt-2 text-3xl font-semibold font-mono text-[var(--al-text-primary)]">
-                      {dashboardSummary?.counts.activeCleanup ?? "-"}
-                    </p>
-                  </div>
-                  <div className="rounded-2xl al-glass-subtle p-4">
-                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--al-text-tertiary)] font-mono">
-                      Buried stale
-                    </p>
-                    <p className="mt-2 text-3xl font-semibold font-mono text-[var(--al-text-primary)]">
-                      {dashboardSummary?.counts.buriedStale ?? "-"}
-                    </p>
-                  </div>
-                </div>
+                <motion.div
+                  className="mt-5 grid gap-3 sm:grid-cols-3"
+                  initial="hidden" animate="show"
+                  variants={{ hidden: {}, show: { transition: { staggerChildren: 0.06 } } }}
+                >
+                  <motion.div variants={{ hidden: { opacity: 0, y: 10, filter: "blur(4px)" }, show: { opacity: 1, y: 0, filter: "blur(0px)" } }}>
+                    <GlassMetricTile label="Waiting on Dez" value={waitingOnDezCount} accentColor="var(--al-cyan)" glowWhen={waitingOnDezCount > 0} />
+                  </motion.div>
+                  <motion.div variants={{ hidden: { opacity: 0, y: 10, filter: "blur(4px)" }, show: { opacity: 1, y: 0, filter: "blur(0px)" } }}>
+                    <GlassMetricTile label="Blocked Systems" value={blockedSystemsCount} accentColor="var(--al-red)" glowWhen={blockedSystemsCount > 0} />
+                  </motion.div>
+                  <motion.div variants={{ hidden: { opacity: 0, y: 10, filter: "blur(4px)" }, show: { opacity: 1, y: 0, filter: "blur(0px)" } }}>
+                    <GlassMetricTile label="Inbox Queue" value={queuedInboxCount + runningInboxCount} accentColor="var(--al-amber)" />
+                  </motion.div>
+                </motion.div>
+                <motion.div
+                  className="mt-3 grid gap-3 sm:grid-cols-3"
+                  initial="hidden" animate="show"
+                  variants={{ hidden: {}, show: { transition: { staggerChildren: 0.06, delayChildren: 0.18 } } }}
+                >
+                  <motion.div variants={{ hidden: { opacity: 0, y: 10, filter: "blur(4px)" }, show: { opacity: 1, y: 0, filter: "blur(0px)" } }}>
+                    <GlassMetricTile label="Review ready" value={reviewReadyCount} accentColor="var(--al-cyan)" />
+                  </motion.div>
+                  <motion.div variants={{ hidden: { opacity: 0, y: 10, filter: "blur(4px)" }, show: { opacity: 1, y: 0, filter: "blur(0px)" } }}>
+                    <GlassMetricTile label="Cleanup live" value={dashboardSummary?.counts.activeCleanup ?? 0} accentColor="var(--al-amber)" />
+                  </motion.div>
+                  <motion.div variants={{ hidden: { opacity: 0, y: 10, filter: "blur(4px)" }, show: { opacity: 1, y: 0, filter: "blur(0px)" } }}>
+                    <GlassMetricTile label="Buried stale" value={dashboardSummary?.counts.buriedStale ?? 0} accentColor="var(--al-text-tertiary)" />
+                  </motion.div>
+                </motion.div>
                 {dashboardSummary?.spotlight?.length ? (
                   <div className="mt-5 grid gap-3 sm:grid-cols-2">
                     {dashboardSummary.spotlight.map((item) => {
@@ -2524,32 +2517,21 @@ export function ChatApp() {
                     </Link>
                   </div>
                 </div>
-                <div className="mt-5 grid gap-3 sm:grid-cols-3">
-                  <div className="rounded-2xl al-glass-subtle p-4" style={{ borderColor: "rgba(0,229,155,0.12)" }}>
-                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--al-green)] font-mono">
-                      Healthy
-                    </p>
-                    <p className={`mt-2 text-3xl font-semibold font-mono ${systemHealthyCount > 0 ? "text-[var(--al-green)]" : "text-[var(--al-text-primary)]"}`}>
-                      {systemHealthyCount}
-                    </p>
-                  </div>
-                  <div className="rounded-2xl al-glass-subtle p-4" style={{ borderColor: "rgba(255,176,32,0.12)" }}>
-                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--al-amber)]/70 font-mono">
-                      Warning
-                    </p>
-                    <p className={`mt-2 text-3xl font-semibold font-mono ${systemWarningCount > 0 ? "text-[var(--al-amber)]" : "text-[var(--al-text-primary)]"}`}>
-                      {systemWarningCount}
-                    </p>
-                  </div>
-                  <div className="rounded-2xl al-glass-subtle p-4" style={{ borderColor: "rgba(255,77,106,0.12)" }}>
-                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--al-red)]/70 font-mono">
-                      Failing
-                    </p>
-                    <p className={`mt-2 text-3xl font-semibold font-mono ${systemFailingCount > 0 ? "text-[var(--al-red)]" : "text-[var(--al-text-primary)]"}`}>
-                      {systemFailingCount}
-                    </p>
-                  </div>
-                </div>
+                <motion.div
+                  className="mt-5 grid gap-3 sm:grid-cols-3"
+                  initial="hidden" animate="show"
+                  variants={{ hidden: {}, show: { transition: { staggerChildren: 0.06 } } }}
+                >
+                  <motion.div variants={{ hidden: { opacity: 0, y: 10, filter: "blur(4px)" }, show: { opacity: 1, y: 0, filter: "blur(0px)" } }}>
+                    <GlassMetricTile label="Healthy" value={systemHealthyCount} accentColor="var(--al-green)" glowWhen={systemHealthyCount > 0} />
+                  </motion.div>
+                  <motion.div variants={{ hidden: { opacity: 0, y: 10, filter: "blur(4px)" }, show: { opacity: 1, y: 0, filter: "blur(0px)" } }}>
+                    <GlassMetricTile label="Warning" value={systemWarningCount} accentColor="var(--al-amber)" glowWhen={systemWarningCount > 0} />
+                  </motion.div>
+                  <motion.div variants={{ hidden: { opacity: 0, y: 10, filter: "blur(4px)" }, show: { opacity: 1, y: 0, filter: "blur(0px)" } }}>
+                    <GlassMetricTile label="Failing" value={systemFailingCount} accentColor="var(--al-red)" glowWhen={systemFailingCount > 0} />
+                  </motion.div>
+                </motion.div>
                 <div className="mt-5 grid gap-3 sm:grid-cols-2">
                   <div className="rounded-2xl al-glass-subtle p-4">
                     <p className="text-sm font-semibold text-[var(--al-text-primary)]">
@@ -2573,12 +2555,16 @@ export function ChatApp() {
           ) : (
             <div className="mx-auto max-w-3xl space-y-4">
               <AnimatePresence initial={false}>
-              {messages.map((msg) => (
+              {messages.map((msg, i) => (
                 <motion.div
                   key={msg.id}
-                  initial={{ opacity: 0, y: 16, scale: 0.98 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+                  initial={{ opacity: 0, y: 14, scale: 0.97, filter: "blur(3px)" }}
+                  animate={{ opacity: 1, y: 0, scale: 1, filter: "blur(0px)" }}
+                  transition={{
+                    duration: 0.4,
+                    ease: [0.16, 1, 0.3, 1],
+                    delay: i === messages.length - 1 ? 0 : 0,
+                  }}
                 >
                   <MessageBubble message={msg} />
                 </motion.div>
@@ -2633,8 +2619,15 @@ export function ChatApp() {
         </div>
 
         {/* Input */}
-        <div className="relative p-4 pb-5 lg:p-6" style={{ background: "var(--al-glass-bg)", backdropFilter: "blur(var(--al-glass-blur))" }}>
-          <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[var(--al-cyan)]/15 to-transparent" />
+        <div
+          className="relative p-4 pb-5 lg:p-6"
+          style={{
+            background: "var(--al-glass-bg-elevated)",
+            backdropFilter: "blur(28px)",
+            WebkitBackdropFilter: "blur(28px)",
+          }}
+        >
+          <div className="pointer-events-none absolute inset-x-0 top-0 al-separator-h" />
           <div className="mx-auto max-w-3xl">
             {/* File preview strip */}
             {pendingFiles.length > 0 && (
@@ -2706,7 +2699,7 @@ export function ChatApp() {
                         : "Message Al..."
                   }
                   rows={1}
-                  className="w-full resize-none rounded-xl border border-[var(--al-border)] bg-[var(--al-surface-0)] px-4 py-3 text-sm text-[var(--al-text-primary)] placeholder-[var(--al-text-tertiary)] transition-all focus:border-[var(--al-border-active)] focus:outline-none focus:ring-1 focus:ring-[var(--al-cyan)]/15 focus:shadow-[var(--al-cyan-glow)] disabled:opacity-50"
+                  className="w-full resize-none rounded-2xl border border-[var(--al-border-faint)] bg-[var(--al-glass-bg-recessed)] px-4 py-3 text-sm text-[var(--al-text-primary)] placeholder-[var(--al-text-ghost)] transition-all duration-300 focus:border-[var(--al-border-active)] focus:outline-none focus:ring-1 focus:ring-[var(--al-cyan)]/10 focus:shadow-[var(--al-cyan-glow)] focus:bg-[var(--al-surface-0)] disabled:opacity-50"
                   style={{ minHeight: 48, maxHeight: 160 }}
                   onInput={(e) => {
                     const el = e.target as HTMLTextAreaElement;
@@ -2811,22 +2804,21 @@ function MessageBubble({ message }: { message: Message }) {
   const atts = message.attachments;
 
   return (
-    <div
-      className={`flex ${isUser ? "justify-end" : "justify-start"} animate-fade-up`}
-    >
+    <div className={`flex ${isUser ? "justify-end" : "justify-start"}`}>
       <div
         className={`
-          group relative max-w-[85%] rounded-2xl px-4 py-3 text-sm leading-relaxed
-          ${
-            isUser
-              ? "al-glass-subtle text-[var(--al-text-primary)]"
-              : "al-glass-subtle text-[var(--al-text-secondary)]"
-          }
+          group relative max-w-[85%] rounded-2xl px-4 py-3 text-sm leading-relaxed al-inner-light
+          ${isUser ? "text-[var(--al-text-primary)]" : "text-[var(--al-text-secondary)]"}
         `}
-        style={isUser
-          ? { borderRight: "2px solid rgba(0,229,255,0.20)" }
-          : { borderLeft: "2px solid rgba(0,229,255,0.15)" }
-        }
+        style={{
+          background: isUser ? "var(--al-surface-1)" : "var(--al-surface-0)",
+          backdropFilter: "blur(16px)",
+          WebkitBackdropFilter: "blur(16px)",
+          border: `1px solid var(--al-border-faint)`,
+          ...(isUser
+            ? { borderRight: "2px solid rgba(0,229,255,0.15)" }
+            : { borderLeft: "2px solid rgba(0,229,255,0.10)" }),
+        }}
       >
         {!isUser && (
           <div className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-[var(--al-cyan-muted)]">
@@ -3236,106 +3228,93 @@ function SettingsModal({
             <X className="h-4 w-4" />
           </button>
         </div>
-        <div className="space-y-5">
+        <div className="space-y-4">
           {/* Model */}
-          <div className="rounded-xl border border-emerald-900/20 bg-[#0d1410] px-4 py-3">
+          <div className="al-glass-subtle al-inner-light rounded-2xl px-4 py-3">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-[#e2ede8]">Model</p>
-                <p className="mt-0.5 text-xs text-emerald-200/35">
+                <p className="text-sm font-medium text-[var(--al-text-primary)]">Model</p>
+                <p className="mt-0.5 text-xs text-[var(--al-text-tertiary)]">
                   OpenAI-first chairman runtime
                 </p>
               </div>
-              <div className="flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-2.5 py-1">
-                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
-                <span className="text-[11px] font-medium text-emerald-400">
+              <div className="flex items-center gap-1.5 rounded-full px-2.5 py-1" style={{ background: "rgba(0,229,155,0.08)", border: "1px solid rgba(0,229,155,0.12)" }}>
+                <span className="h-1.5 w-1.5 rounded-full bg-[var(--al-green)]" />
+                <span className="text-[10px] font-semibold font-mono text-[var(--al-green)]">
                   {hostedRuntimeTruth ? "Verified" : "Configured"}
                 </span>
               </div>
             </div>
-            <p className="mt-2 text-[11px] leading-5 text-emerald-200/35">
-              Chairman reasoning is OpenAI-first. Legacy Claude-backed lanes can still exist for specialized fallback work, but they are no longer the primary runtime.
+            <p className="mt-2 text-[11px] leading-5 text-[var(--al-text-ghost)]">
+              Chairman reasoning is OpenAI-first. Legacy Claude-backed lanes can still exist for specialized fallback work.
             </p>
           </div>
 
           {/* Web Search */}
-          <div className="rounded-xl border border-emerald-900/20 bg-[#0d1410] px-4 py-3">
+          <div className="al-glass-subtle al-inner-light rounded-2xl px-4 py-3">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-[#e2ede8]">Web Search</p>
-                <p className="mt-0.5 text-xs text-emerald-200/35">
+                <p className="text-sm font-medium text-[var(--al-text-primary)]">Web Search</p>
+                <p className="mt-0.5 text-xs text-[var(--al-text-tertiary)]">
                   Tavily-powered live internet access
                 </p>
               </div>
-              <div className="flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-2.5 py-1">
-                <Globe className="h-3 w-3 text-emerald-400" />
-                <span className="text-[11px] font-medium text-emerald-400">
-                  Active
-                </span>
+              <div className="flex items-center gap-1.5 rounded-full px-2.5 py-1" style={{ background: "rgba(0,229,155,0.08)", border: "1px solid rgba(0,229,155,0.12)" }}>
+                <Globe className="h-3 w-3 text-[var(--al-green)]" />
+                <span className="text-[10px] font-semibold font-mono text-[var(--al-green)]">Active</span>
               </div>
             </div>
           </div>
 
           {/* Vault Bridge */}
-          <div className="rounded-xl border border-emerald-900/20 bg-[#0d1410] px-4 py-3">
+          <div className="al-glass-subtle al-inner-light rounded-2xl px-4 py-3">
             <div className="flex items-center justify-between mb-3">
               <div>
-                <p className="text-sm font-medium text-[#e2ede8]">
-                  Vault Bridge
-                </p>
-                <p className="mt-0.5 text-xs text-emerald-200/35">
-                  Local Obsidian vault access
-                </p>
+                <p className="text-sm font-medium text-[var(--al-text-primary)]">Vault Bridge</p>
+                <p className="mt-0.5 text-xs text-[var(--al-text-tertiary)]">Local Obsidian vault access</p>
               </div>
               <div
-                className={`flex items-center gap-1.5 rounded-full px-2.5 py-1 ${
-                  bridgeConnected
-                    ? "bg-emerald-500/10"
-                    : "bg-red-500/10"
-                }`}
+                className="flex items-center gap-1.5 rounded-full px-2.5 py-1"
+                style={{
+                  background: bridgeConnected ? "rgba(0,229,155,0.08)" : "rgba(255,77,106,0.06)",
+                  border: `1px solid ${bridgeConnected ? "rgba(0,229,155,0.12)" : "rgba(255,77,106,0.12)"}`,
+                }}
               >
-                <span
-                  className={`h-1.5 w-1.5 rounded-full ${
-                    bridgeConnected ? "bg-emerald-400" : "bg-red-400"
-                  }`}
-                />
-                <span
-                  className={`text-[11px] font-medium ${
-                    bridgeConnected ? "text-emerald-400" : "text-red-400/70"
-                  }`}
-                >
+                <span className={`h-1.5 w-1.5 rounded-full ${bridgeConnected ? "bg-[var(--al-green)]" : "bg-[var(--al-red)]"}`} />
+                <span className={`text-[10px] font-semibold font-mono ${bridgeConnected ? "text-[var(--al-green)]" : "text-[var(--al-red)]/70"}`}>
                   {bridgeConnected ? "Connected" : "Offline"}
                 </span>
               </div>
             </div>
             <div className="space-y-2">
               <div>
-                <label className="block text-[11px] font-medium text-emerald-200/30 mb-1">
+                <label className="block text-[10px] font-semibold font-mono text-[var(--al-text-tertiary)] mb-1 uppercase tracking-wider">
                   Bridge URL
                 </label>
                 <input
                   type="text"
                   value={bridgeUrl}
                   onChange={(e) => setBridgeUrl(e.target.value)}
-                  className="w-full rounded-lg border border-emerald-900/25 bg-[#0a0f0d] px-3 py-2 text-xs text-[#e2ede8] placeholder-emerald-200/20 focus:border-emerald-500/40 focus:outline-none"
+                  className="w-full rounded-xl border border-[var(--al-border-faint)] bg-[var(--al-glass-bg-recessed)] px-3 py-2 text-xs text-[var(--al-text-primary)] placeholder-[var(--al-text-ghost)] focus:border-[var(--al-border-active)] focus:outline-none transition-all"
                   placeholder={isLocalBrowserHost() ? "http://localhost:3141" : "http://your-machine:3141"}
                 />
               </div>
               <div>
-                <label className="block text-[11px] font-medium text-emerald-200/30 mb-1">
+                <label className="block text-[10px] font-semibold font-mono text-[var(--al-text-tertiary)] mb-1 uppercase tracking-wider">
                   Token (optional)
                 </label>
                 <input
                   type="password"
                   value={bridgeToken}
                   onChange={(e) => setBridgeToken(e.target.value)}
-                  className="w-full rounded-lg border border-emerald-900/25 bg-[#0a0f0d] px-3 py-2 text-xs text-[#e2ede8] placeholder-emerald-200/20 focus:border-emerald-500/40 focus:outline-none"
+                  className="w-full rounded-xl border border-[var(--al-border-faint)] bg-[var(--al-glass-bg-recessed)] px-3 py-2 text-xs text-[var(--al-text-primary)] placeholder-[var(--al-text-ghost)] focus:border-[var(--al-border-active)] focus:outline-none transition-all"
                   placeholder="bearer token"
                 />
               </div>
               <button
                 onClick={saveBridgeSettings}
-                className="mt-1 rounded-lg bg-emerald-600/20 px-3 py-1.5 text-xs font-medium text-emerald-400 transition-colors hover:bg-emerald-600/30"
+                className="mt-1 rounded-xl px-3 py-1.5 text-xs font-semibold font-mono text-[var(--al-cyan)] transition-all hover:shadow-[var(--al-cyan-glow)]"
+                style={{ background: "rgba(0,229,255,0.06)", border: "1px solid rgba(0,229,255,0.12)" }}
               >
                 Save &amp; Test Connection
               </button>
@@ -3343,28 +3322,26 @@ function SettingsModal({
           </div>
 
           {/* Trajectory Logging */}
-          <div className="rounded-xl border border-emerald-900/20 bg-[#0d1410] px-4 py-3">
-            <p className="text-sm font-medium text-[#e2ede8]">
-              Trajectory Logging
-            </p>
-            <p className="mt-0.5 text-xs text-emerald-200/35">
-              Every exchange is logged to the Supabase trajectories table when
-              configured.
+          <div className="al-glass-subtle al-inner-light rounded-2xl px-4 py-3">
+            <p className="text-sm font-medium text-[var(--al-text-primary)]">Trajectory Logging</p>
+            <p className="mt-0.5 text-xs text-[var(--al-text-tertiary)]">
+              Every exchange is logged to the Supabase trajectories table when configured.
             </p>
           </div>
 
-          <div className="flex items-center justify-between border-t border-emerald-900/20 pt-5">
+          <div className="al-separator-h" />
+          <div className="flex items-center justify-between pt-2">
             <button
               onClick={() => {
                 if (window.confirm("Clear all chat history?")) onClearChat();
               }}
-              className="text-xs text-red-400/50 transition-colors hover:text-red-400"
+              className="text-xs font-mono text-[var(--al-red)]/40 transition-colors hover:text-[var(--al-red)]"
             >
               Clear chat history
             </button>
             <button
               onClick={onClose}
-              className="rounded-xl bg-emerald-600 px-6 py-2.5 text-sm font-semibold text-white transition-all hover:bg-emerald-500 active:scale-[0.98]"
+              className="rounded-2xl bg-[var(--al-cyan)] px-6 py-2.5 text-sm font-semibold text-[var(--al-void)] transition-all hover:shadow-[var(--al-cyan-glow-strong)] active:scale-[0.98]"
             >
               Done
             </button>

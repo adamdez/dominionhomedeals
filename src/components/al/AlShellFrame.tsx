@@ -39,12 +39,12 @@ export function AlShellFrame({ children }: { children: React.ReactNode }) {
     <div className="flex h-full w-full">
       <aside
         className="relative hidden h-full w-72 shrink-0 lg:flex lg:flex-col"
-        style={{ background: "var(--al-glass-bg)", backdropFilter: "blur(24px)", WebkitBackdropFilter: "blur(24px)" }}
+        style={{ background: "var(--al-glass-bg-elevated)", backdropFilter: "blur(28px)", WebkitBackdropFilter: "blur(28px)" }}
       >
-        <div className="pointer-events-none absolute inset-y-0 right-0 w-px bg-gradient-to-b from-transparent via-[var(--al-cyan)]/15 to-transparent" />
+        <div className="pointer-events-none absolute inset-y-0 right-0 al-separator-v" />
 
         <div className="relative px-5 py-6" style={{ background: "var(--al-surface-0)" }}>
-          <div className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-[var(--al-cyan)]/12 to-transparent" />
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 al-separator-h" />
           <p className="text-[11px] font-semibold uppercase tracking-[0.22em] font-mono text-[var(--al-cyan-muted)]">
             AL Navigation
           </p>

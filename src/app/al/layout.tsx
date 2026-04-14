@@ -38,7 +38,8 @@ export const viewport: Viewport = {
 
 export default function AlLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="al-workshop-bg fixed inset-0 z-[200] flex overflow-hidden text-[var(--al-text-primary)]">
+    <div className="al-workshop-bg al-noise-overlay fixed inset-0 z-[200] flex overflow-hidden text-[var(--al-text-primary)]">
+      <div className="al-ambient-mesh" aria-hidden="true" />
       <AlShellFrame>{children}</AlShellFrame>
       <MobileDock />
     </div>

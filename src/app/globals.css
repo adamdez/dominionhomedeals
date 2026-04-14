@@ -13,23 +13,50 @@
   --al-surface-0: rgba(8, 14, 30, 0.55);
   --al-surface-1: rgba(11, 20, 40, 0.60);
   --al-surface-2: rgba(14, 24, 48, 0.65);
-  --al-border: rgba(0, 229, 255, 0.08);
-  --al-border-hover: rgba(0, 229, 255, 0.18);
-  --al-border-active: rgba(0, 229, 255, 0.30);
+  --al-surface-3: rgba(18, 30, 58, 0.70);
+  --al-border: rgba(0, 229, 255, 0.06);
+  --al-border-hover: rgba(0, 229, 255, 0.16);
+  --al-border-active: rgba(0, 229, 255, 0.28);
+  --al-border-faint: rgba(0, 229, 255, 0.03);
   --al-cyan: #00e5ff;
   --al-cyan-muted: rgba(0, 229, 255, 0.55);
-  --al-cyan-dim: rgba(0, 229, 255, 0.12);
-  --al-cyan-glow: 0 0 20px rgba(0, 229, 255, 0.15), 0 0 60px rgba(0, 229, 255, 0.05);
-  --al-cyan-glow-strong: 0 0 12px rgba(0, 229, 255, 0.30), 0 0 40px rgba(0, 229, 255, 0.12);
+  --al-cyan-dim: rgba(0, 229, 255, 0.08);
+  --al-cyan-glow: 0 0 20px rgba(0, 229, 255, 0.12), 0 0 60px rgba(0, 229, 255, 0.04);
+  --al-cyan-glow-strong: 0 0 12px rgba(0, 229, 255, 0.25), 0 0 40px rgba(0, 229, 255, 0.10);
+  --al-cyan-glow-intense: 0 0 8px rgba(0, 229, 255, 0.40), 0 0 24px rgba(0, 229, 255, 0.20), 0 0 64px rgba(0, 229, 255, 0.08);
   --al-text-primary: #eaf2ff;
-  --al-text-secondary: rgba(203, 213, 235, 0.75);
-  --al-text-tertiary: rgba(160, 175, 205, 0.50);
-  --al-glass-blur: 20px;
-  --al-glass-bg: rgba(8, 14, 30, 0.65);
-  --al-panel-shadow: 0 20px 60px rgba(2, 6, 18, 0.50), 0 1px 0 rgba(0, 229, 255, 0.04) inset;
+  --al-text-secondary: rgba(203, 213, 235, 0.72);
+  --al-text-tertiary: rgba(160, 175, 205, 0.45);
+  --al-text-ghost: rgba(140, 155, 190, 0.28);
+  --al-glass-blur: 24px;
+  --al-glass-bg: rgba(6, 12, 26, 0.72);
+  --al-glass-bg-elevated: rgba(10, 18, 38, 0.78);
+  --al-glass-bg-recessed: rgba(4, 8, 18, 0.60);
+  --al-panel-shadow:
+    0 1px 0 rgba(0, 229, 255, 0.03) inset,
+    0 -1px 0 rgba(0, 0, 0, 0.20) inset,
+    0 8px 32px rgba(2, 4, 12, 0.40),
+    0 24px 64px rgba(0, 0, 0, 0.25);
+  --al-panel-shadow-elevated:
+    0 1px 0 rgba(0, 229, 255, 0.06) inset,
+    0 -1px 0 rgba(0, 0, 0, 0.15) inset,
+    0 12px 48px rgba(2, 4, 12, 0.50),
+    0 32px 80px rgba(0, 0, 0, 0.30);
   --al-red: #ff4d6a;
   --al-amber: #ffb020;
   --al-green: #00e59b;
+  --al-indigo: #6366f1;
+  --al-indigo-dim: rgba(99, 102, 241, 0.10);
+
+  --al-radius-sm: 10px;
+  --al-radius-md: 16px;
+  --al-radius-lg: 24px;
+  --al-radius-xl: 32px;
+
+  --al-transition-micro: 120ms cubic-bezier(0.22, 1, 0.36, 1);
+  --al-transition-fast: 200ms cubic-bezier(0.22, 1, 0.36, 1);
+  --al-transition-normal: 350ms cubic-bezier(0.16, 1, 0.3, 1);
+  --al-transition-slow: 600ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 @layer base {
@@ -133,14 +160,48 @@
   .al-workshop-bg {
     background-color: var(--al-void);
     background-image:
-      radial-gradient(circle at 15% 0%, rgba(0, 229, 255, 0.12), transparent 35%),
-      radial-gradient(circle at 85% 5%, rgba(99, 102, 241, 0.10), transparent 35%),
-      radial-gradient(circle at 50% 100%, rgba(0, 229, 255, 0.06), transparent 45%),
-      radial-gradient(circle 1px at center, rgba(0, 229, 255, 0.035) 1px, transparent 0);
-    background-size: 100% 100%, 100% 100%, 100% 100%, 32px 32px;
+      radial-gradient(ellipse 80% 50% at 15% -5%, rgba(0, 229, 255, 0.08), transparent),
+      radial-gradient(ellipse 60% 40% at 85% 0%, rgba(99, 102, 241, 0.06), transparent),
+      radial-gradient(ellipse 70% 50% at 50% 105%, rgba(0, 229, 255, 0.04), transparent),
+      radial-gradient(circle 0.8px at center, rgba(0, 229, 255, 0.025) 0.8px, transparent 0);
+    background-size: 100% 100%, 100% 100%, 100% 100%, 28px 28px;
   }
 
-  /* ── Glass Surfaces ── */
+  /* ── Animated Ambient Mesh ── */
+  .al-ambient-mesh {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    opacity: 0.45;
+    background:
+      radial-gradient(ellipse 50% 40% at var(--mesh-x1, 20%) var(--mesh-y1, 15%), rgba(0, 229, 255, 0.07), transparent),
+      radial-gradient(ellipse 40% 50% at var(--mesh-x2, 75%) var(--mesh-y2, 25%), rgba(99, 102, 241, 0.05), transparent),
+      radial-gradient(ellipse 45% 35% at var(--mesh-x3, 50%) var(--mesh-y3, 80%), rgba(0, 229, 255, 0.04), transparent);
+    animation: alMeshDrift 25s ease-in-out infinite alternate;
+    will-change: opacity;
+  }
+
+  /* ── Cursor Spotlight ── */
+  .al-cursor-spotlight {
+    position: fixed;
+    width: 600px;
+    height: 600px;
+    pointer-events: none;
+    z-index: 1;
+    border-radius: 50%;
+    background: radial-gradient(
+      circle,
+      rgba(0, 229, 255, 0.04) 0%,
+      rgba(0, 229, 255, 0.015) 30%,
+      transparent 70%
+    );
+    transform: translate(-50%, -50%);
+    transition: opacity 0.4s ease;
+    will-change: left, top;
+  }
+
+  /* ── Glass Surfaces — 5-tier depth system ── */
   .al-glass {
     background: var(--al-glass-bg);
     backdrop-filter: blur(var(--al-glass-blur));
@@ -151,23 +212,47 @@
 
   .al-glass-subtle {
     background: var(--al-surface-0);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border: 1px solid var(--al-border);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid var(--al-border-faint);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+    transition: border-color var(--al-transition-fast), box-shadow var(--al-transition-fast), background var(--al-transition-fast);
+  }
+
+  .al-glass-subtle:hover {
+    border-color: var(--al-border);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.18);
   }
 
   .al-glass-card {
     background: var(--al-surface-1);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
     border: 1px solid var(--al-border);
     box-shadow: var(--al-panel-shadow);
-    transition: border-color 0.25s ease, box-shadow 0.25s ease;
+    transition: border-color var(--al-transition-fast), box-shadow var(--al-transition-fast), transform var(--al-transition-fast);
   }
 
   .al-glass-card:hover {
     border-color: var(--al-border-hover);
-    box-shadow: var(--al-panel-shadow), var(--al-cyan-glow);
+    box-shadow: var(--al-panel-shadow-elevated), var(--al-cyan-glow);
+    transform: translateY(-1px);
+  }
+
+  .al-glass-elevated {
+    background: var(--al-glass-bg-elevated);
+    backdrop-filter: blur(28px);
+    -webkit-backdrop-filter: blur(28px);
+    border: 1px solid var(--al-border-hover);
+    box-shadow: var(--al-panel-shadow-elevated);
+  }
+
+  .al-glass-recessed {
+    background: var(--al-glass-bg-recessed);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid var(--al-border-faint);
+    box-shadow: inset 0 2px 8px rgba(0,0,0,0.20);
   }
 
   /* ── Gradient Border (pseudo-element approach) ── */
@@ -182,29 +267,85 @@
     padding: 1px;
     background: linear-gradient(
       135deg,
-      rgba(0, 229, 255, 0.20),
-      rgba(99, 102, 241, 0.10),
-      rgba(0, 229, 255, 0.06)
+      rgba(0, 229, 255, 0.16) 0%,
+      rgba(99, 102, 241, 0.08) 40%,
+      rgba(0, 229, 255, 0.04) 70%,
+      rgba(99, 102, 241, 0.12) 100%
     );
     mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
     mask-composite: exclude;
     -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
     -webkit-mask-composite: xor;
     pointer-events: none;
+    opacity: 0.8;
+    transition: opacity var(--al-transition-fast);
+  }
+  .al-gradient-border:hover::before {
+    opacity: 1;
+  }
+
+  /* ── Inner Light Edge ── top edge catches light, bottom recedes */
+  .al-inner-light {
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.03),
+      inset 0 -1px 0 rgba(0, 0, 0, 0.15);
   }
 
   /* ── Glow Utilities ── */
   .al-glow-text {
-    text-shadow: 0 0 20px rgba(0, 229, 255, 0.30), 0 0 60px rgba(0, 229, 255, 0.08);
+    text-shadow:
+      0 0 12px rgba(0, 229, 255, 0.20),
+      0 0 40px rgba(0, 229, 255, 0.06);
   }
 
   .al-glow-metric {
-    text-shadow: 0 0 10px rgba(0, 229, 255, 0.25), 0 0 40px rgba(0, 229, 255, 0.08);
+    text-shadow:
+      0 0 8px rgba(0, 229, 255, 0.22),
+      0 0 28px rgba(0, 229, 255, 0.06);
     font-variant-numeric: tabular-nums;
   }
 
   .al-glow-dot {
     box-shadow: 0 0 6px 2px currentColor;
+  }
+
+  /* ── Separator Lines ── seamless gradient fade on both ends */
+  .al-separator-h {
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(0, 229, 255, 0.10) 20%, rgba(0, 229, 255, 0.10) 80%, transparent);
+  }
+
+  .al-separator-v {
+    width: 1px;
+    background: linear-gradient(180deg, transparent, rgba(0, 229, 255, 0.10) 20%, rgba(0, 229, 255, 0.10) 80%, transparent);
+  }
+
+  /* ── Status Pulse Ring ── */
+  .al-status-pulse {
+    position: relative;
+  }
+  .al-status-pulse::after {
+    content: "";
+    position: absolute;
+    inset: -3px;
+    border-radius: 50%;
+    border: 1.5px solid currentColor;
+    opacity: 0;
+    animation: alStatusPulse 2s ease-out infinite;
+  }
+
+  /* ── Noise Texture Overlay ── eliminates gradient banding */
+  .al-noise-overlay::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 9999;
+    opacity: 0.018;
+    mix-blend-mode: overlay;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    background-repeat: repeat;
+    background-size: 256px 256px;
   }
 
   /* ── Legacy compat ── */
@@ -273,27 +414,82 @@
     content: "";
     position: absolute;
     inset: -2px;
-    border-radius: 9999px;
+    border-radius: inherit;
     padding: 1.5px;
     background: conic-gradient(
       from 0deg,
-      rgba(0, 229, 255, 0.50),
-      transparent 40%,
-      rgba(99, 102, 241, 0.30),
-      transparent 70%,
-      rgba(0, 229, 255, 0.50)
+      rgba(0, 229, 255, 0.45),
+      transparent 35%,
+      rgba(99, 102, 241, 0.25),
+      transparent 65%,
+      rgba(0, 229, 255, 0.45)
     );
     mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
     mask-composite: exclude;
     -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
     -webkit-mask-composite: xor;
-    animation: alRingSpin 4s linear infinite;
+    animation: alRingSpin 5s linear infinite;
     pointer-events: none;
   }
 
   .al-brass-label {
     color: var(--al-cyan-muted);
-    letter-spacing: 0.2em;
+    letter-spacing: 0.18em;
+    font-size: 10px;
+    text-transform: uppercase;
+    font-weight: 600;
+  }
+
+  /* ── Metric Sparkline Container ── */
+  .al-sparkline {
+    display: flex;
+    align-items: flex-end;
+    gap: 1px;
+    height: 20px;
+  }
+
+  .al-sparkline-bar {
+    flex: 1;
+    min-width: 2px;
+    border-radius: 1px 1px 0 0;
+    background: var(--al-cyan);
+    opacity: 0.35;
+    transition: opacity var(--al-transition-micro), height var(--al-transition-fast);
+  }
+
+  .al-sparkline-bar:last-child {
+    opacity: 0.8;
+  }
+
+  /* ── Animated Counter ── */
+  .al-counter-animate {
+    display: inline-block;
+    transition: transform var(--al-transition-normal), opacity var(--al-transition-normal);
+  }
+
+  /* ── Loading Skeleton ── */
+  .al-skeleton {
+    background: linear-gradient(
+      90deg,
+      var(--al-surface-0) 0%,
+      var(--al-surface-2) 40%,
+      var(--al-surface-0) 80%
+    );
+    background-size: 200% 100%;
+    animation: alSkeletonShimmer 1.8s ease-in-out infinite;
+    border-radius: var(--al-radius-sm);
+  }
+
+  /* ── 3D Tilt Perspective Container ── */
+  .al-tilt-container {
+    perspective: 800px;
+    transform-style: preserve-3d;
+  }
+
+  .al-tilt-card {
+    transition: transform var(--al-transition-fast);
+    transform-style: preserve-3d;
+    will-change: transform;
   }
 }
 
@@ -302,19 +498,20 @@
    ================================================================ */
 
 .al-scrollbar::-webkit-scrollbar {
-  width: 5px;
+  width: 4px;
 }
 .al-scrollbar::-webkit-scrollbar-track {
   background: transparent;
 }
 .al-scrollbar::-webkit-scrollbar-thumb {
-  background: rgba(0, 229, 255, 0.12);
-  border-radius: 3px;
-  transition: background 0.2s;
+  background: rgba(0, 229, 255, 0.08);
+  border-radius: 4px;
 }
 .al-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: rgba(0, 229, 255, 0.28);
-  box-shadow: 0 0 6px rgba(0, 229, 255, 0.15);
+  background: rgba(0, 229, 255, 0.20);
+}
+.al-scrollbar {
+  scrollbar-gutter: stable;
 }
 
 /* ================================================================
@@ -326,29 +523,79 @@
 }
 
 @keyframes alDotPulse {
-  0%, 80%, 100% {
-    opacity: 0.25;
-    transform: scale(0.75);
-  }
-  40% {
-    opacity: 1;
-    transform: scale(1);
-  }
+  0%, 80%, 100% { opacity: 0.25; transform: scale(0.75); }
+  40% { opacity: 1; transform: scale(1); }
 }
 
 @keyframes alNeuralPulse {
-  0%, 100% { transform: scaleY(0.3); opacity: 0.3; }
-  50% { transform: scaleY(1); opacity: 1; }
+  0%, 100% { transform: scaleY(0.25); opacity: 0.25; }
+  50% { transform: scaleY(1); opacity: 0.9; }
 }
 
 @keyframes alGlowPulse {
-  0%, 100% { box-shadow: 0 0 8px rgba(0, 229, 255, 0.15); }
-  50% { box-shadow: 0 0 20px rgba(0, 229, 255, 0.35), 0 0 50px rgba(0, 229, 255, 0.10); }
+  0%, 100% { box-shadow: 0 0 6px rgba(0, 229, 255, 0.10); }
+  50% { box-shadow: 0 0 16px rgba(0, 229, 255, 0.28), 0 0 40px rgba(0, 229, 255, 0.08); }
 }
 
 @keyframes alScanLine {
   0% { left: -100%; }
   100% { left: 100%; }
+}
+
+@keyframes alMeshDrift {
+  0% {
+    --mesh-x1: 18%; --mesh-y1: 12%;
+    --mesh-x2: 78%; --mesh-y2: 22%;
+    --mesh-x3: 48%; --mesh-y3: 82%;
+  }
+  33% {
+    --mesh-x1: 25%; --mesh-y1: 20%;
+    --mesh-x2: 70%; --mesh-y2: 30%;
+    --mesh-x3: 55%; --mesh-y3: 75%;
+  }
+  66% {
+    --mesh-x1: 15%; --mesh-y1: 18%;
+    --mesh-x2: 82%; --mesh-y2: 18%;
+    --mesh-x3: 42%; --mesh-y3: 85%;
+  }
+  100% {
+    --mesh-x1: 22%; --mesh-y1: 10%;
+    --mesh-x2: 75%; --mesh-y2: 28%;
+    --mesh-x3: 52%; --mesh-y3: 78%;
+  }
+}
+
+@keyframes alStatusPulse {
+  0% { opacity: 0.6; transform: scale(1); }
+  100% { opacity: 0; transform: scale(1.8); }
+}
+
+@keyframes alSkeletonShimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+@keyframes alBreathGlow {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.7; }
+}
+
+@keyframes alCounterSlideUp {
+  from { transform: translateY(100%); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes alCardEntrance {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.97);
+    filter: blur(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0);
+  }
 }
 
 @keyframes fadeInLift {
