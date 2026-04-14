@@ -190,37 +190,37 @@ export function Sidebar({
       href: "/",
       label: "Command Center",
       detail: "Start here",
-      icon: <Sparkles className="h-4 w-4 text-emerald-400/65" />,
+      icon: <Sparkles className="h-4 w-4 text-sky-300/75" />,
     },
     {
       href: "/attention",
       label: "Attention",
       detail: "What needs action",
-      icon: <Activity className="h-4 w-4 text-emerald-400/65" />,
+      icon: <Activity className="h-4 w-4 text-sky-300/75" />,
     },
     {
       href: "/inbox",
       label: "Inbox",
       detail: "Queue asks without blocking chat",
-      icon: <BookUp className="h-4 w-4 text-emerald-400/65" />,
+      icon: <BookUp className="h-4 w-4 text-sky-300/75" />,
     },
     {
       href: "/boardroom",
       label: "Board Room",
       detail: "Approvals and packages",
-      icon: <Users className="h-4 w-4 text-emerald-400/65" />,
+      icon: <Users className="h-4 w-4 text-sky-300/75" />,
     },
     {
       href: "/planner",
       label: "Planner",
       detail: "Task truth",
-      icon: <CalendarDays className="h-4 w-4 text-emerald-400/65" />,
+      icon: <CalendarDays className="h-4 w-4 text-sky-300/75" />,
     },
     {
       href: "/operational-proof",
       label: "System Health",
       detail: "Can we trust the loops?",
-      icon: <ShieldCheck className="h-4 w-4 text-emerald-400/65" />,
+      icon: <ShieldCheck className="h-4 w-4 text-sky-300/75" />,
     },
   ] as const;
   const businessLinks = [
@@ -228,19 +228,19 @@ export function Sidebar({
       href: "/dominion/leads",
       label: "Dominion Leads",
       detail: "First touch and follow-up",
-      icon: <Building2 className="h-4 w-4 text-emerald-400/65" />,
+      icon: <Building2 className="h-4 w-4 text-sky-300/75" />,
     },
     {
       href: "/wrenchready/day-readiness",
       label: "Day Readiness",
       detail: "Protect wrench time",
-      icon: <Wrench className="h-4 w-4 text-emerald-400/65" />,
+      icon: <Wrench className="h-4 w-4 text-sky-300/75" />,
     },
     {
       href: "/labor-lanes",
       label: "Labor Lanes",
       detail: "Can AL replace labor here?",
-      icon: <Receipt className="h-4 w-4 text-emerald-400/65" />,
+      icon: <Receipt className="h-4 w-4 text-sky-300/75" />,
     },
   ] as const;
   const extendedQuickActionCategories = categories.filter((category) =>
@@ -299,7 +299,7 @@ export function Sidebar({
 
   function statusClasses(status: "live" | "degraded" | "blocked") {
     if (status === "live") {
-      return "border-emerald-500/20 bg-emerald-500/10 text-emerald-200/70";
+      return "border-sky-500/30 bg-sky-500/10 text-sky-100/85";
     }
     if (status === "degraded") {
       return "border-amber-500/20 bg-amber-500/10 text-amber-200/70";
@@ -311,8 +311,8 @@ export function Sidebar({
     const target = withAlAppPrefix(pathname, href);
     const active = pathname === target;
     return active
-      ? "border-emerald-500/30 bg-emerald-500/10 text-[#f2f6f3]"
-      : "border-emerald-900/15 bg-[#111916]/70 text-[#f2f6f3] hover:border-amber-400/30 hover:bg-amber-500/5";
+      ? "border-sky-500/35 bg-sky-500/12 text-[#f4f8ff]"
+      : "border-slate-700/55 bg-[#0f1629]/75 text-[#eaf2ff] hover:border-sky-400/40 hover:bg-sky-500/5";
   }
 
   return (
@@ -328,7 +328,7 @@ export function Sidebar({
       <aside
         className={`
           fixed left-0 top-0 z-40 flex h-full w-72 flex-col pb-24
-          border-r border-amber-700/20 bg-[#0d1410]
+          border-r border-slate-700/55 bg-[#09101f]
           transition-transform duration-300 ease-out
           lg:relative lg:translate-x-0
           lg:pb-0
@@ -336,12 +336,12 @@ export function Sidebar({
         `}
       >
         <div
-          className="al-flannel-panel flex items-center justify-between border-b border-amber-700/20 px-5 pb-5 pt-6"
+          className="al-flannel-panel flex items-center justify-between border-b border-slate-700/55 px-5 pb-5 pt-6"
           style={{ paddingTop: "max(env(safe-area-inset-top), 1.25rem)" }}
         >
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-amber-500/10 ring-1 ring-amber-500/20">
-              <Sparkles className="h-4 w-4 text-amber-300" />
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-sky-500/12 ring-1 ring-sky-400/35">
+              <Sparkles className="h-4 w-4 text-sky-300" />
             </div>
             <div>
               <p className="text-[10px] font-semibold uppercase al-brass-label">
@@ -350,12 +350,12 @@ export function Sidebar({
               <h2 className="text-sm font-semibold text-[#f2f6f3]">
                 Al Boreland
               </h2>
-              <p className="text-xs text-emerald-100/50">Command and follow-through</p>
+              <p className="text-xs text-slate-300/75">Command and follow-through</p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="rounded-xl p-3 text-emerald-200/45 transition-colors hover:bg-emerald-500/10 hover:text-emerald-200/65 lg:hidden"
+            className="rounded-xl p-3 text-slate-300/70 transition-colors hover:bg-sky-500/10 hover:text-sky-200 lg:hidden"
             aria-label="Close sidebar"
           >
             <X className="h-4 w-4" />
@@ -365,7 +365,7 @@ export function Sidebar({
         <nav className="flex-1 overflow-y-auto px-3 py-4 al-scrollbar">
           <div className="mb-5 px-2">
             <div className="mb-3">
-              <p className="px-2 text-[11px] font-semibold uppercase tracking-wider text-amber-300/45">
+              <p className="px-2 text-[11px] font-semibold uppercase tracking-wider text-slate-400/80">
                 Core
               </p>
               <div className="mt-2 space-y-2">
@@ -379,7 +379,7 @@ export function Sidebar({
                     <span className="mt-0.5 flex-shrink-0">{link.icon}</span>
                     <span className="min-w-0">
                       <span className="block text-sm font-semibold">{link.label}</span>
-                      <span className="mt-0.5 block text-[11px] text-emerald-100/45">{link.detail}</span>
+                      <span className="mt-0.5 block text-[11px] text-slate-300/70">{link.detail}</span>
                     </span>
                   </Link>
                 ))}
@@ -387,7 +387,7 @@ export function Sidebar({
             </div>
 
             <div>
-              <p className="px-2 text-[11px] font-semibold uppercase tracking-wider text-amber-300/45">
+              <p className="px-2 text-[11px] font-semibold uppercase tracking-wider text-slate-400/80">
                 Business lanes
               </p>
               <div className="mt-2 space-y-2">
@@ -401,7 +401,7 @@ export function Sidebar({
                     <span className="mt-0.5 flex-shrink-0">{link.icon}</span>
                     <span className="min-w-0">
                       <span className="block text-sm font-semibold">{link.label}</span>
-                      <span className="mt-0.5 block text-[11px] text-emerald-100/45">{link.detail}</span>
+                      <span className="mt-0.5 block text-[11px] text-slate-300/70">{link.detail}</span>
                     </span>
                   </Link>
                 ))}
@@ -414,13 +414,13 @@ export function Sidebar({
               <button
                 type="button"
                 onClick={() => setShowRuntime((value) => !value)}
-                className="al-shop-card flex w-full items-center justify-between rounded-xl px-3 py-3 text-left transition hover:border-amber-400/30 hover:bg-amber-500/5"
+                className="al-shop-card flex w-full items-center justify-between rounded-xl px-3 py-3 text-left transition hover:border-sky-400/40 hover:bg-sky-500/5"
               >
                 <div>
-                  <p className="text-[11px] font-semibold uppercase tracking-wider text-amber-300/50">
+                  <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400/80">
                     Runtime
                   </p>
-                  <p className="mt-1 text-xs text-emerald-100/72">
+                  <p className="mt-1 text-xs text-slate-300/80">
                     {hostedRuntimeTruth
                       ? `${hostedRuntimeTruth.summary.live} live, ${hostedRuntimeTruth.summary.degraded} degraded`
                       : "Runtime status unavailable"}
@@ -429,9 +429,9 @@ export function Sidebar({
                   </p>
                 </div>
                 {showRuntime ? (
-                  <ChevronDown className="h-4 w-4 text-emerald-200/45" />
+                  <ChevronDown className="h-4 w-4 text-slate-300/70" />
                 ) : (
-                  <ChevronRight className="h-4 w-4 text-emerald-200/45" />
+                  <ChevronRight className="h-4 w-4 text-slate-300/70" />
                 )}
               </button>
 
@@ -445,7 +445,7 @@ export function Sidebar({
                           "Run a status check and summarize what is live, degraded, blocked, and what needs action now.",
                         )
                       }
-                      className="rounded-xl border border-emerald-800/40 bg-[#0b110e] px-3 py-2 text-xs font-semibold text-emerald-100 transition hover:border-emerald-500/45"
+                      className="rounded-xl border border-slate-700/55 bg-[#0b1222] px-3 py-2 text-xs font-semibold text-slate-100 transition hover:border-sky-400/50"
                     >
                       Run status check
                     </button>
@@ -453,7 +453,7 @@ export function Sidebar({
 
                   {hostedRuntimeTruth ? (
                     <div className="mt-3 space-y-2">
-                      <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-amber-300/50">
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400/80">
                         Hosted lanes
                       </p>
                       {hostedRuntimeTruth.lanes.map((lane) => (
@@ -477,7 +477,7 @@ export function Sidebar({
                   ) : null}
 
                   <div className="mt-3 space-y-2">
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-amber-300/50">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400/80">
                       Local lanes
                     </p>
                     {localLaneRows.map((lane) => (
@@ -504,7 +504,7 @@ export function Sidebar({
 
           <div className="mb-5">
             <div className="px-2">
-              <p className="text-[11px] font-semibold uppercase tracking-wider text-amber-300/45">
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400/80">
                 Start here
               </p>
               <div className="mt-2 space-y-0.5">
@@ -514,9 +514,9 @@ export function Sidebar({
                     <button
                       key={action.id}
                       onClick={() => onQuickAction(action.prompt)}
-                      className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm text-emerald-100/60 transition-all hover:bg-emerald-500/10 hover:text-emerald-50 active:scale-[0.98]"
+                      className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm text-slate-200/80 transition-all hover:bg-sky-500/10 hover:text-sky-100 active:scale-[0.98]"
                     >
-                      <span className="flex-shrink-0 text-emerald-400/50">
+                      <span className="flex-shrink-0 text-sky-300/70">
                         {action.icon}
                       </span>
                       {action.label}
@@ -526,18 +526,18 @@ export function Sidebar({
               <button
                 type="button"
                 onClick={() => setShowQuickActions((value) => !value)}
-                className="mt-2 flex w-full items-center justify-between rounded-xl border border-emerald-900/15 bg-[#111916]/70 px-3 py-3 text-left transition hover:border-amber-400/30 hover:bg-amber-500/5"
+                className="mt-2 flex w-full items-center justify-between rounded-xl border border-slate-700/55 bg-[#0f1629]/75 px-3 py-3 text-left transition hover:border-sky-400/40 hover:bg-sky-500/5"
               >
                 <div>
                   <p className="text-sm font-semibold text-[#f2f6f3]">More quick asks</p>
-                  <p className="mt-0.5 text-[11px] text-emerald-100/45">
+                  <p className="mt-0.5 text-[11px] text-slate-300/70">
                     Specialist prompts and CEO shortcuts
                   </p>
                 </div>
                 {showQuickActions ? (
-                  <ChevronDown className="h-4 w-4 text-emerald-200/45" />
+                  <ChevronDown className="h-4 w-4 text-slate-300/70" />
                 ) : (
-                  <ChevronRight className="h-4 w-4 text-emerald-200/45" />
+                  <ChevronRight className="h-4 w-4 text-slate-300/70" />
                 )}
               </button>
             </div>
@@ -546,7 +546,7 @@ export function Sidebar({
               <div className="mt-3">
                 {extendedQuickActionCategories.map((category) => (
                   <div key={category} className="mb-4">
-                    <h3 className="mb-2 px-2 text-[11px] font-semibold uppercase tracking-wider text-amber-300/45">
+                    <h3 className="mb-2 px-2 text-[11px] font-semibold uppercase tracking-wider text-slate-400/80">
                       {category}
                     </h3>
                     <div className="space-y-0.5">
@@ -559,9 +559,9 @@ export function Sidebar({
                           <button
                             key={action.id}
                             onClick={() => onQuickAction(action.prompt)}
-                            className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm text-emerald-100/60 transition-all hover:bg-emerald-500/10 hover:text-emerald-50 active:scale-[0.98]"
+                            className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm text-slate-200/80 transition-all hover:bg-sky-500/10 hover:text-sky-100 active:scale-[0.98]"
                           >
-                            <span className="flex-shrink-0 text-emerald-400/50">
+                            <span className="flex-shrink-0 text-sky-300/70">
                               {action.icon}
                             </span>
                             {action.label}
@@ -575,10 +575,10 @@ export function Sidebar({
           </div>
         </nav>
 
-        <div className="border-t border-emerald-900/20 p-3">
+        <div className="border-t border-slate-700/55 p-3">
           <button
             onClick={onOpenSettings}
-            className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-emerald-200/35 transition-all hover:bg-emerald-500/10 hover:text-emerald-200/60"
+            className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-slate-300/80 transition-all hover:bg-sky-500/10 hover:text-sky-200"
           >
             <Settings className="h-4 w-4" />
             Settings

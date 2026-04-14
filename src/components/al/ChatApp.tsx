@@ -2165,7 +2165,7 @@ export function ChatApp() {
   if (authed === null) {
     return (
       <div className="flex h-full w-full items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-emerald-500/20 border-t-emerald-500" />
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-sky-500/20 border-t-sky-400" />
       </div>
     );
   }
@@ -2192,7 +2192,7 @@ export function ChatApp() {
       />
 
       <div
-        className="relative flex min-w-0 flex-1 flex-col pb-24 lg:pb-0"
+        className="al-workshop-bg relative flex min-w-0 flex-1 flex-col pb-24 lg:pb-0"
         onDragEnter={handleDragEnter}
         onDragLeave={handleDragLeave}
         onDragOver={handleDragOver}
@@ -2200,13 +2200,13 @@ export function ChatApp() {
       >
         {/* Drag overlay */}
         {dragActive && (
-          <div className="absolute inset-0 z-20 flex items-center justify-center bg-emerald-500/[0.04] backdrop-blur-[1px]">
-            <div className="rounded-2xl border-2 border-dashed border-emerald-500/25 bg-[#0a0f0d]/80 px-8 py-6 text-center">
-              <Paperclip className="mx-auto mb-2 h-6 w-6 text-emerald-400/60" />
-              <p className="text-sm font-medium text-emerald-200/60">
+          <div className="absolute inset-0 z-20 flex items-center justify-center bg-sky-500/[0.04] backdrop-blur-[1px]">
+            <div className="rounded-2xl border-2 border-dashed border-sky-500/30 bg-[#070d1a]/85 px-8 py-6 text-center">
+              <Paperclip className="mx-auto mb-2 h-6 w-6 text-sky-300/70" />
+              <p className="text-sm font-medium text-slate-100/85">
                 Drop files here
               </p>
-              <p className="mt-1 text-xs text-emerald-200/25">
+              <p className="mt-1 text-xs text-slate-300/65">
                 Images and PDFs up to 5 MB
               </p>
             </div>
@@ -2215,21 +2215,21 @@ export function ChatApp() {
 
         {/* Top bar */}
         <header
-          className="flex items-center gap-3 border-b border-emerald-900/20 px-4 pb-3 pt-4 lg:px-6 lg:py-3"
+          className="flex items-center gap-3 border-b border-slate-700/55 px-4 pb-3 pt-4 lg:px-6 lg:py-3"
           style={{ paddingTop: "max(env(safe-area-inset-top), 1rem)" }}
         >
           <button
             onClick={() => setSidebarOpen(true)}
-            className="rounded-xl p-3 text-emerald-200/50 transition-colors hover:bg-emerald-500/10 hover:text-emerald-200/70 lg:hidden"
+            className="rounded-xl p-3 text-slate-300/70 transition-colors hover:bg-sky-500/10 hover:text-sky-200 lg:hidden"
             aria-label="Open sidebar"
           >
             <Menu className="h-5 w-5" />
           </button>
           <div className="flex-1 min-w-0">
-            <h1 className="text-sm font-semibold text-[#f2f6f3] truncate">
+            <h1 className="text-sm font-semibold text-[#f4f8ff] truncate">
               Al Boreland
             </h1>
-            <p className="text-xs text-emerald-100/45 truncate">
+            <p className="text-xs text-slate-300/70 truncate">
               {messages.length === 0
                 ? `${getGreeting()} — ready when you are`
                 : `${messages.length} message${messages.length === 1 ? "" : "s"} this session`}
@@ -2239,48 +2239,48 @@ export function ChatApp() {
             <div className="hidden items-center gap-2 sm:flex lg:hidden">
               <Link
                 href={withAlAppPrefix(pathname, "/attention")}
-                className="rounded-full border border-emerald-500/25 bg-emerald-500/10 px-3 py-1.5 text-xs font-semibold text-emerald-100"
+                className="rounded-full border border-sky-500/35 bg-sky-500/12 px-3 py-1.5 text-xs font-semibold text-sky-100"
               >
                 Attention
               </Link>
               <Link
                 href={withAlAppPrefix(pathname, "/inbox")}
-                className="rounded-full border border-emerald-900/25 bg-[#101714] px-3 py-1.5 text-xs font-semibold text-emerald-100/80"
+                className="rounded-full border border-slate-700/55 bg-[#0f1629] px-3 py-1.5 text-xs font-semibold text-slate-100/85"
               >
                 Inbox
               </Link>
               <Link
                 href={withAlAppPrefix(pathname, "/operational-proof")}
-                className="rounded-full border border-emerald-900/25 bg-[#101714] px-3 py-1.5 text-xs font-semibold text-emerald-100/80"
+                className="rounded-full border border-slate-700/55 bg-[#0f1629] px-3 py-1.5 text-xs font-semibold text-slate-100/85"
               >
                 System Health
               </Link>
             </div>
             <Link
               href={withAlAppPrefix(pathname, "/attention")}
-              className="hidden items-center gap-1.5 rounded-full border border-emerald-500/25 bg-emerald-500/10 px-3 py-1.5 text-[10px] font-semibold text-emerald-100 lg:inline-flex"
+              className="hidden items-center gap-1.5 rounded-full border border-sky-500/35 bg-sky-500/12 px-3 py-1.5 text-[10px] font-semibold text-sky-100 lg:inline-flex"
             >
               <Sparkles className="h-3 w-3" />
               <span>Attention</span>
             </Link>
             <Link
               href={withAlAppPrefix(pathname, "/inbox")}
-              className="hidden items-center gap-1.5 rounded-full border border-emerald-900/25 bg-[#101714] px-3 py-1.5 text-[10px] font-semibold text-emerald-100/80 md:inline-flex"
+              className="hidden items-center gap-1.5 rounded-full border border-slate-700/55 bg-[#0f1629] px-3 py-1.5 text-[10px] font-semibold text-slate-100/85 md:inline-flex"
             >
               <BookUp className="h-3 w-3" />
               <span>Inbox</span>
             </Link>
             <Link
               href={withAlAppPrefix(pathname, "/operational-proof")}
-              className="hidden items-center gap-1.5 rounded-full border border-emerald-900/25 bg-[#101714] px-3 py-1.5 text-[10px] font-semibold text-emerald-100/80 lg:inline-flex"
+              className="hidden items-center gap-1.5 rounded-full border border-slate-700/55 bg-[#0f1629] px-3 py-1.5 text-[10px] font-semibold text-slate-100/85 lg:inline-flex"
             >
               <ShieldCheck className="h-3 w-3" />
               <span>System Health</span>
             </Link>
             {bridgeConnected && (
-              <div className="flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-2.5 py-1">
-                <FolderOpen className="h-3 w-3 text-emerald-400/60" />
-                <span className="text-[10px] font-medium text-emerald-400/50">
+              <div className="flex items-center gap-1.5 rounded-full bg-sky-500/12 px-2.5 py-1">
+                <FolderOpen className="h-3 w-3 text-sky-300/70" />
+                <span className="text-[10px] font-medium text-sky-200/75">
                   Vault
                 </span>
               </div>
@@ -2288,7 +2288,7 @@ export function ChatApp() {
             {messages.length > 0 && (
               <button
                 onClick={clearChat}
-                className="rounded-lg px-3 py-1.5 text-xs text-emerald-200/25 transition-colors hover:bg-emerald-500/10 hover:text-emerald-200/50"
+                className="rounded-lg px-3 py-1.5 text-xs text-slate-300/65 transition-colors hover:bg-sky-500/10 hover:text-sky-200"
               >
                 Clear
               </button>
@@ -2299,42 +2299,42 @@ export function ChatApp() {
         {/* Messages */}
         <div className="flex-1 overflow-y-auto px-4 py-6 al-scrollbar lg:px-6">
           {messages.length === 0 ? (
-            <div className="flex min-h-full flex-col items-center justify-start px-4 pb-6 pt-8 text-center lg:pt-10">
-              <div className="al-avatar-badge relative mb-6 flex h-20 w-20 items-center justify-center overflow-hidden rounded-2xl">
-                <span className="relative z-10 text-2xl font-display text-[#f3faf6]">AB</span>
-                <div className="al-avatar-beard absolute inset-x-3 bottom-2 h-5 rounded-b-full" />
+            <div className="flex min-h-full flex-col items-center justify-start px-4 pb-6 pt-6 text-left lg:pt-8">
+              <div className="w-full max-w-3xl rounded-2xl border border-slate-700/55 bg-[#0d1527] px-5 py-4 shadow-[0_14px_40px_rgba(2,6,23,0.42)]">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">
+                  Command Focus
+                </p>
+                <h2 className="mt-2 font-display text-lg text-[#eff6ff]">
+                  {dashboardSummary?.headline || "What needs attention now?"}
+                </h2>
+                <p className="mt-1.5 text-sm text-slate-300/80">
+                  Founder-first view: priority, blockers, and the next move without dashboard noise.
+                </p>
               </div>
-              <h2 className="font-display text-xl text-[#e2ede8]">
-                {getGreeting()}
-              </h2>
-              <p className="mt-2 max-w-sm text-sm leading-relaxed text-emerald-100/45">
-                I&apos;ll help you sort what matters, route the work, and keep the next move clear.
-                Measure twice, move once.
-              </p>
-              <div className="mt-8 w-full max-w-3xl rounded-3xl border border-emerald-900/20 bg-[#101714] p-5 text-left shadow-[0_18px_60px_rgba(0,0,0,0.22)]">
+              <div className="mt-4 w-full max-w-3xl rounded-3xl border border-slate-700/55 bg-[#0d1527] p-5 text-left shadow-[0_18px_60px_rgba(2,6,23,0.46)]">
                 <div className="flex flex-wrap items-start justify-between gap-4">
                   <div>
-                    <p className="text-xs font-semibold uppercase tracking-[0.22em] text-emerald-300/45">
+                    <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-400/85">
                       Attention Now
                     </p>
                     <h3 className="mt-2 text-xl font-semibold text-[#f3faf6]">
                       {dashboardSummary?.headline || "Pulling the real queue into focus."}
                     </h3>
-                    <p className="mt-2 max-w-xl text-sm leading-6 text-emerald-100/65">
+                    <p className="mt-2 max-w-xl text-sm leading-6 text-slate-300/80">
                       This should answer the founder question first: what needs action now, what is waiting on you, and where the next move belongs.
                     </p>
                   </div>
                   <div className="flex flex-wrap gap-3">
                     <Link
                       href={withAlAppPrefix(pathname, "/attention")}
-                      className="inline-flex items-center gap-2 rounded-2xl bg-emerald-500 px-4 py-3 text-sm font-semibold text-[#05110b] transition hover:bg-emerald-400"
+                      className="inline-flex items-center gap-2 rounded-2xl bg-sky-500 px-4 py-3 text-sm font-semibold text-slate-950 transition hover:bg-sky-400"
                     >
                       <Sparkles className="h-4 w-4" />
                       Open Attention
                     </Link>
                     <Link
                       href={withAlAppPrefix(pathname, "/inbox")}
-                      className="inline-flex items-center gap-2 rounded-2xl border border-emerald-900/25 bg-[#0b110e] px-4 py-3 text-sm font-semibold text-emerald-100 transition hover:border-emerald-500/40"
+                      className="inline-flex items-center gap-2 rounded-2xl border border-slate-700/60 bg-[#0a1222] px-4 py-3 text-sm font-semibold text-slate-100 transition hover:border-sky-500/55"
                     >
                       <BookUp className="h-4 w-4" />
                       Open Inbox
@@ -2342,15 +2342,15 @@ export function ChatApp() {
                   </div>
                 </div>
                 <div className="mt-5 grid gap-3 sm:grid-cols-3">
-                  <div className="rounded-2xl border border-emerald-500/18 bg-[#0b110e] p-4">
-                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-200/65">
+                  <div className="rounded-2xl border border-sky-500/25 bg-[#0a1222] p-4">
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-sky-200/80">
                       Waiting on Dez
                     </p>
-                    <p className="mt-2 text-3xl font-semibold text-emerald-100">
+                    <p className="mt-2 text-3xl font-semibold text-slate-100">
                       {waitingOnDezCount}
                     </p>
                   </div>
-                  <div className="rounded-2xl border border-red-500/18 bg-[#0b110e] p-4">
+                  <div className="rounded-2xl border border-red-500/25 bg-[#0a1222] p-4">
                     <p className="text-xs font-semibold uppercase tracking-[0.18em] text-red-200/70">
                       Blocked Systems
                     </p>
@@ -2358,7 +2358,7 @@ export function ChatApp() {
                       {blockedSystemsCount}
                     </p>
                   </div>
-                  <div className="rounded-2xl border border-amber-500/18 bg-[#0b110e] p-4">
+                  <div className="rounded-2xl border border-amber-500/25 bg-[#0a1222] p-4">
                     <p className="text-xs font-semibold uppercase tracking-[0.18em] text-amber-200/70">
                       Inbox Queue
                     </p>
@@ -2368,15 +2368,15 @@ export function ChatApp() {
                   </div>
                 </div>
                 <div className="mt-3 grid gap-3 sm:grid-cols-3">
-                  <div className="rounded-2xl border border-emerald-500/18 bg-[#0b110e] p-4">
-                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-200/65">
+                  <div className="rounded-2xl border border-sky-500/25 bg-[#0a1222] p-4">
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-sky-200/80">
                       Review ready
                     </p>
-                    <p className="mt-2 text-3xl font-semibold text-emerald-100">
+                    <p className="mt-2 text-3xl font-semibold text-slate-100">
                       {reviewReadyCount}
                     </p>
                   </div>
-                  <div className="rounded-2xl border border-amber-500/18 bg-[#0b110e] p-4">
+                  <div className="rounded-2xl border border-amber-500/25 bg-[#0a1222] p-4">
                     <p className="text-xs font-semibold uppercase tracking-[0.18em] text-amber-200/70">
                       Cleanup live
                     </p>
@@ -2384,7 +2384,7 @@ export function ChatApp() {
                       {dashboardSummary?.counts.activeCleanup ?? "-"}
                     </p>
                   </div>
-                  <div className="rounded-2xl border border-slate-500/18 bg-[#0b110e] p-4">
+                  <div className="rounded-2xl border border-slate-500/30 bg-[#0a1222] p-4">
                     <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-200/70">
                       Buried stale
                     </p>
@@ -2403,34 +2403,34 @@ export function ChatApp() {
                             ? "border-amber-500/20 bg-amber-500/10 text-amber-100"
                             : item.tone === "sky"
                               ? "border-sky-500/20 bg-sky-500/10 text-sky-100"
-                              : "border-emerald-500/20 bg-emerald-500/10 text-emerald-100";
+                              : "border-sky-500/25 bg-sky-500/12 text-sky-100";
                       return (
                         <a
                           key={`${item.href}-${item.title}`}
                           href={item.href}
-                          className="rounded-2xl border border-emerald-900/20 bg-[#0b110e] p-4 text-left transition hover:border-emerald-500/35"
+                          className="rounded-2xl border border-slate-700/55 bg-[#0a1222] p-4 text-left transition hover:border-sky-500/45"
                         >
                           <span className={`inline-flex rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.15em] ${toneClass}`}>
                             Spotlight
                           </span>
                           <p className="mt-3 text-base font-semibold text-[#f3faf6]">{item.title}</p>
-                          <p className="mt-2 text-sm leading-6 text-emerald-100/70">{item.reason}</p>
+                          <p className="mt-2 text-sm leading-6 text-slate-300/85">{item.reason}</p>
                         </a>
                       );
                     })}
                   </div>
                 ) : null}
               </div>
-              <div className="mt-8 w-full max-w-3xl rounded-3xl border border-emerald-900/20 bg-[#101714] p-5 text-left shadow-[0_18px_60px_rgba(0,0,0,0.22)]">
+              <div className="mt-8 w-full max-w-3xl rounded-3xl border border-slate-700/55 bg-[#0d1527] p-5 text-left shadow-[0_18px_60px_rgba(2,6,23,0.46)]">
                 <div className="flex flex-wrap items-start justify-between gap-4">
                   <div>
-                    <p className="text-xs font-semibold uppercase tracking-[0.22em] text-emerald-300/45">
+                    <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-400/85">
                       Businesses
                     </p>
                     <h3 className="mt-2 text-xl font-semibold text-[#f3faf6]">
                       Who owns the work and where is the friction?
                     </h3>
-                    <p className="mt-2 max-w-xl text-sm leading-6 text-emerald-100/65">
+                    <p className="mt-2 max-w-xl text-sm leading-6 text-slate-300/80">
                       This is the operating strip for the businesses plugged into AL. Each card should make the owner, the top signal, and the next move obvious.
                     </p>
                   </div>
@@ -2443,7 +2443,7 @@ export function ChatApp() {
                           ? "border-red-500/20 bg-red-500/10 text-red-100"
                           : business.status === "warning"
                             ? "border-amber-500/20 bg-amber-500/10 text-amber-100"
-                            : "border-emerald-500/20 bg-emerald-500/10 text-emerald-100";
+                            : "border-sky-500/25 bg-sky-500/12 text-sky-100";
                       const Icon = business.businessId === "dominion" ? Building2 : Wrench;
                       const ceoName = business.ceoId === "dominion" ? "Jerry" : business.ceoId === "wrenchready" ? "Tom" : business.ceoId;
 
@@ -2451,27 +2451,27 @@ export function ChatApp() {
                         <a
                           key={business.businessId}
                           href={business.operatorHomePath}
-                          className="rounded-2xl border border-emerald-900/20 bg-[#0b110e] p-4 text-left transition hover:border-emerald-500/35"
+                          className="rounded-2xl border border-slate-700/55 bg-[#0a1222] p-4 text-left transition hover:border-sky-500/45"
                         >
                           <div className="flex items-start justify-between gap-3">
                             <div className="flex items-center gap-3">
-                              <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#111916] text-emerald-200/70">
+                              <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#0f1b33] text-sky-200/80">
                                 <Icon className="h-4 w-4" />
                               </span>
                               <div>
                                 <p className="text-base font-semibold text-[#f3faf6]">{business.businessLabel}</p>
-                                <p className="text-xs text-emerald-100/45">CEO lane: {ceoName}</p>
+                                <p className="text-xs text-slate-300/70">CEO lane: {ceoName}</p>
                               </div>
                             </div>
                             <span className={`inline-flex rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.15em] ${badgeClass}`}>
                               {business.status}
                             </span>
                           </div>
-                          <p className="mt-4 text-sm font-semibold text-emerald-100">{business.headline}</p>
-                          <p className="mt-2 text-sm leading-6 text-emerald-100/70">{business.nextAction}</p>
-                          <div className="mt-4 flex items-center justify-between gap-3 text-xs text-emerald-100/45">
+                          <p className="mt-4 text-sm font-semibold text-slate-100">{business.headline}</p>
+                          <p className="mt-2 text-sm leading-6 text-slate-300/85">{business.nextAction}</p>
+                          <div className="mt-4 flex items-center justify-between gap-3 text-xs text-slate-300/75">
                             <span>{business.scorecardSummary}</span>
-                            <span className="inline-flex items-center gap-1 text-emerald-200/60">
+                            <span className="inline-flex items-center gap-1 text-sky-200/85">
                               Open
                               <ArrowUpRight className="h-3 w-3" />
                             </span>
@@ -2481,37 +2481,37 @@ export function ChatApp() {
                     })}
                   </div>
                 ) : (
-                  <div className="mt-5 rounded-2xl border border-emerald-900/20 bg-[#0b110e] p-4">
-                    <p className="text-sm text-emerald-100/70">
+                  <div className="mt-5 rounded-2xl border border-slate-700/55 bg-[#0a1222] p-4">
+                    <p className="text-sm text-slate-300/80">
                       No business modules are registered yet.
                     </p>
                   </div>
                 )}
               </div>
-              <div className="mt-8 w-full max-w-3xl rounded-3xl border border-emerald-900/20 bg-[#101714] p-5 text-left shadow-[0_18px_60px_rgba(0,0,0,0.22)]">
+              <div className="mt-8 w-full max-w-3xl rounded-3xl border border-slate-700/55 bg-[#0d1527] p-5 text-left shadow-[0_18px_60px_rgba(2,6,23,0.46)]">
                 <div className="flex flex-wrap items-start justify-between gap-4">
                   <div>
-                    <p className="text-xs font-semibold uppercase tracking-[0.22em] text-emerald-300/45">
+                    <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-400/85">
                       System Trust
                     </p>
                     <h3 className="mt-2 text-xl font-semibold text-[#f3faf6]">
                       Can we trust the system underneath the work?
                     </h3>
-                    <p className="mt-2 max-w-xl text-sm leading-6 text-emerald-100/65">
+                    <p className="mt-2 max-w-xl text-sm leading-6 text-slate-300/80">
                       Keep the framework in the background. This is where you check whether AL is healthy enough to trust, and whether the labor lanes are actually live.
                     </p>
                   </div>
                   <div className="flex flex-wrap gap-3">
                     <Link
                       href={withAlAppPrefix(pathname, "/operational-proof")}
-                      className="inline-flex items-center gap-2 rounded-2xl bg-emerald-500 px-4 py-3 text-sm font-semibold text-[#05110b] transition hover:bg-emerald-400"
+                      className="inline-flex items-center gap-2 rounded-2xl bg-sky-500 px-4 py-3 text-sm font-semibold text-slate-950 transition hover:bg-sky-400"
                     >
                       <ShieldCheck className="h-4 w-4" />
                       Open System Health
                     </Link>
                     <Link
                       href={withAlAppPrefix(pathname, "/labor-lanes")}
-                      className="inline-flex items-center gap-2 rounded-2xl border border-emerald-900/25 bg-[#0b110e] px-4 py-3 text-sm font-semibold text-emerald-100 transition hover:border-emerald-500/40"
+                      className="inline-flex items-center gap-2 rounded-2xl border border-slate-700/60 bg-[#0a1222] px-4 py-3 text-sm font-semibold text-slate-100 transition hover:border-sky-500/55"
                     >
                       <Receipt className="h-4 w-4" />
                       Open Labor Lanes
@@ -2519,15 +2519,15 @@ export function ChatApp() {
                   </div>
                 </div>
                 <div className="mt-5 grid gap-3 sm:grid-cols-3">
-                  <div className="rounded-2xl border border-emerald-500/18 bg-[#0b110e] p-4">
-                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-200/65">
+                  <div className="rounded-2xl border border-sky-500/25 bg-[#0a1222] p-4">
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-sky-200/80">
                       Healthy
                     </p>
-                    <p className="mt-2 text-3xl font-semibold text-emerald-100">
+                    <p className="mt-2 text-3xl font-semibold text-slate-100">
                       {systemHealthyCount}
                     </p>
                   </div>
-                  <div className="rounded-2xl border border-amber-500/18 bg-[#0b110e] p-4">
+                  <div className="rounded-2xl border border-amber-500/25 bg-[#0a1222] p-4">
                     <p className="text-xs font-semibold uppercase tracking-[0.18em] text-amber-200/70">
                       Warning
                     </p>
@@ -2535,7 +2535,7 @@ export function ChatApp() {
                       {systemWarningCount}
                     </p>
                   </div>
-                  <div className="rounded-2xl border border-red-500/18 bg-[#0b110e] p-4">
+                  <div className="rounded-2xl border border-red-500/25 bg-[#0a1222] p-4">
                     <p className="text-xs font-semibold uppercase tracking-[0.18em] text-red-200/70">
                       Failing
                     </p>
@@ -2545,19 +2545,19 @@ export function ChatApp() {
                     </div>
                 </div>
                 <div className="mt-5 grid gap-3 sm:grid-cols-2">
-                  <div className="rounded-2xl border border-emerald-900/20 bg-[#0b110e] p-4">
+                  <div className="rounded-2xl border border-slate-700/55 bg-[#0a1222] p-4">
                     <p className="text-sm font-semibold text-[#f3faf6]">
                       {operationalProof?.topNextMove || "Checking the control-loop health now."}
                     </p>
-                    <p className="mt-2 text-sm leading-6 text-emerald-100/70">
+                    <p className="mt-2 text-sm leading-6 text-slate-300/85">
                       Operational proof is the truth panel behind the command center. Use it when you need to verify whether the loops can be trusted.
                     </p>
                   </div>
-                  <div className="rounded-2xl border border-emerald-900/20 bg-[#0b110e] p-4">
+                  <div className="rounded-2xl border border-slate-700/55 bg-[#0a1222] p-4">
                     <p className="text-sm font-semibold text-[#f3faf6]">
                       {laborLanes?.headline || "Checking whether the shared labor lanes are real yet."}
                     </p>
-                    <p className="mt-2 text-sm leading-6 text-emerald-100/70">
+                    <p className="mt-2 text-sm leading-6 text-slate-300/85">
                       {laborLanes?.topNextMove || "Pulling the lane bottlenecks into view."}
                     </p>
                   </div>

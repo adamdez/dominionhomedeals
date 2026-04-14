@@ -40,17 +40,17 @@ export function AuthScreen({ onAuthenticated }: AuthScreenProps) {
   return (
     <div className="flex h-full w-full items-center justify-center p-4">
       <div className="relative w-full max-w-sm">
-        <div className="absolute -inset-1 rounded-2xl bg-gradient-to-b from-emerald-500/20 via-emerald-500/5 to-transparent blur-xl" />
+        <div className="absolute -inset-1 rounded-2xl bg-gradient-to-b from-sky-500/25 via-blue-500/10 to-transparent blur-xl" />
 
-        <div className="relative rounded-2xl border border-emerald-900/30 bg-[#111916] p-8 shadow-2xl">
-          <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-emerald-500/10 ring-1 ring-emerald-500/20">
-            <span className="text-2xl font-display text-emerald-400">A</span>
+        <div className="relative rounded-2xl border border-slate-700/50 bg-[#0b1120] p-8 shadow-2xl">
+          <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-sky-500/15 ring-1 ring-sky-400/35">
+            <span className="text-2xl font-display text-sky-300">A</span>
           </div>
 
-          <h1 className="text-center font-display text-2xl text-[#e2ede8]">
+          <h1 className="text-center font-display text-2xl text-[#edf4ff]">
             Al Boreland
           </h1>
-          <p className="mt-1.5 text-center text-sm text-emerald-200/40">
+          <p className="mt-1.5 text-center text-sm text-slate-300/70">
             Private operating system &mdash; Command Center
           </p>
 
@@ -64,7 +64,7 @@ export function AuthScreen({ onAuthenticated }: AuthScreenProps) {
               aria-hidden="true"
             />
             <div className="relative">
-              <Lock className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-emerald-200/25" />
+              <Lock className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400/65" />
               <input
                 type="password"
                 value={password}
@@ -72,7 +72,7 @@ export function AuthScreen({ onAuthenticated }: AuthScreenProps) {
                 placeholder="Enter password"
                 autoComplete="current-password"
                 autoFocus
-                className="w-full rounded-xl border border-emerald-900/30 bg-[#0a0f0d] py-3 pl-10 pr-4 text-sm text-[#e2ede8] placeholder-emerald-200/25 transition-colors focus:border-emerald-500/50 focus:outline-none focus:ring-1 focus:ring-emerald-500/25"
+                className="w-full rounded-xl border border-slate-700/50 bg-[#060b17] py-3 pl-10 pr-4 text-sm text-[#eaf2ff] placeholder-slate-400/60 transition-colors focus:border-sky-400/60 focus:outline-none focus:ring-1 focus:ring-sky-400/35"
               />
             </div>
 
@@ -86,7 +86,7 @@ export function AuthScreen({ onAuthenticated }: AuthScreenProps) {
             <button
               type="submit"
               disabled={loading || !password}
-              className="flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 py-3 text-sm font-semibold text-white transition-all hover:bg-emerald-500 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40"
+              className="flex w-full items-center justify-center gap-2 rounded-xl bg-sky-500 py-3 text-sm font-semibold text-slate-950 transition-all hover:bg-sky-400 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40"
             >
               {loading ? (
                 <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />

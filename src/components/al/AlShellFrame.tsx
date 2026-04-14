@@ -29,7 +29,7 @@ const sectionLinks = [
 
 export function AlShellFrame({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const isCommandCenter = pathname === "/al";
+  const isCommandCenter = pathname === "/al" || pathname === "/";
 
   if (isCommandCenter) {
     return <>{children}</>;
@@ -37,14 +37,14 @@ export function AlShellFrame({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="flex h-full w-full">
-      <aside className="hidden h-full w-72 shrink-0 border-r border-emerald-900/20 bg-[#0b120e] lg:flex lg:flex-col">
-        <div className="border-b border-emerald-900/20 px-5 py-6">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-emerald-300/45">
+      <aside className="hidden h-full w-72 shrink-0 border-r border-slate-700/55 bg-[#09101f] lg:flex lg:flex-col">
+        <div className="border-b border-slate-700/55 px-5 py-6">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400/80">
             AL Navigation
           </p>
-          <h2 className="mt-2 text-2xl font-semibold text-[#f3faf6]">Keep the bolts tight</h2>
-          <p className="mt-3 text-sm leading-6 text-emerald-100/60">
-            Stay inside the same AL truth system while moving between command, approvals, tasks, and daily operating checks.
+          <h2 className="mt-2 text-2xl font-semibold text-[#f4f8ff]">Operator map</h2>
+          <p className="mt-3 text-sm leading-6 text-slate-300/80">
+            Stay inside one control surface while moving between command, approvals, tasks, and operating checks.
           </p>
         </div>
 
@@ -60,21 +60,21 @@ export function AlShellFrame({ children }: { children: React.ReactNode }) {
                 href={href}
                 className={`block rounded-2xl border px-4 py-4 transition ${
                   active
-                    ? "border-emerald-500/25 bg-emerald-500/10"
-                    : "border-emerald-900/20 bg-[#101714] hover:border-emerald-500/30 hover:bg-emerald-500/5"
+                    ? "border-sky-500/30 bg-sky-500/12"
+                    : "border-slate-700/55 bg-[#0d1527] hover:border-sky-500/35 hover:bg-sky-500/5"
                 }`}
               >
                 <div className="flex items-center gap-3">
                   <span
                     className={`flex h-10 w-10 items-center justify-center rounded-2xl ${
-                      active ? "bg-emerald-500 text-[#05110b]" : "bg-[#0b120e] text-emerald-200/70"
+                      active ? "bg-sky-500 text-slate-950" : "bg-[#0a1222] text-sky-200/80"
                     }`}
                   >
                     <Icon className="h-4 w-4" />
                   </span>
                   <div>
-                    <p className="text-sm font-semibold text-[#f3faf6]">{item.label}</p>
-                    <p className="text-xs text-emerald-100/45">{item.note}</p>
+                    <p className="text-sm font-semibold text-[#f4f8ff]">{item.label}</p>
+                    <p className="text-xs text-slate-300/70">{item.note}</p>
                   </div>
                 </div>
               </Link>
