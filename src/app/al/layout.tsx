@@ -30,7 +30,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#0a0f0d",
+  themeColor: "#050911",
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
@@ -38,7 +38,7 @@ export const viewport: Viewport = {
 
 export default function AlLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="al-workshop-bg fixed inset-0 z-[200] flex overflow-hidden text-[#e2ede8]">
+    <div className="al-workshop-bg fixed inset-0 z-[200] flex overflow-hidden text-[var(--al-text-primary)]">
       <AlShellFrame>{children}</AlShellFrame>
       <MobileDock />
     </div>

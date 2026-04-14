@@ -80,6 +80,10 @@ const config: Config = {
       animation: {
         "fade-up": "fadeUp 0.65s cubic-bezier(0.16,1,0.3,1) forwards",
         "pulse-soft": "pulseSoft 2.5s ease-in-out infinite",
+        "al-glow-pulse": "alGlowPulse 2.5s ease-in-out infinite",
+        "al-ring-spin": "alRingSpin 4s linear infinite",
+        "al-neural": "alNeuralPulse 1.2s ease-in-out infinite",
+        "al-scan": "alScanLine 0.6s ease-out",
       },
       keyframes: {
         fadeUp: {
@@ -89,6 +93,21 @@ const config: Config = {
         pulseSoft: {
           "0%,100%": { opacity: "1" },
           "50%": { opacity: "0.6" },
+        },
+        alGlowPulse: {
+          "0%,100%": { boxShadow: "0 0 8px rgba(0,229,255,0.15)" },
+          "50%": { boxShadow: "0 0 20px rgba(0,229,255,0.35), 0 0 50px rgba(0,229,255,0.10)" },
+        },
+        alRingSpin: {
+          to: { transform: "rotate(360deg)" },
+        },
+        alNeuralPulse: {
+          "0%,100%": { transform: "scaleY(0.3)", opacity: "0.3" },
+          "50%": { transform: "scaleY(1)", opacity: "1" },
+        },
+        alScanLine: {
+          "0%": { left: "-100%" },
+          "100%": { left: "100%" },
         },
       },
     },

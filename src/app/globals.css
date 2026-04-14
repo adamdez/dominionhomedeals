@@ -7,6 +7,31 @@
    Warm · Trustworthy · Pacific Northwest
    ================================================================ */
 
+/* ── AL Premium Design Tokens ── */
+:root {
+  --al-void: #050911;
+  --al-surface-0: rgba(8, 14, 30, 0.55);
+  --al-surface-1: rgba(11, 20, 40, 0.60);
+  --al-surface-2: rgba(14, 24, 48, 0.65);
+  --al-border: rgba(0, 229, 255, 0.08);
+  --al-border-hover: rgba(0, 229, 255, 0.18);
+  --al-border-active: rgba(0, 229, 255, 0.30);
+  --al-cyan: #00e5ff;
+  --al-cyan-muted: rgba(0, 229, 255, 0.55);
+  --al-cyan-dim: rgba(0, 229, 255, 0.12);
+  --al-cyan-glow: 0 0 20px rgba(0, 229, 255, 0.15), 0 0 60px rgba(0, 229, 255, 0.05);
+  --al-cyan-glow-strong: 0 0 12px rgba(0, 229, 255, 0.30), 0 0 40px rgba(0, 229, 255, 0.12);
+  --al-text-primary: #eaf2ff;
+  --al-text-secondary: rgba(203, 213, 235, 0.75);
+  --al-text-tertiary: rgba(160, 175, 205, 0.50);
+  --al-glass-blur: 20px;
+  --al-glass-bg: rgba(8, 14, 30, 0.65);
+  --al-panel-shadow: 0 20px 60px rgba(2, 6, 18, 0.50), 0 1px 0 rgba(0, 229, 255, 0.04) inset;
+  --al-red: #ff4d6a;
+  --al-amber: #ffb020;
+  --al-green: #00e59b;
+}
+
 @layer base {
   html {
     scroll-behavior: smooth;
@@ -39,7 +64,6 @@
     @apply outline-none ring-2 ring-forest-400 ring-offset-2 ring-offset-stone-50;
   }
 
-  /* Smooth text rendering for display font */
   .font-display {
     font-feature-settings: "liga" 1, "kern" 1;
   }
@@ -105,39 +129,111 @@
     text-wrap: balance;
   }
 
+  /* ── AL Premium Background ── */
   .al-workshop-bg {
-    background:
-      radial-gradient(circle at 10% -10%, rgba(56, 189, 248, 0.18), transparent 32%),
-      radial-gradient(circle at 95% 10%, rgba(99, 102, 241, 0.14), transparent 34%),
-      radial-gradient(circle at 50% 120%, rgba(34, 211, 238, 0.1), transparent 42%),
-      linear-gradient(180deg, #060913 0%, #070d1a 48%, #050913 100%);
+    background-color: var(--al-void);
+    background-image:
+      radial-gradient(circle at 15% 0%, rgba(0, 229, 255, 0.12), transparent 35%),
+      radial-gradient(circle at 85% 5%, rgba(99, 102, 241, 0.10), transparent 35%),
+      radial-gradient(circle at 50% 100%, rgba(0, 229, 255, 0.06), transparent 45%),
+      radial-gradient(circle 1px at center, rgba(0, 229, 255, 0.035) 1px, transparent 0);
+    background-size: 100% 100%, 100% 100%, 100% 100%, 32px 32px;
   }
 
+  /* ── Glass Surfaces ── */
+  .al-glass {
+    background: var(--al-glass-bg);
+    backdrop-filter: blur(var(--al-glass-blur));
+    -webkit-backdrop-filter: blur(var(--al-glass-blur));
+    border: 1px solid var(--al-border);
+    box-shadow: var(--al-panel-shadow);
+  }
+
+  .al-glass-subtle {
+    background: var(--al-surface-0);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid var(--al-border);
+  }
+
+  .al-glass-card {
+    background: var(--al-surface-1);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid var(--al-border);
+    box-shadow: var(--al-panel-shadow);
+    transition: border-color 0.25s ease, box-shadow 0.25s ease;
+  }
+
+  .al-glass-card:hover {
+    border-color: var(--al-border-hover);
+    box-shadow: var(--al-panel-shadow), var(--al-cyan-glow);
+  }
+
+  /* ── Gradient Border (pseudo-element approach) ── */
+  .al-gradient-border {
+    position: relative;
+  }
+  .al-gradient-border::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1px;
+    background: linear-gradient(
+      135deg,
+      rgba(0, 229, 255, 0.20),
+      rgba(99, 102, 241, 0.10),
+      rgba(0, 229, 255, 0.06)
+    );
+    mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    mask-composite: exclude;
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    pointer-events: none;
+  }
+
+  /* ── Glow Utilities ── */
+  .al-glow-text {
+    text-shadow: 0 0 20px rgba(0, 229, 255, 0.30), 0 0 60px rgba(0, 229, 255, 0.08);
+  }
+
+  .al-glow-metric {
+    text-shadow: 0 0 10px rgba(0, 229, 255, 0.25), 0 0 40px rgba(0, 229, 255, 0.08);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .al-glow-dot {
+    box-shadow: 0 0 6px 2px currentColor;
+  }
+
+  /* ── Legacy compat ── */
   .al-flannel-panel {
-    background:
-      linear-gradient(120deg, rgba(8, 47, 73, 0.46), rgba(17, 24, 39, 0.82)),
-      linear-gradient(0deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0.02)),
-      #0c1321;
+    background: var(--al-glass-bg);
+    backdrop-filter: blur(var(--al-glass-blur));
+    -webkit-backdrop-filter: blur(var(--al-glass-blur));
   }
 
   .al-shop-card {
-    background: linear-gradient(180deg, rgba(15, 23, 42, 0.95), rgba(10, 18, 31, 0.96));
-    border: 1px solid rgba(56, 189, 248, 0.2);
-    box-shadow: 0 20px 60px rgba(2, 6, 23, 0.55);
+    background: var(--al-surface-1);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid var(--al-border);
+    box-shadow: var(--al-panel-shadow);
   }
 
   .al-avatar-badge {
     background:
-      radial-gradient(circle at 50% 26%, rgba(255, 255, 255, 0.24), transparent 24%),
-      linear-gradient(160deg, rgba(37, 99, 235, 0.46), rgba(14, 116, 144, 0.35)),
-      #0c1321;
-    border: 1px solid rgba(125, 211, 252, 0.4);
-    box-shadow: inset 0 -10px 24px rgba(2, 6, 23, 0.42);
+      radial-gradient(circle at 50% 26%, rgba(0, 229, 255, 0.20), transparent 24%),
+      linear-gradient(160deg, rgba(0, 100, 180, 0.40), rgba(0, 180, 200, 0.25)),
+      #0a1428;
+    border: 1px solid rgba(0, 229, 255, 0.30);
+    box-shadow: inset 0 -10px 24px rgba(2, 6, 18, 0.42);
   }
 
   .al-avatar-beard {
-    background: linear-gradient(180deg, rgba(15, 23, 42, 0.1), rgba(15, 23, 42, 0.85));
-    border-top: 1px solid rgba(125, 211, 252, 0.26);
+    background: linear-gradient(180deg, rgba(10, 20, 40, 0.1), rgba(10, 20, 40, 0.85));
+    border-top: 1px solid rgba(0, 229, 255, 0.20);
   }
 
   .al-avatar-mini {
@@ -150,11 +246,11 @@
     overflow: hidden;
     border-radius: 9999px;
     background:
-      radial-gradient(circle at 50% 26%, rgba(255, 255, 255, 0.2), transparent 24%),
-      linear-gradient(160deg, rgba(30, 64, 175, 0.44), rgba(14, 116, 144, 0.3)),
-      #0f172a;
-    border: 1px solid rgba(125, 211, 252, 0.28);
-    box-shadow: inset 0 -6px 10px rgba(2, 6, 23, 0.3);
+      radial-gradient(circle at 50% 26%, rgba(0, 229, 255, 0.15), transparent 24%),
+      linear-gradient(160deg, rgba(0, 80, 160, 0.35), rgba(0, 150, 180, 0.20)),
+      #0a1428;
+    border: 1px solid rgba(0, 229, 255, 0.22);
+    box-shadow: inset 0 -6px 10px rgba(2, 6, 18, 0.3);
   }
 
   .al-avatar-mini::after {
@@ -165,32 +261,68 @@
     bottom: 0.14rem;
     height: 0.42rem;
     border-radius: 9999px;
-    background: linear-gradient(180deg, rgba(15, 23, 42, 0.1), rgba(15, 23, 42, 0.85));
-    border-top: 1px solid rgba(125, 211, 252, 0.22);
+    background: linear-gradient(180deg, rgba(10, 20, 40, 0.1), rgba(10, 20, 40, 0.85));
+    border-top: 1px solid rgba(0, 229, 255, 0.18);
+  }
+
+  /* ── Rotating ring for AL avatar ── */
+  .al-avatar-ring {
+    position: relative;
+  }
+  .al-avatar-ring::before {
+    content: "";
+    position: absolute;
+    inset: -2px;
+    border-radius: 9999px;
+    padding: 1.5px;
+    background: conic-gradient(
+      from 0deg,
+      rgba(0, 229, 255, 0.50),
+      transparent 40%,
+      rgba(99, 102, 241, 0.30),
+      transparent 70%,
+      rgba(0, 229, 255, 0.50)
+    );
+    mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    mask-composite: exclude;
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    animation: alRingSpin 4s linear infinite;
+    pointer-events: none;
   }
 
   .al-brass-label {
-    color: rgba(56, 189, 248, 0.82);
+    color: var(--al-cyan-muted);
     letter-spacing: 0.2em;
   }
 }
 
 /* ================================================================
-   AL COMMAND CENTER — Dark theme utilities
+   AL COMMAND CENTER — Scrollbar
    ================================================================ */
 
 .al-scrollbar::-webkit-scrollbar {
-  width: 6px;
+  width: 5px;
 }
 .al-scrollbar::-webkit-scrollbar-track {
   background: transparent;
 }
 .al-scrollbar::-webkit-scrollbar-thumb {
-  background: rgba(56, 189, 248, 0.18);
+  background: rgba(0, 229, 255, 0.12);
   border-radius: 3px;
+  transition: background 0.2s;
 }
 .al-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: rgba(56, 189, 248, 0.3);
+  background: rgba(0, 229, 255, 0.28);
+  box-shadow: 0 0 6px rgba(0, 229, 255, 0.15);
+}
+
+/* ================================================================
+   AL COMMAND CENTER — Keyframes
+   ================================================================ */
+
+@keyframes alRingSpin {
+  to { transform: rotate(360deg); }
 }
 
 @keyframes alDotPulse {
@@ -202,6 +334,21 @@
     opacity: 1;
     transform: scale(1);
   }
+}
+
+@keyframes alNeuralPulse {
+  0%, 100% { transform: scaleY(0.3); opacity: 0.3; }
+  50% { transform: scaleY(1); opacity: 1; }
+}
+
+@keyframes alGlowPulse {
+  0%, 100% { box-shadow: 0 0 8px rgba(0, 229, 255, 0.15); }
+  50% { box-shadow: 0 0 20px rgba(0, 229, 255, 0.35), 0 0 50px rgba(0, 229, 255, 0.10); }
+}
+
+@keyframes alScanLine {
+  0% { left: -100%; }
+  100% { left: 100%; }
 }
 
 @keyframes fadeInLift {

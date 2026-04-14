@@ -299,27 +299,32 @@ export function Sidebar({
 
   function statusClasses(status: "live" | "degraded" | "blocked") {
     if (status === "live") {
-      return "border-sky-500/30 bg-sky-500/10 text-sky-100/85";
+      return "border-[rgba(0,229,155,0.15)] bg-[rgba(0,229,155,0.06)] text-[#00e59b]";
     }
     if (status === "degraded") {
-      return "border-amber-500/20 bg-amber-500/10 text-amber-200/70";
+      return "border-[rgba(255,176,32,0.15)] bg-[rgba(255,176,32,0.06)] text-[#ffb020]";
     }
-    return "border-red-500/20 bg-red-500/10 text-red-200/70";
+    return "border-[rgba(255,77,106,0.15)] bg-[rgba(255,77,106,0.06)] text-[#ff4d6a]";
   }
 
   function navItemClasses(href: string) {
     const target = withAlAppPrefix(pathname, href);
     const active = pathname === target;
     return active
-      ? "border-sky-500/35 bg-sky-500/12 text-[#f4f8ff]"
-      : "border-slate-700/55 bg-[#0f1629]/75 text-[#eaf2ff] hover:border-sky-400/40 hover:bg-sky-500/5";
+      ? "border-transparent bg-transparent text-[var(--al-text-primary)]"
+      : "border-transparent bg-transparent text-[var(--al-text-secondary)] hover:text-[var(--al-text-primary)] hover:bg-[var(--al-cyan-dim)]";
+  }
+
+  function navActiveBar(href: string) {
+    const target = withAlAppPrefix(pathname, href);
+    return pathname === target;
   }
 
   return (
     <>
       {isOpen && (
         <div
-          className="fixed inset-0 z-30 bg-black/50 backdrop-blur-sm lg:hidden"
+          className="fixed inset-0 z-30 bg-black/60 backdrop-blur-md lg:hidden"
           onClick={onClose}
           aria-hidden="true"
         />
@@ -328,34 +333,37 @@ export function Sidebar({
       <aside
         className={`
           fixed left-0 top-0 z-40 flex h-full w-72 flex-col pb-24
-          border-r border-slate-700/55 bg-[#09101f]
           transition-transform duration-300 ease-out
           lg:relative lg:translate-x-0
           lg:pb-0
           ${isOpen ? "translate-x-0" : "-translate-x-full"}
         `}
+        style={{ background: "var(--al-glass-bg)", backdropFilter: "blur(24px)", WebkitBackdropFilter: "blur(24px)" }}
       >
+        <div className="pointer-events-none absolute inset-y-0 right-0 w-px bg-gradient-to-b from-transparent via-[var(--al-cyan)]/15 to-transparent" />
+
         <div
-          className="al-flannel-panel flex items-center justify-between border-b border-slate-700/55 px-5 pb-5 pt-6"
-          style={{ paddingTop: "max(env(safe-area-inset-top), 1.25rem)" }}
+          className="relative flex items-center justify-between px-5 pb-5 pt-6"
+          style={{ paddingTop: "max(env(safe-area-inset-top), 1.25rem)", background: "var(--al-surface-0)" }}
         >
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-[var(--al-cyan)]/12 to-transparent" />
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-sky-500/12 ring-1 ring-sky-400/35">
-              <Sparkles className="h-4 w-4 text-sky-300" />
+            <div className="al-avatar-ring flex h-10 w-10 items-center justify-center rounded-lg bg-[var(--al-cyan-dim)]">
+              <Sparkles className="h-4 w-4 text-[var(--al-cyan)]" />
             </div>
             <div>
-              <p className="text-[10px] font-semibold uppercase al-brass-label">
+              <p className="text-[10px] font-semibold uppercase al-brass-label font-mono">
                 AL operator
               </p>
-              <h2 className="text-sm font-semibold text-[#f2f6f3]">
+              <h2 className="text-sm font-semibold text-[var(--al-text-primary)] al-glow-text">
                 Al Boreland
               </h2>
-              <p className="text-xs text-slate-300/75">Command and follow-through</p>
+              <p className="text-xs text-[var(--al-text-tertiary)]">Command and follow-through</p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="rounded-xl p-3 text-slate-300/70 transition-colors hover:bg-sky-500/10 hover:text-sky-200 lg:hidden"
+            className="rounded-xl p-3 text-[var(--al-text-tertiary)] transition-colors hover:bg-[var(--al-cyan-dim)] hover:text-[var(--al-cyan)] lg:hidden"
             aria-label="Close sidebar"
           >
             <X className="h-4 w-4" />
@@ -365,21 +373,24 @@ export function Sidebar({
         <nav className="flex-1 overflow-y-auto px-3 py-4 al-scrollbar">
           <div className="mb-5 px-2">
             <div className="mb-3">
-              <p className="px-2 text-[11px] font-semibold uppercase tracking-wider text-slate-400/80">
+              <p className="px-2 text-[11px] font-semibold uppercase tracking-wider font-mono text-[var(--al-cyan-muted)]">
                 Core
               </p>
-              <div className="mt-2 space-y-2">
+              <div className="mt-2 space-y-0.5">
                 {coreLinks.map((link) => (
                   <Link
                     key={link.href}
                     href={withAlAppPrefix(pathname, link.href)}
-                    className={`flex items-start gap-3 rounded-xl border px-3 py-3 text-left transition active:scale-[0.99] ${navItemClasses(link.href)}`}
+                    className={`group relative flex items-start gap-3 overflow-hidden rounded-xl border px-3 py-3 text-left transition active:scale-[0.99] ${navItemClasses(link.href)}`}
                     onClick={onClose}
                   >
-                    <span className="mt-0.5 flex-shrink-0">{link.icon}</span>
+                    {navActiveBar(link.href) && (
+                      <span className="absolute inset-y-1 left-0 w-[2px] rounded-full bg-[var(--al-cyan)] shadow-[0_0_8px_var(--al-cyan)]" />
+                    )}
+                    <span className={`mt-0.5 flex-shrink-0 ${navActiveBar(link.href) ? "text-[var(--al-cyan)]" : ""}`}>{link.icon}</span>
                     <span className="min-w-0">
                       <span className="block text-sm font-semibold">{link.label}</span>
-                      <span className="mt-0.5 block text-[11px] text-slate-300/70">{link.detail}</span>
+                      <span className="mt-0.5 block text-[11px] text-[var(--al-text-tertiary)]">{link.detail}</span>
                     </span>
                   </Link>
                 ))}
@@ -387,21 +398,24 @@ export function Sidebar({
             </div>
 
             <div>
-              <p className="px-2 text-[11px] font-semibold uppercase tracking-wider text-slate-400/80">
+              <p className="px-2 text-[11px] font-semibold uppercase tracking-wider font-mono text-[var(--al-cyan-muted)]">
                 Business lanes
               </p>
-              <div className="mt-2 space-y-2">
+              <div className="mt-2 space-y-0.5">
                 {businessLinks.map((link) => (
                   <Link
                     key={link.href}
                     href={withAlAppPrefix(pathname, link.href)}
-                    className={`flex items-start gap-3 rounded-xl border px-3 py-3 text-left transition active:scale-[0.99] ${navItemClasses(link.href)}`}
+                    className={`group relative flex items-start gap-3 overflow-hidden rounded-xl border px-3 py-3 text-left transition active:scale-[0.99] ${navItemClasses(link.href)}`}
                     onClick={onClose}
                   >
-                    <span className="mt-0.5 flex-shrink-0">{link.icon}</span>
+                    {navActiveBar(link.href) && (
+                      <span className="absolute inset-y-1 left-0 w-[2px] rounded-full bg-[var(--al-cyan)] shadow-[0_0_8px_var(--al-cyan)]" />
+                    )}
+                    <span className={`mt-0.5 flex-shrink-0 ${navActiveBar(link.href) ? "text-[var(--al-cyan)]" : ""}`}>{link.icon}</span>
                     <span className="min-w-0">
                       <span className="block text-sm font-semibold">{link.label}</span>
-                      <span className="mt-0.5 block text-[11px] text-slate-300/70">{link.detail}</span>
+                      <span className="mt-0.5 block text-[11px] text-[var(--al-text-tertiary)]">{link.detail}</span>
                     </span>
                   </Link>
                 ))}
@@ -414,13 +428,13 @@ export function Sidebar({
               <button
                 type="button"
                 onClick={() => setShowRuntime((value) => !value)}
-                className="al-shop-card flex w-full items-center justify-between rounded-xl px-3 py-3 text-left transition hover:border-sky-400/40 hover:bg-sky-500/5"
+                className="al-glass-subtle flex w-full items-center justify-between rounded-xl px-3 py-3 text-left transition hover:border-[var(--al-border-hover)]"
               >
                 <div>
-                  <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400/80">
+                  <p className="text-[11px] font-semibold uppercase tracking-wider font-mono text-[var(--al-cyan-muted)]">
                     Runtime
                   </p>
-                  <p className="mt-1 text-xs text-slate-300/80">
+                  <p className="mt-1 text-xs text-[var(--al-text-secondary)]">
                     {hostedRuntimeTruth
                       ? `${hostedRuntimeTruth.summary.live} live, ${hostedRuntimeTruth.summary.degraded} degraded`
                       : "Runtime status unavailable"}
@@ -429,14 +443,14 @@ export function Sidebar({
                   </p>
                 </div>
                 {showRuntime ? (
-                  <ChevronDown className="h-4 w-4 text-slate-300/70" />
+                  <ChevronDown className="h-4 w-4 text-[var(--al-text-tertiary)]" />
                 ) : (
-                  <ChevronRight className="h-4 w-4 text-slate-300/70" />
+                  <ChevronRight className="h-4 w-4 text-[var(--al-text-tertiary)]" />
                 )}
               </button>
 
               {showRuntime ? (
-                <div className="al-shop-card mt-2 rounded-xl p-3">
+                <div className="al-glass-subtle mt-2 rounded-xl p-3">
                   <div className="flex flex-wrap gap-2">
                     <button
                       type="button"
@@ -445,7 +459,7 @@ export function Sidebar({
                           "Run a status check and summarize what is live, degraded, blocked, and what needs action now.",
                         )
                       }
-                      className="rounded-xl border border-slate-700/55 bg-[#0b1222] px-3 py-2 text-xs font-semibold text-slate-100 transition hover:border-sky-400/50"
+                      className="rounded-xl al-glass-subtle px-3 py-2 text-xs font-semibold text-[var(--al-text-primary)] transition hover:border-[var(--al-border-hover)]"
                     >
                       Run status check
                     </button>
@@ -453,7 +467,7 @@ export function Sidebar({
 
                   {hostedRuntimeTruth ? (
                     <div className="mt-3 space-y-2">
-                      <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400/80">
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.18em] font-mono text-[var(--al-cyan-muted)]">
                         Hosted lanes
                       </p>
                       {hostedRuntimeTruth.lanes.map((lane) => (
@@ -462,12 +476,12 @@ export function Sidebar({
                           className={`rounded-lg border px-3 py-2 ${statusClasses(lane.status)}`}
                         >
                           <div className="flex items-center justify-between gap-2">
-                            <span className="text-[11px] font-semibold">{lane.label}</span>
-                            <span className="text-[10px] uppercase tracking-wide opacity-75">
+                            <span className="text-[11px] font-semibold font-mono">{lane.label}</span>
+                            <span className="text-[10px] uppercase tracking-wide font-mono opacity-75">
                               {lane.status}
                             </span>
                           </div>
-                          <p className="mt-1 text-[10px] opacity-80">
+                          <p className="mt-1 text-[10px] opacity-80 font-mono">
                             {lane.primaryMode}
                             {lane.fallbackMode ? ` -> ${lane.fallbackMode}` : ""}
                           </p>
@@ -477,7 +491,7 @@ export function Sidebar({
                   ) : null}
 
                   <div className="mt-3 space-y-2">
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400/80">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.18em] font-mono text-[var(--al-cyan-muted)]">
                       Local lanes
                     </p>
                     {localLaneRows.map((lane) => (
@@ -488,8 +502,8 @@ export function Sidebar({
                         )}`}
                       >
                         <div className="flex items-center justify-between gap-2">
-                          <span className="text-[11px] font-semibold">{lane.label}</span>
-                          <span className="text-[10px] uppercase tracking-wide opacity-75">
+                          <span className="text-[11px] font-semibold font-mono">{lane.label}</span>
+                          <span className="text-[10px] uppercase tracking-wide font-mono opacity-75">
                             {lane.status}
                           </span>
                         </div>
@@ -504,7 +518,7 @@ export function Sidebar({
 
           <div className="mb-5">
             <div className="px-2">
-              <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400/80">
+              <p className="text-[11px] font-semibold uppercase tracking-wider font-mono text-[var(--al-cyan-muted)]">
                 Start here
               </p>
               <div className="mt-2 space-y-0.5">
@@ -514,9 +528,9 @@ export function Sidebar({
                     <button
                       key={action.id}
                       onClick={() => onQuickAction(action.prompt)}
-                      className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm text-slate-200/80 transition-all hover:bg-sky-500/10 hover:text-sky-100 active:scale-[0.98]"
+                      className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm text-[var(--al-text-secondary)] transition-all hover:bg-[var(--al-cyan-dim)] hover:text-[var(--al-cyan)] active:scale-[0.98]"
                     >
-                      <span className="flex-shrink-0 text-sky-300/70">
+                      <span className="flex-shrink-0 text-[var(--al-cyan-muted)]">
                         {action.icon}
                       </span>
                       {action.label}
@@ -526,18 +540,18 @@ export function Sidebar({
               <button
                 type="button"
                 onClick={() => setShowQuickActions((value) => !value)}
-                className="mt-2 flex w-full items-center justify-between rounded-xl border border-slate-700/55 bg-[#0f1629]/75 px-3 py-3 text-left transition hover:border-sky-400/40 hover:bg-sky-500/5"
+                className="mt-2 flex w-full items-center justify-between rounded-xl al-glass-subtle px-3 py-3 text-left transition hover:border-[var(--al-border-hover)]"
               >
                 <div>
-                  <p className="text-sm font-semibold text-[#f2f6f3]">More quick asks</p>
-                  <p className="mt-0.5 text-[11px] text-slate-300/70">
+                  <p className="text-sm font-semibold text-[var(--al-text-primary)]">More quick asks</p>
+                  <p className="mt-0.5 text-[11px] text-[var(--al-text-tertiary)]">
                     Specialist prompts and CEO shortcuts
                   </p>
                 </div>
                 {showQuickActions ? (
-                  <ChevronDown className="h-4 w-4 text-slate-300/70" />
+                  <ChevronDown className="h-4 w-4 text-[var(--al-text-tertiary)]" />
                 ) : (
-                  <ChevronRight className="h-4 w-4 text-slate-300/70" />
+                  <ChevronRight className="h-4 w-4 text-[var(--al-text-tertiary)]" />
                 )}
               </button>
             </div>
@@ -546,7 +560,7 @@ export function Sidebar({
               <div className="mt-3">
                 {extendedQuickActionCategories.map((category) => (
                   <div key={category} className="mb-4">
-                    <h3 className="mb-2 px-2 text-[11px] font-semibold uppercase tracking-wider text-slate-400/80">
+                    <h3 className="mb-2 px-2 text-[11px] font-semibold uppercase tracking-wider font-mono text-[var(--al-cyan-muted)]">
                       {category}
                     </h3>
                     <div className="space-y-0.5">
@@ -559,9 +573,9 @@ export function Sidebar({
                           <button
                             key={action.id}
                             onClick={() => onQuickAction(action.prompt)}
-                            className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm text-slate-200/80 transition-all hover:bg-sky-500/10 hover:text-sky-100 active:scale-[0.98]"
+                            className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm text-[var(--al-text-secondary)] transition-all hover:bg-[var(--al-cyan-dim)] hover:text-[var(--al-cyan)] active:scale-[0.98]"
                           >
-                            <span className="flex-shrink-0 text-sky-300/70">
+                            <span className="flex-shrink-0 text-[var(--al-cyan-muted)]">
                               {action.icon}
                             </span>
                             {action.label}
@@ -575,10 +589,11 @@ export function Sidebar({
           </div>
         </nav>
 
-        <div className="border-t border-slate-700/55 p-3">
+        <div className="relative p-3">
+          <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[var(--al-cyan)]/10 to-transparent" />
           <button
             onClick={onOpenSettings}
-            className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-slate-300/80 transition-all hover:bg-sky-500/10 hover:text-sky-200"
+            className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-[var(--al-text-secondary)] transition-all hover:bg-[var(--al-cyan-dim)] hover:text-[var(--al-cyan)]"
           >
             <Settings className="h-4 w-4" />
             Settings

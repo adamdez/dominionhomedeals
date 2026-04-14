@@ -11,6 +11,7 @@ import {
   type FormEvent,
   type ReactNode,
 } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Send,
   Menu,
@@ -2200,13 +2201,13 @@ export function ChatApp() {
       >
         {/* Drag overlay */}
         {dragActive && (
-          <div className="absolute inset-0 z-20 flex items-center justify-center bg-sky-500/[0.04] backdrop-blur-[1px]">
-            <div className="rounded-2xl border-2 border-dashed border-sky-500/30 bg-[#070d1a]/85 px-8 py-6 text-center">
-              <Paperclip className="mx-auto mb-2 h-6 w-6 text-sky-300/70" />
-              <p className="text-sm font-medium text-slate-100/85">
+          <div className="absolute inset-0 z-20 flex items-center justify-center bg-[var(--al-cyan)]/[0.03] backdrop-blur-[2px]">
+            <div className="rounded-2xl border-2 border-dashed border-[var(--al-cyan)]/30 al-glass px-8 py-6 text-center">
+              <Paperclip className="mx-auto mb-2 h-6 w-6 text-[var(--al-cyan-muted)]" />
+              <p className="text-sm font-medium text-[var(--al-text-primary)]">
                 Drop files here
               </p>
-              <p className="mt-1 text-xs text-slate-300/65">
+              <p className="mt-1 text-xs text-[var(--al-text-secondary)]">
                 Images and PDFs up to 5 MB
               </p>
             </div>
@@ -2215,21 +2216,22 @@ export function ChatApp() {
 
         {/* Top bar */}
         <header
-          className="flex items-center gap-3 border-b border-slate-700/55 px-4 pb-3 pt-4 lg:px-6 lg:py-3"
-          style={{ paddingTop: "max(env(safe-area-inset-top), 1rem)" }}
+          className="al-glass-subtle relative flex items-center gap-3 px-4 pb-3 pt-4 lg:px-6 lg:py-3"
+          style={{ paddingTop: "max(env(safe-area-inset-top), 1rem)", borderBottom: "1px solid transparent", backgroundClip: "padding-box" }}
         >
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-[var(--al-cyan)]/20 to-transparent" />
           <button
             onClick={() => setSidebarOpen(true)}
-            className="rounded-xl p-3 text-slate-300/70 transition-colors hover:bg-sky-500/10 hover:text-sky-200 lg:hidden"
+            className="rounded-xl p-3 text-[var(--al-text-secondary)] transition-colors hover:bg-[var(--al-cyan-dim)] hover:text-[var(--al-cyan)] lg:hidden"
             aria-label="Open sidebar"
           >
             <Menu className="h-5 w-5" />
           </button>
           <div className="flex-1 min-w-0">
-            <h1 className="text-sm font-semibold text-[#f4f8ff] truncate">
+            <h1 className="text-sm font-semibold text-[var(--al-text-primary)] al-glow-text truncate">
               Al Boreland
             </h1>
-            <p className="text-xs text-slate-300/70 truncate">
+            <p className="text-xs text-[var(--al-text-tertiary)] truncate font-mono">
               {messages.length === 0
                 ? `${getGreeting()} — ready when you are`
                 : `${messages.length} message${messages.length === 1 ? "" : "s"} this session`}
@@ -2239,48 +2241,48 @@ export function ChatApp() {
             <div className="hidden items-center gap-2 sm:flex lg:hidden">
               <Link
                 href={withAlAppPrefix(pathname, "/attention")}
-                className="rounded-full border border-sky-500/35 bg-sky-500/12 px-3 py-1.5 text-xs font-semibold text-sky-100"
+                className="al-glass-subtle rounded-full px-3 py-1.5 text-xs font-semibold text-[var(--al-cyan)] shadow-[0_0_12px_rgba(0,229,255,0.10)]"
               >
                 Attention
               </Link>
               <Link
                 href={withAlAppPrefix(pathname, "/inbox")}
-                className="rounded-full border border-slate-700/55 bg-[#0f1629] px-3 py-1.5 text-xs font-semibold text-slate-100/85"
+                className="al-glass-subtle rounded-full px-3 py-1.5 text-xs font-semibold text-[var(--al-text-primary)]"
               >
                 Inbox
               </Link>
               <Link
                 href={withAlAppPrefix(pathname, "/operational-proof")}
-                className="rounded-full border border-slate-700/55 bg-[#0f1629] px-3 py-1.5 text-xs font-semibold text-slate-100/85"
+                className="al-glass-subtle rounded-full px-3 py-1.5 text-xs font-semibold text-[var(--al-text-primary)]"
               >
                 System Health
               </Link>
             </div>
             <Link
               href={withAlAppPrefix(pathname, "/attention")}
-              className="hidden items-center gap-1.5 rounded-full border border-sky-500/35 bg-sky-500/12 px-3 py-1.5 text-[10px] font-semibold text-sky-100 lg:inline-flex"
+              className="hidden items-center gap-1.5 rounded-full al-glass-subtle px-3 py-1.5 text-[10px] font-semibold text-[var(--al-cyan)] shadow-[0_0_12px_rgba(0,229,255,0.10)] lg:inline-flex"
             >
               <Sparkles className="h-3 w-3" />
               <span>Attention</span>
             </Link>
             <Link
               href={withAlAppPrefix(pathname, "/inbox")}
-              className="hidden items-center gap-1.5 rounded-full border border-slate-700/55 bg-[#0f1629] px-3 py-1.5 text-[10px] font-semibold text-slate-100/85 md:inline-flex"
+              className="hidden items-center gap-1.5 rounded-full al-glass-subtle px-3 py-1.5 text-[10px] font-semibold text-[var(--al-text-primary)] md:inline-flex"
             >
               <BookUp className="h-3 w-3" />
               <span>Inbox</span>
             </Link>
             <Link
               href={withAlAppPrefix(pathname, "/operational-proof")}
-              className="hidden items-center gap-1.5 rounded-full border border-slate-700/55 bg-[#0f1629] px-3 py-1.5 text-[10px] font-semibold text-slate-100/85 lg:inline-flex"
+              className="hidden items-center gap-1.5 rounded-full al-glass-subtle px-3 py-1.5 text-[10px] font-semibold text-[var(--al-text-primary)] lg:inline-flex"
             >
               <ShieldCheck className="h-3 w-3" />
               <span>System Health</span>
             </Link>
             {bridgeConnected && (
-              <div className="flex items-center gap-1.5 rounded-full bg-sky-500/12 px-2.5 py-1">
-                <FolderOpen className="h-3 w-3 text-sky-300/70" />
-                <span className="text-[10px] font-medium text-sky-200/75">
+              <div className="flex items-center gap-1.5 rounded-full bg-[var(--al-cyan-dim)] px-2.5 py-1">
+                <FolderOpen className="h-3 w-3 text-[var(--al-cyan-muted)]" />
+                <span className="text-[10px] font-medium font-mono text-[var(--al-cyan-muted)]">
                   Vault
                 </span>
               </div>
@@ -2288,7 +2290,7 @@ export function ChatApp() {
             {messages.length > 0 && (
               <button
                 onClick={clearChat}
-                className="rounded-lg px-3 py-1.5 text-xs text-slate-300/65 transition-colors hover:bg-sky-500/10 hover:text-sky-200"
+                className="rounded-lg px-3 py-1.5 text-xs text-[var(--al-text-tertiary)] transition-colors hover:bg-[var(--al-cyan-dim)] hover:text-[var(--al-cyan)]"
               >
                 Clear
               </button>
@@ -2300,41 +2302,41 @@ export function ChatApp() {
         <div className="flex-1 overflow-y-auto px-4 py-6 al-scrollbar lg:px-6">
           {messages.length === 0 ? (
             <div className="flex min-h-full flex-col items-center justify-start px-4 pb-6 pt-6 text-left lg:pt-8">
-              <div className="w-full max-w-3xl rounded-2xl border border-slate-700/55 bg-[#0d1527] px-5 py-4 shadow-[0_14px_40px_rgba(2,6,23,0.42)]">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">
+              <div className="al-glass-card al-gradient-border w-full max-w-3xl rounded-2xl px-5 py-4">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--al-cyan-muted)] font-mono">
                   Command Focus
                 </p>
-                <h2 className="mt-2 font-display text-lg text-[#eff6ff]">
+                <h2 className="mt-2 font-display text-lg text-[var(--al-text-primary)] al-glow-text">
                   {dashboardSummary?.headline || "What needs attention now?"}
                 </h2>
-                <p className="mt-1.5 text-sm text-slate-300/80">
+                <p className="mt-1.5 text-sm text-[var(--al-text-secondary)]">
                   Founder-first view: priority, blockers, and the next move without dashboard noise.
                 </p>
               </div>
-              <div className="mt-4 w-full max-w-3xl rounded-3xl border border-slate-700/55 bg-[#0d1527] p-5 text-left shadow-[0_18px_60px_rgba(2,6,23,0.46)]">
+              <div className="mt-4 w-full max-w-3xl al-glass-card al-gradient-border rounded-3xl p-5 text-left">
                 <div className="flex flex-wrap items-start justify-between gap-4">
                   <div>
-                    <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-400/85">
+                    <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--al-cyan-muted)] font-mono">
                       Attention Now
                     </p>
-                    <h3 className="mt-2 text-xl font-semibold text-[#f3faf6]">
+                    <h3 className="mt-2 text-xl font-semibold text-[var(--al-text-primary)]">
                       {dashboardSummary?.headline || "Pulling the real queue into focus."}
                     </h3>
-                    <p className="mt-2 max-w-xl text-sm leading-6 text-slate-300/80">
+                    <p className="mt-2 max-w-xl text-sm leading-6 text-[var(--al-text-secondary)]">
                       This should answer the founder question first: what needs action now, what is waiting on you, and where the next move belongs.
                     </p>
                   </div>
                   <div className="flex flex-wrap gap-3">
                     <Link
                       href={withAlAppPrefix(pathname, "/attention")}
-                      className="inline-flex items-center gap-2 rounded-2xl bg-sky-500 px-4 py-3 text-sm font-semibold text-slate-950 transition hover:bg-sky-400"
+                      className="inline-flex items-center gap-2 rounded-2xl bg-[var(--al-cyan)] px-4 py-3 text-sm font-semibold text-[var(--al-void)] transition hover:shadow-[var(--al-cyan-glow-strong)]"
                     >
                       <Sparkles className="h-4 w-4" />
                       Open Attention
                     </Link>
                     <Link
                       href={withAlAppPrefix(pathname, "/inbox")}
-                      className="inline-flex items-center gap-2 rounded-2xl border border-slate-700/60 bg-[#0a1222] px-4 py-3 text-sm font-semibold text-slate-100 transition hover:border-sky-500/55"
+                      className="inline-flex items-center gap-2 rounded-2xl al-glass-subtle px-4 py-3 text-sm font-semibold text-[var(--al-text-primary)] transition hover:border-[var(--al-border-hover)]"
                     >
                       <BookUp className="h-4 w-4" />
                       Open Inbox
@@ -2342,53 +2344,53 @@ export function ChatApp() {
                   </div>
                 </div>
                 <div className="mt-5 grid gap-3 sm:grid-cols-3">
-                  <div className="rounded-2xl border border-sky-500/25 bg-[#0a1222] p-4">
-                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-sky-200/80">
+                  <div className="rounded-2xl al-glass-subtle p-4" style={{ borderColor: "rgba(0,229,255,0.12)" }}>
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--al-cyan-muted)] font-mono">
                       Waiting on Dez
                     </p>
-                    <p className="mt-2 text-3xl font-semibold text-slate-100">
+                    <p className={`mt-2 text-3xl font-semibold font-mono text-[var(--al-text-primary)] ${waitingOnDezCount > 0 ? "al-glow-metric" : ""}`}>
                       {waitingOnDezCount}
                     </p>
                   </div>
-                  <div className="rounded-2xl border border-red-500/25 bg-[#0a1222] p-4">
-                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-red-200/70">
+                  <div className="rounded-2xl al-glass-subtle p-4" style={{ borderColor: "rgba(255,77,106,0.15)" }}>
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--al-red)]/70 font-mono">
                       Blocked Systems
                     </p>
-                    <p className="mt-2 text-3xl font-semibold text-red-100">
+                    <p className={`mt-2 text-3xl font-semibold font-mono ${blockedSystemsCount > 0 ? "text-[var(--al-red)]" : "text-[var(--al-text-primary)]"}`}>
                       {blockedSystemsCount}
                     </p>
                   </div>
-                  <div className="rounded-2xl border border-amber-500/25 bg-[#0a1222] p-4">
-                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-amber-200/70">
+                  <div className="rounded-2xl al-glass-subtle p-4" style={{ borderColor: "rgba(255,176,32,0.12)" }}>
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--al-amber)]/70 font-mono">
                       Inbox Queue
                     </p>
-                    <p className="mt-2 text-3xl font-semibold text-amber-100">
+                    <p className="mt-2 text-3xl font-semibold font-mono text-[var(--al-text-primary)]">
                       {queuedInboxCount + runningInboxCount}
                     </p>
                   </div>
                 </div>
                 <div className="mt-3 grid gap-3 sm:grid-cols-3">
-                  <div className="rounded-2xl border border-sky-500/25 bg-[#0a1222] p-4">
-                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-sky-200/80">
+                  <div className="rounded-2xl al-glass-subtle p-4" style={{ borderColor: "rgba(0,229,255,0.12)" }}>
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--al-cyan-muted)] font-mono">
                       Review ready
                     </p>
-                    <p className="mt-2 text-3xl font-semibold text-slate-100">
+                    <p className="mt-2 text-3xl font-semibold font-mono text-[var(--al-text-primary)]">
                       {reviewReadyCount}
                     </p>
                   </div>
-                  <div className="rounded-2xl border border-amber-500/25 bg-[#0a1222] p-4">
-                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-amber-200/70">
+                  <div className="rounded-2xl al-glass-subtle p-4" style={{ borderColor: "rgba(255,176,32,0.12)" }}>
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--al-amber)]/70 font-mono">
                       Cleanup live
                     </p>
-                    <p className="mt-2 text-3xl font-semibold text-amber-100">
+                    <p className="mt-2 text-3xl font-semibold font-mono text-[var(--al-text-primary)]">
                       {dashboardSummary?.counts.activeCleanup ?? "-"}
                     </p>
                   </div>
-                  <div className="rounded-2xl border border-slate-500/30 bg-[#0a1222] p-4">
-                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-200/70">
+                  <div className="rounded-2xl al-glass-subtle p-4">
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--al-text-tertiary)] font-mono">
                       Buried stale
                     </p>
-                    <p className="mt-2 text-3xl font-semibold text-slate-100">
+                    <p className="mt-2 text-3xl font-semibold font-mono text-[var(--al-text-primary)]">
                       {dashboardSummary?.counts.buriedStale ?? "-"}
                     </p>
                   </div>
@@ -2396,41 +2398,42 @@ export function ChatApp() {
                 {dashboardSummary?.spotlight?.length ? (
                   <div className="mt-5 grid gap-3 sm:grid-cols-2">
                     {dashboardSummary.spotlight.map((item) => {
-                      const toneClass =
+                      const toneColor =
                         item.tone === "red"
-                          ? "border-red-500/20 bg-red-500/10 text-red-100"
+                          ? "var(--al-red)"
                           : item.tone === "amber"
-                            ? "border-amber-500/20 bg-amber-500/10 text-amber-100"
-                            : item.tone === "sky"
-                              ? "border-sky-500/20 bg-sky-500/10 text-sky-100"
-                              : "border-sky-500/25 bg-sky-500/12 text-sky-100";
+                            ? "var(--al-amber)"
+                            : "var(--al-cyan)";
                       return (
                         <a
                           key={`${item.href}-${item.title}`}
                           href={item.href}
-                          className="rounded-2xl border border-slate-700/55 bg-[#0a1222] p-4 text-left transition hover:border-sky-500/45"
+                          className="al-glass-card rounded-2xl p-4 text-left"
                         >
-                          <span className={`inline-flex rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.15em] ${toneClass}`}>
+                          <span
+                            className="inline-flex rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.15em] font-mono animate-al-glow-pulse"
+                            style={{ borderColor: `color-mix(in srgb, ${toneColor} 25%, transparent)`, backgroundColor: `color-mix(in srgb, ${toneColor} 8%, transparent)`, color: toneColor }}
+                          >
                             Spotlight
                           </span>
-                          <p className="mt-3 text-base font-semibold text-[#f3faf6]">{item.title}</p>
-                          <p className="mt-2 text-sm leading-6 text-slate-300/85">{item.reason}</p>
+                          <p className="mt-3 text-base font-semibold text-[var(--al-text-primary)]">{item.title}</p>
+                          <p className="mt-2 text-sm leading-6 text-[var(--al-text-secondary)]">{item.reason}</p>
                         </a>
                       );
                     })}
                   </div>
                 ) : null}
               </div>
-              <div className="mt-8 w-full max-w-3xl rounded-3xl border border-slate-700/55 bg-[#0d1527] p-5 text-left shadow-[0_18px_60px_rgba(2,6,23,0.46)]">
+              <div className="mt-8 w-full max-w-3xl al-glass-card al-gradient-border rounded-3xl p-5 text-left">
                 <div className="flex flex-wrap items-start justify-between gap-4">
                   <div>
-                    <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-400/85">
+                    <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--al-cyan-muted)] font-mono">
                       Businesses
                     </p>
-                    <h3 className="mt-2 text-xl font-semibold text-[#f3faf6]">
+                    <h3 className="mt-2 text-xl font-semibold text-[var(--al-text-primary)]">
                       Who owns the work and where is the friction?
                     </h3>
-                    <p className="mt-2 max-w-xl text-sm leading-6 text-slate-300/80">
+                    <p className="mt-2 max-w-xl text-sm leading-6 text-[var(--al-text-secondary)]">
                       This is the operating strip for the businesses plugged into AL. Each card should make the owner, the top signal, and the next move obvious.
                     </p>
                   </div>
@@ -2438,12 +2441,12 @@ export function ChatApp() {
                 {dashboardSummary?.businesses?.length ? (
                   <div className="mt-5 grid gap-3 sm:grid-cols-2">
                     {dashboardSummary.businesses.map((business) => {
-                      const badgeClass =
+                      const statusColor =
                         business.status === "blocked"
-                          ? "border-red-500/20 bg-red-500/10 text-red-100"
+                          ? "var(--al-red)"
                           : business.status === "warning"
-                            ? "border-amber-500/20 bg-amber-500/10 text-amber-100"
-                            : "border-sky-500/25 bg-sky-500/12 text-sky-100";
+                            ? "var(--al-amber)"
+                            : "var(--al-cyan)";
                       const Icon = business.businessId === "dominion" ? Building2 : Wrench;
                       const ceoName = business.ceoId === "dominion" ? "Jerry" : business.ceoId === "wrenchready" ? "Tom" : business.ceoId;
 
@@ -2451,27 +2454,30 @@ export function ChatApp() {
                         <a
                           key={business.businessId}
                           href={business.operatorHomePath}
-                          className="rounded-2xl border border-slate-700/55 bg-[#0a1222] p-4 text-left transition hover:border-sky-500/45"
+                          className="al-glass-card rounded-2xl p-4 text-left"
                         >
                           <div className="flex items-start justify-between gap-3">
                             <div className="flex items-center gap-3">
-                              <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#0f1b33] text-sky-200/80">
+                              <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[var(--al-surface-0)] text-[var(--al-cyan-muted)]">
                                 <Icon className="h-4 w-4" />
                               </span>
                               <div>
-                                <p className="text-base font-semibold text-[#f3faf6]">{business.businessLabel}</p>
-                                <p className="text-xs text-slate-300/70">CEO lane: {ceoName}</p>
+                                <p className="text-base font-semibold text-[var(--al-text-primary)]">{business.businessLabel}</p>
+                                <p className="text-xs text-[var(--al-text-tertiary)] font-mono">CEO lane: {ceoName}</p>
                               </div>
                             </div>
-                            <span className={`inline-flex rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.15em] ${badgeClass}`}>
+                            <span
+                              className="inline-flex rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.15em] font-mono"
+                              style={{ borderColor: `color-mix(in srgb, ${statusColor} 25%, transparent)`, backgroundColor: `color-mix(in srgb, ${statusColor} 8%, transparent)`, color: statusColor }}
+                            >
                               {business.status}
                             </span>
                           </div>
-                          <p className="mt-4 text-sm font-semibold text-slate-100">{business.headline}</p>
-                          <p className="mt-2 text-sm leading-6 text-slate-300/85">{business.nextAction}</p>
-                          <div className="mt-4 flex items-center justify-between gap-3 text-xs text-slate-300/75">
-                            <span>{business.scorecardSummary}</span>
-                            <span className="inline-flex items-center gap-1 text-sky-200/85">
+                          <p className="mt-4 text-sm font-semibold text-[var(--al-text-primary)]">{business.headline}</p>
+                          <p className="mt-2 text-sm leading-6 text-[var(--al-text-secondary)]">{business.nextAction}</p>
+                          <div className="mt-4 flex items-center justify-between gap-3 text-xs text-[var(--al-text-tertiary)]">
+                            <span className="font-mono">{business.scorecardSummary}</span>
+                            <span className="inline-flex items-center gap-1 text-[var(--al-cyan-muted)]">
                               Open
                               <ArrowUpRight className="h-3 w-3" />
                             </span>
@@ -2481,37 +2487,37 @@ export function ChatApp() {
                     })}
                   </div>
                 ) : (
-                  <div className="mt-5 rounded-2xl border border-slate-700/55 bg-[#0a1222] p-4">
-                    <p className="text-sm text-slate-300/80">
+                  <div className="mt-5 rounded-2xl al-glass-subtle p-4">
+                    <p className="text-sm text-[var(--al-text-secondary)]">
                       No business modules are registered yet.
                     </p>
                   </div>
                 )}
               </div>
-              <div className="mt-8 w-full max-w-3xl rounded-3xl border border-slate-700/55 bg-[#0d1527] p-5 text-left shadow-[0_18px_60px_rgba(2,6,23,0.46)]">
+              <div className="mt-8 w-full max-w-3xl al-glass-card al-gradient-border rounded-3xl p-5 text-left">
                 <div className="flex flex-wrap items-start justify-between gap-4">
                   <div>
-                    <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-400/85">
+                    <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--al-cyan-muted)] font-mono">
                       System Trust
                     </p>
-                    <h3 className="mt-2 text-xl font-semibold text-[#f3faf6]">
+                    <h3 className="mt-2 text-xl font-semibold text-[var(--al-text-primary)]">
                       Can we trust the system underneath the work?
                     </h3>
-                    <p className="mt-2 max-w-xl text-sm leading-6 text-slate-300/80">
+                    <p className="mt-2 max-w-xl text-sm leading-6 text-[var(--al-text-secondary)]">
                       Keep the framework in the background. This is where you check whether AL is healthy enough to trust, and whether the labor lanes are actually live.
                     </p>
                   </div>
                   <div className="flex flex-wrap gap-3">
                     <Link
                       href={withAlAppPrefix(pathname, "/operational-proof")}
-                      className="inline-flex items-center gap-2 rounded-2xl bg-sky-500 px-4 py-3 text-sm font-semibold text-slate-950 transition hover:bg-sky-400"
+                      className="inline-flex items-center gap-2 rounded-2xl bg-[var(--al-cyan)] px-4 py-3 text-sm font-semibold text-[var(--al-void)] transition hover:shadow-[var(--al-cyan-glow-strong)]"
                     >
                       <ShieldCheck className="h-4 w-4" />
                       Open System Health
                     </Link>
                     <Link
                       href={withAlAppPrefix(pathname, "/labor-lanes")}
-                      className="inline-flex items-center gap-2 rounded-2xl border border-slate-700/60 bg-[#0a1222] px-4 py-3 text-sm font-semibold text-slate-100 transition hover:border-sky-500/55"
+                      className="inline-flex items-center gap-2 rounded-2xl al-glass-subtle px-4 py-3 text-sm font-semibold text-[var(--al-text-primary)] transition hover:border-[var(--al-border-hover)]"
                     >
                       <Receipt className="h-4 w-4" />
                       Open Labor Lanes
@@ -2519,45 +2525,45 @@ export function ChatApp() {
                   </div>
                 </div>
                 <div className="mt-5 grid gap-3 sm:grid-cols-3">
-                  <div className="rounded-2xl border border-sky-500/25 bg-[#0a1222] p-4">
-                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-sky-200/80">
+                  <div className="rounded-2xl al-glass-subtle p-4" style={{ borderColor: "rgba(0,229,155,0.12)" }}>
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--al-green)] font-mono">
                       Healthy
                     </p>
-                    <p className="mt-2 text-3xl font-semibold text-slate-100">
+                    <p className={`mt-2 text-3xl font-semibold font-mono ${systemHealthyCount > 0 ? "text-[var(--al-green)]" : "text-[var(--al-text-primary)]"}`}>
                       {systemHealthyCount}
                     </p>
                   </div>
-                  <div className="rounded-2xl border border-amber-500/25 bg-[#0a1222] p-4">
-                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-amber-200/70">
+                  <div className="rounded-2xl al-glass-subtle p-4" style={{ borderColor: "rgba(255,176,32,0.12)" }}>
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--al-amber)]/70 font-mono">
                       Warning
                     </p>
-                    <p className="mt-2 text-3xl font-semibold text-amber-100">
+                    <p className={`mt-2 text-3xl font-semibold font-mono ${systemWarningCount > 0 ? "text-[var(--al-amber)]" : "text-[var(--al-text-primary)]"}`}>
                       {systemWarningCount}
                     </p>
                   </div>
-                  <div className="rounded-2xl border border-red-500/25 bg-[#0a1222] p-4">
-                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-red-200/70">
+                  <div className="rounded-2xl al-glass-subtle p-4" style={{ borderColor: "rgba(255,77,106,0.12)" }}>
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--al-red)]/70 font-mono">
                       Failing
                     </p>
-                    <p className="mt-2 text-3xl font-semibold text-red-100">
+                    <p className={`mt-2 text-3xl font-semibold font-mono ${systemFailingCount > 0 ? "text-[var(--al-red)]" : "text-[var(--al-text-primary)]"}`}>
                       {systemFailingCount}
                     </p>
-                    </div>
+                  </div>
                 </div>
                 <div className="mt-5 grid gap-3 sm:grid-cols-2">
-                  <div className="rounded-2xl border border-slate-700/55 bg-[#0a1222] p-4">
-                    <p className="text-sm font-semibold text-[#f3faf6]">
+                  <div className="rounded-2xl al-glass-subtle p-4">
+                    <p className="text-sm font-semibold text-[var(--al-text-primary)]">
                       {operationalProof?.topNextMove || "Checking the control-loop health now."}
                     </p>
-                    <p className="mt-2 text-sm leading-6 text-slate-300/85">
+                    <p className="mt-2 text-sm leading-6 text-[var(--al-text-secondary)]">
                       Operational proof is the truth panel behind the command center. Use it when you need to verify whether the loops can be trusted.
                     </p>
                   </div>
-                  <div className="rounded-2xl border border-slate-700/55 bg-[#0a1222] p-4">
-                    <p className="text-sm font-semibold text-[#f3faf6]">
+                  <div className="rounded-2xl al-glass-subtle p-4">
+                    <p className="text-sm font-semibold text-[var(--al-text-primary)]">
                       {laborLanes?.headline || "Checking whether the shared labor lanes are real yet."}
                     </p>
-                    <p className="mt-2 text-sm leading-6 text-slate-300/85">
+                    <p className="mt-2 text-sm leading-6 text-[var(--al-text-secondary)]">
                       {laborLanes?.topNextMove || "Pulling the lane bottlenecks into view."}
                     </p>
                   </div>
@@ -2566,8 +2572,16 @@ export function ChatApp() {
             </div>
           ) : (
             <div className="mx-auto max-w-3xl space-y-4">
+              <AnimatePresence initial={false}>
               {messages.map((msg) => (
-                <MessageBubble key={msg.id} message={msg} />
+                <motion.div
+                  key={msg.id}
+                  initial={{ opacity: 0, y: 16, scale: 0.98 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+                >
+                  <MessageBubble message={msg} />
+                </motion.div>
               ))}
               {loading && searchQuery && <SearchingWeb query={searchQuery} />}
               {loading && publishingPath && <PublishingToVault path={publishingPath} />}
@@ -2612,13 +2626,15 @@ export function ChatApp() {
                   executing={executingVault}
                 />
               )}
+              </AnimatePresence>
               <div ref={bottomRef} />
             </div>
           )}
         </div>
 
         {/* Input */}
-        <div className="border-t border-emerald-900/20 bg-[#0a0f0d] p-4 pb-5 lg:p-6">
+        <div className="relative p-4 pb-5 lg:p-6" style={{ background: "var(--al-glass-bg)", backdropFilter: "blur(var(--al-glass-blur))" }}>
+          <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[var(--al-cyan)]/15 to-transparent" />
           <div className="mx-auto max-w-3xl">
             {/* File preview strip */}
             {pendingFiles.length > 0 && (
@@ -2629,16 +2645,16 @@ export function ChatApp() {
                       <img
                         src={f.data}
                         alt={f.name}
-                        className="h-16 w-16 rounded-lg object-cover border border-emerald-900/25"
+                        className="h-16 w-16 rounded-lg object-cover border border-[var(--al-border)]"
                       />
                     ) : (
-                      <div className="flex h-16 items-center gap-2 rounded-lg border border-emerald-900/25 bg-[#0d1410] px-3">
-                        <FileText className="h-4 w-4 flex-shrink-0 text-emerald-400/50" />
+                      <div className="flex h-16 items-center gap-2 rounded-lg al-glass-subtle px-3">
+                        <FileText className="h-4 w-4 flex-shrink-0 text-[var(--al-cyan-muted)]" />
                         <div className="max-w-[120px]">
-                          <p className="truncate text-xs text-[#e2ede8]">
+                          <p className="truncate text-xs text-[var(--al-text-primary)]">
                             {f.name}
                           </p>
-                          <p className="text-[10px] text-emerald-200/30">
+                          <p className="text-[10px] font-mono text-[var(--al-text-tertiary)]">
                             {formatBytes(f.size)}
                           </p>
                         </div>
@@ -2646,7 +2662,7 @@ export function ChatApp() {
                     )}
                     <button
                       onClick={() => removeFile(f.id)}
-                      className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full border border-emerald-900/30 bg-[#0a0f0d] text-emerald-200/50 transition-colors hover:border-red-400/30 hover:text-red-400"
+                      className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full border border-[var(--al-border)] bg-[var(--al-void)] text-[var(--al-text-tertiary)] transition-colors hover:border-[var(--al-red)]/30 hover:text-[var(--al-red)]"
                       aria-label={`Remove ${f.name}`}
                     >
                       <X className="h-3 w-3" />
@@ -2669,7 +2685,7 @@ export function ChatApp() {
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
                 disabled={isBusy || pendingFiles.length >= MAX_FILES}
-                className="flex h-12 w-10 flex-shrink-0 items-center justify-center rounded-lg text-emerald-200/35 transition-colors hover:bg-emerald-500/10 hover:text-emerald-200/60 disabled:opacity-30 disabled:cursor-not-allowed"
+                className="flex h-12 w-10 flex-shrink-0 items-center justify-center rounded-lg text-[var(--al-text-tertiary)] transition-colors hover:bg-[var(--al-cyan-dim)] hover:text-[var(--al-cyan)] disabled:opacity-30 disabled:cursor-not-allowed"
                 aria-label="Attach files"
               >
                 <Paperclip className="h-4 w-4" />
@@ -2690,7 +2706,7 @@ export function ChatApp() {
                         : "Message Al..."
                   }
                   rows={1}
-                  className="w-full resize-none rounded-xl border border-emerald-900/25 bg-[#111916] px-4 py-3 text-sm text-[#e2ede8] placeholder-emerald-200/25 transition-colors focus:border-emerald-500/40 focus:outline-none focus:ring-1 focus:ring-emerald-500/20 disabled:opacity-50"
+                  className="w-full resize-none rounded-xl border border-[var(--al-border)] bg-[var(--al-surface-0)] px-4 py-3 text-sm text-[var(--al-text-primary)] placeholder-[var(--al-text-tertiary)] transition-all focus:border-[var(--al-border-active)] focus:outline-none focus:ring-1 focus:ring-[var(--al-cyan)]/15 focus:shadow-[var(--al-cyan-glow)] disabled:opacity-50"
                   style={{ minHeight: 48, maxHeight: 160 }}
                   onInput={(e) => {
                     const el = e.target as HTMLTextAreaElement;
@@ -2705,15 +2721,15 @@ export function ChatApp() {
                   <button
                     type="button"
                     onClick={stopGenerating}
-                    className="flex h-12 w-12 items-center justify-center rounded-xl border border-emerald-900/25 bg-[#111916] text-emerald-200/50 transition-all hover:bg-[#1a2820] hover:text-emerald-200/70 active:scale-95"
+                    className="flex h-12 w-12 items-center justify-center rounded-xl al-glass-subtle text-[var(--al-text-secondary)] transition-all hover:border-[var(--al-border-hover)] hover:text-[var(--al-text-primary)] active:scale-95"
                     aria-label="Stop generating"
                   >
-                    <div className="h-3.5 w-3.5 rounded-sm bg-emerald-400/70" />
+                    <div className="h-3.5 w-3.5 rounded-sm bg-[var(--al-cyan-muted)]" />
                   </button>
                   <button
                     type="submit"
                     disabled={!input.trim()}
-                    className="flex h-12 w-12 items-center justify-center rounded-xl border border-emerald-500/25 bg-emerald-500/10 text-emerald-100 transition-all hover:bg-emerald-500/20 active:scale-95 disabled:cursor-not-allowed disabled:opacity-30"
+                    className="flex h-12 w-12 items-center justify-center rounded-xl al-glass-subtle text-[var(--al-cyan)] transition-all hover:shadow-[var(--al-cyan-glow)] active:scale-95 disabled:cursor-not-allowed disabled:opacity-30"
                     aria-label="Queue ask"
                     title="Queue this ask while AL is still working"
                   >
@@ -2724,14 +2740,14 @@ export function ChatApp() {
                 <button
                   type="submit"
                   disabled={!canSend}
-                  className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl bg-emerald-600 text-white transition-all hover:bg-emerald-500 active:scale-95 disabled:cursor-not-allowed disabled:opacity-30"
+                  className={`flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl bg-[var(--al-cyan)] text-[var(--al-void)] transition-all hover:shadow-[var(--al-cyan-glow-strong)] active:scale-95 disabled:cursor-not-allowed disabled:opacity-30 disabled:bg-[var(--al-surface-2)] disabled:text-[var(--al-text-tertiary)] ${canSend ? "animate-al-glow-pulse" : ""}`}
                   aria-label="Send message"
                 >
                   <Send className="h-4 w-4" />
                 </button>
               )}
             </form>
-            <p className="mt-2 text-center text-[11px] text-emerald-200/15">
+            <p className="mt-2 text-center text-[11px] font-mono text-[var(--al-text-tertiary)]">
               Enter to send or queue &middot; Shift+Enter for new line &middot; Paste or
               drag images &amp; PDFs
             </p>
@@ -2770,18 +2786,18 @@ function InboxQueueCard({ item }: { item: InboxItemRecord }) {
       : "border-amber-500/20 bg-amber-500/10 text-amber-100";
 
   return (
-    <div className="rounded-2xl border border-emerald-900/20 bg-[#141b18] p-4">
+    <div className="rounded-2xl al-glass-subtle p-4">
       <div className="flex flex-wrap items-center gap-2">
-        <span className={`rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.15em] ${tone}`}>
+        <span className={`rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.15em] font-mono ${tone}`}>
           {item.status === "running" ? "Inbox running" : "Inbox queued"}
         </span>
-        <span className="text-[11px] uppercase tracking-[0.16em] text-emerald-300/45">
+        <span className="text-[11px] uppercase tracking-[0.16em] font-mono text-[var(--al-text-tertiary)]">
           {item.business.replace("-", " ")} · {item.lane.replace("-", " ")}
         </span>
       </div>
-      <p className="mt-3 text-sm font-semibold text-[#f3faf6]">{item.title}</p>
-      <p className="mt-2 text-sm leading-6 text-emerald-100/70">{item.body}</p>
-      <p className="mt-3 text-xs text-emerald-100/40">Updated {timestamp}</p>
+      <p className="mt-3 text-sm font-semibold text-[var(--al-text-primary)]">{item.title}</p>
+      <p className="mt-2 text-sm leading-6 text-[var(--al-text-secondary)]">{item.body}</p>
+      <p className="mt-3 text-xs font-mono text-[var(--al-text-tertiary)]">Updated {timestamp}</p>
     </div>
   );
 }
@@ -2803,19 +2819,23 @@ function MessageBubble({ message }: { message: Message }) {
           group relative max-w-[85%] rounded-2xl px-4 py-3 text-sm leading-relaxed
           ${
             isUser
-              ? "bg-emerald-600/15 text-emerald-50 border border-emerald-500/10"
-              : "bg-[#141f1a] text-[#cfdbd4] border border-emerald-900/15"
+              ? "al-glass-subtle text-[var(--al-text-primary)]"
+              : "al-glass-subtle text-[var(--al-text-secondary)]"
           }
         `}
+        style={isUser
+          ? { borderRight: "2px solid rgba(0,229,255,0.20)" }
+          : { borderLeft: "2px solid rgba(0,229,255,0.15)" }
+        }
       >
         {!isUser && (
-          <div className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-emerald-400/60">
-            <span className="al-avatar-mini">
-              <span className="relative z-10 text-[9px] font-semibold text-[#f3faf6]">AB</span>
+          <div className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-[var(--al-cyan-muted)]">
+            <span className="al-avatar-mini al-avatar-ring">
+              <span className="relative z-10 text-[9px] font-semibold text-[var(--al-text-primary)]">AB</span>
             </span>
-            <span>Al</span>
+            <span className="font-mono">Al</span>
             {message.typing && (
-              <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-400" />
+              <span className="inline-block h-1.5 w-1.5 rounded-full bg-[var(--al-cyan)] al-glow-dot" />
             )}
           </div>
         )}
@@ -2846,11 +2866,7 @@ function MessageBubble({ message }: { message: Message }) {
         )}
 
         <div
-          className={`mt-1.5 text-[10px] transition-opacity ${
-            isUser
-              ? "text-emerald-300/20 opacity-0 group-hover:opacity-100"
-              : "text-emerald-200/15 opacity-0 group-hover:opacity-100"
-          }`}
+          className="mt-1.5 text-[10px] font-mono text-[var(--al-text-tertiary)] opacity-0 transition-opacity group-hover:opacity-100"
         >
           {time}
         </div>
@@ -2861,11 +2877,11 @@ function MessageBubble({ message }: { message: Message }) {
 
 function AttachmentBadge({ att }: { att: Attachment }) {
   return (
-    <div className="flex items-center gap-2 rounded-lg bg-black/20 px-3 py-2">
-      <FileText className="h-4 w-4 flex-shrink-0 text-emerald-400/50" />
+    <div className="flex items-center gap-2 rounded-lg al-glass-subtle px-3 py-2">
+      <FileText className="h-4 w-4 flex-shrink-0 text-[var(--al-cyan-muted)]" />
       <div className="min-w-0">
-        <p className="truncate text-xs">{att.name}</p>
-        <p className="text-[10px] opacity-50">{formatBytes(att.size)}</p>
+        <p className="truncate text-xs text-[var(--al-text-primary)]">{att.name}</p>
+        <p className="text-[10px] font-mono text-[var(--al-text-tertiary)]">{formatBytes(att.size)}</p>
       </div>
     </div>
   );
@@ -2874,25 +2890,27 @@ function AttachmentBadge({ att }: { att: Attachment }) {
 function ThinkingDots() {
   return (
     <div className="flex justify-start animate-fade-up">
-      <div className="rounded-2xl border border-emerald-900/15 bg-[#141f1a] px-4 py-3">
-        <div className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-emerald-400/60">
-          <span className="al-avatar-mini">
-            <span className="relative z-10 text-[9px] font-semibold text-[#f3faf6]">AB</span>
+      <div className="rounded-2xl al-glass-subtle px-4 py-3" style={{ borderLeft: "2px solid rgba(0,229,255,0.15)" }}>
+        <div className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-[var(--al-cyan-muted)]">
+          <span className="al-avatar-mini al-avatar-ring">
+            <span className="relative z-10 text-[9px] font-semibold text-[var(--al-text-primary)]">AB</span>
           </span>
-          <span>Al</span>
+          <span className="font-mono">Al</span>
         </div>
-        <div className="flex items-center gap-1.5">
-          {[0, 1, 2].map((i) => (
+        <div className="flex items-center gap-1 h-5">
+          {[0, 1, 2, 3, 4].map((i) => (
             <span
               key={i}
-              className="h-2 w-2 rounded-full bg-emerald-400/50"
+              className="w-[3px] rounded-full bg-[var(--al-cyan)]"
               style={{
-                animation: `alDotPulse 1.4s ease-in-out ${i * 0.2}s infinite`,
+                animation: `alNeuralPulse 1.2s ease-in-out ${i * 0.15}s infinite`,
+                height: "100%",
+                transformOrigin: "bottom",
               }}
             />
           ))}
         </div>
-        <p className="mt-2 text-xs text-emerald-100/35">
+        <p className="mt-2 text-xs font-mono text-[var(--al-text-tertiary)]">
           Getting a straight answer lined up.
         </p>
       </div>
@@ -2903,23 +2921,23 @@ function ThinkingDots() {
 function SearchingWeb({ query }: { query: string }) {
   return (
     <div className="flex justify-start animate-fade-up">
-      <div className="rounded-2xl border border-emerald-900/15 bg-[#141f1a] px-4 py-3">
-        <div className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-emerald-400/60">
-          <span className="al-avatar-mini">
-            <span className="relative z-10 text-[9px] font-semibold text-[#f3faf6]">AB</span>
+      <div className="rounded-2xl al-glass-subtle px-4 py-3" style={{ borderLeft: "2px solid rgba(0,229,255,0.15)" }}>
+        <div className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-[var(--al-cyan-muted)]">
+          <span className="al-avatar-mini al-avatar-ring">
+            <span className="relative z-10 text-[9px] font-semibold text-[var(--al-text-primary)]">AB</span>
           </span>
-          <span>Al</span>
+          <span className="font-mono">Al</span>
         </div>
         <div className="flex items-center gap-2">
           <Globe
-            className="h-3.5 w-3.5 animate-spin text-emerald-400/60"
+            className="h-3.5 w-3.5 animate-spin text-[var(--al-cyan-muted)]"
             style={{ animationDuration: "2s" }}
           />
-          <span className="text-sm text-emerald-200/50">
+          <span className="text-sm text-[var(--al-text-secondary)]">
             Checking the outside world&hellip;
           </span>
         </div>
-        <p className="mt-1.5 max-w-xs truncate text-xs italic text-emerald-200/20">
+        <p className="mt-1.5 max-w-xs truncate text-xs italic font-mono text-[var(--al-text-tertiary)]">
           &ldquo;{query}&rdquo;
         </p>
       </div>
@@ -2994,18 +3012,16 @@ function bridgeRequestDetail(req: VaultToolRequest): string {
 function DelegatingToCeo({ ceo }: { ceo: string }) {
   return (
     <div className="flex justify-start animate-fade-up">
-      <div className="rounded-2xl border border-emerald-900/15 bg-[#141f1a] px-4 py-3">
-        <div className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-emerald-400/60">
-          <span className="al-avatar-mini">
-            <span className="relative z-10 text-[9px] font-semibold text-[#f3faf6]">AB</span>
+      <div className="rounded-2xl al-glass-subtle px-4 py-3" style={{ borderLeft: "2px solid rgba(0,229,255,0.15)" }}>
+        <div className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-[var(--al-cyan-muted)]">
+          <span className="al-avatar-mini al-avatar-ring">
+            <span className="relative z-10 text-[9px] font-semibold text-[var(--al-text-primary)]">AB</span>
           </span>
-          <span>Al</span>
+          <span className="font-mono">Al</span>
         </div>
         <div className="flex items-center gap-2">
-          <Users
-            className="h-3.5 w-3.5 animate-pulse text-emerald-400/60"
-          />
-          <span className="text-sm text-emerald-200/50">
+          <Users className="h-3.5 w-3.5 animate-pulse text-[var(--al-cyan-muted)]" />
+          <span className="text-sm text-[var(--al-text-secondary)]">
             Checking with {ceo}&hellip;
           </span>
         </div>
@@ -3017,22 +3033,20 @@ function DelegatingToCeo({ ceo }: { ceo: string }) {
 function PublishingToVault({ path }: { path: string }) {
   return (
     <div className="flex justify-start animate-fade-up">
-      <div className="rounded-2xl border border-emerald-900/15 bg-[#141f1a] px-4 py-3">
-        <div className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-emerald-400/60">
-          <span className="al-avatar-mini">
-            <span className="relative z-10 text-[9px] font-semibold text-[#f3faf6]">AB</span>
+      <div className="rounded-2xl al-glass-subtle px-4 py-3" style={{ borderLeft: "2px solid rgba(0,229,255,0.15)" }}>
+        <div className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-[var(--al-cyan-muted)]">
+          <span className="al-avatar-mini al-avatar-ring">
+            <span className="relative z-10 text-[9px] font-semibold text-[var(--al-text-primary)]">AB</span>
           </span>
-          <span>Al</span>
+          <span className="font-mono">Al</span>
         </div>
         <div className="flex items-center gap-2">
-          <BookUp
-            className="h-3.5 w-3.5 animate-pulse text-emerald-400/60"
-          />
-          <span className="text-sm text-emerald-200/50">
+          <BookUp className="h-3.5 w-3.5 animate-pulse text-[var(--al-cyan-muted)]" />
+          <span className="text-sm text-[var(--al-text-secondary)]">
             Putting it on the shelf&hellip;
           </span>
         </div>
-        <p className="mt-1.5 max-w-xs truncate text-xs font-mono italic text-emerald-200/20">
+        <p className="mt-1.5 max-w-xs truncate text-xs font-mono italic text-[var(--al-text-tertiary)]">
           {path}
         </p>
       </div>
@@ -3043,16 +3057,16 @@ function PublishingToVault({ path }: { path: string }) {
 function RunningCrew({ crew }: { crew: string }) {
   return (
     <div className="flex justify-start animate-fade-up">
-      <div className="rounded-2xl border border-emerald-900/15 bg-[#141f1a] px-4 py-3">
-        <div className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-emerald-400/60">
-          <span className="al-avatar-mini">
-            <span className="relative z-10 text-[9px] font-semibold text-[#f3faf6]">AB</span>
+      <div className="rounded-2xl al-glass-subtle px-4 py-3" style={{ borderLeft: "2px solid rgba(0,229,255,0.15)" }}>
+        <div className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-[var(--al-cyan-muted)]">
+          <span className="al-avatar-mini al-avatar-ring">
+            <span className="relative z-10 text-[9px] font-semibold text-[var(--al-text-primary)]">AB</span>
           </span>
-          <span>Al</span>
+          <span className="font-mono">Al</span>
         </div>
         <div className="flex items-center gap-2">
-          <Bot className="h-3.5 w-3.5 animate-pulse text-emerald-400/60" />
-          <span className="text-sm text-emerald-200/50">
+          <Bot className="h-3.5 w-3.5 animate-pulse text-[var(--al-cyan-muted)]" />
+          <span className="text-sm text-[var(--al-text-secondary)]">
             Starting the crew{crew ? ` (${crew})` : ""}&hellip;
           </span>
         </div>
@@ -3072,16 +3086,16 @@ function JobBadge({
 }) {
   return (
     <div className="flex justify-start animate-fade-up">
-      <div className="rounded-2xl border border-emerald-900/15 bg-[#141f1a] px-4 py-3">
-        <div className="mb-1.5 text-xs font-medium text-emerald-400/60">Al</div>
+      <div className="rounded-2xl al-glass-subtle px-4 py-3" style={{ borderLeft: "2px solid rgba(0,229,255,0.15)" }}>
+        <div className="mb-1.5 text-xs font-medium font-mono text-[var(--al-cyan-muted)]">Al</div>
         <div className="flex items-center gap-2">
-          <Users className="h-3.5 w-3.5 animate-pulse text-emerald-400/60" />
-          <span className="text-sm text-emerald-200/50">
+          <Users className="h-3.5 w-3.5 animate-pulse text-[var(--al-cyan-muted)]" />
+          <span className="text-sm text-[var(--al-text-secondary)]">
             Job #{job_id} &mdash; {ceo_name} is in the back room working on it
           </span>
           <button
             onClick={onDismiss}
-            className="ml-1 flex h-4 w-4 items-center justify-center rounded-full text-emerald-200/20 transition-colors hover:text-emerald-200/50"
+            className="ml-1 flex h-4 w-4 items-center justify-center rounded-full text-[var(--al-text-tertiary)] transition-colors hover:text-[var(--al-text-primary)]"
             aria-label="Dismiss"
           >
             <X className="h-3 w-3" />
@@ -3114,8 +3128,8 @@ function ToolApprovalCard({
 
   return (
     <div className="flex justify-start animate-fade-up">
-      <div className="w-full max-w-md rounded-2xl border border-amber-500/20 bg-[#1a1810] p-4">
-        <div className="mb-3 flex items-center gap-2 text-xs font-medium text-amber-400/70">
+      <div className="w-full max-w-md rounded-2xl al-glass-card p-4" style={{ borderColor: "rgba(255,176,32,0.15)" }}>
+        <div className="mb-3 flex items-center gap-2 text-xs font-medium font-mono text-[var(--al-amber)]">
           <ShieldCheck className="h-3.5 w-3.5" />
           {title}
         </div>
@@ -3124,9 +3138,9 @@ function ToolApprovalCard({
           {requests.map((req) => (
             <div
               key={req.id}
-              className="rounded-lg border border-amber-500/10 bg-black/20 p-3"
+              className="rounded-lg al-glass-subtle p-3" style={{ borderColor: "rgba(255,176,32,0.08)" }}
             >
-              <div className="flex items-center gap-2 text-xs font-medium text-amber-200/60">
+              <div className="flex items-center gap-2 text-xs font-medium text-[var(--al-amber)]/70">
                 {req.name.startsWith("crew_") ? (
                   <Bot className="h-3 w-3" />
                 ) : (
@@ -3134,11 +3148,11 @@ function ToolApprovalCard({
                 )}
                 {vaultActionLabel(req.name)}
               </div>
-              <p className="mt-1 font-mono text-xs text-emerald-200/40 break-all">
+              <p className="mt-1 font-mono text-xs text-[var(--al-text-tertiary)] break-all">
                 {bridgeRequestDetail(req)}
               </p>
               {req.name === "vault_write" && inputString(req.input.content) && (
-                <pre className="mt-2 max-h-32 overflow-auto rounded bg-black/30 p-2 text-[11px] leading-relaxed text-emerald-200/30 al-scrollbar">
+                <pre className="mt-2 max-h-32 overflow-auto rounded bg-black/20 p-2 text-[11px] leading-relaxed text-[var(--al-text-tertiary)] al-scrollbar">
                   {inputString(req.input.content).slice(0, 500)}
                   {inputString(req.input.content).length > 500 && "\n..."}
                 </pre>
@@ -3151,7 +3165,7 @@ function ToolApprovalCard({
           <button
             onClick={onApprove}
             disabled={executing}
-            className="flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-xs font-semibold text-white transition-all hover:bg-emerald-500 active:scale-[0.97] disabled:opacity-50"
+            className="flex items-center gap-2 rounded-lg bg-[var(--al-cyan)] px-4 py-2 text-xs font-semibold text-[var(--al-void)] transition-all hover:shadow-[var(--al-cyan-glow-strong)] active:scale-[0.97] disabled:opacity-50"
           >
             {executing ? (
               <>
@@ -3165,7 +3179,7 @@ function ToolApprovalCard({
           <button
             onClick={onDeny}
             disabled={executing}
-            className="rounded-lg border border-amber-500/15 px-4 py-2 text-xs font-medium text-amber-200/50 transition-all hover:bg-amber-500/10 hover:text-amber-200/70 disabled:opacity-50"
+            className="rounded-lg al-glass-subtle px-4 py-2 text-xs font-medium text-[var(--al-amber)] transition-all hover:border-[var(--al-amber)]/25 disabled:opacity-50"
           >
             Not now
           </button>
@@ -3206,17 +3220,17 @@ function SettingsModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-md p-4">
       <div
-        className="w-full max-w-md max-h-[90vh] overflow-y-auto rounded-2xl border border-emerald-900/30 bg-[#111916] p-6 shadow-2xl animate-fade-up al-scrollbar"
+        className="w-full max-w-md max-h-[90vh] overflow-y-auto rounded-2xl al-glass al-gradient-border p-6 animate-fade-up al-scrollbar"
         role="dialog"
         aria-label="Settings"
       >
         <div className="mb-6 flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-[#e2ede8]">Settings</h2>
+          <h2 className="text-lg font-semibold text-[var(--al-text-primary)]">Settings</h2>
           <button
             onClick={onClose}
-            className="rounded-lg p-1.5 text-emerald-200/40 transition-colors hover:bg-emerald-500/10 hover:text-emerald-200/60"
+            className="rounded-lg p-1.5 text-[var(--al-text-tertiary)] transition-colors hover:bg-[var(--al-cyan-dim)] hover:text-[var(--al-cyan)]"
             aria-label="Close settings"
           >
             <X className="h-4 w-4" />

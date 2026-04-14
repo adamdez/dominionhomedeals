@@ -22,8 +22,12 @@ export function MobileDock() {
   const appPrefix = alAppPrefix(pathname);
 
   return (
-    <nav className="pointer-events-auto fixed inset-x-0 bottom-0 z-[260] border-t border-emerald-900/25 bg-[#08100c]/95 px-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] pt-2 backdrop-blur lg:hidden">
-      <div className="mx-auto grid max-w-md grid-cols-9 gap-2">
+    <nav
+      className="pointer-events-auto fixed inset-x-0 bottom-0 z-[260] px-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] pt-2 lg:hidden"
+      style={{ background: "rgba(5,9,17,0.85)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)" }}
+    >
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[var(--al-cyan)]/15 to-transparent" />
+      <div className="mx-auto grid max-w-md grid-cols-9 gap-1.5">
         {navItems.map((item) => {
           const Icon = item.icon;
           const href =
@@ -39,14 +43,17 @@ export function MobileDock() {
             <Link
               key={item.href}
               href={href}
-              className={`flex min-h-[60px] flex-col items-center justify-center rounded-2xl px-2 py-2 text-[11px] font-semibold transition ${
+              className={`relative flex min-h-[56px] flex-col items-center justify-center rounded-xl px-1 py-2 text-[10px] font-semibold transition ${
                 active
-                  ? "bg-emerald-500 text-[#05110b]"
-                  : "border border-emerald-900/25 bg-[#111916] text-emerald-100/75"
+                  ? "text-[var(--al-cyan)]"
+                  : "text-[var(--al-text-tertiary)]"
               }`}
             >
               <Icon className="mb-1 h-4 w-4" />
               <span className="text-center leading-tight">{item.label}</span>
+              {active && (
+                <span className="absolute bottom-1 h-[3px] w-[3px] rounded-full bg-[var(--al-cyan)] shadow-[0_0_6px_var(--al-cyan)]" />
+              )}
             </Link>
           );
         })}
