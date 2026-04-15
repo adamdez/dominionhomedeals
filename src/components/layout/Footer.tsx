@@ -1,10 +1,11 @@
 import Link from "next/link";
 import Image from "next/image";
-import { SITE, NEIGHBORHOODS } from "@/lib/constants";
+import { SITE } from "@/lib/constants";
+import { getByCounty } from "@/lib/neighborhoods";
 
 export function Footer() {
   const year = new Date().getFullYear();
-  const topNeighborhoods = NEIGHBORHOODS.slice(0, 10);
+  const topNeighborhoods = getByCounty("Spokane County").slice(0, 8);
   const promises = [
     "No commissions or fees",
     "Buy in any condition",
@@ -53,7 +54,7 @@ export function Footer() {
           <div>
             <h3 className="mb-3 text-xs font-bold uppercase tracking-widest text-stone-400">Areas We Serve</h3>
             <ul className="space-y-2">
-              {topNeighborhoods.slice(0, 8).map((neighborhood) => (
+              {topNeighborhoods.map((neighborhood) => (
                 <li key={neighborhood.slug}>
                   <Link
                     href={`/neighborhoods/${neighborhood.slug}`}

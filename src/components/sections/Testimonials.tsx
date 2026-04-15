@@ -125,9 +125,11 @@ export function Testimonials() {
 
               <div className="mt-6 rounded-xl bg-forest-50 p-4">
                 <p className="text-sm leading-relaxed text-forest-700">
-                  This section is now set up like a real deal library. When you have
-                  real closings you want public, we can replace these snapshots one by
-                  one with verified case studies instead of rebuilding the section.
+                  Want to see how a direct sale works for your situation?{" "}
+                  <Link href="/#get-offer" className="font-semibold underline hover:text-forest-800">
+                    Get a no-obligation offer
+                  </Link>{" "}
+                  and we&apos;ll walk you through it.
                 </p>
               </div>
             </aside>

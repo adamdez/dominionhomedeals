@@ -8,7 +8,7 @@ export const metadata: Metadata = {
     "Adam and Logan are a local team that buys houses for cash across Spokane County and Kootenai County. Based in Spokane, WA. Meet the people behind Dominion Homes.",
   alternates: { canonical: "https://dominionhomedeals.com/about" },
   openGraph: {
-    title: "About Dominion Homes | Local Cash Home Buyers",
+    title: "About Us — Meet the Team | Dominion Homes",
     description:
       "Based in Spokane, WA. We buy houses for cash across Spokane County, WA and Kootenai County, ID. No agents, no games - just a local team.",
     url: "https://dominionhomedeals.com/about",
@@ -73,7 +73,7 @@ export default function AboutPage() {
         dangerouslySetInnerHTML={{
           __html: JSON.stringify({
             "@context": "https://schema.org",
-            "@type": "RealEstateAgent",
+            "@type": "LocalBusiness",
             name: "Dominion Homes, LLC",
             description:
               "Local cash home buyers serving Spokane County, WA and Kootenai County, ID. We buy houses in any condition - no agents, no commissions, no repairs.",
@@ -106,7 +106,7 @@ export default function AboutPage() {
             We are your neighbors.
           </h1>
           <p className="mx-auto mt-5 max-w-2xl text-lg text-ink-400">
-            Dominion Homes is a small local team based in Spokane, Washington. We buy houses for cash across
+            Dominion Homes is a small local team based in Spokane, Washington. We buy houses directly across
             Spokane County and Kootenai County, and we keep the process direct, local, and easy to follow.
           </p>
         </div>

@@ -14,7 +14,7 @@ if %errorlevel% neq 0 (
     )
     timeout /t 5 /nobreak >nul
 )
-timeout /t 60 /nobreak >nul
+timeout /t 20 /nobreak >nul
 goto loop
 
 :port_running

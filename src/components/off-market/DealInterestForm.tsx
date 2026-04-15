@@ -251,7 +251,7 @@ export function DealInterestForm({
             className="mt-0.5 h-4 w-4 shrink-0 rounded border-stone-300 text-forest-500 focus:ring-forest-400"
           />
           <span className="text-xs leading-relaxed text-ink-400">
-            By submitting, you consent to be contacted by Dominion Home Deals via phone, text, and email.{' '}
+            By submitting, you consent to be contacted by Dominion Homes via phone, text, and email.{' '}
             <span className="text-red-500">*</span>
           </span>
         </label>

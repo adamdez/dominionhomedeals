@@ -32,9 +32,9 @@ const HOMEPAGE_AREAS: { name: string; slug: string }[] = [
 ];
 
 export const metadata: Metadata = {
-  title: "Sell Your House Fast for Cash in Spokane & CDA | Dominion Homes",
+  title: "Sell Your Spokane Home Fast — No Repairs, No Fees | Dominion Homes",
   description:
-    "Get a fair cash offer on your Spokane or CDA home. Local team, no repairs, no commissions, close in as fast as 2 weeks. Call us today.",
+    "Local Spokane team that buys houses directly. Inherited property, landlord fatigue, repairs you can't afford — we handle it. No agents, no commissions, close on your schedule.",
 };
 
 export default function HomePage() {
@@ -56,22 +56,22 @@ export default function HomePage() {
                   <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-forest-500 opacity-75" />
                   <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-forest-500" />
                 </span>
-                Local Spokane & CDA Team · Based in Spokane
+                Spokane-Based Team · We Buy Houses Directly
               </div>
 
               <h1 className="font-display text-hero text-ink-700 text-balance">
-                Sell Your Spokane Home
+                Need to Sell Your Spokane Home?
                 <br />
                 <span className="text-forest-500">
-                  for Cash. Skip the Stress.
+                  We Buy It Directly. You Skip the Hassle.
                 </span>
               </h1>
 
               <p className="mt-5 max-w-lg text-lg leading-relaxed text-ink-400">
-                We&apos;re Adam and Logan - a local team that buys houses
-                for cash across Spokane County and North Idaho. No agents,
-                no commissions, no repairs. Just a fair offer and a
-                handshake.
+                Inherited a house you don&apos;t want? Tired of being a
+                landlord? Can&apos;t afford repairs? We&apos;re Adam and
+                Logan — a two-person Spokane team that buys homes
+                directly. No agents, no showings, no fees.
               </p>
 
               <div className="mt-7 flex flex-wrap items-center gap-3">
@@ -141,6 +141,47 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* ======== TRUST PROOF ======== */}
+      <section className="section-wrap">
+        <FadeIn>
+          <div className="mx-auto max-w-4xl">
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {[
+                {
+                  title: "Real local people",
+                  text: "Adam and Logan are based in Spokane. When you call, one of us picks up — not a call center.",
+                },
+                {
+                  title: "We buy as-is",
+                  text: "Roof damage, foundation issues, clutter, deferred maintenance — we don't ask you to fix anything.",
+                },
+                {
+                  title: "No commissions or fees",
+                  text: "The number we offer is the number you walk away with. No agent fees, no closing costs on your side.",
+                },
+                {
+                  title: "You pick the closing date",
+                  text: "Two weeks or two months — we work around your timeline, not the other way around.",
+                },
+                {
+                  title: "We close through title",
+                  text: "Every deal goes through WFG Title or North Idaho Title. Standard, transparent closing process.",
+                },
+                {
+                  title: "No pressure, ever",
+                  text: "If a direct sale isn't your best move, we'll tell you. We'd rather be straight with you than force a fit.",
+                },
+              ].map((item) => (
+                <div key={item.title} className="rounded-xl border border-stone-200 bg-white p-5">
+                  <h3 className="text-sm font-semibold text-ink-600">{item.title}</h3>
+                  <p className="mt-1.5 text-sm leading-relaxed text-ink-400">{item.text}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </FadeIn>
+      </section>
+
       {/* ======== HOW IT WORKS ======== */}
       <section className="section-wrap">
         <FadeIn>
@@ -195,9 +236,9 @@ export default function HomePage() {
                   Why It Matters
                 </p>
                 <h2 className="mt-2 font-display text-display text-ink-600 text-balance">
-                  We&apos;re Not a Call Center.
+                  We Live Here.
                   <br />
-                  We&apos;re Your Neighbors.
+                  That Changes Everything.
                 </h2>
                 <p className="mt-4 text-base leading-relaxed text-ink-400">
                   Most &ldquo;we buy houses&rdquo; companies operate from out of state. They
@@ -321,7 +362,7 @@ export default function HomePage() {
             <div className="pointer-events-none absolute -bottom-10 -left-10 h-32 w-32 rounded-full bg-amber-400/10 blur-2xl" />
 
             <h2 className="font-display text-display text-white text-balance">
-              Ready to See What Your Home Is Worth?
+              Have a Property You Need to Move On From?
             </h2>
             <p className="mx-auto mt-3 max-w-lg text-base text-stone-400">
               No obligation. No pressure. Fill out the form or reach out

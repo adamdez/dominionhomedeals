@@ -22,6 +22,12 @@ const {
   resolveBrandMediaJobDir,
   resolveBrandMediaArtifact,
 } = require("./media-brand-assets");
+const {
+  inspectStaticBrandSwapStack,
+  runStaticBrandSwap,
+  resolveStaticBrandSwapJobDir,
+  resolveStaticBrandSwapArtifact,
+} = require("./static-brand-swap");
 
 /* ── Load .env ──────────────────────────────────────────────── */
 const envFile = path.join(__dirname, ".env");
@@ -100,6 +106,7 @@ let coworkHealthCache = {
   status: "unchecked",
   detail: "Cowork execute lane has not been probed yet.",
 };
+let coworkHealthProbePromise = null;
 let claudeCliStatusCache = {
   checkedAt: 0,
   loggedIn: null,
@@ -572,6 +579,20 @@ async function runRemoteBridgeRequest(request) {
           ok: false,
           status: "media_bridge_request_failed",
           operator_message: `Media production lane failed with HTTP ${response.status}.`,
+          },
+      );
+    }
+    case "static_brand_swap": {
+      const { response, data } = await callLocalBridge("/image/static-brand-swap", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(input || {}),
+      });
+      return JSON.stringify(
+        data || {
+          ok: false,
+          status: "static_brand_swap_bridge_request_failed",
+          operator_message: `Static brand swap lane failed with HTTP ${response.status}.`,
         },
       );
     }
@@ -582,6 +603,27 @@ async function runRemoteBridgeRequest(request) {
 
 let remoteRelayBusy = false;
 let lastRemoteHeartbeatSentAt = 0;
+let lastRemoteRelaySuccessAt = 0;
+let lastRemoteRelayErrorAt = 0;
+let lastRemoteRelayErrorMessage = "";
+
+function noteRemoteRelaySuccess() {
+  lastRemoteRelaySuccessAt = Date.now();
+  lastRemoteRelayErrorMessage = "";
+  lastRemoteRelayErrorAt = 0;
+}
+
+function noteRemoteRelayFailure(error) {
+  const detail = error instanceof Error ? error.message : String(error || "Unknown remote relay error");
+  const now = Date.now();
+  const shouldLog =
+    detail !== lastRemoteRelayErrorMessage || now - lastRemoteRelayErrorAt > 5 * 60 * 1000;
+  lastRemoteRelayErrorMessage = detail;
+  lastRemoteRelayErrorAt = now;
+  if (shouldLog) {
+    console.error(`[AL-Bridge Remote Relay] ${detail}`);
+  }
+}
 
 async function buildBridgeStatusSnapshot() {
   const executor = await readExecutorHealth();
@@ -598,6 +640,7 @@ async function buildBridgeStatusSnapshot() {
   const localClaudeAuth = readLocalClaudeAuthHealth(coworkProbe);
   const browserVendorStack = inspectBrowserVendorCartReviewStack();
   const brandMediaStack = inspectBrandMediaStack();
+  const staticBrandSwapStack = inspectStaticBrandSwapStack();
   const codexStack = inspectCodexStack();
 
   return {
@@ -617,6 +660,7 @@ async function buildBridgeStatusSnapshot() {
       media_generation: brandMediaStack.live,
       media_runway: brandMediaStack.details.runway_api_key,
       media_gif_export: brandMediaStack.details.ffmpeg_available,
+      static_image_edit: staticBrandSwapStack.live,
       local_pdf_merge: true,
       codex_execution: codexStack.available,
       remote_bridge_relay: remoteRelayConfigured(),
@@ -631,6 +675,11 @@ async function buildBridgeStatusSnapshot() {
       missingAccess: brandMediaStack.missingAccess,
       details: brandMediaStack.details,
     },
+    staticBrandSwap: {
+      live: staticBrandSwapStack.live,
+      missingAccess: staticBrandSwapStack.missingAccess,
+      details: staticBrandSwapStack.details,
+    },
     codexTaskExecution: {
       live: codexStack.available,
       missingAccess: codexStack.available ? [] : ["local_codex_cli"],
@@ -642,6 +691,13 @@ async function buildBridgeStatusSnapshot() {
       details: {
         api_base: REMOTE_BRIDGE_API_BASE || null,
         client_id: REMOTE_BRIDGE_CLIENT_ID,
+        last_success_at: lastRemoteRelaySuccessAt
+          ? new Date(lastRemoteRelaySuccessAt).toISOString()
+          : null,
+        last_error_at: lastRemoteRelayErrorAt
+          ? new Date(lastRemoteRelayErrorAt).toISOString()
+          : null,
+        last_error: lastRemoteRelayErrorMessage || null,
       },
     },
   };
@@ -671,7 +727,11 @@ async function maybeSendRemoteBridgeHeartbeat(force = false) {
 
   if (response.ok) {
     lastRemoteHeartbeatSentAt = now;
+    noteRemoteRelaySuccess();
+    return;
   }
+
+  noteRemoteRelayFailure(`Heartbeat failed with HTTP ${response.status}`);
 }
 
 async function processRemoteBridgeRelayQueue() {
@@ -690,6 +750,11 @@ async function processRemoteBridgeRelayQueue() {
 
     const pollPayload = await pollResponse.json().catch(() => null);
     if (!pollResponse.ok || !pollPayload?.ok || !pollPayload.bundle) {
+      if (!pollResponse.ok) {
+        noteRemoteRelayFailure(`Poll failed with HTTP ${pollResponse.status}`);
+      } else {
+        noteRemoteRelaySuccess();
+      }
       return;
     }
 
@@ -728,8 +793,9 @@ async function processRemoteBridgeRelayQueue() {
         results,
       }),
     });
-  } catch {
-    // Stay quiet here; the hosted AL proof surface should tell the truth about relay availability.
+    noteRemoteRelaySuccess();
+  } catch (error) {
+    noteRemoteRelayFailure(error);
   } finally {
     remoteRelayBusy = false;
   }
@@ -791,12 +857,8 @@ async function readExecutorHealth() {
   }
 }
 
-async function probeCoworkExecutionHealth(force = false) {
+async function refreshCoworkExecutionHealth() {
   const now = Date.now();
-  if (!force && coworkHealthCache.ok !== null && now - coworkHealthCache.checkedAt < COWORK_HEALTH_PROBE_TTL_MS) {
-    return coworkHealthCache;
-  }
-
   try {
     const execRes = await fetch("http://127.0.0.1:3456/execute", {
       method: "POST",
@@ -807,7 +869,7 @@ async function probeCoworkExecutionHealth(force = false) {
         authority_zone: 1,
         secret: process.env.EXECUTOR_SECRET || "sentinel-ceo-2026",
       }),
-      signal: AbortSignal.timeout(20000),
+      signal: AbortSignal.timeout(8000),
     });
     const data = await execRes.json().catch(() => null);
     const raw =
@@ -865,6 +927,25 @@ async function probeCoworkExecutionHealth(force = false) {
   }
 
   return coworkHealthCache;
+}
+
+async function probeCoworkExecutionHealth(force = false) {
+  const now = Date.now();
+  if (!force && coworkHealthCache.ok !== null && now - coworkHealthCache.checkedAt < COWORK_HEALTH_PROBE_TTL_MS) {
+    return coworkHealthCache;
+  }
+
+  if (!coworkHealthProbePromise) {
+    coworkHealthProbePromise = refreshCoworkExecutionHealth().finally(() => {
+      coworkHealthProbePromise = null;
+    });
+  }
+
+  if (!force && coworkHealthCache.ok !== null) {
+    return coworkHealthCache;
+  }
+
+  return coworkHealthProbePromise;
 }
 
 async function handleHealth(res, o) {
@@ -1779,6 +1860,40 @@ const server = http.createServer(async (req, res) => {
     }
   }
 
+  async function handleStaticBrandSwap(req, res, o) {
+    let body = {};
+    try {
+      body = JSON.parse(await readBody(req));
+    } catch {
+      return json(res, 400, { error: "Invalid JSON body." }, o);
+    }
+
+    try {
+      const result = await runStaticBrandSwap(body);
+      return json(res, result.ok ? 200 : 503, result, o);
+    } catch (err) {
+      return json(
+        res,
+        500,
+        {
+          ok: false,
+          status: "failed_static_brand_swap_bridge_execution",
+          lane_id: "wrenchready-static-brand-swap",
+          preferred_execution_path: "bridge:static_brand_swap",
+          missing_access: [],
+          error: err instanceof Error ? err.message : "Unknown static brand swap bridge error.",
+          operator_message:
+            err instanceof Error
+              ? `Static brand swap lane failed: ${err.message}`
+              : "Static brand swap lane failed.",
+          next_action:
+            "Inspect the local static image edit worker, verify the source hero image and transparent logo asset, then rerun the proof.",
+        },
+        o,
+      );
+    }
+  }
+
   async function handleBrandMediaReviewPage(res, o, jobId) {
     const full = resolveBrandMediaArtifact(jobId, "review.html");
     if (!full || !fsSync.existsSync(full)) {
@@ -1914,6 +2029,95 @@ const server = http.createServer(async (req, res) => {
     return res.end(body);
   }
 
+  async function handleStaticBrandSwapReviewPage(res, o, jobId) {
+    const full = resolveStaticBrandSwapArtifact(jobId, "review.html");
+    if (!full || !fsSync.existsSync(full)) {
+      return html(
+        res,
+        404,
+        "<!doctype html><title>Review page missing</title><p>Static brand swap review page not found for this job.</p>",
+        o,
+      );
+    }
+
+    const markup = await fs.readFile(full, "utf8");
+    return html(res, 200, markup, o);
+  }
+
+  async function handleStaticBrandSwapArtifact(res, o, jobId, fileName) {
+    const full = resolveStaticBrandSwapArtifact(jobId, fileName);
+    if (!full || !fsSync.existsSync(full)) {
+      return json(res, 404, { error: "Artifact not found" }, o);
+    }
+
+    const ext = path.extname(full).toLowerCase();
+    const contentType =
+      ext === ".html"
+        ? "text/html; charset=utf-8"
+        : ext === ".json"
+          ? "application/json; charset=utf-8"
+          : ext === ".gif"
+            ? "image/gif"
+            : ext === ".png"
+              ? "image/png"
+              : ext === ".jpg" || ext === ".jpeg"
+                ? "image/jpeg"
+                : "application/octet-stream";
+    const body = await fs.readFile(full);
+    res.writeHead(200, { ...cors(o), "Content-Type": contentType });
+    return res.end(body);
+  }
+
+  function resolveStaticBrandSwapOutputRoot() {
+    const probe = resolveStaticBrandSwapJobDir("probe");
+    return probe ? path.dirname(probe) : null;
+  }
+
+  function listStaticBrandSwapJobs() {
+    const root = resolveStaticBrandSwapOutputRoot();
+    if (!root || !fsSync.existsSync(root)) return [];
+    return fsSync
+      .readdirSync(root, { withFileTypes: true })
+      .filter((entry) => entry.isDirectory())
+      .map((entry) => {
+        const jobId = entry.name;
+        const reviewFile = path.join(root, jobId, "review.html");
+        const manifestFile = path.join(root, jobId, "review-manifest.json");
+        const stat = fsSync.statSync(path.join(root, jobId));
+        let summary = "";
+        try {
+          if (fsSync.existsSync(manifestFile)) {
+            const parsed = JSON.parse(fsSync.readFileSync(manifestFile, "utf8"));
+            summary =
+              parsed?.result?.summary ||
+              parsed?.result?.operator_message ||
+              parsed?.result?.status ||
+              "";
+          }
+        } catch {}
+        return {
+          jobId,
+          createdAt: stat.mtimeMs,
+          reviewExists: fsSync.existsSync(reviewFile),
+          summary,
+        };
+      })
+      .sort((a, b) => b.createdAt - a.createdAt);
+  }
+
+  async function handleStaticBrandSwapLatestReviewPage(res, o) {
+    const latest = listStaticBrandSwapJobs().find((job) => job.reviewExists);
+    if (!latest) {
+      return html(
+        res,
+        404,
+        "<!doctype html><title>No static brand swap reviews</title><p>No static brand swap review jobs were found yet.</p>",
+        o,
+      );
+    }
+    return handleStaticBrandSwapReviewPage(res, o, latest.jobId);
+  }
+
   const providedToken = ((req.headers.authorization || "").match(/^Bearer\s+(.+)$/i)?.[1] || u.searchParams.get("token") || "").trim();
   if (TOKEN && providedToken !== TOKEN)
     return json(res, 401, { error: "Unauthorized" }, o);
@@ -1925,6 +2129,8 @@ const server = http.createServer(async (req, res) => {
     const reviewResumeMatch = p.match(/^\/browser\/vendor-cart-review\/job\/([^/]+)\/resume\/([^/]+)$/);
     const brandMediaReviewPageMatch = p.match(/^\/media\/brand-assets\/job\/([^/]+)\/review$/);
     const brandMediaArtifactMatch = p.match(/^\/media\/brand-assets\/job\/([^/]+)\/artifact\/([^/]+)$/);
+    const staticBrandSwapReviewPageMatch = p.match(/^\/image\/static-brand-swap\/job\/([^/]+)\/review$/);
+    const staticBrandSwapArtifactMatch = p.match(/^\/image\/static-brand-swap\/job\/([^/]+)\/artifact\/([^/]+)$/);
     if (p === "/health" && req.method === "GET") return handleHealth(res, o);
     if (p === "/list" && req.method === "GET")
       return handleList(res, o, u);
@@ -1954,10 +2160,14 @@ const server = http.createServer(async (req, res) => {
       return handleBrowserVendorCartReview(req, res, o);
     if (p === "/media/brand-assets" && req.method === "POST")
       return handleBrandMediaProduction(req, res, o);
+    if (p === "/image/static-brand-swap" && req.method === "POST")
+      return handleStaticBrandSwap(req, res, o);
     if (p === "/media/brand-assets/reviews" && req.method === "GET")
       return handleBrandMediaReviewIndex(res, o);
     if (p === "/media/brand-assets/latest/review" && req.method === "GET")
       return handleBrandMediaLatestReviewPage(res, o);
+    if (p === "/image/static-brand-swap/latest/review" && req.method === "GET")
+      return handleStaticBrandSwapLatestReviewPage(res, o);
     if (reviewPageMatch && req.method === "GET")
       return handleBrowserVendorReviewPage(res, o, decodeURIComponent(reviewPageMatch[1]));
     if (reviewArtifactMatch && req.method === "GET")
@@ -1982,6 +2192,19 @@ const server = http.createServer(async (req, res) => {
         o,
         decodeURIComponent(brandMediaArtifactMatch[1]),
         decodeURIComponent(brandMediaArtifactMatch[2]),
+      );
+    if (staticBrandSwapReviewPageMatch && req.method === "GET")
+      return handleStaticBrandSwapReviewPage(
+        res,
+        o,
+        decodeURIComponent(staticBrandSwapReviewPageMatch[1]),
+      );
+    if (staticBrandSwapArtifactMatch && req.method === "GET")
+      return handleStaticBrandSwapArtifact(
+        res,
+        o,
+        decodeURIComponent(staticBrandSwapArtifactMatch[1]),
+        decodeURIComponent(staticBrandSwapArtifactMatch[2]),
       );
     json(res, 404, { error: "Not found" }, o);
   } catch (err) {

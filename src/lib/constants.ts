@@ -3,9 +3,9 @@
 export const SITE = {
   name: "Dominion Homes",
   legalName: "Dominion Homes, LLC",
-  tagline: "Your Local Cash Home Buyers - Spokane & CDA",
+  tagline: "Local Spokane Team · Direct Home Buyers",
   description:
-    "Local Spokane and Coeur d'Alene team that buys houses for cash in any condition. No commissions, no repairs, close on your timeline. We meet you in person.",
+    "Spokane-area team that buys houses directly. No commissions, no repairs, close on your timeline. We meet you in person.",
   url: "https://dominionhomedeals.com",
   phone: "509-822-5460",
   email: "offers@dominionhomedeals.com", 
@@ -68,47 +68,6 @@ export const TRUST_STATS = [
   { value: "2", label: "Local Team Members" },
   { value: "Any", label: "Condition Accepted" },
 ] as const;
-
-/** Neighborhoods - Spokane County + Kootenai County */
-export const NEIGHBORHOODS: Array<{
-  slug: string;
-  name: string;
-  city: string;
-  county: "Spokane" | "Kootenai";
-  state: "WA" | "ID";
-  zip: string;
-}> = [
-  // Spokane County
-  { slug: "spokane-valley", name: "Spokane Valley", city: "Spokane Valley", county: "Spokane", state: "WA", zip: "99206" },
-  { slug: "north-spokane", name: "North Spokane", city: "Spokane", county: "Spokane", state: "WA", zip: "99208" },
-  { slug: "south-hill", name: "South Hill", city: "Spokane", county: "Spokane", state: "WA", zip: "99203" },
-  { slug: "downtown-spokane", name: "Downtown Spokane", city: "Spokane", county: "Spokane", state: "WA", zip: "99201" },
-  { slug: "cheney", name: "Cheney", city: "Cheney", county: "Spokane", state: "WA", zip: "99004" },
-  { slug: "airway-heights", name: "Airway Heights", city: "Airway Heights", county: "Spokane", state: "WA", zip: "99001" },
-  { slug: "liberty-lake", name: "Liberty Lake", city: "Liberty Lake", county: "Spokane", state: "WA", zip: "99019" },
-  { slug: "mead", name: "Mead", city: "Mead", county: "Spokane", state: "WA", zip: "99021" },
-  { slug: "deer-park", name: "Deer Park", city: "Deer Park", county: "Spokane", state: "WA", zip: "99006" },
-  { slug: "medical-lake", name: "Medical Lake", city: "Medical Lake", county: "Spokane", state: "WA", zip: "99022" },
-  { slug: "millwood", name: "Millwood", city: "Millwood", county: "Spokane", state: "WA", zip: "99212" },
-  { slug: "five-mile", name: "Five Mile", city: "Spokane", county: "Spokane", state: "WA", zip: "99208" },
-  { slug: "hillyard", name: "Hillyard", city: "Spokane", county: "Spokane", state: "WA", zip: "99207" },
-  { slug: "shadle", name: "Shadle-Garland", city: "Spokane", county: "Spokane", state: "WA", zip: "99205" },
-  { slug: "brownes-addition", name: "Browne's Addition", city: "Spokane", county: "Spokane", state: "WA", zip: "99201" },
-  { slug: "manito", name: "Manito-Comstock", city: "Spokane", county: "Spokane", state: "WA", zip: "99203" },
-  { slug: "lincoln-heights", name: "Lincoln Heights", city: "Spokane", county: "Spokane", state: "WA", zip: "99203" },
-  { slug: "indian-trail", name: "Indian Trail", city: "Spokane", county: "Spokane", state: "WA", zip: "99208" },
-  { slug: "otis-orchards", name: "Otis Orchards", city: "Otis Orchards", county: "Spokane", state: "WA", zip: "99027" },
-  { slug: "greenacres", name: "Greenacres", city: "Greenacres", county: "Spokane", state: "WA", zip: "99016" },
-  // Kootenai County
-  { slug: "coeur-d-alene", name: "Coeur d'Alene", city: "Coeur d'Alene", county: "Kootenai", state: "ID", zip: "83814" },
-  { slug: "post-falls", name: "Post Falls", city: "Post Falls", county: "Kootenai", state: "ID", zip: "83854" },
-  { slug: "hayden", name: "Hayden", city: "Hayden", county: "Kootenai", state: "ID", zip: "83835" },
-  { slug: "rathdrum", name: "Rathdrum", city: "Rathdrum", county: "Kootenai", state: "ID", zip: "83858" },
-  { slug: "spirit-lake", name: "Spirit Lake", city: "Spirit Lake", county: "Kootenai", state: "ID", zip: "83869" },
-  { slug: "dalton-gardens", name: "Dalton Gardens", city: "Dalton Gardens", county: "Kootenai", state: "ID", zip: "83815" },
-  { slug: "hauser", name: "Hauser", city: "Hauser", county: "Kootenai", state: "ID", zip: "83854" },
-  { slug: "athol", name: "Athol", city: "Athol", county: "Kootenai", state: "ID", zip: "83801" },
-];
 
 export const TCPA_CONSENT_TEXT =
   "By submitting this form, you consent to receive calls, texts, and emails from Dominion Homes, LLC at the number and email provided, including by autodialer and prerecorded messages, for the purpose of discussing the sale of your property. Consent is not a condition of purchase. Message and data rates may apply. Message frequency varies. Reply STOP to opt out. Reply HELP for help." as const;

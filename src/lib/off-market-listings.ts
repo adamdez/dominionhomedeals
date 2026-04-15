@@ -59,7 +59,7 @@ const listings: Record<string, OffMarketListing> = {
     zip: '83869',
     conditionSummary: 'Move-in ready — some interior finishing work remaining',
     summary:
-      'Move-in ready 2-bedroom, 2-bath home on 5 private acres in Spirit Lake, ID. Built 2016, 1,952 sq ft, asking $460,000. Direct from Dominion Home Deals.',
+      'Move-in ready 2-bedroom, 2-bath home on 5 private acres in Spirit Lake, ID. Built 2016, 1,952 sq ft, asking $460,000. Direct from Dominion Homes.',
     paragraphs: [
       'Set on five private acres in Spirit Lake, Idaho, this 2016-built home offers nearly 2,000 square feet of living space with the quiet of rural North Idaho — minutes from town.',
       'The home is move-in ready with some finishing work still needed, giving a buyer room to personalize while the structure, systems, and land do the heavy lifting.',

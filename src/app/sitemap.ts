@@ -1,38 +1,6 @@
 import type { MetadataRoute } from 'next'
 import { SELLER_STORIES } from '@/lib/seller-stories'
-
-// ─── Single source of truth for neighborhood slugs ───────────────────────────
-// Must match exactly the keys in src/app/neighborhoods/[slug]/page.tsx
-// If you add or remove a neighborhood page, update this array.
-const neighborhoods = [
-  // Spokane County
-  'spokane-valley',
-  'north-spokane',
-  'south-hill',
-  'downtown-spokane',
-  'cheney',
-  'airway-heights',
-  'liberty-lake',
-  'mead',
-  'deer-park',
-  'medical-lake',
-  'millwood',
-  'otis-orchards',
-  'nine-mile-falls',
-  'elk',
-  'spangle',
-  // Kootenai County
-  'coeur-d-alene',
-  'post-falls',
-  'hayden',
-  'rathdrum',
-  'dalton-gardens',
-  'spirit-lake',
-  'athol',
-  'hauser',
-  'harrison',
-  'worley',
-]
+import { getAllSlugs } from '@/lib/neighborhoods'
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const baseUrl = 'https://dominionhomedeals.com'
@@ -53,7 +21,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${baseUrl}/terms`, lastModified: new Date(), changeFrequency: 'yearly' as const, priority: 0.3 },
   ]
 
-  const neighborhoodPages = neighborhoods.map((slug) => ({
+  const neighborhoodPages = getAllSlugs().map((slug) => ({
     url: `${baseUrl}/neighborhoods/${slug}`,
     lastModified: new Date(),
     changeFrequency: 'weekly' as const,

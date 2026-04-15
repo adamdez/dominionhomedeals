@@ -27,7 +27,7 @@ export function Header() {
           <div className="flex flex-col leading-tight">
             <span className="font-display text-base text-ink-600">Dominion Homes</span>
             <span className="text-[9px] font-semibold uppercase tracking-[0.15em] text-forest-400">
-              Cash Home Buyers
+              Spokane Direct Buyers
             </span>
           </div>
         </Link>

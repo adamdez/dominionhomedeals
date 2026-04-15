@@ -34,11 +34,11 @@ function publicMetadata(): Metadata {
   return {
     metadataBase: new URL(SITE.url),
     title: {
-      default: "Sell Your House Fast for Cash in Spokane & CDA | Dominion Homes",
+      default: "Sell Your Spokane Home Fast — No Repairs, No Fees | Dominion Homes",
       template: "%s | Dominion Homes",
     },
     description:
-      "Local Spokane and Coeur d'Alene team that buys houses for cash in any condition. No commissions, no repairs, close on your timeline. Based in Spokane, WA.",
+      "Local Spokane team that buys houses directly. Inherited property, landlord fatigue, repairs you can't afford — we handle it. No agents, no commissions, close on your schedule.",
     keywords: [
       "sell my house fast Spokane",
       "cash home buyers Spokane",
@@ -54,8 +54,8 @@ function publicMetadata(): Metadata {
       locale: "en_US",
       url: SITE.url,
       siteName: SITE.name,
-      title: "Sell Your House Fast for Cash - Spokane & CDA",
-      description: "Get a fair cash offer from your local team. No repairs, no fees, close on your schedule.",
+      title: "Sell Your Spokane Home Fast — No Repairs, No Fees | Dominion Homes",
+      description: "Local Spokane team that buys houses directly. No agents, no commissions, close on your schedule.",
       images: [{ url: "/images/og-image.jpg", width: 1200, height: 630 }],
     },
     alternates: { canonical: SITE.url },

@@ -307,7 +307,7 @@ export default async function OffMarketListingPage({ params }: { params: Promise
               <h3 className="font-display text-xl text-white mb-3">Due diligence</h3>
               <p className="text-sm text-stone-300 leading-relaxed">
                 Aerial and map layers are for convenience only. Property lines, acreage, easements, and condition must be
-                verified by buyer with the county, title, and qualified inspectors. Dominion Home Deals is a licensed
+                verified by buyer with the county, title, and qualified inspectors. Dominion Homes is a licensed
                 wholesaler; this is not a retail MLS listing.
               </p>
             </div>
@@ -334,7 +334,7 @@ export default async function OffMarketListingPage({ params }: { params: Promise
 
       <div className="border-t border-stone-200 bg-stone-200/80">
         <div className="mx-auto max-w-6xl px-5 py-6 text-center text-xs text-ink-500 leading-relaxed">
-          Dominion Home Deals is a licensed wholesaler. This is not a retail MLS listing. Property details are provided
+          Dominion Homes is a licensed wholesaler. This is not a retail MLS listing. Property details are provided
           for informational purposes. Buyer is encouraged to conduct independent due diligence. Questions:{' '}
           <a href={`mailto:${SITE.email}`} className="underline underline-offset-2 hover:text-ink-700">
             {SITE.email}

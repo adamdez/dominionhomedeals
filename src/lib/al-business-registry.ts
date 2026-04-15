@@ -187,7 +187,7 @@ async function buildWrenchReadyBoardroomSummary(
 const REGISTRY: Record<AlBusinessId, RegisteredAlBusinessModule> = {
   dominion: {
     businessId: "dominion",
-    businessLabel: "Dominion Home Deals",
+    businessLabel: "Dominion Homes",
     ceoId: "dominion",
     scorecardSummary:
       "Realized gross profit, seller response speed, underwriting quality, and buyer liquidity at exit.",

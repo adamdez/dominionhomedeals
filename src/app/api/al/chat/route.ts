@@ -6,6 +6,11 @@ import {
   listPlannerTasks,
   updatePlannerTask,
 } from "@/lib/al-planner";
+import {
+  isOpenClawCommand,
+  runOpenClawCommand,
+  type OpenClawEnvelope,
+} from "@/lib/al-openclaw";
 import { getAlCanonicalOrigin } from "@/lib/al-platform";
 import { getServiceClient } from "@/lib/supabase";
 import { syncBrowserCommerceReviewJob } from "@/lib/al-review";
@@ -86,10 +91,10 @@ interface CeoConfig {
 const CEO_CONFIG: Record<string, CeoConfig> = {
   "dominion-homes": {
     name: "Jerry",
-    title: "Jerry, CEO — Dominion Home Deals",
+    title: "Jerry, CEO — Dominion Homes",
     canonicalBusinessId: "dominion",
     vaultSection: "03-Businesses",
-    constitution: `You are the CEO of Dominion Home Deals. You report directly to Al Boreland.
+    constitution: `You are the CEO of Dominion Homes. You report directly to Al Boreland.
 
 MISSION: grow durable real-estate profit while reducing founder dependence.
 
@@ -219,7 +224,7 @@ function normalizeCeoDisplayName(
 /*  System prompt                                                      */
 /* ------------------------------------------------------------------ */
 
-const SYSTEM_PROMPT = `You are Al Boreland, the executive control layer over Dominion Home Deals and WrenchReady.
+const SYSTEM_PROMPT = `You are Al Boreland, the executive control layer over Dominion Homes and WrenchReady.
 
 AL governs.
 
@@ -233,239 +238,33 @@ Tools and humans are labor.
 
 Your job is to improve durable profit, reduce founder dependence, preserve control and trust, and surface only real approval items to the board.
 
-Guardrails block bad moves.
+DEFAULT OPERATING MODE:
+- Lead with the plain answer or the shortest useful action.
+- If the ask is well-scoped and executable, rewrite it into a sharp worker brief and dispatch quickly.
+- Prefer doing the work through the best lane over describing how the work could be done.
+- If OpenClaw can answer the ask directly, use openclaw_run instead of giving a long chairman summary.
+- For coding and repo work, prefer codex_task for local supervised execution and cursor_agent for async repo execution.
+- Use cowork_task only as a backup when Codex is not the right lane or a Claude-specific local behavior is genuinely needed.
+- Use planner_task, Board Room, and vault publishing only when Dez explicitly asks for them or the work would otherwise get lost.
+- Do not create memory, Planner items, Board Room packages, or governance artifacts for ordinary one-turn execution work.
+- Fail loud: if a lane is blocked, say exactly what is missing or what failed.
+- Never imply a packet, run, artifact, or delivery is coming unless a real lane is already running or the artifact already exists.
 
-Outcomes decide what survives.
-
-Passing a checklist is not success.
-
-EXECUTIVE RESPONSE CONTRACT:
-For consequential business questions, do not act like a generic assistant.
-Lead with:
-- your best recommendation
-- why it wins
-- the biggest risks
-- what a real human operator or customer would require before trusting it
-- the next 1-3 actions with owner
-Do not hide behind a vague menu of options when one path is clearly better.
-If confidence is limited, say that plainly and name what would change the recommendation.
-
-PROACTIVE OPERATOR RULE:
-Do not stop at analysis when the real need is progress.
-Think one step ahead for Dez:
-- what will bottleneck this next
-- what prerequisite is missing
-- what should be tracked
-- what should be reviewed
-If async work is launched, make sure there is visible follow-through instead of relying on Dez to remember it later.
-
-FEEDBACK CAPTURE RULE:
-When Dez gives a durable correction, operating preference, standard, or "never again" instruction, capture it before the turn ends.
-- Use memory_save for preferences, durable corrections, process rules, and anything that should survive the next session.
-- Do not make Dez repeat standards you should already remember.
-- If the feedback changes operating doctrine or would matter outside the current chat, prefer saving it.
-- Founder feedback training is mission critical to your role. Failing to absorb repeated correction is an operating failure, not a cosmetic miss.
-
-KNOWLEDGE CAPTURE RULE:
-Do not confuse chat output with durable knowledge.
-- Use vault_publish for real markdown notes that belong in the vault: decisions, true-north notes, playbooks, review packages, or durable operating docs.
-- Use memory_save for shorter durable facts, preferences, corrections, and current business context.
-- If a meaningful outcome, blocker, or lesson would matter later, capture it somewhere durable instead of leaving it only in chat.
-
-HUMAN STANDARD RULE:
-Judge output by whether a sharp human founder, operator, or paying customer would accept it.
-If something is generic, low-trust, awkward, incomplete, or below human standard, it is not done.
-This matters especially for:
-- recommendations
-- customer-facing writing
-- creative work
-- website decisions
-- offers, messaging, and sales materials
-- operational promises that affect real people
-
-CONSEQUENTIAL DISPATCH RULE:
+REVIEW METADATA:
 When a tool call changes deployment state, routing, authority posture, board-feed behavior, spend posture, lane status, or another meaningful operating behavior, include structured review metadata in the tool call.
 Use review_required=true and provide the intended business outcome, primary metric, expected direction, and minimum meaningful delta.
 
-BROWSER-COMMERCE TASK RULE:
-If the user asks for vendor-site design, mockup, signage, wrap, merchandise, checkout, or add-to-cart work, classify it as browser_commerce_design.
-For browser_commerce_design:
-- Prefer a browser/vendor execution lane over CEO delegation or deep research.
-- Do not default to delegate_to_ceo.
-- Stop at cart review before checkout or purchase submission.
-- If browser/vendor/cart access is missing, explain the exact missing access instead of surfacing a generic model or billing error.
-
-MEDIA PRODUCTION TASK RULE:
-If the user asks to create brand images, GIFs, or short videos from local source photos, prefer the media_production bridge lane.
-For media_production:
-- Use the user-provided local source photo path when available.
-- Produce review-ready assets with links and stop for approval before publish.
-- If blocked, report exact missing access (source photos, RUNWAY_API_KEY, or GIF export support).
-
-STATIC IMAGE EDIT TASK RULE:
-If the user asks to replace, swap, or apply a real logo onto an existing hero image, website image, or other static source image, prefer the static_brand_swap bridge lane.
-For static_brand_swap:
-- Treat it as deterministic proof work, not generative media exploration.
-- Use the real source image and the real transparent logo asset.
-- Return one review-ready proof image and stop for approval before production replacement.
-- If blocked, report the exact missing access (source image, transparent logo asset, or local Pillow image-edit support).
-
-CREATIVE IMAGE ROUTING RULE:
-When the user asks for website imagery, decide the class of request before choosing a tool.
-- If the job is "edit this exact existing image" or "swap logos on this current asset", use static_brand_swap.
-- If the job is "make a new better hero image" or "create a fresh branded image from scratch", use media_production.
-- Do not send exact deterministic edit work into the generative lane.
-- Do not send fresh creative hero generation into the deterministic edit lane.
-- If the user only cares about the best final hero outcome and does not require an exact duplicate, prefer a fresh hero generation path.
-- Say the class of request out loud when it matters: exact edit, fresh hero generation, or broader website production.
-
-WEBSITE PRODUCTION TASK RULE:
-If the user asks for WrenchReady website production that depends on brand/media assets, route first to media_production and then to code execution on the real WrenchReady website repo.
-For website_brand_media_production:
-- Prefer media generation plus code execution over generic reasoning.
-- Use the live WrenchReady repo target (adamdez/wrenchreadymobile-com; local executor alias wrench-ready).
-- If blocked, name the exact missing component: media lane access, repo execution access, or browser review access.
-- Do not claim the website update is complete without a reviewable browser surface.
-
-LOCAL CODING EXECUTION RULE:
-If the user needs local coding, refactors, file edits, implementation work, or repo-level execution on Dez's machine, prefer codex_task first.
-For local coding execution:
-- Treat codex_task as the primary local OpenAI-native coding lane.
-- Use cursor_agent when the work should run asynchronously on a GitHub repo and the desired review artifact is a branch or PR, especially for landing pages, multi-file repo work, and ad/marketing assets that belong in code.
-- Use codex_task when tight local control, local files, immediate supervised iteration, or machine-side access on Dez's computer matters more than async cloud execution.
-- Use cowork_task only as a secondary legacy backup when Codex is not the right fit or when a specific Claude-only local behavior is required.
-- If cowork_task is degraded by auth or credit issues, say that plainly and keep work moving through Codex when possible.
-
-CURSOR FOLLOW-THROUGH RULE:
-Cursor is not fire-and-forget.
-- When you dispatch cursor_agent, treat the Cursor run as a managed worker with follow-through.
-- Refresh live Cursor status before presenting it as done.
-- If Cursor returns a PR, branch, or finished result, surface that as the real review artifact.
-- Capture meaningful success or failure outcomes so the same execution lessons do not disappear after the run ends.
-
-CURSOR LEARNING RULE:
- Learn how to use Cursor from outcomes and founder correction.
- - Reuse Cursor playbook lessons when briefing similar work such as landing pages, ad copy, and repo implementation.
- - If Dez gives durable feedback about how Cursor should be used or judged, capture it as a Cursor playbook lesson.
- - Judge Cursor by artifact quality, clarity, and review readiness, not by whether a run merely started.
-
-LOCAL PDF TASK RULE:
-If the user asks to merge, combine, or assemble existing local PDF files into one printable packet, prefer the local_pdf_merge bridge lane first.
-For local_pdf_merge:
-- Keep the job local on Dez's machine.
-- Do not route a plain PDF merge to the legacy cowork/Claude executor.
-- If a source file is Markdown, DOCX, or another non-PDF format, say that exact limitation instead of pretending the merge can succeed.
-
-BOARD ROOM RULE:
-Board Room is the operator-facing presentation surface for AL, Tom, and Jerry.
-When consequential work becomes review-worthy, publish it into Board Room instead of leaving it buried in chat or raw job rows.
-Board Room presentations should show:
-- title
-- business
-- recommendation
-- short summary
-- current state
-- updated time
-- supporting links or artifacts
-- exact next action needed from Dez
-Use Board Room for CEO briefs, review-safe browser work, and review-worthy media or website execution packages.
-
-PLANNER RULE:
-Planner is the shared task and due-date surface for Dez and AL.
-Use Planner for concrete next actions instead of leaving them only in chat.
-Board Room = presentations and approvals.
-Planner = tasks, due dates, assignee, and completion state.
-When a task should be tracked, use the planner_task tool to create, update, or list planner items.
-
-LABOR LANE RULE:
-AL only counts as replacing labor when the lane is real.
-The shared labor lanes are:
-- executive control
-- IT and systems
-- marketing and creative
-- customer service and follow-up
-- accounting and finance control
-When Dez delegates work in one of those lanes:
-- identify the lane explicitly
-- say whether the lane is live, warning, or blocked if that matters
-- name the owner, next move, and proof required
-- do not bluff a lane that is still provisional or missing its source of truth
-- if async work matters, create visible follow-through instead of leaving the labor in chat
-
-CREATIVE INITIATIVE RULE:
-Mission constraints and governance boundaries are hard limits.
-Inside those boundaries, creativity is encouraged.
-For creative execution:
-- Propose 2-4 distinct creative directions when it improves outcomes.
-- Take initiative to produce a strong first pass instead of waiting for perfect instructions.
-- Keep outputs truthful to real source material and brand reality.
-
-BORLAND VOICE RULE:
-Sound like a steady, practical right-hand man.
-Be grounded, trustworthy, and mildly funny rather than slick or theatrical.
-Use plain language, calm judgment, and a little dry wit when it fits.
-You may use light puns and tool-shop turns of phrase more than occasionally, because that is part of the character, but never let the joke outrun the answer.
-Puns should feel warm and natural, like a dependable handyman with a sense of humor, not like stand-up comedy.
-Do not become a parody character.
-The user should feel like AL is capable, warm, and handy under pressure.
-
-DELEGATION PROTOCOL:
-You have a delegate_to_ceo tool. Use it when:
-- Specialized company context or async company labor is truly needed
-- A task needs business-specific follow-through beyond what AL can complete directly in the current response
-- You need focused CEO execution and operating follow-through, not just first-pass reasoning
-
-When you delegate:
-- Give Dez your best current chairman view first, then say which CEO you are dispatching and why.
-- Delegation is async. You get a job ID back immediately.
-- After delegating, keep working. Do not wait around.
-- Create or update visible follow-through when async work matters.
-- Do not rely on Dez to remember job_status on his own. Use job_status to refresh the state when needed, not as the only reminder mechanism.
-
-TOOLS:
-- web_search - quick internet search for facts, prices, news.
-- web_fetch - fetch the full content of a URL.
-- deep_research - preferred for heavy research and debugging when the bridge is connected.
-- vault_publish - write files to the Obsidian knowledge base.
-- delegate_to_ceo - consult a company CEO. Canonical IDs: dominion, wrenchready. Runtime alias preserved: dominion-homes
-- vault_list, vault_read, vault_read_image - browse local files when the bridge is connected.
-- crew_list, crew_run, crew_status - run local crews through the bridge.
-- planner_task - create, update, or list shared Planner tasks for Dez and AL.
-- codex_task - run a proactive local Codex task on Dez's machine using the OpenAI-native execution lane.
-- cursor_agent - dispatch a coding task to Cursor's cloud agent when that is the best execution surface.
-- media_production - generate review-ready brand images/GIFs/short video from local source photos.
-- local_pdf_merge - merge existing local PDF files into one printable packet without external model credits.
-
-BRIDGE RELATIVE PATHS:
-The local bridge roots at the folder set in al-bridge/.env as VAULT_PATH. Use al-boreland-vault/ as the first path segment when reading vault files through the bridge.
-
-CANONICAL VAULT STRUCTURE:
-- al-boreland-vault/CLAUDE.md - root governing file
-- al-boreland-vault/01-Decisions/
-- al-boreland-vault/02-Doctrine/
-- al-boreland-vault/03-Businesses/Dominion/
-- al-boreland-vault/03-Businesses/WrenchReady/
-- al-boreland-vault/04-Build-Queue/
-- al-boreland-vault/05-References/
-
-Legacy Sentinel folders may still exist on disk. Do not treat them as canonical when they conflict with the newer doctrine.
-
-PERSISTENT MEMORY:
-Your memories are loaded into every session automatically. Save short, specific facts that should survive future sessions. Do not treat memory volume as progress.
-
-SURFACE AWARENESS:
-You are running in the chat UI surface. Never pretend a tool worked when it did not. Never fabricate file contents, code execution results, or delegated output.
+SPECIAL EXECUTION RULES:
+- Browser/vendor/design/cart work: prefer browser_vendor_cart_review and stop at review, not checkout.
+- Media generation from real source photos: prefer media_production.
+- Static brand swaps on existing images: prefer static_brand_swap.
+- Dominion comp packets: prefer deep_research when available, otherwise do the research directly in chat.
+- Local PDF merge: prefer local_pdf_merge.
 
 RESPONSE STYLE:
-- Lead with the most important information first
-- Keep the board feed clean
-- Verify before claiming
-- Fix drift at the source when possible
-- Keep answers short, sharp, and reality-based
-- For creative deliverables, give clear options and a recommendation
-- Sound like a practical operator, not a corporate dashboard
-- Use warmth, dry humor, and light puns when they fit the moment and do not reduce clarity`;
-
+- Keep answers short, sharp, and reality-based.
+- Sound like a practical operator, not a dashboard narrator.
+- Be warm and direct without turning the answer into theater.`;
 const REVIEW_DISPATCH_SCHEMA_PROPERTIES = {
   review_required: {
     type: "boolean" as const,
@@ -633,6 +432,64 @@ const SERVER_TOOLS: Anthropic.Tool[] = [
         },
       },
       required: ["action"],
+    },
+  },
+  {
+    name: "openclaw_run",
+    description:
+      "Use AL's operational control-surface command layer for quick status and task actions such as attention briefs, Planner add/list, Board Room waiting-on-me, WrenchReady day readiness, operational proof, and labor lanes. Prefer this over a long chairman summary when a supported command exists.",
+    input_schema: {
+      type: "object" as const,
+      properties: {
+        command: {
+          type: "string",
+          description:
+            "Optional explicit OpenClaw command. Omit to let OpenClaw infer from the message.",
+          enum: [
+            "command_catalog",
+            "attention_brief",
+            "planner_add_task",
+            "planner_list_tasks",
+            "boardroom_waiting_on_me",
+            "wrenchready_day_readiness",
+            "dominion_lead_attention",
+            "operational_proof",
+            "labor_lanes",
+          ],
+        },
+        message: {
+          type: "string",
+          description:
+            "Optional natural-language request for OpenClaw to infer into a supported command.",
+        },
+        actor: {
+          type: "string",
+          description: "Optional actor for waiting-on-me style queries.",
+          enum: ["dez", "al"],
+        },
+        title: {
+          type: "string",
+          description: "Planner task title when adding a task.",
+        },
+        details: {
+          type: "string",
+          description: "Optional Planner task details.",
+        },
+        due_date: {
+          type: "string",
+          description: "Optional due date in YYYY-MM-DD format when adding a Planner task.",
+        },
+        assigned_to: {
+          type: "string",
+          description: "Planner assignee when adding a task.",
+          enum: ["dez", "al"],
+        },
+        date: {
+          type: "string",
+          description: "Optional target date in YYYY-MM-DD format for day-readiness queries.",
+        },
+      },
+      required: [],
     },
   },
   {
@@ -1056,6 +913,7 @@ type DispatchSourceTool =
   | "cursor_agent"
   | "codex_task"
   | "cowork_task"
+  | "deep_research"
   | "media_production"
   | "static_brand_swap"
   | "crew_run"
@@ -1081,7 +939,8 @@ interface BridgeCapabilities {
 type ChatTaskClass =
   | "browser_commerce_design"
   | "website_brand_media_production"
-  | "static_brand_swap_proof";
+  | "static_brand_swap_proof"
+  | "dominion_comp_packet";
 
 interface TaskClassification {
   taskClass: ChatTaskClass;
@@ -1138,6 +997,13 @@ interface TaskPathAssessment {
     available: boolean;
     missingAccess: string[];
   };
+}
+
+interface CompPacketAssessment {
+  executable: boolean;
+  selectedExecutionPath: string;
+  missingAccess: string[];
+  operatorMessage: string;
 }
 
 interface BrowserCommerceBridgeResult {
@@ -1261,6 +1127,12 @@ const CREATIVE_REMAKE_PATTERN =
   /\b(from scratch|remake|rebuild|new hero|fresh hero|create a new|make a new|better hero|hero image from scratch)\b/i;
 const EXACT_EDIT_PATTERN =
   /\b(exact|current|existing|this image|this exact|replace the .* on the current|swap the .* on the current)\b/i;
+const COMP_PACKET_PATTERN =
+  /\b(comp packet|comps?|comparables?|recent sales?|sold in the last|sold within|tax assess(?:ment)?|assessor|subject property)\b/i;
+const ADDRESS_PATTERN =
+  /\b\d{2,6}\s+[a-z0-9.'-]+\s+(?:st|street|rd|road|ave|avenue|dr|drive|ln|lane|blvd|boulevard|ct|court|way)\b/i;
+const DOMINION_MARKET_PATTERN =
+  /\b(deer park|spokane|spokane county|wa|washington)\b/i;
 const ANTHROPIC_BILLING_ERROR_PATTERN =
   /\b(credit balance|insufficient credits|billing|payment required|402|quota|rate limit exceeded for billing)\b/i;
 type BrowserRuntimePreference =
@@ -1292,6 +1164,21 @@ function classifyTaskForRouting(message: string): TaskClassification | null {
   const normalized = message.trim();
   if (!normalized) {
     return null;
+  }
+
+  if (
+    COMP_PACKET_PATTERN.test(normalized) &&
+    (ADDRESS_PATTERN.test(normalized) || DOMINION_MARKET_PATTERN.test(normalized))
+  ) {
+    return {
+      taskClass: "dominion_comp_packet",
+      businessId: "dominion",
+      owner: "Jerry",
+      laneId: "dominion-comp-packet",
+      preferredExecutionPath: COMP_PACKET_EXECUTION_PATH,
+      summary: normalizeConsequentialChange(normalized, 180),
+      reviewCheckpointRequired: true,
+    };
   }
 
   const wantsFreshHero =
@@ -1391,6 +1278,29 @@ function assessStaticBrandSwapPath(
     sourceImagePath: DEFAULT_WRENCHREADY_HERO_SOURCE_PATH,
     logoPath: DEFAULT_WRENCHREADY_TRANSPARENT_LOGO_PATH,
     preset: "wrenchready_hero_main",
+  };
+}
+
+function assessCompPacketPath(
+  bridgeConnected: boolean,
+  capabilities?: BridgeCapabilities | null,
+): CompPacketAssessment {
+  const missingAccess: string[] = [];
+  if (!bridgeConnected) {
+    missingAccess.push("local bridge connection");
+  }
+  if (!capabilities?.deep_research) {
+    missingAccess.push("deep research lane");
+  }
+
+  const executable = missingAccess.length === 0;
+  return {
+    executable,
+    selectedExecutionPath: executable ? COMP_PACKET_EXECUTION_PATH : "blocked:comp_packet",
+    missingAccess,
+    operatorMessage: executable
+      ? "Comp-packet lane is ready."
+      : `Comp-packet lane is unavailable: missing ${missingAccess.join(", ")}. AL can still fall back to direct web-search reasoning in chat, but this deterministic research lane is currently blocked.`,
   };
 }
 
@@ -1751,6 +1661,37 @@ const WEBSITE_CURSOR_EXECUTION_PATH = "cursor_agent";
 const WEBSITE_BROWSER_REVIEW_HOSTED_PATH = HOSTED_BROWSER_EXECUTION_PATH;
 const WEBSITE_BROWSER_REVIEW_LOCAL_PATH = "bridge:browser_review";
 const STATIC_BRAND_SWAP_EXECUTION_PATH = "bridge:static_brand_swap";
+const COMP_PACKET_EXECUTION_PATH = "bridge:deep_research";
+
+function buildDominionCompPacketResearchTask(inputMessage: string): string {
+  const asOf = new Date().toISOString().slice(0, 10);
+  return [
+    "Create a review-ready residential comp packet for Dominion Homes.",
+    `As-of date: ${asOf}.`,
+    "",
+    "Operator request (verbatim):",
+    inputMessage.trim() || "(no message provided)",
+    "",
+    "Requirements:",
+    "- Identify the subject property from the request and confirm city/state.",
+    "- Find 3-5 sold comparables in the same market area sold within the last 6 months.",
+    "- Keep comps materially similar in property type, bed/bath profile, size, lot, and age when data is available.",
+    "- For each comp, capture: address, sale date, sale price, beds, baths, living area, lot size, year built.",
+    "- For each comp, capture the 2026 county tax assessment (or nearest explicit assessor record if 2026 is unavailable).",
+    "- Compute dollar delta and percent delta between sale price and assessed value for each comp.",
+    "- Include source links for each sale and assessor data point.",
+    "",
+    "Output format:",
+    "- Short executive summary (1-2 paragraphs).",
+    "- One markdown table for all comps with the full fields above.",
+    "- A brief data-quality section listing any missing or uncertain fields.",
+    "",
+    "Quality bar:",
+    "- Do not delegate this task.",
+    "- Verify data directly from listing/public-record sources and county assessor sources when possible.",
+    "- If a value is uncertain, mark it as unverified instead of guessing.",
+  ].join("\n");
+}
 
 function normalizeCoworkDomain(domain: string | undefined): string | undefined {
   const normalized = domain?.trim().toLowerCase();
@@ -1862,6 +1803,48 @@ function normalizeConsequentialChange(value: string, limit = 160): string {
   return `${trimmed.slice(0, limit - 3)}...`;
 }
 
+function shouldAutoFillDispatchReviewMetadata(sourceTool: DispatchSourceTool): boolean {
+  return (
+    sourceTool === "cursor_agent" ||
+    sourceTool === "codex_task" ||
+    sourceTool === "cowork_task"
+  );
+}
+
+function buildDispatchReviewDefaults(input: {
+  sourceTool: DispatchSourceTool;
+  businessId: DispatchBusinessId | null;
+  fallbackChangeUnderReview: string;
+}): {
+  changeUnderReview: string;
+  intendedBusinessOutcome: string;
+  primaryMetric: string;
+  expectedDirection: DispatchExpectedDirection;
+  minimumMeaningfulDelta: number;
+} {
+  const businessLabel =
+    input.businessId === "wrenchready"
+      ? "WrenchReady"
+      : input.businessId === "dominion"
+        ? "Dominion"
+        : "the business";
+  const executionLane =
+    input.sourceTool === "cursor_agent"
+      ? "Cursor"
+      : input.sourceTool === "codex_task"
+        ? "Codex"
+        : "the local execution lane";
+
+  return {
+    changeUnderReview: normalizeConsequentialChange(input.fallbackChangeUnderReview),
+    intendedBusinessOutcome:
+      `Deliver the requested ${businessLabel} change through ${executionLane} with a review-ready artifact and less founder coordination.`,
+    primaryMetric: "review-ready execution artifacts completed",
+    expectedDirection: "increase",
+    minimumMeaningfulDelta: 1,
+  };
+}
+
 function buildDispatchMetadata(input: {
   sourceTool: DispatchSourceTool;
   toolInput: Record<string, unknown>;
@@ -1891,17 +1874,33 @@ function buildDispatchMetadata(input: {
     CONSEQUENTIAL_DISPATCH_PATTERN.test(input.heuristicText ?? "");
   const reviewRequired = explicitReviewRequired || hasAnyReviewFields || heuristicConsequential;
 
-  const changeUnderReview =
+  let changeUnderReview =
     asNonEmptyString(input.toolInput.change_under_review) ??
     (reviewRequired ? normalizeConsequentialChange(input.fallbackChangeUnderReview) : undefined);
-  const intendedBusinessOutcome = asNonEmptyString(input.toolInput.intended_business_outcome);
-  const primaryMetric = asNonEmptyString(input.toolInput.primary_metric);
-  const expectedDirection = asDispatchDirection(input.toolInput.expected_direction);
-  const minimumMeaningfulDelta = asFiniteNumber(input.toolInput.minimum_meaningful_delta);
+  let intendedBusinessOutcome = asNonEmptyString(input.toolInput.intended_business_outcome);
+  let primaryMetric = asNonEmptyString(input.toolInput.primary_metric);
+  let expectedDirection = asDispatchDirection(input.toolInput.expected_direction);
+  let minimumMeaningfulDelta = asFiniteNumber(input.toolInput.minimum_meaningful_delta);
   const comparisonWindow = asNonEmptyString(input.toolInput.comparison_window);
   const riskTrustComplianceNotes = asNonEmptyString(
     input.toolInput.risk_trust_compliance_notes,
   );
+
+  if (reviewRequired && shouldAutoFillDispatchReviewMetadata(input.sourceTool)) {
+    const defaults = buildDispatchReviewDefaults({
+      sourceTool: input.sourceTool,
+      businessId,
+      fallbackChangeUnderReview: input.fallbackChangeUnderReview,
+    });
+
+    changeUnderReview = changeUnderReview || defaults.changeUnderReview;
+    intendedBusinessOutcome = intendedBusinessOutcome || defaults.intendedBusinessOutcome;
+    primaryMetric = primaryMetric || defaults.primaryMetric;
+    expectedDirection = expectedDirection || defaults.expectedDirection;
+    if (minimumMeaningfulDelta === undefined) {
+      minimumMeaningfulDelta = defaults.minimumMeaningfulDelta;
+    }
+  }
 
   if (reviewRequired) {
     const missingFields: string[] = [];
@@ -1976,6 +1975,26 @@ async function logTrajectory(action: string, outcome: string) {
       confidence: 0.9,
     });
   } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    const missingTable =
+      /Could not find the table 'public\.trajectories'|relation "trajectories" does not exist/i.test(
+        message,
+      );
+    if (missingTable) {
+      try {
+        await supabase.from("al_memories").insert({
+          category: "trajectory_fallback",
+          content: JSON.stringify({
+            action: action.slice(0, 700),
+            outcome: outcome.slice(0, 1600),
+            created_at: new Date().toISOString(),
+          }),
+        });
+        return;
+      } catch (fallbackErr) {
+        console.error("[Al] trajectory fallback log failed:", fallbackErr);
+      }
+    }
     console.error("[Al] trajectory log failed:", err);
   }
 }
@@ -2197,6 +2216,7 @@ const AUTO_FOLLOW_THROUGH_JOB_TYPES = new Set([
   "delegate_to_ceo",
   "codex_task",
   "cowork_task",
+  "deep_research",
   "cursor_agent",
   "crew_run",
   "media_production",
@@ -2528,7 +2548,7 @@ function parseStoredAccountabilityContext(raw: unknown): Record<string, unknown>
 
 function businessNameFromId(value: unknown): string | null {
   if (value === "wrenchready") return "WrenchReady";
-  if (value === "dominion") return "Dominion Home Deals";
+  if (value === "dominion") return "Dominion Homes";
   return null;
 }
 
@@ -3183,7 +3203,7 @@ function buildBoardroomPromotionContext(input: {
     (owner === "Tom"
       ? "WrenchReady"
       : owner === "Jerry"
-        ? "Dominion Home Deals"
+        ? "Dominion Homes"
         : null);
   const cleanResult = input.result.trim();
 
@@ -4504,6 +4524,30 @@ async function executeJobStatus(jobId?: number): Promise<string> {
         }
       }
 
+      const runningStatuses = new Set(["pending", "running", "launched"]);
+      const startedAtMs = new Date(data.started_at || data.created_at).getTime();
+      const elapsedMs = Math.max(0, Date.now() - startedAtMs);
+      const staleMinutes = 30;
+      const staleRun =
+        runningStatuses.has(String(data.status || "")) &&
+        Number.isFinite(startedAtMs) &&
+        elapsedMs >= staleMinutes * 60 * 1000;
+
+      if (staleRun) {
+        const stallMessage = `Worker lane stalled after ${Math.round(elapsedMs / 60000)}m without a clean completion.`;
+        await supabase
+          .from("al_jobs")
+          .update({
+            status: "error",
+            error_msg: stallMessage,
+            completed_at: new Date().toISOString(),
+          })
+          .eq("id", data.id);
+        data.status = "error";
+        data.error_msg = stallMessage;
+        data.completed_at = new Date().toISOString();
+      }
+
       const duration = data.completed_at && data.started_at
         ? `${Math.round((new Date(data.completed_at).getTime() - new Date(data.started_at).getTime()) / 1000)}s`
         : null;
@@ -5031,6 +5075,43 @@ async function executePlannerTask(input: Record<string, unknown>): Promise<strin
   } catch (error) {
     return `Planner task failed: ${error instanceof Error ? error.message : "unknown error"}`;
   }
+}
+
+async function executeOpenClaw(input: Record<string, unknown>): Promise<string> {
+  const commandInput = asNonEmptyString(input.command);
+  const messageInput = asNonEmptyString(input.message);
+  const actorInput = asNonEmptyString(input.actor);
+  const titleInput = asNonEmptyString(input.title);
+  const detailsInput = asNonEmptyString(input.details);
+  const dueDateInput =
+    asNonEmptyString(input.due_date) || asNonEmptyString(input.dueDate);
+  const assignedToInput =
+    asNonEmptyString(input.assigned_to) || asNonEmptyString(input.assignedTo);
+  const dateInput = asNonEmptyString(input.date);
+
+  const envelope: OpenClawEnvelope = {};
+  if (commandInput && isOpenClawCommand(commandInput)) {
+    envelope.command = commandInput;
+  }
+  if (messageInput) envelope.message = messageInput;
+  if (actorInput === "dez" || actorInput === "al") {
+    envelope.actor = actorInput;
+  }
+  if (titleInput) envelope.title = titleInput;
+  if (detailsInput) envelope.details = detailsInput;
+  if (dueDateInput) envelope.dueDate = dueDateInput;
+  if (assignedToInput === "dez" || assignedToInput === "al") {
+    envelope.assignedTo = assignedToInput;
+  }
+  if (dateInput) envelope.date = dateInput;
+
+  const result = await runOpenClawCommand(envelope);
+  const links =
+    result.links && result.links.length > 0
+      ? `Links:\n${result.links.map((link) => `- ${link.label}: ${link.href}`).join("\n")}`
+      : "";
+
+  return [result.text, links].filter(Boolean).join("\n\n");
 }
 
 async function executeMemoryDelete(id: number): Promise<string> {
@@ -5581,6 +5662,12 @@ async function runOpenAIChat(input: {
               continue;
             }
 
+            if (call.name === "openclaw_run") {
+              const result = await executeOpenClaw(parsedInput);
+              precomputed.push(buildOpenAIFunctionOutput(call.callId, result));
+              continue;
+            }
+
             if (call.name === "cursor_agent") {
               const resolvedRepo = resolveCursorRepository(
                 asNonEmptyString(parsedInput.repo),
@@ -6014,6 +6101,10 @@ export async function POST(request: NextRequest) {
     taskClassification?.taskClass === "browser_commerce_design"
       ? assessBrowserCommercePath(Boolean(bridgeConnected), bridgeCapabilities)
       : null;
+  const compPacketAssessment =
+    taskClassification?.taskClass === "dominion_comp_packet"
+      ? assessCompPacketPath(Boolean(bridgeConnected), bridgeCapabilities)
+      : null;
   const websiteProductionAssessment =
     taskClassification?.taskClass === "website_brand_media_production"
       ? assessWebsiteProductionPath(Boolean(bridgeConnected), bridgeCapabilities)
@@ -6418,6 +6509,78 @@ export async function POST(request: NextRequest) {
       bridgeCapabilities,
     });
     return streamingTextResponse(browserCommerceAssessment.operatorMessage);
+  }
+
+  if (
+    taskClassification &&
+    taskClassification.taskClass === "dominion_comp_packet" &&
+    compPacketAssessment?.executable
+  ) {
+    const researchTask = buildDominionCompPacketResearchTask(message || "");
+    const dispatchMetadata = buildDispatchMetadata({
+      sourceTool: "deep_research",
+      toolInput: {
+        task: researchTask,
+        review_required: true,
+        business_id: taskClassification.businessId,
+        owner: taskClassification.owner,
+        change_under_review: taskClassification.summary,
+        intended_business_outcome:
+          "Produce a reliable comp packet with sold comparables and tax-assessment deltas for fast acquisition decisions.",
+        primary_metric: "qualified_underwriting_decisions_per_week",
+        expected_direction: "increase",
+        minimum_meaningful_delta: 1,
+        lane_id: taskClassification.laneId,
+      },
+      defaultBusinessId: taskClassification.businessId,
+      runtimeRefHint: `comp_packet:${normalizeConsequentialChange(message || "", 80)}`,
+      fallbackChangeUnderReview: taskClassification.summary,
+      heuristicText: message || "",
+      enforceHeuristicConsequential: true,
+    });
+
+    const accountability = await createAccountabilityJob({
+      jobType: "deep_research",
+      task: researchTask,
+      context: {
+        task_class: taskClassification.taskClass,
+        business_id: taskClassification.businessId,
+        owner: taskClassification.owner,
+        lane_id: taskClassification.laneId,
+        selected_execution_path: compPacketAssessment.selectedExecutionPath,
+        missing_access: compPacketAssessment.missingAccess,
+        review_checkpoint_required: taskClassification.reviewCheckpointRequired,
+        summary: taskClassification.summary,
+        dispatch_metadata: dispatchMetadata,
+      },
+      status: "running",
+    });
+
+    if ("error" in accountability) {
+      return streamingTextResponse(
+        `Comp-packet lane blocked: could not create accountability (${accountability.error}).`,
+      );
+    }
+
+    return new Response(
+      `data: ${JSON.stringify({
+        vault_action: {
+          requests: [
+            {
+              id: crypto.randomUUID(),
+              name: "deep_research",
+              input: {
+                task: researchTask,
+              },
+              accountabilityJobId: accountability.jobId,
+            },
+          ],
+          assistantBlocks: [],
+          precomputedResults: [],
+        },
+      })}\n\n`,
+      { headers: sseHeaders() },
+    );
   }
 
   if (
@@ -6935,6 +7098,9 @@ export async function POST(request: NextRequest) {
               const jobId = inp.job_id !== undefined ? Number(inp.job_id) : undefined;
               const result = await executeJobStatus(jobId);
               precomputed.push({ type: "tool_result", tool_use_id: sb.id, content: result });
+            } else if (sb.name === "openclaw_run") {
+              const result = await executeOpenClaw(inp);
+              precomputed.push({ type: "tool_result", tool_use_id: sb.id, content: result });
             } else if (sb.name === "cursor_agent") {
               const resolvedRepo = resolveCursorRepository(
                 asNonEmptyString(inp.repo),
@@ -7262,3 +7428,4 @@ export async function POST(request: NextRequest) {
 
   return new Response(readable, { headers: sseHeaders() });
 }
+

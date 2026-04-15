@@ -7,7 +7,7 @@ import { SITE } from '@/lib/constants'
 export const metadata: Metadata = {
   title: 'Off-market opportunities',
   description:
-    'Private, direct opportunities from Dominion Home Deals — North Idaho and Eastern Washington. Not listed on the MLS.',
+    'Private, direct opportunities from Dominion Homes — North Idaho and Eastern Washington. Not listed on the MLS.',
   robots: { index: false, follow: false },
 }
 
@@ -20,7 +20,7 @@ export default function OffMarketHubPage() {
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_80%_60%_at_50%_-20%,rgba(94,153,104,0.35),transparent)]" />
         <div className="relative mx-auto max-w-6xl px-5 sm:px-6 lg:px-8">
           <p className="mb-4 text-center text-xs font-semibold uppercase tracking-[0.25em] text-forest-300">
-            Dominion Home Deals
+            Dominion Homes
           </p>
           <h1 className="font-display text-center text-hero text-white text-balance">Off-market opportunities</h1>
           <p className="mx-auto mt-6 max-w-2xl text-center text-lg leading-relaxed text-stone-300">

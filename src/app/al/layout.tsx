@@ -1,6 +1,4 @@
 import type { Metadata, Viewport } from "next";
-import { AlShellFrame } from "@/components/al/AlShellFrame";
-import { MobileDock } from "@/components/al/MobileDock";
 import { getAlCanonicalOrigin } from "@/lib/al-platform";
 
 export const dynamic = "force-dynamic";
@@ -38,10 +36,6 @@ export const viewport: Viewport = {
 
 export default function AlLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="al-workshop-bg al-noise-overlay fixed inset-0 z-[200] flex overflow-hidden text-[var(--al-text-primary)]">
-      <div className="al-ambient-mesh" aria-hidden="true" />
-      <AlShellFrame>{children}</AlShellFrame>
-      <MobileDock />
-    </div>
+    <div className="min-h-screen bg-[#050911] text-[var(--al-text-primary)]">{children}</div>
   );
 }

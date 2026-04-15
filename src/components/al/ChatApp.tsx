@@ -17,6 +17,7 @@ import {
   Menu,
   Loader2,
   X,
+  Square,
   Paperclip,
   FileText,
   Globe,
@@ -462,6 +463,10 @@ function compactContinuationToolResults(
 }
 
 async function extractChatResponseError(res: Response): Promise<string> {
+  if (res.status === 401) {
+    return "Session expired. Re-enter command center password.";
+  }
+
   let raw = "";
   try {
     raw = await res.text();
@@ -486,6 +491,10 @@ async function extractChatResponseError(res: Response): Promise<string> {
   return `Server error ${res.status}: ${raw.slice(0, 220)}`;
 }
 
+function isSessionAuthError(message: string): boolean {
+  return /session expired|server error 401|unauthorized/i.test(message);
+}
+
 function truncateContinuationText(value: string, reqName: string): string {
   if (value.length <= MAX_TOOL_RESULT_TEXT_CHARS) {
     return value;
@@ -496,6 +505,27 @@ function truncateContinuationText(value: string, reqName: string): string {
     `[${reqName}] result truncated to keep continuation payload stable. ` +
     `Original length: ${value.length} characters.`
   );
+}
+
+async function readWithTimeout(
+  reader: ReadableStreamDefaultReader<Uint8Array>,
+  timeoutMs = 45_000,
+): Promise<ReadableStreamReadResult<Uint8Array>> {
+  let timeoutId: ReturnType<typeof setTimeout> | null = null;
+  try {
+    return await Promise.race([
+      reader.read(),
+      new Promise<never>((_, reject) => {
+        timeoutId = setTimeout(() => {
+          reject(new Error("AL stream timed out while waiting for the next chunk."));
+        }, timeoutMs);
+      }),
+    ]);
+  } finally {
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+    }
+  }
 }
 
 function getGreeting(): string {
@@ -1230,12 +1260,7 @@ export function ChatApp() {
   }, []);
 
   useEffect(() => {
-    if (authed) {
-      checkOperationalProof();
-      checkDashboardSummary();
-      checkLaborLanes();
-      checkInbox();
-    } else if (authed === false) {
+    if (authed === false) {
       setOperationalProof(null);
       setDashboardSummary(null);
       setLaborLanes(null);
@@ -1496,7 +1521,7 @@ export function ChatApp() {
     let needsSeparator = startAccumulated.length > 0;
 
     while (true) {
-      const { done, value } = await reader.read();
+      const { done, value } = await readWithTimeout(reader);
       if (done) break;
       const chunk = decoder.decode(value, { stream: true });
       for (const line of chunk.split("\n\n")) {
@@ -1625,7 +1650,9 @@ export function ChatApp() {
           signal: abortRef.current.signal,
         });
 
-        if (!res.ok || !res.body) throw new Error(`Server error ${res.status}`);
+        if (!res.ok || !res.body) {
+          throw new Error(await extractChatResponseError(res));
+        }
 
         const { accumulated, vaultAction } = await processStream(res, alId, "");
 
@@ -1683,12 +1710,19 @@ export function ChatApp() {
       } catch (err: unknown) {
         const isAbort = err instanceof Error && err.name === "AbortError";
         if (!isAbort) {
+          const detail = err instanceof Error ? err.message : "Failed to reach AL.";
+          const authExpired = isSessionAuthError(detail);
+          if (authExpired) {
+            setAuthed(false);
+          }
           setMessages((prev) =>
             prev.map((m) =>
               m.id === alId
                 ? {
                     ...m,
-                    content: "Failed to reach Al. Check your connection and try again.",
+                    content: authExpired
+                      ? "Session expired. Enter command center password again."
+                      : "Failed to reach Al. Check your connection and try again.",
                     typing: false,
                   }
                 : m
@@ -1697,7 +1731,7 @@ export function ChatApp() {
           if (activeInboxItemIdRef.current) {
             await finalizeActiveInboxItem(
               "blocked",
-              err instanceof Error ? err.message : "Failed to reach AL.",
+              detail,
             );
           }
         }
@@ -1717,37 +1751,16 @@ export function ChatApp() {
 
       const isBusy = loading || executingVault || !!pendingVaultAction;
       if (isBusy) {
-        if (files.length > 0) {
-          setMessages((prev) => [
-            ...prev,
-            {
-              id: crypto.randomUUID(),
-              role: "al",
-              content:
-                "I can queue text asks while another lane is running, but file-backed asks still need a clear lane first. Let the current turn finish, then send the files.",
-              timestamp: Date.now(),
-            },
-          ]);
-          return;
-        }
-        setInput("");
-        if (inputRef.current) inputRef.current.style.height = "auto";
-        try {
-          await queueAsk(text);
-        } catch (error) {
-          setMessages((prev) => [
-            ...prev,
-            {
-              id: crypto.randomUUID(),
-              role: "al",
-              content:
-                error instanceof Error
-                  ? error.message
-                  : "Could not queue that ask right now.",
-              timestamp: Date.now(),
-            },
-          ]);
-        }
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: crypto.randomUUID(),
+            role: "al",
+            content:
+              "One lane is already running. Let it finish or stop it, then send the next ask.",
+            timestamp: Date.now(),
+          },
+        ]);
         return;
       }
 
@@ -1897,6 +1910,9 @@ export function ChatApp() {
       const isAbort = err instanceof Error && err.name === "AbortError";
       if (!isAbort) {
         const detail = err instanceof Error ? err.message : "Unknown continuation error.";
+        if (isSessionAuthError(detail)) {
+          setAuthed(false);
+        }
         setMessages((prev) =>
           prev.map((m) =>
             m.id === alId
@@ -2087,6 +2103,9 @@ export function ChatApp() {
       const isAbort = err instanceof Error && err.name === "AbortError";
       if (!isAbort) {
         const detail = err instanceof Error ? err.message : "Unknown continuation error.";
+        if (isSessionAuthError(detail)) {
+          setAuthed(false);
+        }
         setMessages((prev) =>
           prev.map((m) =>
             m.id === alId
@@ -2154,24 +2173,35 @@ export function ChatApp() {
 
   const canSend = input.trim() || pendingFiles.length > 0;
   const isBusy = loading || executingVault || !!pendingVaultAction;
-  const queuedInboxCount = inboxItems.filter((item) => item.status === "queued").length;
-  const runningInboxCount = inboxItems.filter((item) => item.status === "running").length;
-  const waitingOnDezCount = dashboardSummary?.counts.waitingOnDez ?? 0;
-  const blockedSystemsCount = dashboardSummary?.counts.blockedSystems ?? 0;
-  const reviewReadyCount = dashboardSummary?.counts.reviewReady ?? 0;
-  const systemHealthyCount = operationalProof?.summary.healthy ?? 0;
-  const systemWarningCount = operationalProof?.summary.warning ?? 0;
-  const systemFailingCount = operationalProof?.summary.failing ?? 0;
+  const statusText = searchQuery
+    ? `Searching: ${searchQuery}`
+    : publishingPath
+      ? `Publishing: ${publishingPath}`
+      : delegatingCeo
+        ? `Dispatching: ${delegatingCeo}`
+        : executingVault
+          ? "Running execution lane..."
+          : pendingVaultAction
+            ? "Waiting on the next continuation step..."
+            : loading
+              ? "Thinking..."
+              : null;
+  const bridgeBadge = bridgeConnected
+    ? bridgeHealth?.capabilities?.codex_execution
+      ? "Local execution online"
+      : "Bridge online"
+    : isRemoteOperatorMode()
+      ? "Local bridge offline; hosted relay fallback only"
+      : "Local execution offline";
 
   /* ── Render gates ── */
 
-  const spotlightRef = useCursorSpotlight();
-
   if (authed === null) {
     return (
-      <div className="flex h-full w-full items-center justify-center">
-        <div className="al-avatar-ring flex h-12 w-12 items-center justify-center rounded-full bg-[var(--al-surface-1)]">
-          <Sparkles className="h-5 w-5 text-[var(--al-cyan)] animate-al-breath" />
+      <div className="flex min-h-screen items-center justify-center bg-[#050911]">
+        <div className="flex items-center gap-3 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm text-white/80">
+          <Sparkles className="h-4 w-4 animate-pulse text-[var(--al-cyan)]" />
+          Checking command center session...
         </div>
       </div>
     );
@@ -2184,28 +2214,14 @@ export function ChatApp() {
   /* ── Main interface ── */
 
   return (
-    <div className="flex h-full w-full">
-      <div ref={spotlightRef} className="al-cursor-spotlight hidden lg:block" aria-hidden="true" />
-      <Sidebar
-        isOpen={sidebarOpen}
-        onClose={() => setSidebarOpen(false)}
-        onQuickAction={handleQuickAction}
-        onOpenSettings={() => {
-          setSidebarOpen(false);
-          setSettingsOpen(true);
-        }}
-        hostedRuntimeTruth={hostedHealth?.runtimeTruth || null}
-        bridgeConnected={bridgeConnected}
-        bridgeHealth={bridgeHealth}
-      />
-
-      <div
-        className="relative flex min-w-0 flex-1 flex-col pb-24 lg:pb-0"
-        onDragEnter={handleDragEnter}
-        onDragLeave={handleDragLeave}
-        onDragOver={handleDragOver}
-        onDrop={handleDrop}
-      >
+    <div
+      className="min-h-screen bg-[#050911] text-[var(--al-text-primary)]"
+      onDragEnter={handleDragEnter}
+      onDragLeave={handleDragLeave}
+      onDragOver={handleDragOver}
+      onDrop={handleDrop}
+    >
+      <div className="mx-auto flex min-h-screen w-full max-w-6xl flex-col px-4 py-5 sm:px-6 lg:px-8">
         {/* Drag overlay */}
         {dragActive && (
           <div className="absolute inset-0 z-20 flex items-center justify-center bg-[var(--al-cyan)]/[0.03] backdrop-blur-[2px]">
@@ -2223,381 +2239,82 @@ export function ChatApp() {
 
         {/* Top bar */}
         <header
-          className="relative flex items-center gap-3 px-4 pb-3 pt-4 lg:px-6 lg:py-3"
-          style={{
-            paddingTop: "max(env(safe-area-inset-top), 1rem)",
-            background: "var(--al-glass-bg-elevated)",
-            backdropFilter: "blur(28px)",
-            WebkitBackdropFilter: "blur(28px)",
-          }}
+          className="rounded-[28px] border border-white/10 bg-[rgba(7,13,24,0.86)] px-5 py-5 shadow-[0_24px_80px_rgba(0,0,0,0.35)] backdrop-blur-xl sm:px-6"
+          style={{ paddingTop: "max(env(safe-area-inset-top), 1.25rem)" }}
         >
-          <div className="pointer-events-none absolute inset-x-0 bottom-0 al-separator-h" />
-          <button
-            onClick={() => setSidebarOpen(true)}
-            className="rounded-xl p-3 text-[var(--al-text-secondary)] transition-colors hover:bg-[var(--al-cyan-dim)] hover:text-[var(--al-cyan)] lg:hidden"
-            aria-label="Open sidebar"
-          >
-            <Menu className="h-5 w-5" />
-          </button>
-          <div className="flex-1 min-w-0">
-            <h1 className="text-sm font-semibold text-[var(--al-text-primary)] al-glow-text truncate">
-              Al Boreland
-            </h1>
-            <p className="text-xs text-[var(--al-text-tertiary)] truncate font-mono">
-              {messages.length === 0
-                ? `${getGreeting()} — ready when you are`
-                : `${messages.length} message${messages.length === 1 ? "" : "s"} this session`}
-            </p>
-          </div>
-          <div className="flex items-center gap-2 flex-shrink-0">
-            <div className="hidden items-center gap-2 sm:flex lg:hidden">
-              <Link
-                href={withAlAppPrefix(pathname, "/attention")}
-                className="al-glass-subtle rounded-full px-3 py-1.5 text-xs font-semibold text-[var(--al-cyan)] shadow-[0_0_12px_rgba(0,229,255,0.10)]"
-              >
-                Attention
-              </Link>
-              <Link
-                href={withAlAppPrefix(pathname, "/inbox")}
-                className="al-glass-subtle rounded-full px-3 py-1.5 text-xs font-semibold text-[var(--al-text-primary)]"
-              >
-                Inbox
-              </Link>
-              <Link
-                href={withAlAppPrefix(pathname, "/operational-proof")}
-                className="al-glass-subtle rounded-full px-3 py-1.5 text-xs font-semibold text-[var(--al-text-primary)]"
-              >
-                System Health
-              </Link>
-            </div>
-            <Link
-              href={withAlAppPrefix(pathname, "/attention")}
-              className="hidden items-center gap-1.5 rounded-full px-3 py-1.5 text-[10px] font-semibold font-mono tracking-wide text-[var(--al-cyan)] lg:inline-flex transition-all hover:shadow-[var(--al-cyan-glow)]"
-              style={{ background: "rgba(0,229,255,0.06)", border: "1px solid rgba(0,229,255,0.10)" }}
-            >
-              <Sparkles className="h-3 w-3" />
-              <span>Attention</span>
-            </Link>
-            <Link
-              href={withAlAppPrefix(pathname, "/inbox")}
-              className="hidden items-center gap-1.5 rounded-full px-3 py-1.5 text-[10px] font-semibold font-mono tracking-wide text-[var(--al-text-secondary)] md:inline-flex transition-all hover:text-[var(--al-text-primary)] hover:bg-[var(--al-surface-1)]"
-              style={{ border: "1px solid var(--al-border-faint)" }}
-            >
-              <BookUp className="h-3 w-3" />
-              <span>Inbox</span>
-            </Link>
-            <Link
-              href={withAlAppPrefix(pathname, "/operational-proof")}
-              className="hidden items-center gap-1.5 rounded-full px-3 py-1.5 text-[10px] font-semibold font-mono tracking-wide text-[var(--al-text-secondary)] lg:inline-flex transition-all hover:text-[var(--al-text-primary)] hover:bg-[var(--al-surface-1)]"
-              style={{ border: "1px solid var(--al-border-faint)" }}
-            >
-              <ShieldCheck className="h-3 w-3" />
-              <span>System Health</span>
-            </Link>
-            {bridgeConnected && (
-              <div className="flex items-center gap-1.5 rounded-full bg-[var(--al-cyan-dim)] px-2.5 py-1">
-                <FolderOpen className="h-3 w-3 text-[var(--al-cyan-muted)]" />
-                <span className="text-[10px] font-medium font-mono text-[var(--al-cyan-muted)]">
-                  Vault
+          <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+            <div className="space-y-3">
+              <div className="inline-flex items-center gap-2 rounded-full border border-[var(--al-cyan)]/20 bg-[var(--al-cyan)]/8 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-[var(--al-cyan)]">
+                Thin Operator Mode
+              </div>
+              <div>
+                <h1 className="text-3xl font-semibold tracking-tight text-white sm:text-4xl">
+                  Al Boreland
+                </h1>
+                <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--al-text-secondary)] sm:text-base">
+                  {getGreeting()}. Give AL the ask plainly. He should answer directly, write a sharp worker brief when execution is needed, and fail loud when a lane is blocked.
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <span className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-medium ${
+                  bridgeConnected
+                    ? "border-emerald-400/25 bg-emerald-400/10 text-emerald-100"
+                    : "border-amber-400/25 bg-amber-400/10 text-amber-100"
+                }`}>
+                  {bridgeBadge}
+                </span>
+                <span className="inline-flex items-center rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-medium text-[var(--al-text-secondary)]">
+                  Chat is the control surface
                 </span>
               </div>
-            )}
-            {messages.length > 0 && (
+            </div>
+
+            <div className="flex flex-wrap gap-2">
               <button
-                onClick={clearChat}
-                className="rounded-lg px-3 py-1.5 text-xs text-[var(--al-text-tertiary)] transition-colors hover:bg-[var(--al-cyan-dim)] hover:text-[var(--al-cyan)]"
+                type="button"
+                onClick={checkBridge}
+                className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm text-[var(--al-text-secondary)] transition hover:bg-white/10 hover:text-white"
               >
-                Clear
+                Refresh bridge
               </button>
-            )}
+              {messages.length > 0 && (
+                <button
+                  type="button"
+                  onClick={clearChat}
+                  className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm text-[var(--al-text-secondary)] transition hover:bg-white/10 hover:text-white"
+                >
+                  <X className="h-4 w-4" />
+                  Clear chat
+                </button>
+              )}
+            </div>
           </div>
         </header>
-
         {/* Messages */}
-        <div className="flex-1 overflow-y-auto px-4 py-6 al-scrollbar lg:px-6">
+        <div className={`flex-1 overflow-y-auto px-4 py-6 al-scrollbar lg:px-6 ${dragActive ? "bg-[var(--al-cyan)]/[0.03]" : ""}`}>
           {messages.length === 0 ? (
-            <div className="flex min-h-full flex-col items-center justify-start px-4 pb-6 pt-6 text-left lg:pt-8">
-              <div className="al-glass-elevated al-specular al-gradient-border w-full max-w-3xl rounded-2xl px-8 py-6">
-                <p className="al-text-mono-label text-[var(--al-cyan-muted)]">
-                  Command Focus
-                </p>
-                <h2 className="mt-3 al-text-heading al-glow-text">
-                  {dashboardSummary?.headline || "What needs attention now?"}
-                </h2>
-                <p className="mt-2 text-sm leading-6 text-[var(--al-text-secondary)]">
-                  Founder-first view: priority, blockers, and the next move without dashboard noise.
-                </p>
+            <div className="mx-auto flex h-full max-w-3xl flex-col items-center justify-center text-center">
+              <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-full border border-[var(--al-cyan)]/25 bg-[var(--al-cyan)]/10">
+                <Bot className="h-8 w-8 text-[var(--al-cyan)]" />
               </div>
-              <div className="mt-4 w-full max-w-3xl al-glass-card al-specular al-gradient-border rounded-3xl p-6 text-left">
-                <div className="flex flex-wrap items-start justify-between gap-4">
-                  <div>
-                    <p className="al-text-mono-label text-[var(--al-cyan-muted)]">
-                      Attention Now
-                    </p>
-                    <h3 className="mt-3 text-xl font-semibold text-[var(--al-text-primary)]">
-                      {dashboardSummary?.headline || "Pulling the real queue into focus."}
-                    </h3>
-                    <p className="mt-2 max-w-xl text-sm leading-6 text-[var(--al-text-secondary)]">
-                      This should answer the founder question first: what needs action now, what is waiting on you, and where the next move belongs.
-                    </p>
-                  </div>
-                  <div className="flex flex-wrap gap-3">
-                    <Link
-                      href={withAlAppPrefix(pathname, "/attention")}
-                      className="al-specular-button inline-flex items-center gap-2 rounded-2xl bg-[var(--al-cyan)] px-5 py-3 text-sm font-semibold text-[var(--al-void)] transition hover:shadow-[var(--al-cyan-glow-strong)]"
-                    >
-                      <Sparkles className="h-4 w-4" />
-                      Open Attention
-                    </Link>
-                    <Link
-                      href={withAlAppPrefix(pathname, "/inbox")}
-                      className="inline-flex items-center gap-2 rounded-2xl al-glass-subtle px-5 py-3 text-sm font-semibold text-[var(--al-text-primary)] transition hover:border-[var(--al-border-hover)]"
-                    >
-                      <BookUp className="h-4 w-4" />
-                      Open Inbox
-                    </Link>
-                  </div>
-                </div>
-                <motion.div
-                  className="mt-5 grid gap-3 sm:grid-cols-3"
-                  initial="hidden" animate="show"
-                  variants={{ hidden: {}, show: { transition: { staggerChildren: 0.06 } } }}
-                >
-                  <motion.div variants={{ hidden: { opacity: 0, y: 10, filter: "blur(4px)" }, show: { opacity: 1, y: 0, filter: "blur(0px)" } }}>
-                    <GlassMetricTile label="Waiting on Dez" value={waitingOnDezCount} accentColor="var(--al-cyan)" glowWhen={waitingOnDezCount > 0} />
-                  </motion.div>
-                  <motion.div variants={{ hidden: { opacity: 0, y: 10, filter: "blur(4px)" }, show: { opacity: 1, y: 0, filter: "blur(0px)" } }}>
-                    <GlassMetricTile label="Blocked Systems" value={blockedSystemsCount} accentColor="var(--al-red)" glowWhen={blockedSystemsCount > 0} />
-                  </motion.div>
-                  <motion.div variants={{ hidden: { opacity: 0, y: 10, filter: "blur(4px)" }, show: { opacity: 1, y: 0, filter: "blur(0px)" } }}>
-                    <GlassMetricTile label="Inbox Queue" value={queuedInboxCount + runningInboxCount} accentColor="var(--al-amber)" />
-                  </motion.div>
-                </motion.div>
-                <motion.div
-                  className="mt-3 grid gap-3 sm:grid-cols-3"
-                  initial="hidden" animate="show"
-                  variants={{ hidden: {}, show: { transition: { staggerChildren: 0.06, delayChildren: 0.18 } } }}
-                >
-                  <motion.div variants={{ hidden: { opacity: 0, y: 10, filter: "blur(4px)" }, show: { opacity: 1, y: 0, filter: "blur(0px)" } }}>
-                    <GlassMetricTile label="Review ready" value={reviewReadyCount} accentColor="var(--al-cyan)" />
-                  </motion.div>
-                  <motion.div variants={{ hidden: { opacity: 0, y: 10, filter: "blur(4px)" }, show: { opacity: 1, y: 0, filter: "blur(0px)" } }}>
-                    <GlassMetricTile label="Cleanup live" value={dashboardSummary?.counts.activeCleanup ?? 0} accentColor="var(--al-amber)" />
-                  </motion.div>
-                  <motion.div variants={{ hidden: { opacity: 0, y: 10, filter: "blur(4px)" }, show: { opacity: 1, y: 0, filter: "blur(0px)" } }}>
-                    <GlassMetricTile label="Buried stale" value={dashboardSummary?.counts.buriedStale ?? 0} accentColor="var(--al-text-tertiary)" />
-                  </motion.div>
-                </motion.div>
-                {dashboardSummary?.spotlight?.length ? (
-                  <div className="mt-5 grid gap-3 sm:grid-cols-2">
-                    {dashboardSummary.spotlight.map((item) => {
-                      const toneColor =
-                        item.tone === "red"
-                          ? "var(--al-red)"
-                          : item.tone === "amber"
-                            ? "var(--al-amber)"
-                            : "var(--al-cyan)";
-                      return (
-                        <a
-                          key={`${item.href}-${item.title}`}
-                          href={item.href}
-                          className="al-glass-card rounded-2xl p-4 text-left"
-                        >
-                          <span
-                            className="inline-flex rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.15em] font-mono animate-al-glow-pulse"
-                            style={{ borderColor: `color-mix(in srgb, ${toneColor} 25%, transparent)`, backgroundColor: `color-mix(in srgb, ${toneColor} 8%, transparent)`, color: toneColor }}
-                          >
-                            Spotlight
-                          </span>
-                          <p className="mt-3 text-base font-semibold text-[var(--al-text-primary)]">{item.title}</p>
-                          <p className="mt-2 text-sm leading-6 text-[var(--al-text-secondary)]">{item.reason}</p>
-                        </a>
-                      );
-                    })}
-                  </div>
-                ) : null}
-              </div>
-              <div className="mt-8 w-full max-w-3xl al-glass-card al-specular al-gradient-border rounded-3xl p-6 text-left">
-                <div className="flex flex-wrap items-start justify-between gap-4">
-                  <div>
-                    <p className="al-text-mono-label text-[var(--al-cyan-muted)]">
-                      Businesses
-                    </p>
-                    <h3 className="mt-2 text-xl font-semibold text-[var(--al-text-primary)]">
-                      Who owns the work and where is the friction?
-                    </h3>
-                    <p className="mt-2 max-w-xl text-sm leading-6 text-[var(--al-text-secondary)]">
-                      This is the operating strip for the businesses plugged into AL. Each card should make the owner, the top signal, and the next move obvious.
-                    </p>
-                  </div>
-                </div>
-                {dashboardSummary?.businesses?.length ? (
-                  <div className="mt-5 grid gap-3 sm:grid-cols-2">
-                    {dashboardSummary.businesses.map((business) => {
-                      const statusColor =
-                        business.status === "blocked"
-                          ? "var(--al-red)"
-                          : business.status === "warning"
-                            ? "var(--al-amber)"
-                            : "var(--al-cyan)";
-                      const Icon = business.businessId === "dominion" ? Building2 : Wrench;
-                      const ceoName = business.ceoId === "dominion" ? "Jerry" : business.ceoId === "wrenchready" ? "Tom" : business.ceoId;
-
-                      return (
-                        <a
-                          key={business.businessId}
-                          href={business.operatorHomePath}
-                          className="al-glass-card rounded-2xl p-4 text-left"
-                        >
-                          <div className="flex items-start justify-between gap-3">
-                            <div className="flex items-center gap-3">
-                              <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[var(--al-surface-0)] text-[var(--al-cyan-muted)]">
-                                <Icon className="h-4 w-4" />
-                              </span>
-                              <div>
-                                <p className="text-base font-semibold text-[var(--al-text-primary)]">{business.businessLabel}</p>
-                                <p className="text-xs text-[var(--al-text-tertiary)] font-mono">CEO lane: {ceoName}</p>
-                              </div>
-                            </div>
-                            <span
-                              className="inline-flex rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.15em] font-mono"
-                              style={{ borderColor: `color-mix(in srgb, ${statusColor} 25%, transparent)`, backgroundColor: `color-mix(in srgb, ${statusColor} 8%, transparent)`, color: statusColor }}
-                            >
-                              {business.status}
-                            </span>
-                          </div>
-                          <p className="mt-4 text-sm font-semibold text-[var(--al-text-primary)]">{business.headline}</p>
-                          <p className="mt-2 text-sm leading-6 text-[var(--al-text-secondary)]">{business.nextAction}</p>
-                          <div className="mt-4 flex items-center justify-between gap-3 text-xs text-[var(--al-text-tertiary)]">
-                            <span className="font-mono">{business.scorecardSummary}</span>
-                            <span className="inline-flex items-center gap-1 text-[var(--al-cyan-muted)]">
-                              Open
-                              <ArrowUpRight className="h-3 w-3" />
-                            </span>
-                          </div>
-                        </a>
-                      );
-                    })}
-                  </div>
-                ) : (
-                  <div className="mt-5 rounded-2xl al-glass-subtle p-4">
-                    <p className="text-sm text-[var(--al-text-secondary)]">
-                      No business modules are registered yet.
-                    </p>
-                  </div>
-                )}
-              </div>
-              <div className="mt-8 w-full max-w-3xl al-glass-card al-gradient-border rounded-3xl p-5 text-left">
-                <div className="flex flex-wrap items-start justify-between gap-4">
-                  <div>
-                    <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--al-cyan-muted)] font-mono">
-                      System Trust
-                    </p>
-                    <h3 className="mt-2 text-xl font-semibold text-[var(--al-text-primary)]">
-                      Can we trust the system underneath the work?
-                    </h3>
-                    <p className="mt-2 max-w-xl text-sm leading-6 text-[var(--al-text-secondary)]">
-                      Keep the framework in the background. This is where you check whether AL is healthy enough to trust, and whether the labor lanes are actually live.
-                    </p>
-                  </div>
-                  <div className="flex flex-wrap gap-3">
-                    <Link
-                      href={withAlAppPrefix(pathname, "/operational-proof")}
-                      className="inline-flex items-center gap-2 rounded-2xl bg-[var(--al-cyan)] px-4 py-3 text-sm font-semibold text-[var(--al-void)] transition hover:shadow-[var(--al-cyan-glow-strong)]"
-                    >
-                      <ShieldCheck className="h-4 w-4" />
-                      Open System Health
-                    </Link>
-                    <Link
-                      href={withAlAppPrefix(pathname, "/labor-lanes")}
-                      className="inline-flex items-center gap-2 rounded-2xl al-glass-subtle px-4 py-3 text-sm font-semibold text-[var(--al-text-primary)] transition hover:border-[var(--al-border-hover)]"
-                    >
-                      <Receipt className="h-4 w-4" />
-                      Open Labor Lanes
-                    </Link>
-                  </div>
-                </div>
-                <motion.div
-                  className="mt-5 grid gap-3 sm:grid-cols-3"
-                  initial="hidden" animate="show"
-                  variants={{ hidden: {}, show: { transition: { staggerChildren: 0.06 } } }}
-                >
-                  <motion.div variants={{ hidden: { opacity: 0, y: 10, filter: "blur(4px)" }, show: { opacity: 1, y: 0, filter: "blur(0px)" } }}>
-                    <GlassMetricTile label="Healthy" value={systemHealthyCount} accentColor="var(--al-green)" glowWhen={systemHealthyCount > 0} />
-                  </motion.div>
-                  <motion.div variants={{ hidden: { opacity: 0, y: 10, filter: "blur(4px)" }, show: { opacity: 1, y: 0, filter: "blur(0px)" } }}>
-                    <GlassMetricTile label="Warning" value={systemWarningCount} accentColor="var(--al-amber)" glowWhen={systemWarningCount > 0} />
-                  </motion.div>
-                  <motion.div variants={{ hidden: { opacity: 0, y: 10, filter: "blur(4px)" }, show: { opacity: 1, y: 0, filter: "blur(0px)" } }}>
-                    <GlassMetricTile label="Failing" value={systemFailingCount} accentColor="var(--al-red)" glowWhen={systemFailingCount > 0} />
-                  </motion.div>
-                </motion.div>
-                <div className="mt-5 grid gap-3 sm:grid-cols-2">
-                  <div className="rounded-2xl al-glass-subtle p-4">
-                    <p className="text-sm font-semibold text-[var(--al-text-primary)]">
-                      {operationalProof?.topNextMove || "Checking the control-loop health now."}
-                    </p>
-                    <p className="mt-2 text-sm leading-6 text-[var(--al-text-secondary)]">
-                      Operational proof is the truth panel behind the command center. Use it when you need to verify whether the loops can be trusted.
-                    </p>
-                  </div>
-                  <div className="rounded-2xl al-glass-subtle p-4">
-                    <p className="text-sm font-semibold text-[var(--al-text-primary)]">
-                      {laborLanes?.headline || "Checking whether the shared labor lanes are real yet."}
-                    </p>
-                    <p className="mt-2 text-sm leading-6 text-[var(--al-text-secondary)]">
-                      {laborLanes?.topNextMove || "Pulling the lane bottlenecks into view."}
-                    </p>
-                  </div>
-                </div>
-              </div>
+              <h2 className="text-2xl font-semibold text-white">Simple in, useful out.</h2>
+              <p className="mt-3 max-w-2xl text-sm leading-7 text-[var(--al-text-secondary)] sm:text-base">
+                Ask for the answer, ask for the brief, or ask for the dispatch. AL should not turn a clear task into a committee meeting.
+              </p>
             </div>
           ) : (
             <div className="mx-auto max-w-3xl space-y-4">
-              <AnimatePresence initial={false}>
-              {messages.map((msg, i) => (
-                <motion.div
-                  key={msg.id}
-                  initial={{ opacity: 0, y: 14, scale: 0.97, filter: "blur(3px)" }}
-                  animate={{ opacity: 1, y: 0, scale: 1, filter: "blur(0px)" }}
-                  transition={{
-                    duration: 0.4,
-                    ease: [0.16, 1, 0.3, 1],
-                    delay: i === messages.length - 1 ? 0 : 0,
-                  }}
-                >
-                  <MessageBubble message={msg} />
-                </motion.div>
+              {messages.map((msg) => (
+                <MessageBubble key={msg.id} message={msg} />
               ))}
-              {loading && searchQuery && <SearchingWeb query={searchQuery} />}
-              {loading && publishingPath && <PublishingToVault path={publishingPath} />}
-              {loading && delegatingCeo && <DelegatingToCeo ceo={delegatingCeo} />}
-              {inboxItems
-                .filter((item) => item.status === "queued" || item.status === "running")
-                .slice(0, 6)
-                .map((item) => (
-                  <InboxQueueCard key={item.id} item={item} />
-                ))}
-              {activeJobs.map((job) => (
-                <JobBadge
-                  key={job.job_id}
-                  job_id={job.job_id}
-                  ceo_name={job.ceo_name}
-                  onDismiss={() =>
-                    setActiveJobs((prev) => prev.filter((j) => j.job_id !== job.job_id))
-                  }
-                />
-              ))}
-              {executingVault &&
-                pendingVaultAction?.requests.some((r) => r.name === "crew_run") && (
-                  <RunningCrew
-                    crew={
-                      inputString(
-                        pendingVaultAction.requests.find((r) => r.name === "crew_run")?.input.crew
-                      )
-                    }
-                  />
-                )}
+              {statusText && (
+                <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-[var(--al-text-secondary)]">
+                  <div className="flex items-center gap-2">
+                    <Loader2 className="h-4 w-4 animate-spin text-[var(--al-cyan)]" />
+                    {statusText}
+                  </div>
+                </div>
+              )}
               {loading &&
                 !searchQuery &&
                 !publishingPath &&
@@ -2612,12 +2329,10 @@ export function ChatApp() {
                   executing={executingVault}
                 />
               )}
-              </AnimatePresence>
               <div ref={bottomRef} />
             </div>
           )}
         </div>
-
         {/* Input */}
         <div
           className="relative p-4 pb-5 lg:p-6"
@@ -2678,7 +2393,7 @@ export function ChatApp() {
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
                 disabled={isBusy || pendingFiles.length >= MAX_FILES}
-                className="flex h-12 w-10 flex-shrink-0 items-center justify-center rounded-lg text-[var(--al-text-tertiary)] transition-colors hover:bg-[var(--al-cyan-dim)] hover:text-[var(--al-cyan)] disabled:opacity-30 disabled:cursor-not-allowed"
+                className="flex h-12 w-10 flex-shrink-0 items-center justify-center rounded-lg text-[var(--al-text-tertiary)] transition-colors hover:bg-[var(--al-cyan-dim)] hover:text-[var(--al-cyan)] disabled:cursor-not-allowed disabled:opacity-30"
                 aria-label="Attach files"
               >
                 <Paperclip className="h-4 w-4" />
@@ -2691,13 +2406,7 @@ export function ChatApp() {
                   onChange={(e) => setInput(e.target.value)}
                   onKeyDown={handleKeyDown}
                   onPaste={handlePaste}
-                  placeholder={
-                    pendingFiles.length > 0
-                      ? "Add a message or just send the files..."
-                      : isBusy
-                        ? "Queue another ask while AL works..."
-                        : "Message Al..."
-                  }
+                  placeholder={pendingFiles.length > 0 ? "Add a message or just send the files..." : "Tell AL what you want done. Plain language is fine."}
                   rows={1}
                   className="w-full resize-none rounded-2xl border border-[var(--al-border-faint)] bg-[var(--al-glass-bg-recessed)] px-4 py-3 text-sm text-[var(--al-text-primary)] placeholder-[var(--al-text-ghost)] transition-all duration-300 focus:border-[var(--al-border-active)] focus:outline-none focus:ring-1 focus:ring-[var(--al-cyan)]/10 focus:shadow-[var(--al-cyan-glow)] focus:bg-[var(--al-surface-0)] disabled:opacity-50"
                   style={{ minHeight: 48, maxHeight: 160 }}
@@ -2709,40 +2418,28 @@ export function ChatApp() {
                 />
               </div>
 
-              {isBusy ? (
-                <div className="flex flex-shrink-0 items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={stopGenerating}
-                    className="flex h-12 w-12 items-center justify-center rounded-xl al-glass-subtle text-[var(--al-text-secondary)] transition-all hover:border-[var(--al-border-hover)] hover:text-[var(--al-text-primary)] active:scale-95"
-                    aria-label="Stop generating"
-                  >
-                    <div className="h-3.5 w-3.5 rounded-sm bg-[var(--al-cyan-muted)]" />
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={!input.trim()}
-                    className="flex h-12 w-12 items-center justify-center rounded-xl al-glass-subtle text-[var(--al-cyan)] transition-all hover:shadow-[var(--al-cyan-glow)] active:scale-95 disabled:cursor-not-allowed disabled:opacity-30"
-                    aria-label="Queue ask"
-                    title="Queue this ask while AL is still working"
-                  >
-                    <BookUp className="h-4 w-4" />
-                  </button>
-                </div>
-              ) : (
+              {isBusy && (
                 <button
-                  type="submit"
-                  disabled={!canSend}
-                  className={`flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl bg-[var(--al-cyan)] text-[var(--al-void)] transition-all hover:shadow-[var(--al-cyan-glow-strong)] active:scale-95 disabled:cursor-not-allowed disabled:opacity-30 disabled:bg-[var(--al-surface-2)] disabled:text-[var(--al-text-tertiary)] ${canSend ? "animate-al-glow-pulse" : ""}`}
-                  aria-label="Send message"
+                  type="button"
+                  onClick={stopGenerating}
+                  className="flex h-12 w-12 items-center justify-center rounded-xl al-glass-subtle text-[var(--al-text-secondary)] transition-all hover:border-[var(--al-border-hover)] hover:text-[var(--al-text-primary)] active:scale-95"
+                  aria-label="Stop generating"
                 >
-                  <Send className="h-4 w-4" />
+                  <Square className="h-4 w-4" />
                 </button>
               )}
+
+              <button
+                type="submit"
+                disabled={!canSend || isBusy}
+                className={`flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl bg-[var(--al-cyan)] text-[var(--al-void)] transition-all hover:shadow-[var(--al-cyan-glow-strong)] active:scale-95 disabled:cursor-not-allowed disabled:opacity-30 disabled:bg-[var(--al-surface-2)] disabled:text-[var(--al-text-tertiary)] ${canSend && !isBusy ? "animate-al-glow-pulse" : ""}`}
+                aria-label="Send message"
+              >
+                <Send className="h-4 w-4" />
+              </button>
             </form>
             <p className="mt-2 text-center text-[11px] font-mono text-[var(--al-text-tertiary)]">
-              Enter to send or queue &middot; Shift+Enter for new line &middot; Paste or
-              drag images &amp; PDFs
+              Enter to send &middot; Shift+Enter for new line &middot; Paste or drag images &amp; PDFs
             </p>
           </div>
         </div>
@@ -3351,3 +3048,4 @@ function SettingsModal({
     </div>
   );
 }
+
