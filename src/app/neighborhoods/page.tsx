@@ -1,5 +1,7 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
+import { BreadcrumbJsonLd } from '@/components/seo/BreadcrumbJsonLd'
+import { getByCounty } from '@/lib/neighborhoods'
 
 export const metadata: Metadata = {
   title: 'Areas We Serve — Spokane County & Kootenai County',
@@ -7,7 +9,7 @@ export const metadata: Metadata = {
     'We buy houses for cash across Spokane County, WA and Kootenai County, ID. Spokane Valley, North Spokane, South Hill, Post Falls, CDA, Hayden, and more.',
   alternates: { canonical: 'https://dominionhomedeals.com/neighborhoods' },
   openGraph: {
-    title: 'Areas We Serve | Dominion Homes Cash Home Buyers',
+    title: 'Areas We Serve | Dominion Homes',
     description:
       'Local cash home buyers in Spokane & CDA. We buy houses in every neighborhood across Spokane County and Kootenai County.',
     url: 'https://dominionhomedeals.com/neighborhoods',
@@ -15,40 +17,18 @@ export const metadata: Metadata = {
   },
 }
 
-const spokaneCounty = [
-  { name: 'Spokane Valley', slug: 'spokane-valley', tagline: 'The Valley\'s most active cash buyer' },
-  { name: 'North Spokane', slug: 'north-spokane', tagline: 'From Five Mile to Wandermere' },
-  { name: 'South Hill', slug: 'south-hill', tagline: 'Manito to Moran Prairie and beyond' },
-  { name: 'Downtown Spokane', slug: 'downtown-spokane', tagline: 'Historic core to Browne\'s Addition' },
-  { name: 'Cheney', slug: 'cheney', tagline: 'EWU area and beyond' },
-  { name: 'Airway Heights', slug: 'airway-heights', tagline: 'Fast-growing west plains' },
-  { name: 'Mead', slug: 'mead', tagline: 'North corridor and rural lots' },
-  { name: 'Deer Park', slug: 'deer-park', tagline: 'Highway 395 corridor' },
-  { name: 'Medical Lake', slug: 'medical-lake', tagline: 'Lakeside community' },
-  { name: 'Liberty Lake', slug: 'liberty-lake', tagline: 'East side living' },
-  { name: 'Millwood', slug: 'millwood', tagline: 'Small-town feel, big convenience' },
-  { name: 'Otis Orchards', slug: 'otis-orchards', tagline: 'Rural acreage and family homes' },
-  { name: 'Nine Mile Falls', slug: 'nine-mile-falls', tagline: 'Riverside living' },
-  { name: 'Elk', slug: 'elk', tagline: 'North county' },
-  { name: 'Spangle', slug: 'spangle', tagline: 'South county' },
-]
-
-const kootenaiCounty = [
-  { name: 'Coeur d\'Alene', slug: 'coeur-d-alene', tagline: 'Lake city cash offers' },
-  { name: 'Post Falls', slug: 'post-falls', tagline: 'Our home base' },
-  { name: 'Hayden', slug: 'hayden', tagline: 'Growing north shore community' },
-  { name: 'Rathdrum', slug: 'rathdrum', tagline: 'Prairie corridor' },
-  { name: 'Dalton Gardens', slug: 'dalton-gardens', tagline: 'Quiet residential area' },
-  { name: 'Spirit Lake', slug: 'spirit-lake', tagline: 'Lakefront and acreage' },
-  { name: 'Athol', slug: 'athol', tagline: 'North county corridor' },
-  { name: 'Hauser', slug: 'hauser', tagline: 'Hauser Lake area' },
-  { name: 'Harrison', slug: 'harrison', tagline: 'South Kootenai' },
-  { name: 'Worley', slug: 'worley', tagline: 'Southern Kootenai County' },
-]
-
 export default function NeighborhoodsPage() {
+  const spokaneCounty = getByCounty('Spokane County')
+  const kootenaiCounty = getByCounty('Kootenai County')
+
   return (
     <>
+      <BreadcrumbJsonLd
+        items={[
+          { name: 'Home', url: 'https://dominionhomedeals.com' },
+          { name: 'Areas We Serve', url: 'https://dominionhomedeals.com/neighborhoods' },
+        ]}
+      />
       {/* JSON-LD */}
       <script
         type="application/ld+json"
@@ -62,8 +42,8 @@ export default function NeighborhoodsPage() {
             url: 'https://dominionhomedeals.com',
             address: {
               '@type': 'PostalAddress',
-              addressLocality: 'Post Falls',
-              addressRegion: 'ID',
+              addressLocality: 'Spokane',
+              addressRegion: 'WA',
               addressCountry: 'US',
             },
             areaServed: [
@@ -200,7 +180,7 @@ export default function NeighborhoodsPage() {
             We Know These Neighborhoods Because We Live&nbsp;Here
           </h2>
           <p className="mx-auto mt-4 max-w-xl text-lg text-forest-200">
-            Adam and Logan are based in Post Falls. We drive these streets
+            Adam and Logan are based in Spokane. We drive these streets
             every day. Let us make you a fair cash offer on your property.
           </p>
           <div className="mt-8 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">

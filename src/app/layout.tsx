@@ -1,10 +1,9 @@
-// src/app/layout.tsx
 import type { Metadata, Viewport } from "next";
 import { Playfair_Display, Source_Sans_3 } from "next/font/google";
 import "./globals.css";
 import { SiteChrome } from "@/components/layout/SiteChrome";
 import { SITE } from "@/lib/constants";
-import { GoogleAnalytics } from './analytics'
+import { GoogleAnalytics } from "./analytics";
 
 const playfair = Playfair_Display({
   subsets: ["latin"],
@@ -22,14 +21,16 @@ const sourceSans = Source_Sans_3({
   variable: "--font-body",
 });
 
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   metadataBase: new URL(SITE.url),
   title: {
-    default: "Sell Your House Fast for Cash — Spokane & CDA | Dominion Homes",
+    default: "Sell Your House Fast for Cash in Spokane & CDA | Dominion Homes",
     template: "%s | Dominion Homes",
   },
   description:
-    "Local Spokane and Coeur d'Alene team that buys houses for cash in any condition. No commissions, no repairs, close on your timeline. Based in Post Falls, ID.",
+    "Local Spokane and Coeur d'Alene team that buys houses for cash in any condition. No commissions, no repairs, close on your timeline. Based in Spokane, WA.",
   keywords: [
     "sell my house fast Spokane",
     "cash home buyers Spokane",
@@ -37,7 +38,7 @@ export const metadata: Metadata = {
     "sell house fast CDA",
     "cash for houses Coeur d'Alene",
     "sell house as-is Spokane",
-    "home buyers Post Falls",
+    "home buyers Spokane",
   ],
   robots: { index: true, follow: true },
   openGraph: {
@@ -45,9 +46,8 @@ export const metadata: Metadata = {
     locale: "en_US",
     url: SITE.url,
     siteName: SITE.name,
-    title: "Sell Your House Fast for Cash — Spokane & CDA",
-    description:
-      "Get a fair cash offer from your local team. No repairs, no fees, close on your schedule.",
+    title: "Sell Your House Fast for Cash - Spokane & CDA",
+    description: "Get a fair cash offer from your local team. No repairs, no fees, close on your schedule.",
     images: [{ url: "/images/og-image.jpg", width: 1200, height: 630 }],
   },
   alternates: { canonical: SITE.url },
@@ -78,7 +78,7 @@ function JsonLd() {
           postalCode: SITE.address.zip,
           addressCountry: "US",
         },
-        geo: { "@type": "GeoCoordinates", latitude: 47.7182, longitude: -116.9516 },
+        geo: { "@type": "GeoCoordinates", latitude: 47.6588, longitude: -117.426 },
         areaServed: [
           { "@type": "AdministrativeArea", name: "Spokane County, WA" },
           { "@type": "AdministrativeArea", name: "Kootenai County, ID" },
@@ -101,12 +101,7 @@ function JsonLd() {
     ],
   };
 
-  return (
-    <script
-      type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
-    />
-  );
+  return <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }} />;
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -119,11 +114,16 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png" />
       </head>
       <body className="min-h-screen bg-stone-50 font-body text-ink-600 antialiased">
-        <a href="#main-content" className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[100] focus:rounded-lg focus:bg-forest-600 focus:px-4 focus:py-2 focus:text-white focus:shadow-lg">
+        <a
+          href="#main-content"
+          className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-lg focus:bg-forest-600 focus:px-4 focus:py-2 focus:text-white focus:shadow-lg"
+        >
           Skip to main content
         </a>
         <GoogleAnalytics />
-        <SiteChrome>{children}</SiteChrome>
+        <SiteChrome>
+          <main id="main-content">{children}</main>
+        </SiteChrome>
       </body>
     </html>
   );

@@ -16,6 +16,51 @@ const ALLOWED_BOT_PATTERNS = [
   /WhatsApp/i,
 ];
 
+const LEGACY_AL_PATHS = [
+  /^\/al(?:\/|$)/i,
+  /^\/boardroom(?:\/|$)/i,
+  /^\/planner(?:\/|$)/i,
+  /^\/reviews(?:\/|$)/i,
+  /^\/borelandops-root(?:\/|$)/i,
+  /^\/app(?:\/|$)/i,
+];
+
+function trimOrigin(value: string): string {
+  return value.replace(/\/+$/, "");
+}
+
+function getAlRedirectOrigin(): string {
+  const explicitOrigin = process.env.AL_CANONICAL_ORIGIN?.trim();
+  if (explicitOrigin) {
+    return trimOrigin(explicitOrigin);
+  }
+
+  const explicitHost = process.env.AL_CANONICAL_HOST?.trim();
+  if (explicitHost) {
+    return `https://${explicitHost.replace(/:\d+$/, "")}`;
+  }
+
+  return "https://app.borelandops.com";
+}
+
+function redirectLegacyAlPath(request: NextRequest): NextResponse | null {
+  const pathname = request.nextUrl.pathname;
+  if (!LEGACY_AL_PATHS.some((pattern) => pattern.test(pathname))) {
+    return null;
+  }
+
+  const redirectUrl = new URL(getAlRedirectOrigin());
+  if (/^\/al(?:\/|$)/i.test(pathname)) {
+    redirectUrl.pathname = pathname.replace(/^\/al/i, "") || "/";
+  } else if (/^\/app(?:\/|$)/i.test(pathname)) {
+    redirectUrl.pathname = pathname.replace(/^\/app/i, "") || "/";
+  } else {
+    redirectUrl.pathname = pathname;
+  }
+  redirectUrl.search = request.nextUrl.search;
+  return NextResponse.redirect(redirectUrl, 308);
+}
+
 function isAllowedBot(userAgent: string): boolean {
   return ALLOWED_BOT_PATTERNS.some((pattern) => pattern.test(userAgent));
 }
@@ -78,7 +123,7 @@ function blockedCountryResponse(request: NextRequest): NextResponse {
     <main>
       <h1>Access Restricted</h1>
       <p>Dominion Homes currently serves visitors located in the United States only.</p>
-      <p>If you believe this is a mistake, please call or text <strong>509-822-5460</strong>.</p>
+      <p>If you believe this is a mistake, please call or text 509-822-5460.</p>
       <p>Request country: <strong>${country}</strong></p>
     </main>
   </body>
@@ -94,7 +139,7 @@ function blockedCountryResponse(request: NextRequest): NextResponse {
   }
 
   return NextResponse.json(
-    { error: "Access restricted to United States traffic", country },
+    { error: "Access restricted to United States traffic", country, brand: "Dominion Homes" },
     { status: 403, headers: { "Cache-Control": "no-store" } },
   );
 }
@@ -102,6 +147,11 @@ function blockedCountryResponse(request: NextRequest): NextResponse {
 export function middleware(request: NextRequest) {
   if (shouldBlockByCountry(request)) {
     return blockedCountryResponse(request);
+  }
+
+  const legacyRedirect = redirectLegacyAlPath(request);
+  if (legacyRedirect) {
+    return legacyRedirect;
   }
 
   return NextResponse.next();

@@ -6,7 +6,7 @@ const fs = require("fs").promises;
 const fsSync = require("fs");
 const path = require("path");
 const { URL } = require("url");
-const { spawn } = require("child_process");
+const { spawn, spawnSync } = require("child_process");
 const crypto = require("crypto");
 const {
   resolveBrowserVendorReviewFile,
@@ -22,6 +22,12 @@ const {
   resolveBrandMediaJobDir,
   resolveBrandMediaArtifact,
 } = require("./media-brand-assets");
+const {
+  inspectStaticBrandSwapStack,
+  runStaticBrandSwap,
+  resolveStaticBrandSwapJobDir,
+  resolveStaticBrandSwapArtifact,
+} = require("./static-brand-swap");
 
 /* ── Load .env ──────────────────────────────────────────────── */
 const envFile = path.join(__dirname, ".env");
@@ -41,8 +47,21 @@ if (fsSync.existsSync(envFile)) {
 const PORT = parseInt(process.env.BRIDGE_PORT || "3141", 10);
 const VAULT = (process.env.VAULT_PATH || "").replace(/[\\/]+$/, "");
 const TOKEN = (process.env.BRIDGE_TOKEN || "").trim();
+const REMOTE_BRIDGE_API_BASE = (process.env.REMOTE_BRIDGE_API_BASE || "https://al.dominionhomedeals.com").trim().replace(/\/+$/, "");
+const REMOTE_BRIDGE_SECRET =
+  (process.env.AL_REMOTE_BRIDGE_SECRET || process.env.REMOTE_BRIDGE_SHARED_SECRET || "").trim();
+const ENABLE_REMOTE_BRIDGE_RELAY =
+  String(process.env.ENABLE_REMOTE_BRIDGE_RELAY || "").trim().toLowerCase() === "true";
+const REMOTE_BRIDGE_CLIENT_ID =
+  (process.env.REMOTE_BRIDGE_CLIENT_ID || `${require("os").hostname()}-desktop-bridge`).trim();
 
 const homeDir = process.env.USERPROFILE || process.env.HOME || "";
+const CLAUDE_CREDENTIALS_PATH = homeDir
+  ? path.join(homeDir, ".claude", ".credentials.json")
+  : "";
+const EXECUTOR_ENV_PATH = homeDir
+  ? path.join(homeDir, "Desktop", "sentinel ai", "sentinel-executor", ".env")
+  : "";
 const CREW_ROOT_DEFAULT = homeDir
   ? path.join(homeDir, "Desktop", "al boreland-crew")
   : "";
@@ -53,6 +72,7 @@ const MAX_CONCURRENT_CREWS = 2;
 const CREW_TIMEOUT_MS = 15 * 60 * 1000;
 const MAX_CREW_OUTPUT = 500 * 1024;
 const CODEX_TIMEOUT_MS = 12 * 60 * 1000;
+const COWORK_HEALTH_PROBE_TTL_MS = 10 * 60 * 1000;
 
 /** Maps *_crew.py filename → argv for `python main.py <argv>` */
 const CREW_FILE_TO_CMD = {
@@ -80,6 +100,19 @@ function fileToCrewId(file) {
 }
 
 const crewRuns = new Map();
+let coworkHealthCache = {
+  checkedAt: 0,
+  ok: null,
+  status: "unchecked",
+  detail: "Cowork execute lane has not been probed yet.",
+};
+let coworkHealthProbePromise = null;
+let claudeCliStatusCache = {
+  checkedAt: 0,
+  loggedIn: null,
+  email: null,
+  detail: "Claude CLI auth status has not been checked yet.",
+};
 
 const ORIGINS = new Set([
   "https://dominionhomedeals.com",
@@ -114,6 +147,134 @@ const IMAGE_MIME = {
 const MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5 MB for images
 
 const MAX_SIZE = 1024 * 1024; // 1 MB
+
+function readEnvSecret(value) {
+  const trimmed = String(value || "").trim();
+  if (
+    (trimmed.startsWith('"') && trimmed.endsWith('"')) ||
+    (trimmed.startsWith("'") && trimmed.endsWith("'"))
+  ) {
+    return trimmed.slice(1, -1).trim();
+  }
+  return trimmed;
+}
+
+function readClaudeCliStatus() {
+  const now = Date.now();
+  if (claudeCliStatusCache.checkedAt && now - claudeCliStatusCache.checkedAt < 10 * 60 * 1000) {
+    return claudeCliStatusCache;
+  }
+
+  try {
+    const result = spawnSync("claude", ["auth", "status"], {
+      encoding: "utf8",
+      timeout: 5000,
+      windowsHide: true,
+    });
+    const raw = `${result.stdout || ""}`.trim();
+    const parsed = raw ? JSON.parse(raw) : null;
+    const loggedIn = parsed?.loggedIn === true;
+    claudeCliStatusCache = {
+      checkedAt: now,
+      loggedIn,
+      email: loggedIn && typeof parsed?.email === "string" ? parsed.email.trim() : null,
+      detail: loggedIn
+        ? `Claude CLI reports a logged-in session${parsed?.email ? ` for ${parsed.email.trim()}` : ""}.`
+        : "Claude CLI does not report a logged-in session.",
+    };
+  } catch (error) {
+    claudeCliStatusCache = {
+      checkedAt: now,
+      loggedIn: null,
+      email: null,
+      detail: error instanceof Error ? error.message : "Claude CLI auth status check failed.",
+    };
+  }
+
+  return claudeCliStatusCache;
+}
+
+function readLocalClaudeAuthHealth(coworkProbe = null) {
+  let apiKeyPresent = false;
+  let oauthPresent = false;
+  let fileOauthExpired = false;
+  let fileOauthExpiresAt = null;
+
+  try {
+    if (EXECUTOR_ENV_PATH && fsSync.existsSync(EXECUTOR_ENV_PATH)) {
+      for (const line of fsSync.readFileSync(EXECUTOR_ENV_PATH, "utf8").split("\n")) {
+        const trimmed = line.trim();
+        if (!trimmed || trimmed.startsWith("#")) continue;
+        const eq = trimmed.indexOf("=");
+        if (eq < 1) continue;
+        const key = trimmed.slice(0, eq).trim();
+        if (key !== "ANTHROPIC_API_KEY") continue;
+        apiKeyPresent = Boolean(readEnvSecret(trimmed.slice(eq + 1)));
+        break;
+      }
+    }
+  } catch {}
+
+  try {
+    if (CLAUDE_CREDENTIALS_PATH && fsSync.existsSync(CLAUDE_CREDENTIALS_PATH)) {
+      const parsed = JSON.parse(fsSync.readFileSync(CLAUDE_CREDENTIALS_PATH, "utf8"));
+      const expiresAt = parsed?.claudeAiOauth?.expiresAt;
+      oauthPresent = Boolean(parsed?.claudeAiOauth?.accessToken);
+      fileOauthExpiresAt =
+        typeof expiresAt === "number" && Number.isFinite(expiresAt)
+          ? new Date(expiresAt).toISOString()
+          : null;
+      fileOauthExpired =
+        typeof expiresAt === "number" && Number.isFinite(expiresAt)
+          ? expiresAt <= Date.now()
+          : false;
+    }
+  } catch {}
+
+  const cliStatus = readClaudeCliStatus();
+  const trustFileExpiry = cliStatus.loggedIn !== true;
+  const oauthExpired = trustFileExpiry ? fileOauthExpired : false;
+  const oauthExpiresAt = trustFileExpiry ? fileOauthExpiresAt : null;
+
+  const configured = apiKeyPresent || oauthPresent;
+  let status = "configured";
+  let detail = "Claude auth is configured on this desktop.";
+
+  if (!configured) {
+    status = "missing";
+    detail = "No Claude OAuth credentials and no Anthropic executor key were found on this desktop.";
+  } else if (oauthPresent && oauthExpired && !apiKeyPresent) {
+    status = "oauth_expired";
+    detail = "Claude desktop OAuth credentials are expired and there is no Anthropic executor key fallback.";
+  } else if (oauthPresent && oauthExpired && apiKeyPresent) {
+    status = "oauth_expired_api_present";
+    detail = "Claude desktop OAuth credentials are expired. The executor is relying on the Anthropic executor key fallback.";
+  } else if (apiKeyPresent && !oauthPresent) {
+    status = "api_key_only";
+    detail = "Claude execution is relying on the Anthropic executor key only.";
+  }
+
+  if (coworkProbe?.status === "auth_invalid") {
+    if (cliStatus.loggedIn === true) {
+      status = apiKeyPresent ? "runtime_invalid_api_present" : "runtime_invalid";
+      detail = `Claude CLI reports a logged-in session${cliStatus.email ? ` for ${cliStatus.email}` : ""}, but live execution still returns invalid authentication credentials.${apiKeyPresent ? " The Anthropic executor key fallback also appears invalid." : ""}`;
+    } else if (!configured || oauthExpired) {
+      status = apiKeyPresent ? "runtime_invalid_api_present" : "runtime_invalid";
+      detail = apiKeyPresent
+        ? "Live Claude execution returns invalid authentication credentials, and the Anthropic executor key fallback appears invalid."
+        : "Live Claude execution returns invalid authentication credentials.";
+    }
+  }
+
+  return {
+    configured,
+    status,
+    detail,
+    oauthExpired,
+    oauthExpiresAt,
+    apiKeyPresent,
+  };
+}
 
 /* ── Path safety ────────────────────────────────────────────── */
 function resolveSafe(rel) {
@@ -158,6 +319,10 @@ function trimRouteNoise(value) {
     decoded = decodeURIComponent(decoded);
   } catch {}
   return decoded.replace(/[`'"\\)\]\s]+$/g, "");
+}
+
+function inputString(value) {
+  return typeof value === "string" ? value : "";
 }
 
 function getCodexCandidates() {
@@ -262,6 +427,380 @@ function readBody(req) {
   });
 }
 
+function remoteRelayConfigured() {
+  return ENABLE_REMOTE_BRIDGE_RELAY && Boolean(REMOTE_BRIDGE_API_BASE && REMOTE_BRIDGE_SECRET);
+}
+
+function bridgeAuthHeaders() {
+  return TOKEN ? { Authorization: `Bearer ${TOKEN}` } : {};
+}
+
+async function callLocalBridge(pathname, options = {}) {
+  const response = await fetch(`http://127.0.0.1:${PORT}${pathname}`, {
+    ...options,
+    headers: {
+      ...(options.headers || {}),
+      ...bridgeAuthHeaders(),
+    },
+  });
+  const data = await response.json().catch(() => null);
+  return { response, data };
+}
+
+async function runRemoteBridgeRequest(request) {
+  const input = request && typeof request.input === "object" && request.input
+    ? request.input
+    : {};
+  switch (request.name) {
+    case "vault_list": {
+      const { response, data } = await callLocalBridge(
+        `/list?path=${encodeURIComponent(inputString(input.path))}`,
+      );
+      if (!response.ok) return `Error: ${data?.error || response.status}`;
+      return (data.entries || []).map((entry) => `[${entry.type}] ${entry.name}`).join("\n") || "Empty folder.";
+    }
+    case "vault_read": {
+      const { response, data } = await callLocalBridge(
+        `/read?path=${encodeURIComponent(inputString(input.path))}`,
+      );
+      return response.ok ? data.content : `Error: ${data?.error || response.status}`;
+    }
+    case "vault_read_image": {
+      const { response, data } = await callLocalBridge(
+        `/read-image?path=${encodeURIComponent(inputString(input.path))}`,
+      );
+      if (!response.ok) return `Error: ${data?.error || response.status}`;
+      return {
+        type: "image",
+        base64: data.base64,
+        mimeType: data.mimeType || "image/png",
+        path: data.path || inputString(input.path),
+      };
+    }
+    case "crew_list": {
+      const { response, data } = await callLocalBridge("/crew/list");
+      if (!response.ok) return `Error: ${data?.error || response.status}`;
+      let out = "";
+      if (data.error) out += `Setup: ${data.error}\n\n`;
+      const crews = data.crews || [];
+      out += crews.length ? crews.map((crew) => `- ${crew.id} (${crew.file})`).join("\n") : "No crews discovered.";
+      const runs = data.activeRuns || [];
+      if (runs.length) out += `\n\nActive runs:\n${runs.map((run) => `- ${run.crew} (${run.id})`).join("\n")}`;
+      if (data.crewRoot) out += `\n\nProject: ${data.crewRoot}`;
+      return out.trim();
+    }
+    case "crew_run": {
+      const { response, data } = await callLocalBridge("/crew/run", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ crew: inputString(input.crew) }),
+      });
+      return response.ok ? JSON.stringify(data, null, 2) : `Error: ${data?.error || response.status}`;
+    }
+    case "crew_status": {
+      const { response, data } = await callLocalBridge(
+        `/crew/status?id=${encodeURIComponent(inputString(input.run_id))}`,
+      );
+      return response.ok ? JSON.stringify(data, null, 2) : `Error: ${data?.error || response.status}`;
+    }
+    case "deep_research": {
+      const { response, data } = await callLocalBridge("/research", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ task: inputString(input.task) }),
+      });
+      return response.ok ? data.result || JSON.stringify(data) : `Error: ${data?.error || response.status}`;
+    }
+    case "cowork_task": {
+      const { response, data } = await callLocalBridge("/cowork", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          task: inputString(input.task),
+          domain: inputString(input.domain) || "dominionhomedeals",
+          authority_zone: 1,
+        }),
+      });
+      if (!response.ok) return `Error: ${data?.error || response.status}`;
+      const elapsed = data.elapsed ? ` (${data.elapsed}s)` : "";
+      const session = data.session_id ? ` · session ${data.session_id}` : "";
+      return `✓ Done${elapsed}${session}\n\n${data.result || JSON.stringify(data)}`;
+    }
+    case "codex_task": {
+      const { response, data } = await callLocalBridge("/codex/exec", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(input || {}),
+      });
+      return JSON.stringify(
+        data || {
+          ok: false,
+          status: "codex_bridge_request_failed",
+          operator_message: `Codex task failed with HTTP ${response.status}.`,
+        },
+      );
+    }
+    case "local_pdf_merge": {
+      const { response, data } = await callLocalBridge("/pdf/merge", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(input || {}),
+      });
+      return JSON.stringify(
+        data || {
+          ok: false,
+          status: "pdf_merge_bridge_request_failed",
+          operator_message: `Local PDF merge failed with HTTP ${response.status}.`,
+        },
+      );
+    }
+    case "browser_vendor_cart_review": {
+      const { response, data } = await callLocalBridge("/browser/vendor-cart-review", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(input || {}),
+      });
+      return JSON.stringify(
+        data || {
+          ok: false,
+          status: "bridge_request_failed",
+          operator_message: `Vendor/design lane failed with HTTP ${response.status}.`,
+        },
+      );
+    }
+    case "media_production": {
+      const { response, data } = await callLocalBridge("/media/brand-assets", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(input || {}),
+      });
+      return JSON.stringify(
+        data || {
+          ok: false,
+          status: "media_bridge_request_failed",
+          operator_message: `Media production lane failed with HTTP ${response.status}.`,
+          },
+      );
+    }
+    case "static_brand_swap": {
+      const { response, data } = await callLocalBridge("/image/static-brand-swap", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(input || {}),
+      });
+      return JSON.stringify(
+        data || {
+          ok: false,
+          status: "static_brand_swap_bridge_request_failed",
+          operator_message: `Static brand swap lane failed with HTTP ${response.status}.`,
+        },
+      );
+    }
+    default:
+      return `Unknown bridge tool: ${request.name}`;
+  }
+}
+
+let remoteRelayBusy = false;
+let lastRemoteHeartbeatSentAt = 0;
+let lastRemoteRelaySuccessAt = 0;
+let lastRemoteRelayErrorAt = 0;
+let lastRemoteRelayErrorMessage = "";
+
+function noteRemoteRelaySuccess() {
+  lastRemoteRelaySuccessAt = Date.now();
+  lastRemoteRelayErrorMessage = "";
+  lastRemoteRelayErrorAt = 0;
+}
+
+function noteRemoteRelayFailure(error) {
+  const detail = error instanceof Error ? error.message : String(error || "Unknown remote relay error");
+  const now = Date.now();
+  const shouldLog =
+    detail !== lastRemoteRelayErrorMessage || now - lastRemoteRelayErrorAt > 5 * 60 * 1000;
+  lastRemoteRelayErrorMessage = detail;
+  lastRemoteRelayErrorAt = now;
+  if (shouldLog) {
+    console.error(`[AL-Bridge Remote Relay] ${detail}`);
+  }
+}
+
+async function buildBridgeStatusSnapshot() {
+  const executor = await readExecutorHealth();
+  const hasAsk = Boolean(executor.endpoints["POST /ask"]);
+  const hasExecute = Boolean(executor.endpoints["POST /execute"]);
+  const coworkProbe =
+    executor.online && hasExecute
+      ? await probeCoworkExecutionHealth()
+      : {
+          ok: false,
+          status: "executor_unavailable",
+          detail: "Executor is offline or missing POST /execute.",
+        };
+  const localClaudeAuth = readLocalClaudeAuthHealth(coworkProbe);
+  const browserVendorStack = inspectBrowserVendorCartReviewStack();
+  const brandMediaStack = inspectBrandMediaStack();
+  const staticBrandSwapStack = inspectStaticBrandSwapStack();
+  const codexStack = inspectCodexStack();
+
+  return {
+    executor,
+    coworkProbe,
+    claudeAuth: executor.claudeAuth || localClaudeAuth,
+    capabilities: {
+      executor_online: executor.online,
+      deep_research: executor.online && hasAsk,
+      cowork_execution: executor.online && hasExecute && coworkProbe.ok === true,
+      browser_automation: browserVendorStack.details.browser_automation,
+      vendor_site_access: browserVendorStack.details.vendor_site_access,
+      design_mockup: browserVendorStack.details.design_mockup,
+      screenshot_capture: browserVendorStack.details.screenshot_capture,
+      cart_preparation: browserVendorStack.details.cart_preparation,
+      review_checkpoint: browserVendorStack.details.review_checkpoint,
+      media_generation: brandMediaStack.live,
+      media_runway: brandMediaStack.details.runway_api_key,
+      media_gif_export: brandMediaStack.details.ffmpeg_available,
+      static_image_edit: staticBrandSwapStack.live,
+      local_pdf_merge: true,
+      codex_execution: codexStack.available,
+      remote_bridge_relay: remoteRelayConfigured(),
+    },
+    browserVendorCartReview: {
+      live: browserVendorStack.live,
+      missingAccess: browserVendorStack.missingAccess,
+      details: browserVendorStack.details,
+    },
+    brandMediaProduction: {
+      live: brandMediaStack.live,
+      missingAccess: brandMediaStack.missingAccess,
+      details: brandMediaStack.details,
+    },
+    staticBrandSwap: {
+      live: staticBrandSwapStack.live,
+      missingAccess: staticBrandSwapStack.missingAccess,
+      details: staticBrandSwapStack.details,
+    },
+    codexTaskExecution: {
+      live: codexStack.available,
+      missingAccess: codexStack.available ? [] : ["local_codex_cli"],
+      details: codexStack.details,
+    },
+    remoteBridgeRelay: {
+      live: remoteRelayConfigured(),
+      missingAccess: remoteRelayConfigured() ? [] : ["AL_REMOTE_BRIDGE_SECRET", "ENABLE_REMOTE_BRIDGE_RELAY"],
+      details: {
+        api_base: REMOTE_BRIDGE_API_BASE || null,
+        client_id: REMOTE_BRIDGE_CLIENT_ID,
+        last_success_at: lastRemoteRelaySuccessAt
+          ? new Date(lastRemoteRelaySuccessAt).toISOString()
+          : null,
+        last_error_at: lastRemoteRelayErrorAt
+          ? new Date(lastRemoteRelayErrorAt).toISOString()
+          : null,
+        last_error: lastRemoteRelayErrorMessage || null,
+      },
+    },
+  };
+}
+
+async function maybeSendRemoteBridgeHeartbeat(force = false) {
+  if (!remoteRelayConfigured()) return;
+  const now = Date.now();
+  if (!force && now - lastRemoteHeartbeatSentAt < 60000) return;
+
+  const snapshot = await buildBridgeStatusSnapshot();
+  const response = await fetch(`${REMOTE_BRIDGE_API_BASE}/api/al/remote-bridge/heartbeat`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-al-remote-bridge-secret": REMOTE_BRIDGE_SECRET,
+    },
+    body: JSON.stringify({
+      clientId: REMOTE_BRIDGE_CLIENT_ID,
+      relayApiBase: REMOTE_BRIDGE_API_BASE,
+      bridgeAuthRequired: Boolean(TOKEN),
+      capabilities: snapshot.capabilities,
+      coworkProbe: snapshot.coworkProbe,
+      claudeAuth: snapshot.claudeAuth,
+    }),
+  });
+
+  if (response.ok) {
+    lastRemoteHeartbeatSentAt = now;
+    noteRemoteRelaySuccess();
+    return;
+  }
+
+  noteRemoteRelayFailure(`Heartbeat failed with HTTP ${response.status}`);
+}
+
+async function processRemoteBridgeRelayQueue() {
+  if (!remoteRelayConfigured() || remoteRelayBusy) return;
+  remoteRelayBusy = true;
+  try {
+    await maybeSendRemoteBridgeHeartbeat();
+    const pollResponse = await fetch(`${REMOTE_BRIDGE_API_BASE}/api/al/remote-bridge/poll`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-al-remote-bridge-secret": REMOTE_BRIDGE_SECRET,
+      },
+      body: JSON.stringify({ clientId: REMOTE_BRIDGE_CLIENT_ID }),
+    });
+
+    const pollPayload = await pollResponse.json().catch(() => null);
+    if (!pollResponse.ok || !pollPayload?.ok || !pollPayload.bundle) {
+      if (!pollResponse.ok) {
+        noteRemoteRelayFailure(`Poll failed with HTTP ${pollResponse.status}`);
+      } else {
+        noteRemoteRelaySuccess();
+      }
+      return;
+    }
+
+    const bundle = pollPayload.bundle;
+    const requests = Array.isArray(bundle.requests) ? bundle.requests : [];
+    const results = [];
+    let hasError = false;
+    let errorMessage = null;
+
+    for (const request of requests) {
+      try {
+        const result = await runRemoteBridgeRequest(request);
+        results.push({ id: request.id, name: request.name, result });
+      } catch (err) {
+        hasError = true;
+        errorMessage = err instanceof Error ? err.message : "Unknown remote bridge request error.";
+        results.push({
+          id: request.id,
+          name: request.name,
+          result: `Bridge connection failed: ${errorMessage}`,
+        });
+      }
+    }
+
+    await fetch(`${REMOTE_BRIDGE_API_BASE}/api/al/remote-bridge/complete`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-al-remote-bridge-secret": REMOTE_BRIDGE_SECRET,
+      },
+      body: JSON.stringify({
+        jobId: bundle.jobId,
+        clientId: REMOTE_BRIDGE_CLIENT_ID,
+        isError: hasError,
+        errorMessage,
+        results,
+      }),
+    });
+    noteRemoteRelaySuccess();
+  } catch (error) {
+    noteRemoteRelayFailure(error);
+  } finally {
+    remoteRelayBusy = false;
+  }
+}
+
 /* ── Routes ─────────────────────────────────────────────────── */
 async function readExecutorHealth() {
   try {
@@ -275,6 +814,7 @@ async function readExecutorHealth() {
         status: `HTTP ${response.status}`,
         version: null,
         endpoints: {},
+        claudeAuth: null,
       };
     }
 
@@ -287,6 +827,24 @@ async function readExecutorHealth() {
         data && typeof data.endpoints === "object" && data.endpoints
           ? data.endpoints
           : {},
+      claudeAuth:
+        data &&
+        typeof data.claude_auth === "object" &&
+        data.claude_auth
+          ? {
+              configured: data.claude_auth.configured === true,
+              status:
+                typeof data.claude_auth.status === "string"
+                  ? data.claude_auth.status
+                  : "unknown",
+              detail:
+                typeof data.claude_auth.detail === "string"
+                  ? data.claude_auth.detail
+                  : "No Claude auth detail reported.",
+              oauthExpired: data.claude_auth.oauthExpired === true,
+              apiKeyPresent: data.claude_auth.apiKeyPresent === true,
+            }
+          : null,
     };
   } catch (err) {
     return {
@@ -294,55 +852,117 @@ async function readExecutorHealth() {
       status: err instanceof Error ? err.message : "executor unreachable",
       version: null,
       endpoints: {},
+      claudeAuth: null,
     };
   }
 }
 
-async function handleHealth(res, o) {
-  const executor = await readExecutorHealth();
-  const hasAsk = Boolean(executor.endpoints["POST /ask"]);
-  const hasExecute = Boolean(executor.endpoints["POST /execute"]);
-  const browserVendorStack = inspectBrowserVendorCartReviewStack();
-  const brandMediaStack = inspectBrandMediaStack();
-  const codexStack = inspectCodexStack();
+async function refreshCoworkExecutionHealth() {
+  const now = Date.now();
+  try {
+    const execRes = await fetch("http://127.0.0.1:3456/execute", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        task: "Do not write files or change anything. Return exactly: OK",
+        domain: "dominionhomedeals",
+        authority_zone: 1,
+        secret: process.env.EXECUTOR_SECRET || "sentinel-ceo-2026",
+      }),
+      signal: AbortSignal.timeout(8000),
+    });
+    const data = await execRes.json().catch(() => null);
+    const raw =
+      data && typeof data === "object"
+        ? String(data.output || data.result || data.error || "")
+        : "";
+    let detail = raw;
+    try {
+      const parsed = JSON.parse(raw);
+      if (parsed && typeof parsed === "object") {
+        detail =
+          String(parsed.error || parsed.result || parsed.output || raw);
+      }
+    } catch {}
+    const normalized = detail.toLowerCase();
+    const authFailure =
+      normalized.includes("invalid api key") ||
+      normalized.includes("fix external api key");
+    const creditFailure =
+      normalized.includes("credit balance is too low") ||
+      normalized.includes("insufficient credits");
+    const failed =
+      !execRes.ok ||
+      authFailure ||
+      creditFailure ||
+      normalized.includes('"success":false') ||
+      normalized.includes("executor error");
 
+    coworkHealthCache = failed
+      ? {
+          checkedAt: now,
+          ok: false,
+          status: authFailure
+            ? "auth_invalid"
+            : creditFailure
+              ? "credit_blocked"
+              : `probe_failed_http_${execRes.status}`,
+          detail:
+            detail ||
+            `Cowork execute probe failed with HTTP ${execRes.status}.`,
+        }
+      : {
+          checkedAt: now,
+          ok: true,
+          status: "ready",
+          detail: detail || "Cowork execute probe succeeded.",
+        };
+  } catch (err) {
+    coworkHealthCache = {
+      checkedAt: now,
+      ok: false,
+      status: "probe_error",
+      detail: err instanceof Error ? err.message : "Unknown cowork probe error.",
+    };
+  }
+
+  return coworkHealthCache;
+}
+
+async function probeCoworkExecutionHealth(force = false) {
+  const now = Date.now();
+  if (!force && coworkHealthCache.ok !== null && now - coworkHealthCache.checkedAt < COWORK_HEALTH_PROBE_TTL_MS) {
+    return coworkHealthCache;
+  }
+
+  if (!coworkHealthProbePromise) {
+    coworkHealthProbePromise = refreshCoworkExecutionHealth().finally(() => {
+      coworkHealthProbePromise = null;
+    });
+  }
+
+  if (!force && coworkHealthCache.ok !== null) {
+    return coworkHealthCache;
+  }
+
+  return coworkHealthProbePromise;
+}
+
+async function handleHealth(res, o) {
+  const snapshot = await buildBridgeStatusSnapshot();
   json(res, 200, {
     ok: true,
     vault: VAULT,
     crewProject: crewProjectOk(),
     crewRoot: CREW_ROOT || null,
-    executor,
-    capabilities: {
-      executor_online: executor.online,
-      deep_research: executor.online && hasAsk,
-      cowork_execution: executor.online && hasExecute,
-      browser_automation: browserVendorStack.details.browser_automation,
-      vendor_site_access: browserVendorStack.details.vendor_site_access,
-      design_mockup: browserVendorStack.details.design_mockup,
-      screenshot_capture: browserVendorStack.details.screenshot_capture,
-      cart_preparation: browserVendorStack.details.cart_preparation,
-      review_checkpoint: browserVendorStack.details.review_checkpoint,
-      media_generation: brandMediaStack.live,
-      media_runway: brandMediaStack.details.runway_api_key,
-      media_gif_export: brandMediaStack.details.ffmpeg_available,
-      local_pdf_merge: true,
-      codex_execution: codexStack.available,
-    },
-    browserVendorCartReview: {
-      live: browserVendorStack.live,
-      missingAccess: browserVendorStack.missingAccess,
-      details: browserVendorStack.details,
-    },
-    brandMediaProduction: {
-      live: brandMediaStack.live,
-      missingAccess: brandMediaStack.missingAccess,
-      details: brandMediaStack.details,
-    },
-    codexTaskExecution: {
-      live: codexStack.available,
-      missingAccess: codexStack.available ? [] : ["local_codex_cli"],
-      details: codexStack.details,
-    },
+    executor: snapshot.executor,
+    coworkProbe: snapshot.coworkProbe,
+    claudeAuth: snapshot.claudeAuth,
+    capabilities: snapshot.capabilities,
+    browserVendorCartReview: snapshot.browserVendorCartReview,
+    brandMediaProduction: snapshot.brandMediaProduction,
+    codexTaskExecution: snapshot.codexTaskExecution,
+    remoteBridgeRelay: snapshot.remoteBridgeRelay,
   }, o);
 }
 
@@ -933,6 +1553,70 @@ const server = http.createServer(async (req, res) => {
   }
 
   /* ── Cowork proxy — forwards to AL executor /execute (Claude Agent SDK, full tools) ── */
+  function codexWorkspaceForCoworkDomain(domain) {
+    const normalized = String(domain || "").trim().toLowerCase();
+    if (
+      normalized.includes("wrench") ||
+      normalized.includes("simon") ||
+      normalized.includes("wrench-ready")
+    ) {
+      return "wrenchreadymobile-com";
+    }
+    if (normalized.includes("sentinel")) return "sentinel";
+    if (normalized === "al" || normalized.includes("al-boreland")) return "al";
+    if (normalized.includes("vault")) return "al-boreland-vault";
+    return "dominionhomedeals";
+  }
+
+  async function runCodexFallbackForCowork({ task, domain }) {
+    const workspace = codexWorkspaceForCoworkDomain(domain);
+    const codexRes = await fetch(`http://127.0.0.1:${PORT}/codex/exec`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...bridgeAuthHeaders(),
+      },
+      body: JSON.stringify({
+        task,
+        workspace,
+        sandbox: "workspace-write",
+      }),
+      signal: AbortSignal.timeout(280000),
+    });
+    const codexData = await codexRes.json().catch(() => null);
+    const codexMessage =
+      typeof codexData?.result === "string"
+        ? codexData.result
+        : typeof codexData?.operator_message === "string"
+          ? codexData.operator_message
+          : codexData
+            ? JSON.stringify(codexData)
+            : `Codex task failed with HTTP ${codexRes.status}.`;
+
+    if (codexRes.ok && codexData?.ok !== false) {
+      return {
+        statusCode: 200,
+        payload: {
+          result:
+            `Claude cowork backup was unavailable. AL rerouted this coding task to the OpenAI-native Codex lane (${workspace}) so work could keep moving.\n\n${codexMessage}`,
+          session_id: codexData?.session_id || null,
+          elapsed: null,
+          domain,
+          fallback_lane: "codex_task",
+          fallback_workspace: workspace,
+        },
+      };
+    }
+
+    return {
+      statusCode: codexRes.status || 500,
+      payload: {
+        error:
+          `Claude cowork backup was unavailable, and the OpenAI-native Codex fallback (${workspace}) also failed.\n\n${codexMessage}`,
+      },
+    };
+  }
+
   async function handleCowork(req, res, o) {
     const body = JSON.parse(await readBody(req));
     const task = (body.task || "").trim();
@@ -952,9 +1636,65 @@ const server = http.createServer(async (req, res) => {
         signal: AbortSignal.timeout(280000),
       });
       const data = await execRes.json();
-      if (!execRes.ok) return json(res, execRes.status, { error: data.error || "Executor error" }, o);
+      if (!execRes.ok) {
+        const error = data.error || "Executor error";
+        const normalized = String(error).toLowerCase();
+        if (normalized.includes("invalid api key") || normalized.includes("fix external api key")) {
+          coworkHealthCache = {
+            checkedAt: Date.now(),
+            ok: false,
+            status: "auth_invalid",
+            detail: String(error),
+          };
+        } else if (normalized.includes("credit balance is too low") || normalized.includes("insufficient credits")) {
+          coworkHealthCache = {
+            checkedAt: Date.now(),
+            ok: false,
+            status: "credit_blocked",
+            detail: String(error),
+          };
+        }
+        if (
+          normalized.includes("invalid api key") ||
+          normalized.includes("fix external api key") ||
+          normalized.includes("credit balance is too low") ||
+          normalized.includes("insufficient credits")
+        ) {
+          const fallback = await runCodexFallbackForCowork({ task, domain });
+          return json(res, fallback.statusCode, fallback.payload, o);
+        }
+        return json(res, execRes.status, { error }, o);
+      }
+      const resultText = String(data.output || data.result || JSON.stringify(data));
+      const normalizedResult = resultText.toLowerCase();
+      if (
+        normalizedResult.includes("invalid api key") ||
+        normalizedResult.includes("fix external api key") ||
+        normalizedResult.includes("credit balance is too low") ||
+        normalizedResult.includes("insufficient credits") ||
+        normalizedResult.includes('"success":false')
+      ) {
+        coworkHealthCache = {
+          checkedAt: Date.now(),
+          ok: false,
+          status:
+            normalizedResult.includes("credit balance is too low") ||
+            normalizedResult.includes("insufficient credits")
+              ? "credit_blocked"
+              : "auth_invalid",
+          detail: resultText,
+        };
+        const fallback = await runCodexFallbackForCowork({ task, domain });
+        return json(res, fallback.statusCode, fallback.payload, o);
+      }
+      coworkHealthCache = {
+        checkedAt: Date.now(),
+        ok: true,
+        status: "ready",
+        detail: "Cowork execution succeeded.",
+      };
       return json(res, 200, {
-        result: data.output || data.result || JSON.stringify(data),
+        result: resultText,
         session_id: data.session_id || null,
         elapsed: data.elapsed_seconds || null,
         domain: data.domain || domain,
@@ -1120,6 +1860,40 @@ const server = http.createServer(async (req, res) => {
     }
   }
 
+  async function handleStaticBrandSwap(req, res, o) {
+    let body = {};
+    try {
+      body = JSON.parse(await readBody(req));
+    } catch {
+      return json(res, 400, { error: "Invalid JSON body." }, o);
+    }
+
+    try {
+      const result = await runStaticBrandSwap(body);
+      return json(res, result.ok ? 200 : 503, result, o);
+    } catch (err) {
+      return json(
+        res,
+        500,
+        {
+          ok: false,
+          status: "failed_static_brand_swap_bridge_execution",
+          lane_id: "wrenchready-static-brand-swap",
+          preferred_execution_path: "bridge:static_brand_swap",
+          missing_access: [],
+          error: err instanceof Error ? err.message : "Unknown static brand swap bridge error.",
+          operator_message:
+            err instanceof Error
+              ? `Static brand swap lane failed: ${err.message}`
+              : "Static brand swap lane failed.",
+          next_action:
+            "Inspect the local static image edit worker, verify the source hero image and transparent logo asset, then rerun the proof.",
+        },
+        o,
+      );
+    }
+  }
+
   async function handleBrandMediaReviewPage(res, o, jobId) {
     const full = resolveBrandMediaArtifact(jobId, "review.html");
     if (!full || !fsSync.existsSync(full)) {
@@ -1255,6 +2029,95 @@ const server = http.createServer(async (req, res) => {
     return res.end(body);
   }
 
+  async function handleStaticBrandSwapReviewPage(res, o, jobId) {
+    const full = resolveStaticBrandSwapArtifact(jobId, "review.html");
+    if (!full || !fsSync.existsSync(full)) {
+      return html(
+        res,
+        404,
+        "<!doctype html><title>Review page missing</title><p>Static brand swap review page not found for this job.</p>",
+        o,
+      );
+    }
+
+    const markup = await fs.readFile(full, "utf8");
+    return html(res, 200, markup, o);
+  }
+
+  async function handleStaticBrandSwapArtifact(res, o, jobId, fileName) {
+    const full = resolveStaticBrandSwapArtifact(jobId, fileName);
+    if (!full || !fsSync.existsSync(full)) {
+      return json(res, 404, { error: "Artifact not found" }, o);
+    }
+
+    const ext = path.extname(full).toLowerCase();
+    const contentType =
+      ext === ".html"
+        ? "text/html; charset=utf-8"
+        : ext === ".json"
+          ? "application/json; charset=utf-8"
+          : ext === ".gif"
+            ? "image/gif"
+            : ext === ".png"
+              ? "image/png"
+              : ext === ".jpg" || ext === ".jpeg"
+                ? "image/jpeg"
+                : "application/octet-stream";
+    const body = await fs.readFile(full);
+    res.writeHead(200, { ...cors(o), "Content-Type": contentType });
+    return res.end(body);
+  }
+
+  function resolveStaticBrandSwapOutputRoot() {
+    const probe = resolveStaticBrandSwapJobDir("probe");
+    return probe ? path.dirname(probe) : null;
+  }
+
+  function listStaticBrandSwapJobs() {
+    const root = resolveStaticBrandSwapOutputRoot();
+    if (!root || !fsSync.existsSync(root)) return [];
+    return fsSync
+      .readdirSync(root, { withFileTypes: true })
+      .filter((entry) => entry.isDirectory())
+      .map((entry) => {
+        const jobId = entry.name;
+        const reviewFile = path.join(root, jobId, "review.html");
+        const manifestFile = path.join(root, jobId, "review-manifest.json");
+        const stat = fsSync.statSync(path.join(root, jobId));
+        let summary = "";
+        try {
+          if (fsSync.existsSync(manifestFile)) {
+            const parsed = JSON.parse(fsSync.readFileSync(manifestFile, "utf8"));
+            summary =
+              parsed?.result?.summary ||
+              parsed?.result?.operator_message ||
+              parsed?.result?.status ||
+              "";
+          }
+        } catch {}
+        return {
+          jobId,
+          createdAt: stat.mtimeMs,
+          reviewExists: fsSync.existsSync(reviewFile),
+          summary,
+        };
+      })
+      .sort((a, b) => b.createdAt - a.createdAt);
+  }
+
+  async function handleStaticBrandSwapLatestReviewPage(res, o) {
+    const latest = listStaticBrandSwapJobs().find((job) => job.reviewExists);
+    if (!latest) {
+      return html(
+        res,
+        404,
+        "<!doctype html><title>No static brand swap reviews</title><p>No static brand swap review jobs were found yet.</p>",
+        o,
+      );
+    }
+    return handleStaticBrandSwapReviewPage(res, o, latest.jobId);
+  }
+
   const providedToken = ((req.headers.authorization || "").match(/^Bearer\s+(.+)$/i)?.[1] || u.searchParams.get("token") || "").trim();
   if (TOKEN && providedToken !== TOKEN)
     return json(res, 401, { error: "Unauthorized" }, o);
@@ -1266,6 +2129,8 @@ const server = http.createServer(async (req, res) => {
     const reviewResumeMatch = p.match(/^\/browser\/vendor-cart-review\/job\/([^/]+)\/resume\/([^/]+)$/);
     const brandMediaReviewPageMatch = p.match(/^\/media\/brand-assets\/job\/([^/]+)\/review$/);
     const brandMediaArtifactMatch = p.match(/^\/media\/brand-assets\/job\/([^/]+)\/artifact\/([^/]+)$/);
+    const staticBrandSwapReviewPageMatch = p.match(/^\/image\/static-brand-swap\/job\/([^/]+)\/review$/);
+    const staticBrandSwapArtifactMatch = p.match(/^\/image\/static-brand-swap\/job\/([^/]+)\/artifact\/([^/]+)$/);
     if (p === "/health" && req.method === "GET") return handleHealth(res, o);
     if (p === "/list" && req.method === "GET")
       return handleList(res, o, u);
@@ -1295,10 +2160,14 @@ const server = http.createServer(async (req, res) => {
       return handleBrowserVendorCartReview(req, res, o);
     if (p === "/media/brand-assets" && req.method === "POST")
       return handleBrandMediaProduction(req, res, o);
+    if (p === "/image/static-brand-swap" && req.method === "POST")
+      return handleStaticBrandSwap(req, res, o);
     if (p === "/media/brand-assets/reviews" && req.method === "GET")
       return handleBrandMediaReviewIndex(res, o);
     if (p === "/media/brand-assets/latest/review" && req.method === "GET")
       return handleBrandMediaLatestReviewPage(res, o);
+    if (p === "/image/static-brand-swap/latest/review" && req.method === "GET")
+      return handleStaticBrandSwapLatestReviewPage(res, o);
     if (reviewPageMatch && req.method === "GET")
       return handleBrowserVendorReviewPage(res, o, decodeURIComponent(reviewPageMatch[1]));
     if (reviewArtifactMatch && req.method === "GET")
@@ -1324,6 +2193,19 @@ const server = http.createServer(async (req, res) => {
         decodeURIComponent(brandMediaArtifactMatch[1]),
         decodeURIComponent(brandMediaArtifactMatch[2]),
       );
+    if (staticBrandSwapReviewPageMatch && req.method === "GET")
+      return handleStaticBrandSwapReviewPage(
+        res,
+        o,
+        decodeURIComponent(staticBrandSwapReviewPageMatch[1]),
+      );
+    if (staticBrandSwapArtifactMatch && req.method === "GET")
+      return handleStaticBrandSwapArtifact(
+        res,
+        o,
+        decodeURIComponent(staticBrandSwapArtifactMatch[1]),
+        decodeURIComponent(staticBrandSwapArtifactMatch[2]),
+      );
     json(res, 404, { error: "Not found" }, o);
   } catch (err) {
     json(res, 500, { error: err.message || "Internal error" }, o);
@@ -1348,6 +2230,15 @@ server.listen(PORT, "127.0.0.1", () => {
     `  Crew:  ${crewProjectOk() ? CREW_ROOT : "not found — set CREW_PROJECT_ROOT"}`
   );
   console.log(`  Auth:  ${TOKEN ? "token required" : "open (set BRIDGE_TOKEN to secure)"}`);
+  console.log(`  Relay: ${remoteRelayConfigured() ? `polling ${REMOTE_BRIDGE_API_BASE}` : "disabled"}`);
   console.log("  Ready.");
   console.log("");
+
+  if (remoteRelayConfigured()) {
+    maybeSendRemoteBridgeHeartbeat(true).catch(() => {});
+    processRemoteBridgeRelayQueue().catch(() => {});
+    setInterval(() => {
+      processRemoteBridgeRelayQueue().catch(() => {});
+    }, 3000);
+  }
 });

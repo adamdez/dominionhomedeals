@@ -12,7 +12,7 @@ import { InterestForm } from './InterestForm'
 export const metadata: Metadata = {
   title: '472 Torrens Trail, Spirit Lake ID 83869 — 5 Acres, 2 Bed/2 Bath, $460K',
   description:
-    'Move-in ready 2-bedroom, 2-bath home on 5 private acres in Spirit Lake, ID. Built 2016, 1,952 sq ft, asking $460K. Some finishing work needed. Direct from Dominion Home Deals.',
+    'Move-in ready 2-bedroom, 2-bath home on 5 private acres in Spirit Lake, ID. Built 2016, 1,952 sq ft, asking $460K. Some finishing work needed. Direct from Dominion Homes.',
   openGraph: {
     title: '472 Torrens Trail — Spirit Lake, ID · 5 Acres · $460K',
     description:
@@ -345,7 +345,7 @@ export default function TorrensTrailPage() {
       {/* ── Bottom CTA ────────────────────────────────────────────── */}
       <section className="bg-stone-100">
         <div className="section-wrap text-center">
-          <span className="trust-badge mb-5">Direct from Dominion Home Deals</span>
+          <span className="trust-badge mb-5">Direct from Dominion Homes</span>
           <h2 className="font-display text-display text-ink-600 mb-4">
             Ready to move on 472 Torrens Trail?
           </h2>
@@ -368,7 +368,7 @@ export default function TorrensTrailPage() {
       <div className="bg-stone-200 border-t border-stone-300">
         <div className="section-wrap !pt-5 !pb-5">
           <p className="text-center text-xs text-ink-400 leading-relaxed">
-            Dominion Home Deals is a licensed wholesaler. This is not a retail listing.
+            Dominion Homes is a licensed wholesaler. This is not a retail listing.
             <br className="hidden sm:block" />
             Property details are provided for informational purposes. Buyer is encouraged to conduct
             independent due diligence. Contact us at{' '}

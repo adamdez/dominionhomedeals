@@ -14,11 +14,14 @@ export function Situations() {
               Any Situation
             </p>
             <h2 className="mt-2 font-display text-display text-white text-balance">
-              We Buy Houses No Matter What You&apos;re Going Through
+              Every Seller&apos;s Situation Is Different.
+              <br />
+              We Work With All of Them.
             </h2>
             <p className="mx-auto mt-3 max-w-xl text-base text-forest-200">
-              Life happens. We&apos;re here to give you a fair cash option so
-              you can move forward — on your terms.
+              Most people don&apos;t call because they want a &ldquo;cash
+              offer.&rdquo; They call because something about the house or the
+              timing has gotten heavy. Here&apos;s what we see most.
             </p>
           </div>
         </FadeIn>

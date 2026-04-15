@@ -2,14 +2,14 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "AL Boreland",
-    short_name: "AL",
-    description: "Phone-first command center for AL, Board Room approvals, and Planner tasks.",
+    name: "Dominion Homes",
+    short_name: "Dominion",
+    description: "Local Spokane team that buys houses for cash. No commissions, no repairs, close on your timeline.",
     start_url: "/",
     scope: "/",
     display: "standalone",
-    background_color: "#0a0f0d",
-    theme_color: "#0a0f0d",
+    background_color: "#FAFAF8",
+    theme_color: "#FAFAF8",
     icons: [
       {
         src: "/icons/icon-192.png",
@@ -22,7 +22,7 @@ export default function manifest(): MetadataRoute.Manifest {
         type: "image/png",
       },
       {
-        src: "/icons/al-apple-touch-icon.png",
+        src: "/icons/apple-touch-icon.png",
         sizes: "180x180",
         type: "image/png",
       },

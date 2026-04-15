@@ -1,161 +1,139 @@
-import type { Metadata } from 'next'
-import Link from 'next/link'
+import type { Metadata } from "next";
+import Image from "next/image";
+import Link from "next/link";
 
 export const metadata: Metadata = {
-  title: 'About Us — Meet the Team | Post Falls, ID',
+  title: "About Us - Meet the Team | Spokane, WA",
   description:
-    'Adam and Logan — a local team that buys houses for cash across Spokane County and Kootenai County. Based in Post Falls, ID. Meet our team.',
-  alternates: { canonical: 'https://dominionhomedeals.com/about' },
+    "Adam and Logan are a local team that buys houses for cash across Spokane County and Kootenai County. Based in Spokane, WA. Meet the people behind Dominion Homes.",
+  alternates: { canonical: "https://dominionhomedeals.com/about" },
   openGraph: {
-    title: 'About Dominion Homes | Local Cash Home Buyers',
+    title: "About Us — Meet the Team | Dominion Homes",
     description:
-      'Based in Post Falls, ID. We buy houses for cash across Spokane County, WA and Kootenai County, ID. No agents, no games — just a local team.',
-    url: 'https://dominionhomedeals.com/about',
-    type: 'website',
+      "Based in Spokane, WA. We buy houses for cash across Spokane County, WA and Kootenai County, ID. No agents, no games - just a local team.",
+    url: "https://dominionhomedeals.com/about",
+    type: "website",
   },
-}
+};
 
 const team = [
   {
-    name: 'Adam',
-    initials: 'AD',
-    role: 'Operations',
-    bio: 'Adam runs the day-to-day at Dominion Homes from our Post Falls office. He oversees every deal from first call to closing, making sure the process stays smooth and every seller gets treated right. When he\'s not reviewing contracts, he\'s probably driving through a neighborhood with a coffee in hand.',
+    name: "Adam",
+    role: "Operations",
+    image: "/images/team/adam.jpg",
+    bio: "Adam runs the day-to-day at Dominion Homes from our Spokane base. He keeps each deal moving from the first call through closing so sellers know what is happening and what comes next.",
   },
   {
-    name: 'Logan',
-    initials: 'LA',
-    role: 'Sales & Dispositions',
-    bio: 'Logan handles the buy-side relationships and makes sure every property finds the right next owner. His network of local buyers and investors means deals close reliably and on time. He\'s the one making sure the whole pipeline moves.',
+    name: "Logan",
+    role: "Sales & Dispositions",
+    image: "/images/team/logan.jpg",
+    bio: "Logan handles buy-side relationships and dispositions. He keeps the buyer side organized so deals move cleanly, timelines stay real, and properties land with the right next owner.",
   },
-]
+] as const;
 
 const values = [
   {
-    icon: (
-      <svg className="h-7 w-7 text-forest-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
-        <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" />
-      </svg>
-    ),
-    title: 'Local First',
-    text: 'We live here. We work here. Our office is in Post Falls. When we say we\'ll meet you at your kitchen table, we mean it — because we probably drove past your house this morning.',
+    title: "Local First",
+    text: "We live here. We work here. Our base is in Spokane. When we say we will meet you at your kitchen table, we mean it.",
   },
   {
-    icon: (
-      <svg className="h-7 w-7 text-forest-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-      </svg>
-    ),
-    title: 'Fair & Transparent',
-    text: 'We show you exactly how we arrived at our offer. No hidden fees, no last-minute price changes. The number we shake hands on is the number you get at closing.',
+    title: "Fair and Transparent",
+    text: "We explain how we arrived at our number. No hidden fees, no last-minute games, and no pressure to rush into a decision.",
   },
   {
-    icon: (
-      <svg className="h-7 w-7 text-forest-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
-      </svg>
-    ),
-    title: 'Zero Pressure',
-    text: 'We don\'t use high-pressure sales tactics. If our offer doesn\'t work for you, we\'ll tell you that honestly — and if listing with an agent makes more sense, we\'ll say that too.',
+    title: "Zero Pressure",
+    text: "If a direct sale is not the best option, we will say so. We would rather give a straight answer than force a bad fit.",
   },
   {
-    icon: (
-      <svg className="h-7 w-7 text-forest-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 21h16.5M4.5 3h15M5.25 3v18m13.5-18v18M9 6.75h1.5m-1.5 3h1.5m-1.5 3h1.5m3-6H15m-1.5 3H15m-1.5 3H15M9 21v-3.375c0-.621.504-1.125 1.125-1.125h3.75c.621 0 1.125.504 1.125 1.125V21" />
-      </svg>
-    ),
-    title: 'Principals, Not Agents',
-    text: 'We\'re not brokers and we\'re not middlemen. Dominion Homes buys properties directly with our own capital. You deal with us — the actual buyers — from start to finish.',
+    title: "Principals, Not Agents",
+    text: "We buy properties directly. You deal with the actual buyers from start to finish, not a middleman or national call center.",
   },
-]
+] as const;
+
+const sellerTrustMarkers = [
+  {
+    title: "We explain the process in plain English",
+    text: "Sellers usually want to know what happens first, who handles closing, and whether the date is actually real. We slow it down and walk through it clearly.",
+  },
+  {
+    title: "You do not need to clean the house out first",
+    text: "Many of the homes we see still have furniture, leftover belongings, deferred maintenance, or years of life packed into them. That does not scare us off.",
+  },
+  {
+    title: "We will tell you if listing makes more sense",
+    text: "Not every property should be sold this way. If the better move is to clean it up and list it, we would rather say that than pretend otherwise.",
+  },
+] as const;
 
 export default function AboutPage() {
   return (
     <>
-      {/* JSON-LD Schema */}
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
           __html: JSON.stringify({
-            '@context': 'https://schema.org',
-            '@type': 'RealEstateAgent',
-            name: 'Dominion Homes, LLC',
+            "@context": "https://schema.org",
+            "@type": "LocalBusiness",
+            name: "Dominion Homes, LLC",
             description:
-              'Local cash home buyers serving Spokane County, WA and Kootenai County, ID. We buy houses in any condition — no agents, no commissions, no repairs.',
-            url: 'https://dominionhomedeals.com',
-            telephone: '+1-509-822-5460',
+              "Local cash home buyers serving Spokane County, WA and Kootenai County, ID. We buy houses in any condition - no agents, no commissions, no repairs.",
+            url: "https://dominionhomedeals.com",
+            telephone: "+1-509-822-5460",
             address: {
-              '@type': 'PostalAddress',
-              addressLocality: 'Post Falls',
-              addressRegion: 'ID',
-              addressCountry: 'US',
+              "@type": "PostalAddress",
+              addressLocality: "Spokane",
+              addressRegion: "WA",
+              addressCountry: "US",
             },
             areaServed: [
-              { '@type': 'County', name: 'Spokane County', containedInPlace: { '@type': 'State', name: 'Washington' } },
-              { '@type': 'County', name: 'Kootenai County', containedInPlace: { '@type': 'State', name: 'Idaho' } },
+              { "@type": "County", name: "Spokane County", containedInPlace: { "@type": "State", name: "Washington" } },
+              { "@type": "County", name: "Kootenai County", containedInPlace: { "@type": "State", name: "Idaho" } },
             ],
             founder: [
-              { '@type': 'Person', name: 'Adam', jobTitle: 'Operations' },
-              { '@type': 'Person', name: 'Logan', jobTitle: 'Sales & Dispositions' },
+              { "@type": "Person", name: "Adam", jobTitle: "Operations" },
+              { "@type": "Person", name: "Logan", jobTitle: "Sales & Dispositions" },
             ],
           }),
         }}
       />
 
-      {/* Hero */}
       <section className="relative bg-cream-50 pt-32 pb-20 md:pt-40 md:pb-28">
         <div className="mx-auto max-w-4xl px-5 text-center">
-          <p className="mb-4 text-sm font-semibold uppercase tracking-wider text-forest-600">
-            About Us
-          </p>
+          <p className="mb-4 text-sm font-semibold uppercase tracking-wider text-forest-600">About Us</p>
           <h1 className="font-display text-display text-ink-700 text-balance">
-            We&rsquo;re Not a Call Center.{' '}
+            We are not a call center.
             <br className="hidden sm:block" />
-            We&rsquo;re Your Neighbors.
+            We are your neighbors.
           </h1>
           <p className="mx-auto mt-5 max-w-2xl text-lg text-ink-400">
-            Dominion Homes is a small, local team based in Post Falls, Idaho. We buy
-            houses for cash across Spokane County and Kootenai County — and we do
-            it face-to-face, not from behind a&nbsp;screen.
+            Dominion Homes is a small local team based in Spokane, Washington. We buy houses directly across
+            Spokane County and Kootenai County, and we keep the process direct, local, and easy to follow.
           </p>
         </div>
       </section>
 
-      {/* Our Story */}
       <section className="bg-white py-20 md:py-28">
         <div className="mx-auto max-w-5xl px-5">
           <div className="grid gap-12 md:grid-cols-2 md:items-center md:gap-16">
             <div>
-              <p className="text-sm font-semibold uppercase tracking-wider text-forest-600">
-                Our Story
-              </p>
-              <h2 className="mt-2 font-display text-3xl text-ink-700 md:text-4xl">
-                Built on Handshakes, Not&nbsp;Scripts
-              </h2>
+              <p className="text-sm font-semibold uppercase tracking-wider text-forest-600">Our Story</p>
+              <h2 className="mt-2 font-display text-3xl text-ink-700 md:text-4xl">Built on handshakes, not scripts</h2>
               <div className="mt-6 space-y-4 text-ink-400 leading-relaxed">
                 <p>
-                  Most &ldquo;we buy houses&rdquo; companies operate from out of state. They
-                  send strangers, use scripts, and treat your home like a spreadsheet
-                  line item. We started Dominion Homes because we saw how that played
-                  out — and we knew the Spokane–CDA area deserved better.
+                  A lot of sellers talk to companies that feel remote from the first call. The person on the phone is in
+                  another state, the follow-up feels scripted, and nobody seems accountable when questions come up.
                 </p>
                 <p>
-                  We live here. We raise our families here. When we say we&rsquo;ll meet
-                  you at your kitchen table to talk through your options, we mean it.
-                  We&rsquo;re both based in Post Falls. We know the
-                  neighborhoods because we drive through them every single day.
+                  Dominion Homes was built to be the opposite of that. We are based in Spokane, we know these
+                  neighborhoods, and when we say we will show up, it is us showing up.
                 </p>
                 <p>
-                  Our goal is simple: give homeowners a fair, honest cash option so
-                  they can move forward — on their terms. Whether that means closing
-                  in two weeks or taking a few months, we work around your life, not
-                  the other way around.
+                  Our goal is simple: give homeowners a fair, honest cash option so they can move forward on their own
+                  timeline. Sometimes that means two weeks. Sometimes it means a slower decision with room to breathe.
                 </p>
               </div>
             </div>
 
-            {/* Office / Local proof */}
             <div className="rounded-2xl border border-sage-100 bg-cream-50 p-8">
               <div className="space-y-6">
                 <div className="flex items-start gap-4">
@@ -166,8 +144,8 @@ export default function AboutPage() {
                     </svg>
                   </div>
                   <div>
-                    <p className="font-medium text-ink-600">Based in Post Falls, Idaho</p>
-                    <p className="mt-1 text-sm text-ink-400">Not a national call center — a real local office</p>
+                    <p className="font-medium text-ink-600">Based in Spokane, Washington</p>
+                    <p className="mt-1 text-sm text-ink-400">Not a national call center. A real local operation.</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-4">
@@ -177,8 +155,8 @@ export default function AboutPage() {
                     </svg>
                   </div>
                   <div>
-                    <p className="font-medium text-ink-600">2-person local team</p>
-                    <p className="mt-1 text-sm text-ink-400">You work directly with Adam or Logan</p>
+                    <p className="font-medium text-ink-600">Two-person local team</p>
+                    <p className="mt-1 text-sm text-ink-400">You work directly with Adam or Logan.</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-4">
@@ -189,7 +167,7 @@ export default function AboutPage() {
                   </div>
                   <div>
                     <p className="font-medium text-ink-600">We close through WFG Title</p>
-                    <p className="mt-1 text-sm text-ink-400">WFG National Title Insurance Company, Eastern WA</p>
+                    <p className="mt-1 text-sm text-ink-400">A real local closing process with real title support.</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-4">
@@ -199,8 +177,8 @@ export default function AboutPage() {
                     </svg>
                   </div>
                   <div>
-                    <p className="font-medium text-ink-600">Call or text: 509-822-5460</p>
-                    <p className="mt-1 text-sm text-ink-400">A real person answers — not a recording</p>
+                    <p className="font-medium text-ink-600">Call or text 509-822-5460</p>
+                    <p className="mt-1 text-sm text-ink-400">A real person answers.</p>
                   </div>
                 </div>
               </div>
@@ -209,96 +187,90 @@ export default function AboutPage() {
         </div>
       </section>
 
-      {/* Team Section */}
       <section className="bg-cream-50 py-20 md:py-28">
         <div className="mx-auto max-w-5xl px-5">
           <div className="text-center">
-            <p className="text-sm font-semibold uppercase tracking-wider text-forest-600">
-              Meet the Team
-            </p>
-            <h2 className="mt-2 font-display text-display text-ink-600">
-              The People Behind the Offer
-            </h2>
+            <p className="text-sm font-semibold uppercase tracking-wider text-forest-600">Meet the Team</p>
+            <h2 className="mt-2 font-display text-display text-ink-600">The people behind the offer</h2>
           </div>
 
-          <div className="mt-12 grid gap-8 sm:grid-cols-2 max-w-2xl mx-auto">
+          <div className="mx-auto mt-12 grid max-w-2xl gap-8 sm:grid-cols-2">
             {team.map((member) => (
-              <div
-                key={member.name}
-                className="rounded-2xl border border-sage-100 bg-white p-8 text-center shadow-sm"
-              >
-                {/* Photo placeholder — replace with real images */}
-                <div className="mx-auto flex h-24 w-24 items-center justify-center rounded-full bg-sage-100">
-                  <span className="font-display text-2xl font-bold text-forest-600">
-                    {member.initials}
-                  </span>
+              <div key={member.name} className="rounded-2xl border border-sage-100 bg-white p-8 text-center shadow-sm">
+                <div className="relative mx-auto h-24 w-24 overflow-hidden rounded-full ring-4 ring-forest-50">
+                  <Image
+                    src={member.image}
+                    alt={`${member.name} from Dominion Homes`}
+                    fill
+                    sizes="96px"
+                    className="object-cover"
+                    quality={74}
+                  />
                 </div>
-                <h3 className="mt-5 font-display text-xl text-ink-700">
-                  {member.name}
-                </h3>
+                <h3 className="mt-5 font-display text-xl text-ink-700">{member.name}</h3>
                 <p className="text-sm font-medium text-forest-600">{member.role}</p>
-                <p className="mt-4 text-sm leading-relaxed text-ink-400">
-                  {member.bio}
-                </p>
+                <p className="mt-4 text-sm leading-relaxed text-ink-400">{member.bio}</p>
               </div>
             ))}
           </div>
-
-          {/* TODO: Replace initials with real headshots for E-E-A-T */}
         </div>
       </section>
 
-      {/* Our Values */}
       <section className="bg-white py-20 md:py-28">
         <div className="mx-auto max-w-5xl px-5">
           <div className="text-center">
-            <p className="text-sm font-semibold uppercase tracking-wider text-forest-600">
-              What We Stand For
-            </p>
-            <h2 className="mt-2 font-display text-display text-ink-600">
-              How We Do Business
-            </h2>
+            <p className="text-sm font-semibold uppercase tracking-wider text-forest-600">What We Stand For</p>
+            <h2 className="mt-2 font-display text-display text-ink-600">How we do business</h2>
           </div>
 
           <div className="mt-12 grid gap-8 sm:grid-cols-2">
-            {values.map((v) => (
-              <div
-                key={v.title}
-                className="rounded-2xl border border-sage-100 bg-cream-50/50 p-7"
-              >
-                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-forest-50">
-                  {v.icon}
-                </div>
-                <h3 className="mt-4 font-display text-lg text-ink-700">{v.title}</h3>
-                <p className="mt-2 text-sm leading-relaxed text-ink-400">{v.text}</p>
+            {values.map((value) => (
+              <div key={value.title} className="rounded-2xl border border-sage-100 bg-cream-50/50 p-7">
+                <h3 className="font-display text-lg text-ink-700">{value.title}</h3>
+                <p className="mt-2 text-sm leading-relaxed text-ink-400">{value.text}</p>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Legal Disclaimer */}
+      <section className="border-y border-sage-100 bg-stone-100/50 py-20 md:py-28">
+        <div className="mx-auto max-w-5xl px-5">
+          <div className="text-center">
+            <p className="text-sm font-semibold uppercase tracking-wider text-forest-600">What Sellers Usually Notice</p>
+            <h2 className="mt-2 font-display text-display text-ink-600">The small things matter</h2>
+            <p className="mx-auto mt-4 max-w-2xl text-base leading-relaxed text-ink-400">
+              In this kind of sale, trust usually comes from a handful of simple things: clear communication, realistic
+              expectations, and not making a hard situation feel heavier than it already does.
+            </p>
+          </div>
+
+          <div className="mt-12 grid gap-8 md:grid-cols-3">
+            {sellerTrustMarkers.map((marker) => (
+              <div key={marker.title} className="rounded-2xl border border-sage-100 bg-white p-6 shadow-sm">
+                <h3 className="font-display text-2xl leading-tight text-ink-700">{marker.title}</h3>
+                <p className="mt-3 text-sm leading-relaxed text-ink-400">{marker.text}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       <section className="border-t border-sage-100 bg-cream-50 py-12">
         <div className="mx-auto max-w-3xl px-5 text-center">
           <p className="text-xs leading-relaxed text-ink-300">
-            Dominion Homes, LLC is a real estate investment company. We are principals — not
-            licensed real estate agents or brokers. We buy properties directly. We are not
-            affiliated with any government agency. This is not a solicitation for listings.
-            Serving Spokane County, WA and Kootenai County, ID. Title services provided by
-            WFG National Title Insurance Company, Eastern WA.
+            Dominion Homes, LLC is a real estate investment company. We are principals, not licensed real estate agents
+            or brokers. We buy properties directly. We are not affiliated with any government agency. This is not a
+            solicitation for listings. Serving Spokane County, WA and Kootenai County, ID.
           </p>
         </div>
       </section>
 
-      {/* Final CTA */}
       <section className="bg-forest-700 py-20 md:py-28">
         <div className="mx-auto max-w-3xl px-5 text-center">
-          <h2 className="font-display text-display text-white text-balance">
-            Let&rsquo;s Talk About Your Property
-          </h2>
+          <h2 className="font-display text-display text-white text-balance">Let&apos;s talk about your property</h2>
           <p className="mx-auto mt-4 max-w-xl text-lg text-forest-200">
-            Reach out anytime. One of us — Adam or Logan — will get back
-            to you personally.
+            Reach out anytime. One of us will get back to you directly.
           </p>
           <div className="mt-8 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
             <Link
@@ -306,6 +278,12 @@ export default function AboutPage() {
               className="inline-flex items-center rounded-xl bg-white px-8 py-4 text-lg font-semibold text-forest-700 shadow-lg transition hover:bg-cream-50 hover:shadow-xl"
             >
               Get My Cash Offer
+            </Link>
+            <Link
+              href="/stories"
+              className="inline-flex items-center gap-2 text-lg font-medium text-white/90 transition hover:text-white"
+            >
+              Read seller stories
             </Link>
             <a
               href="sms:5098225460"
@@ -317,5 +295,5 @@ export default function AboutPage() {
         </div>
       </section>
     </>
-  )
+  );
 }

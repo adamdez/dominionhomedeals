@@ -16,6 +16,10 @@ tmp-*
 .next-dev-*.err.log
 *.tmp
 *.log
+.playwright-cli/
+output/
+.tmp_route_prev.ts
+source-assets/
 !SENTINEL-DIALER-TEST-RESULTS-2026-03-17.md
 al-bridge/.env
 al-bridge/.bridge*.log

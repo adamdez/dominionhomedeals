@@ -72,6 +72,7 @@ export function ListingGallery({ photos, prioritySrc }: Props) {
               sizes="(max-width: 1024px) 100vw, 66vw"
               className="object-cover transition-transform duration-500 group-hover:scale-[1.02]"
               priority={prioritySrc === hero.src || !prioritySrc}
+              quality={74}
             />
             <span className="absolute bottom-4 left-4 rounded-full bg-black/45 px-3 py-1 text-xs font-medium text-white backdrop-blur-sm">
               Open gallery ({photos.length})
@@ -90,6 +91,7 @@ export function ListingGallery({ photos, prioritySrc }: Props) {
                 fill
                 sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
                 className="object-cover transition-transform duration-300 group-hover:scale-[1.03]"
+                quality={70}
               />
             </button>
           ))}
@@ -129,6 +131,7 @@ export function ListingGallery({ photos, prioritySrc }: Props) {
                 sizes="100vw"
                 className="object-contain"
                 priority
+                quality={78}
               />
               <button
                 type="button"

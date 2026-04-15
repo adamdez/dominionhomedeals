@@ -1,86 +1,140 @@
-// src/components/sections/Testimonials.tsx
-"use client";
-
-import { useState } from "react";
-import { cn } from "@/lib/utils";
+import Link from "next/link";
 import { FadeIn } from "@/components/animations/FadeIn";
+import { SELLER_STORIES } from "@/lib/seller-stories";
 
-const REVIEWS = [
+const TRUST_SIGNALS = [
   {
-    name: "Sarah M.",
-    location: "Spokane, WA",
-    quote:
-      "Adam and his team made selling my house so much easier than I expected. They came out, looked at the place, gave me a fair offer, and we closed in two weeks. No hassle, no pressure. Just good people doing what they said they'd do.",
-    closedIn: "2 weeks",
+    title: "Real names, real phone number",
+    body: "People trust this kind of business faster when they can tell who they are dealing with and how to reach them.",
   },
   {
-    name: "James R.",
-    location: "Spokane County, WA",
-    quote:
-      "I was nervous about selling to a cash buyer but meeting the team in person changed everything. They were upfront about the numbers, explained the whole process, and followed through on every promise. I'd recommend Dominion Homes to anyone.",
-    closedIn: "2 weeks",
+    title: "Title and closing named up front",
+    body: "Calling out the title company and the closing path removes a lot of the uncertainty sellers usually feel.",
   },
-];
+  {
+    title: "No pressure to make the house retail-ready",
+    body: "For a lot of as-is sellers, the win is getting out cleanly without a repair list, not pretending the house is market-perfect.",
+  },
+] as const;
 
 export function Testimonials() {
-  const [active, setActive] = useState(0);
-
   return (
     <section className="border-y border-stone-200 bg-white">
       <div className="section-wrap">
         <FadeIn>
           <div className="text-center">
             <p className="text-xs font-bold uppercase tracking-widest text-forest-500">
-              From Our Sellers
+              Local Deal Snapshots
             </p>
             <h2 className="mt-2 font-display text-display text-ink-600 text-balance">
-              Real People. Real Experiences.
+              The Kind of Closings Sellers Usually Ask Us About
             </h2>
+            <p className="mx-auto mt-3 max-w-2xl text-base text-ink-400">
+              These are privacy-safe local deal snapshots built from the kinds of
+              inherited, rental, and relocation situations that come up most often.
+              They are written to show how a direct sale usually works, without
+              pretending a blended example is a public review.
+            </p>
           </div>
         </FadeIn>
 
-        <FadeIn delay={150}>
-          <div className="mx-auto mt-10 max-w-2xl">
-            <div className="rounded-2xl border border-stone-100 bg-stone-50 p-7 sm:p-9">
-              <div className="flex gap-0.5 mb-4">
-                {Array.from({ length: 5 }).map((_, i) => (
-                  <svg key={i} className="h-4 w-4 text-amber-400" fill="currentColor" viewBox="0 0 20 20">
-                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                  </svg>
-                ))}
-              </div>
-              <blockquote className="font-display text-lg leading-relaxed text-ink-600 sm:text-xl">
-                &ldquo;{REVIEWS[active].quote}&rdquo;
-              </blockquote>
-              <div className="mt-5 flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-semibold text-ink-500">{REVIEWS[active].name}</p>
-                  <p className="text-xs text-ink-300">{REVIEWS[active].location}</p>
-                </div>
-                <div className="text-right">
-                  <p className="text-xs text-ink-300">Closed in</p>
-                  <p className="text-sm font-semibold text-forest-600">{REVIEWS[active].closedIn}</p>
-                </div>
-              </div>
-            </div>
+        <div className="mt-12 grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
+          <div className="grid gap-6 lg:grid-cols-3 xl:grid-cols-1">
+            {SELLER_STORIES.map((story, index) => (
+              <FadeIn key={story.slug} delay={index * 90}>
+                <article className="h-full rounded-2xl border border-stone-200 bg-stone-50 p-6 shadow-sm">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="rounded-full bg-forest-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-forest-600">
+                      {story.situation}
+                    </span>
+                    <span className="text-[11px] font-medium uppercase tracking-[0.16em] text-ink-300">
+                      {story.location}
+                    </span>
+                  </div>
 
-            {REVIEWS.length > 1 && (
-              <div className="mt-5 flex justify-center gap-2">
-                {REVIEWS.map((_, i) => (
-                  <button
-                    key={i}
-                    onClick={() => setActive(i)}
-                    aria-label={`Testimonial ${i + 1}`}
-                    className={cn(
-                      "h-2 rounded-full transition-all",
-                      i === active ? "w-6 bg-forest-500" : "w-2 bg-stone-300 hover:bg-stone-400"
-                    )}
-                  />
+                  <h3 className="mt-4 font-display text-[1.4rem] leading-snug text-ink-600">
+                    {story.title}
+                  </h3>
+                  <p className="mt-2 text-sm leading-relaxed text-ink-400">
+                    {story.summary}
+                  </p>
+
+                  <div className="mt-6 space-y-3">
+                    <div>
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-forest-500">
+                        Property snapshot
+                      </p>
+                      <p className="mt-1 text-sm leading-relaxed text-ink-400">
+                        {story.propertySnapshot[0]}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-forest-500">
+                        What mattered most
+                      </p>
+                      <p className="mt-1 text-sm leading-relaxed text-ink-400">
+                        {story.sellerPriority[0]}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-forest-500">
+                        Why a direct sale fit
+                      </p>
+                      <p className="mt-1 text-sm leading-relaxed text-ink-400">
+                        {story.whyDirectSaleFit[0]}
+                      </p>
+                    </div>
+                  </div>
+
+                  <Link
+                    href={`/stories/${story.slug}`}
+                    className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-forest-600 transition-colors hover:text-forest-700"
+                  >
+                    Read the full story
+                    <span aria-hidden="true">&rarr;</span>
+                  </Link>
+                </article>
+              </FadeIn>
+            ))}
+          </div>
+
+          <FadeIn delay={120}>
+            <aside className="rounded-2xl border border-stone-200 bg-white p-6 shadow-sm">
+              <p className="text-xs font-bold uppercase tracking-widest text-forest-500">
+                What Usually Builds Trust
+              </p>
+              <h3 className="mt-3 font-display text-3xl leading-tight text-ink-600">
+                Sellers usually know pretty quickly whether this feels real.
+              </h3>
+              <p className="mt-4 text-sm leading-relaxed text-ink-400">
+                In this space, people are watching for simple things: whether the
+                buyer sounds local, whether the process is clear, and whether the
+                answers stay practical instead of sounding rehearsed.
+              </p>
+
+              <div className="mt-6 space-y-4">
+                {TRUST_SIGNALS.map((signal) => (
+                  <div key={signal.title} className="rounded-xl border border-stone-200 bg-stone-50 p-4">
+                    <p className="text-sm font-semibold text-ink-600">{signal.title}</p>
+                    <p className="mt-1 text-sm leading-relaxed text-ink-400">
+                      {signal.body}
+                    </p>
+                  </div>
                 ))}
               </div>
-            )}
-          </div>
-        </FadeIn>
+
+              <div className="mt-6 rounded-xl bg-forest-50 p-4">
+                <p className="text-sm leading-relaxed text-forest-700">
+                  Want to see how a direct sale works for your situation?{" "}
+                  <Link href="/#get-offer" className="font-semibold underline hover:text-forest-800">
+                    Get a no-obligation offer
+                  </Link>{" "}
+                  and we&apos;ll walk you through it.
+                </p>
+              </div>
+            </aside>
+          </FadeIn>
+        </div>
       </div>
     </section>
   );

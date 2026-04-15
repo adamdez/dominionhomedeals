@@ -80,6 +80,16 @@ const config: Config = {
       animation: {
         "fade-up": "fadeUp 0.65s cubic-bezier(0.16,1,0.3,1) forwards",
         "pulse-soft": "pulseSoft 2.5s ease-in-out infinite",
+        "al-glow-pulse": "alGlowPulse 2.5s ease-in-out infinite",
+        "al-ring-spin": "alRingSpin 5s linear infinite",
+        "al-neural": "alNeuralPulse 1.2s ease-in-out infinite",
+        "al-scan": "alScanLine 0.6s ease-out",
+        "al-breath": "alBreathGlow 3s ease-in-out infinite",
+        "al-counter-up": "alCounterSlideUp 0.4s cubic-bezier(0.16,1,0.3,1) forwards",
+        "al-card-enter": "alCardEntrance 0.5s cubic-bezier(0.16,1,0.3,1) forwards",
+        "al-skeleton": "alSkeletonShimmer 1.8s ease-in-out infinite",
+        "al-mesh": "alMeshDrift 25s ease-in-out infinite alternate",
+        "al-status-pulse": "alStatusPulse 2s ease-out infinite",
       },
       keyframes: {
         fadeUp: {
@@ -89,6 +99,45 @@ const config: Config = {
         pulseSoft: {
           "0%,100%": { opacity: "1" },
           "50%": { opacity: "0.6" },
+        },
+        alGlowPulse: {
+          "0%,100%": { boxShadow: "0 0 6px rgba(0,229,255,0.10)" },
+          "50%": { boxShadow: "0 0 16px rgba(0,229,255,0.28), 0 0 40px rgba(0,229,255,0.08)" },
+        },
+        alRingSpin: {
+          to: { transform: "rotate(360deg)" },
+        },
+        alNeuralPulse: {
+          "0%,100%": { transform: "scaleY(0.25)", opacity: "0.25" },
+          "50%": { transform: "scaleY(1)", opacity: "0.9" },
+        },
+        alScanLine: {
+          "0%": { left: "-100%" },
+          "100%": { left: "100%" },
+        },
+        alBreathGlow: {
+          "0%,100%": { opacity: "0.4" },
+          "50%": { opacity: "0.7" },
+        },
+        alCounterSlideUp: {
+          from: { transform: "translateY(100%)", opacity: "0" },
+          to: { transform: "translateY(0)", opacity: "1" },
+        },
+        alCardEntrance: {
+          from: { opacity: "0", transform: "translateY(12px) scale(0.97)", filter: "blur(4px)" },
+          to: { opacity: "1", transform: "translateY(0) scale(1)", filter: "blur(0)" },
+        },
+        alSkeletonShimmer: {
+          "0%": { backgroundPosition: "200% 0" },
+          "100%": { backgroundPosition: "-200% 0" },
+        },
+        alMeshDrift: {
+          "0%": { opacity: "0.4" },
+          "100%": { opacity: "0.55" },
+        },
+        alStatusPulse: {
+          "0%": { opacity: "0.6", transform: "scale(1)" },
+          "100%": { opacity: "0", transform: "scale(1.8)" },
         },
       },
     },

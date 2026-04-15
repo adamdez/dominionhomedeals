@@ -76,7 +76,7 @@ const FAQS = [
   },
   {
     q: "How do I know I can trust you?",
-    a: "Fair question. We're a local company based in Post Falls. We use a standard title company for closing, you have full visibility into the process, and you can have an attorney review everything. We don't ask for money upfront — ever.",
+    a: "Fair question. We're a local company based in Spokane. We use a standard title company for closing, you have full visibility into the process, and you can have an attorney review everything. We don't ask for money upfront — ever.",
   },
 ];
 

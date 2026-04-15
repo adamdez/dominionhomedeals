@@ -1,13 +1,18 @@
-// src/app/page.tsx
+﻿// src/app/page.tsx
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import { LeadForm } from "@/components/forms/LeadForm";
 import { FadeIn } from "@/components/animations/FadeIn";
 import { Testimonials } from "@/components/sections/Testimonials";
 import { Situations } from "@/components/sections/Situations";
+import { SellerPaths } from "@/components/sections/SellerPaths";
+import { SellerGuideCta } from "@/components/sections/SellerGuideCta";
+import { BuyerChecklist } from "@/components/sections/BuyerChecklist";
+import { CommonSellerScenarios } from "@/components/sections/CommonSellerScenarios";
 import { SITE, PROCESS_STEPS, TRUST_STATS, TEAM } from "@/lib/constants";
 
-/** Display name → slug map for homepage neighborhood links */
+/** Display name -> slug map for homepage neighborhood links */
 const HOMEPAGE_AREAS: { name: string; slug: string }[] = [
   { name: "Spokane Valley", slug: "spokane-valley" },
   { name: "North Spokane", slug: "north-spokane" },
@@ -27,9 +32,9 @@ const HOMEPAGE_AREAS: { name: string; slug: string }[] = [
 ];
 
 export const metadata: Metadata = {
-  title: "Sell Your House Fast for Cash in Spokane & CDA | Dominion Homes",
+  title: "Sell Your Spokane Home Fast — No Repairs, No Fees | Dominion Homes",
   description:
-    "Get a fair cash offer on your Spokane or CDA home. Local team, no repairs, no commissions, close in as fast as 2 weeks. Call us today.",
+    "Local Spokane team that buys houses directly. Inherited property, landlord fatigue, repairs you can't afford — we handle it. No agents, no commissions, close on your schedule.",
 };
 
 export default function HomePage() {
@@ -51,22 +56,22 @@ export default function HomePage() {
                   <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-forest-500 opacity-75" />
                   <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-forest-500" />
                 </span>
-                Local Spokane & CDA Team · Based in Post Falls
+                Spokane-Based Team · We Buy Houses Directly
               </div>
 
               <h1 className="font-display text-hero text-ink-700 text-balance">
-                Sell Your Spokane Home
+                Need to Sell Your Spokane Home?
                 <br />
                 <span className="text-forest-500">
-                  for Cash. Skip the Stress.
+                  We Buy It Directly. You Skip the Hassle.
                 </span>
               </h1>
 
               <p className="mt-5 max-w-lg text-lg leading-relaxed text-ink-400">
-                We&apos;re Adam and Logan — a local team that buys houses
-                for cash across Spokane County and North Idaho. No agents,
-                no commissions, no repairs. Just a fair offer and a
-                handshake.
+                Inherited a house you don&apos;t want? Tired of being a
+                landlord? Can&apos;t afford repairs? We&apos;re Adam and
+                Logan — a two-person Spokane team that buys homes
+                directly. No agents, no showings, no fees.
               </p>
 
               <div className="mt-7 flex flex-wrap items-center gap-3">
@@ -112,7 +117,7 @@ export default function HomePage() {
             {/* Form */}
             <div id="get-offer" className="scroll-mt-24">
               <p className="mb-3 text-center text-sm font-medium text-forest-600">
-                Takes about 60 seconds — no obligation
+                Takes about 60 seconds - no obligation
               </p>
               <LeadForm />
             </div>
@@ -134,6 +139,47 @@ export default function HomePage() {
             ))}
           </div>
         </div>
+      </section>
+
+      {/* ======== TRUST PROOF ======== */}
+      <section className="section-wrap">
+        <FadeIn>
+          <div className="mx-auto max-w-4xl">
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {[
+                {
+                  title: "Real local people",
+                  text: "Adam and Logan are based in Spokane. When you call, one of us picks up — not a call center.",
+                },
+                {
+                  title: "We buy as-is",
+                  text: "Roof damage, foundation issues, clutter, deferred maintenance — we don't ask you to fix anything.",
+                },
+                {
+                  title: "No commissions or fees",
+                  text: "The number we offer is the number you walk away with. No agent fees, no closing costs on your side.",
+                },
+                {
+                  title: "You pick the closing date",
+                  text: "Two weeks or two months — we work around your timeline, not the other way around.",
+                },
+                {
+                  title: "We close through title",
+                  text: "Every deal goes through WFG Title or North Idaho Title. Standard, transparent closing process.",
+                },
+                {
+                  title: "No pressure, ever",
+                  text: "If a direct sale isn't your best move, we'll tell you. We'd rather be straight with you than force a fit.",
+                },
+              ].map((item) => (
+                <div key={item.title} className="rounded-xl border border-stone-200 bg-white p-5">
+                  <h3 className="text-sm font-semibold text-ink-600">{item.title}</h3>
+                  <p className="mt-1.5 text-sm leading-relaxed text-ink-400">{item.text}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </FadeIn>
       </section>
 
       {/* ======== HOW IT WORKS ======== */}
@@ -174,7 +220,7 @@ export default function HomePage() {
         <FadeIn delay={400}>
           <div className="mt-10 text-center">
             <a href="#get-offer" className="btn-primary">
-              Start Step 1 — It&apos;s Free
+              Start Step 1 - It&apos;s Free
             </a>
           </div>
         </FadeIn>
@@ -190,9 +236,9 @@ export default function HomePage() {
                   Why It Matters
                 </p>
                 <h2 className="mt-2 font-display text-display text-ink-600 text-balance">
-                  We&apos;re Not a Call Center.
+                  We Live Here.
                   <br />
-                  We&apos;re Your Neighbors.
+                  That Changes Everything.
                 </h2>
                 <p className="mt-4 text-base leading-relaxed text-ink-400">
                   Most &ldquo;we buy houses&rdquo; companies operate from out of state. They
@@ -202,15 +248,15 @@ export default function HomePage() {
                 <p className="mt-3 text-base leading-relaxed text-ink-400">
                   We live here. We raise our families here. When we say
                   we&apos;ll meet you at your kitchen table to talk through
-                  your options — we mean it. We&apos;re both based in Post
-                  Falls. We know the neighborhoods because we drive through
+                  your options - we mean it. We&apos;re based in Spokane.
+                  We know the neighborhoods because we drive through
                   them every day.
                 </p>
                 <ul className="mt-5 space-y-2.5">
                   {[
-                    "Based in Post Falls, ID — not a national call center",
+                    "Based in Spokane, WA - not a national call center",
                     "We meet every seller face-to-face",
-                    "We close through WFG Title — a name you know",
+                    "We close through WFG Title - a name you know",
                     "No bait-and-switch. The offer we make is the offer you get.",
                   ].map((item) => (
                     <li key={item} className="flex items-start gap-2.5">
@@ -224,14 +270,19 @@ export default function HomePage() {
               </div>
             </FadeIn>
             <FadeIn delay={200} direction="left">
-              {/* Team preview — this will be photos once uploaded */}
+              {/* Team preview */}
               <div className="grid grid-cols-2 gap-4 max-w-xs mx-auto lg:mx-0">
                 {TEAM.map((member) => (
                   <div key={member.name} className="rounded-2xl bg-white p-5 shadow-soft text-center">
-                    <div className="mx-auto mb-3 flex h-16 w-16 items-center justify-center rounded-full bg-forest-100 text-forest-600">
-                      <span className="font-display text-lg">
-                        {member.name.split(" ")[0]}
-                      </span>
+                    <div className="relative mx-auto mb-3 h-16 w-16 overflow-hidden rounded-full ring-4 ring-forest-50">
+                      <Image
+                        src={member.image}
+                        alt={`${member.name} headshot`}
+                        fill
+                        sizes="64px"
+                        className="object-cover"
+                        quality={72}
+                      />
                     </div>
                     <p className="text-sm font-semibold text-ink-600">
                       {member.name.split(" ")[0]}
@@ -245,8 +296,20 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* ======== BUYER CHECKLIST ======== */}
+      <BuyerChecklist />
+
+      {/* ======== COMMON SELLER SCENARIOS ======== */}
+      <CommonSellerScenarios />
+
       {/* ======== SITUATIONS ======== */}
       <Situations />
+
+      {/* ======== SELLER PATHS ======== */}
+      <SellerPaths />
+
+      {/* ======== SELLER GUIDE CTA ======== */}
+      <SellerGuideCta />
 
       {/* ======== TESTIMONIALS ======== */}
       <Testimonials />
@@ -263,7 +326,7 @@ export default function HomePage() {
             </h2>
             <p className="mx-auto mt-3 max-w-xl text-base text-ink-400">
               From Spokane Valley to Coeur d&apos;Alene and everywhere in
-              between — if it&apos;s in our area, we want to hear about it.
+              between - if it&apos;s in our area, we want to hear about it.
             </p>
           </div>
         </FadeIn>
@@ -285,7 +348,7 @@ export default function HomePage() {
               href="/neighborhoods"
               className="text-sm font-medium text-forest-600 transition-colors hover:text-forest-700"
             >
-              View all areas we serve →
+              View all areas we serve {"->"}
             </Link>
           </div>
         </FadeIn>
@@ -299,11 +362,11 @@ export default function HomePage() {
             <div className="pointer-events-none absolute -bottom-10 -left-10 h-32 w-32 rounded-full bg-amber-400/10 blur-2xl" />
 
             <h2 className="font-display text-display text-white text-balance">
-              Ready to See What Your Home Is Worth?
+              Have a Property You Need to Move On From?
             </h2>
             <p className="mx-auto mt-3 max-w-lg text-base text-stone-400">
               No obligation. No pressure. Fill out the form or reach out
-              directly — one of us will get back to you.
+              directly - one of us will get back to you.
             </p>
             <div className="mt-7 flex flex-wrap items-center justify-center gap-3">
               <a href="#get-offer" className="btn-primary !bg-white !text-ink-600 hover:!bg-stone-100">
@@ -322,3 +385,4 @@ export default function HomePage() {
     </>
   );
 }
+

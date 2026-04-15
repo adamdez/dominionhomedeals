@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "next lint",
     "photos:torrens": "node scripts/convert-torrens-heic.cjs",
+    "images:optimize": "node scripts/optimize-public-images.cjs",
     "al:bench": "node scripts/al-benchmark-runner.cjs run",
     "al:bench:compare": "node scripts/al-benchmark-runner.cjs compare",
     "al:smoke": "node scripts/al-smoke-check.cjs"
@@ -18,6 +19,7 @@
     "@supabase/supabase-js": "^2.99.0",
     "@tailwindcss/postcss": "^4.2.2",
     "clsx": "^2.1.1",
+    "framer-motion": "^12.38.0",
     "lucide-react": "^1.7.0",
     "next": "^15.1.0",
     "openai": "^6.33.0",
