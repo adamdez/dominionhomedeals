@@ -32,7 +32,7 @@ const steps = [
     time: "1-2 days",
     title: "Get a Fair Cash Offer",
     description:
-      "Adam or Logan will review your property, often the same day. We look at comparable sales, property condition, and local market data so we can give you a number that makes sense.",
+      "Logan or someone on his team will review your property, often the same day. We look at comparable sales, property condition, and local market data so we can give you a number that makes sense.",
     details: [
       "Most offers are delivered within a day or two",
       "We explain how we arrived at the price",

@@ -22,16 +22,9 @@ export const SITE = {
 /** Team - real people, real bios, honest */
 export const TEAM = [
   {
-    name: "Adam DesJardin",
-    role: "Operations",
-    bio: "Grew up on the Palouse, served in the military, then built and led sales and operations teams for a local startup. Adam handles the details so every deal runs smooth and every seller is taken care of from first call to closing day.",
-    image: "/images/team/adam.jpg",
-    location: "Spokane, WA",
-  },
-  {
     name: "Logan Anyan",
-    role: "Sales & Dispositions",
-    bio: "Logan connects sellers to solutions and keeps our buyer network strong. His relationships across the Inland Northwest mean your property gets matched with the right buyer fast - so you get cash in hand without the wait.",
+    role: "Founder & Owner",
+    bio: "Logan is the founder and owner of Dominion Homes. He works directly with sellers across Spokane County and the Spokane-CDA corridor to keep every deal straightforward, local, and easy to follow from first conversation to closing.",
     image: "/images/team/logan.jpg",
     location: "Spokane, WA",
   },
@@ -65,7 +58,7 @@ export const PROCESS_STEPS = [
 export const TRUST_STATS = [
   { value: "2", label: "Weeks to Close" },
   { value: "$0", label: "Commissions or Fees" },
-  { value: "2", label: "Local Team Members" },
+  { value: "Local", label: "Founder-Led Team" },
   { value: "Any", label: "Condition Accepted" },
 ] as const;
 
@@ -106,7 +99,7 @@ export const SELL_PAGE_FAQS = [
   },
   {
     q: "Who are you, exactly?",
-    a: "We're Adam and Logan - a local two-person team based in Spokane, WA. We buy houses directly across Spokane County and North Idaho. No call center, no scripts, no middlemen. Call or text us at 509-822-5460 - one of us picks up. Every conversation is direct, and there's never any obligation.",
+    a: "Logan leads Dominion Homes, a local Spokane team that buys houses directly across Spokane County and North Idaho. No call center, no scripts, no middlemen. Call or text us at 509-822-5460 and you'll hear from Logan or someone on his team. Every conversation is direct, and there's never any obligation.",
   },
 ] as const;
 

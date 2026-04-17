@@ -180,7 +180,7 @@ export default function NeighborhoodsPage() {
             We Know These Neighborhoods Because We Live&nbsp;Here
           </h2>
           <p className="mx-auto mt-4 max-w-xl text-lg text-forest-200">
-            Adam and Logan are based in Spokane. We drive these streets
+            Logan and his team are based in Spokane. We drive these streets
             every day. Let us make you a fair cash offer on your property.
           </p>
           <div className="mt-8 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">

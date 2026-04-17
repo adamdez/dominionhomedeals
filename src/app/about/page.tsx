@@ -5,7 +5,7 @@ import Link from "next/link";
 export const metadata: Metadata = {
   title: "About Us - Meet the Team | Spokane, WA",
   description:
-    "Adam and Logan are a local team that buys houses for cash across Spokane County and Kootenai County. Based in Spokane, WA. Meet the people behind Dominion Homes.",
+    "Meet Logan and the local Dominion Homes team serving Spokane County and Kootenai County. Based in Spokane, WA.",
   alternates: { canonical: "https://dominionhomedeals.com/about" },
   openGraph: {
     title: "About Us — Meet the Team | Dominion Homes",
@@ -18,16 +18,10 @@ export const metadata: Metadata = {
 
 const team = [
   {
-    name: "Adam",
-    role: "Operations",
-    image: "/images/team/adam.jpg",
-    bio: "Adam runs the day-to-day at Dominion Homes from our Spokane base. He keeps each deal moving from the first call through closing so sellers know what is happening and what comes next.",
-  },
-  {
     name: "Logan",
-    role: "Sales & Dispositions",
+    role: "Founder & Owner",
     image: "/images/team/logan.jpg",
-    bio: "Logan handles buy-side relationships and dispositions. He keeps the buyer side organized so deals move cleanly, timelines stay real, and properties land with the right next owner.",
+    bio: "Logan leads Dominion Homes from Spokane. He works directly with sellers, keeps the process clear, and makes sure people know what to expect from the first call through closing day.",
   },
 ] as const;
 
@@ -89,10 +83,7 @@ export default function AboutPage() {
               { "@type": "County", name: "Spokane County", containedInPlace: { "@type": "State", name: "Washington" } },
               { "@type": "County", name: "Kootenai County", containedInPlace: { "@type": "State", name: "Idaho" } },
             ],
-            founder: [
-              { "@type": "Person", name: "Adam", jobTitle: "Operations" },
-              { "@type": "Person", name: "Logan", jobTitle: "Sales & Dispositions" },
-            ],
+            founder: { "@type": "Person", name: "Logan Anyan", jobTitle: "Founder & Owner" },
           }),
         }}
       />
@@ -155,8 +146,8 @@ export default function AboutPage() {
                     </svg>
                   </div>
                   <div>
-                    <p className="font-medium text-ink-600">Two-person local team</p>
-                    <p className="mt-1 text-sm text-ink-400">You work directly with Adam or Logan.</p>
+                    <p className="font-medium text-ink-600">Founder-led local team</p>
+                    <p className="mt-1 text-sm text-ink-400">You work directly with Logan and his team.</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-4">
@@ -190,11 +181,11 @@ export default function AboutPage() {
       <section className="bg-cream-50 py-20 md:py-28">
         <div className="mx-auto max-w-5xl px-5">
           <div className="text-center">
-            <p className="text-sm font-semibold uppercase tracking-wider text-forest-600">Meet the Team</p>
-            <h2 className="mt-2 font-display text-display text-ink-600">The people behind the offer</h2>
+            <p className="text-sm font-semibold uppercase tracking-wider text-forest-600">Meet Logan</p>
+            <h2 className="mt-2 font-display text-display text-ink-600">The founder behind the offer</h2>
           </div>
 
-          <div className="mx-auto mt-12 grid max-w-2xl gap-8 sm:grid-cols-2">
+          <div className="mx-auto mt-12 grid max-w-sm gap-8">
             {team.map((member) => (
               <div key={member.name} className="rounded-2xl border border-sage-100 bg-white p-8 text-center shadow-sm">
                 <div className="relative mx-auto h-24 w-24 overflow-hidden rounded-full ring-4 ring-forest-50">

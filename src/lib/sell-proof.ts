@@ -46,7 +46,7 @@ export const SELLER_PROOF = {
       name: "Sarah M.",
       neighborhood: "Spokane",
       quote:
-        "Adam and his team made selling my house so much easier than I expected. They came out, looked at the place, gave me a fair offer, and we closed in two weeks. No hassle, no pressure. Just good people doing what they said they'd do.",
+        "Logan and his team made selling my house so much easier than I expected. They came out, looked at the place, gave me a fair offer, and we closed in two weeks. No hassle, no pressure. Just good people doing what they said they'd do.",
       avatarLabel: "SM",
     },
   ],

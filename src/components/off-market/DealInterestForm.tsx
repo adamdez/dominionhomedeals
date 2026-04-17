@@ -147,7 +147,7 @@ export function DealInterestForm({
         </div>
         <h3 className="font-display text-xl font-semibold text-forest-800 mb-2">We received your inquiry</h3>
         <p className="text-ink-500 text-sm leading-relaxed">
-          Thanks for your interest in {propertyLabel}. Adam or Logan will be in touch within a few hours.
+          Thanks for your interest in {propertyLabel}. Logan or someone on his team will be in touch within a few hours.
           <br />
           Questions now? Call or text{' '}
           <a href="tel:509-822-5460" className="font-semibold text-forest-600 underline underline-offset-2">

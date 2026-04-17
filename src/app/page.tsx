@@ -69,9 +69,9 @@ export default function HomePage() {
 
               <p className="mt-5 max-w-lg text-lg leading-relaxed text-ink-400">
                 Inherited a house you don&apos;t want? Tired of being a
-                landlord? Can&apos;t afford repairs? We&apos;re Adam and
-                Logan — a two-person Spokane team that buys homes
-                directly. No agents, no showings, no fees.
+                landlord? Can&apos;t afford repairs? Logan and his team
+                buy homes directly across Spokane. No agents, no
+                showings, no fees.
               </p>
 
               <div className="mt-7 flex flex-wrap items-center gap-3">
@@ -149,7 +149,7 @@ export default function HomePage() {
               {[
                 {
                   title: "Real local people",
-                  text: "Adam and Logan are based in Spokane. When you call, one of us picks up — not a call center.",
+                  text: "Logan and his team are based in Spokane. When you call, someone local picks up — not a call center.",
                 },
                 {
                   title: "We buy as-is",
@@ -271,7 +271,7 @@ export default function HomePage() {
             </FadeIn>
             <FadeIn delay={200} direction="left">
               {/* Team preview */}
-              <div className="grid grid-cols-2 gap-4 max-w-xs mx-auto lg:mx-0">
+              <div className="grid max-w-[11rem] grid-cols-1 gap-4 mx-auto lg:mx-0">
                 {TEAM.map((member) => (
                   <div key={member.name} className="rounded-2xl bg-white p-5 shadow-soft text-center">
                     <div className="relative mx-auto mb-3 h-16 w-16 overflow-hidden rounded-full ring-4 ring-forest-50">
