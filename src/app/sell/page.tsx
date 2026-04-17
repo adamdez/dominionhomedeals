@@ -4,6 +4,9 @@ import { LeadForm } from "@/components/forms/LeadForm";
 import { FadeIn } from "@/components/animations/FadeIn";
 import { BreadcrumbJsonLd } from "@/components/seo/BreadcrumbJsonLd";
 import { Situations } from "@/components/sections/Situations";
+import { SellerProofSection } from "@/components/sell/SellerProofSection";
+import { SellStickyBar } from "@/components/sell/SellStickyBar";
+import { SellTrustStrip } from "@/components/sell/SellTrustStrip";
 import { SITE, PROCESS_STEPS, TEAM, SELL_PAGE_FAQS } from "@/lib/constants";
 
 export const metadata: Metadata = {
@@ -100,6 +103,10 @@ export default function SellPage() {
                 </h1>
               </FadeIn>
 
+              <FadeIn delay={120}>
+                <SellTrustStrip />
+              </FadeIn>
+
               <FadeIn delay={160}>
                 <p className="mt-5 max-w-lg text-lg leading-relaxed text-ink-400">
                   We are a Spokane-based team that buys houses directly across
@@ -149,6 +156,8 @@ export default function SellPage() {
           </div>
         </div>
       </section>
+
+      <SellerProofSection angle="default" />
 
       <section className="border-y border-stone-200 bg-white py-10">
         <div className="mx-auto max-w-4xl px-5 sm:px-6 lg:px-8">
@@ -334,6 +343,8 @@ export default function SellPage() {
           </div>
         </FadeIn>
       </section>
+
+      <SellStickyBar />
     </>
   );
 }

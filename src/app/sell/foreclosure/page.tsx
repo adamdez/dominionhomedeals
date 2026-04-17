@@ -1,7 +1,9 @@
-// src/app/sell/foreclosure/page.tsx
 import type { Metadata } from "next";
 import { FadeIn } from "@/components/animations/FadeIn";
 import { LeadForm } from "@/components/forms/LeadForm";
+import { SellerProofSection } from "@/components/sell/SellerProofSection";
+import { SellStickyBar } from "@/components/sell/SellStickyBar";
+import { SellTrustStrip } from "@/components/sell/SellTrustStrip";
 import { SITE } from "@/lib/constants";
 
 export const metadata: Metadata = {
@@ -20,7 +22,13 @@ export const metadata: Metadata = {
 
 function CheckIcon() {
   return (
-    <svg className="mt-0.5 h-4 w-4 flex-shrink-0 text-forest-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+    <svg
+      className="mt-0.5 h-4 w-4 flex-shrink-0 text-forest-500"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+      strokeWidth={2.5}
+    >
       <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
     </svg>
   );
@@ -29,7 +37,11 @@ function CheckIcon() {
 function PhoneIcon() {
   return (
     <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"
+      />
     </svg>
   );
 }
@@ -37,34 +49,37 @@ function PhoneIcon() {
 const TIMELINE_STAGES = [
   {
     stage: "Behind on payments, no notice yet",
-    detail: "You have the most options here. This is the best time to explore a sale if you don't see a way to catch up.",
+    detail:
+      "You have the most options here. This is the best time to explore a sale if you do not see a way to catch up.",
   },
   {
     stage: "Received a Notice of Default",
-    detail: "The clock is running, but you typically still have time to sell. The sooner you act, the more flexibility you have.",
+    detail:
+      "The clock is running, but you usually still have time to sell. The sooner you act, the more flexibility you have.",
   },
   {
     stage: "Auction date is set",
-    detail: "It may still be possible to sell before the auction, but timing is tight. Call us immediately so we can evaluate whether a fast close is realistic.",
+    detail:
+      "It may still be possible to sell before the auction, but timing is tight. Call us immediately so we can evaluate whether a fast close is realistic.",
   },
 ];
 
 const FAQS = [
   {
     q: "Can I sell my house if I'm behind on the mortgage?",
-    a: "Yes. As long as you still own the property, you can sell it. The mortgage gets paid off from the sale proceeds at closing. If there's equity left over, it goes to you.",
+    a: "Yes. As long as you still own the property, you can sell it. The mortgage gets paid off from the sale proceeds at closing. If there is equity left over, it goes to you.",
   },
   {
     q: "What if I owe more than the house is worth?",
-    a: "That's called being \"underwater.\" In some cases, a short sale may be an option — where the lender agrees to accept less than what's owed. We can help you understand if that's a possibility. Either way, we'll give you an honest assessment.",
+    a: "That is called being underwater. In some cases, a short sale may be an option where the lender agrees to accept less than what is owed. We can help you understand if that is a possibility and give you an honest assessment.",
   },
   {
     q: "Will selling stop the foreclosure?",
-    a: "If the sale closes before the foreclosure is finalized, yes. The mortgage gets paid off and the process stops. That's why timing matters — the earlier you start, the more room there is to close cleanly.",
+    a: "If the sale closes before the foreclosure is finalized, yes. The mortgage gets paid off and the process stops. That is why timing matters - the earlier you start, the more room there is to close cleanly.",
   },
   {
     q: "How fast can you close?",
-    a: "When everything is clear and ready, we can close in as little as two weeks. If there's an auction deadline, we'll tell you honestly whether the timeline is realistic.",
+    a: "When everything is clear and ready, we can close in as little as two weeks. If there is an auction deadline, we'll tell you honestly whether the timeline is realistic.",
   },
   {
     q: "Do I need to fix up the house?",
@@ -72,11 +87,7 @@ const FAQS = [
   },
   {
     q: "Will this hurt my credit?",
-    a: "A regular sale is much better for your credit than a completed foreclosure. If you're already behind, your credit has likely been affected, but avoiding a foreclosure on your record makes a real difference.",
-  },
-  {
-    q: "How do I know I can trust you?",
-    a: "Fair question. We're a local company based in Spokane. We use a standard title company for closing, you have full visibility into the process, and you can have an attorney review everything. We don't ask for money upfront — ever.",
+    a: "A regular sale is much better for your credit than a completed foreclosure. If you're already behind, your credit has likely been affected, but avoiding a foreclosure on your record still makes a real difference.",
   },
 ];
 
@@ -90,7 +101,10 @@ function FAQJsonLd() {
       acceptedAnswer: { "@type": "Answer", text: faq.a },
     })),
   };
-  return <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }} />;
+
+  return (
+    <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }} />
+  );
 }
 
 export default function ForeclosurePage() {
@@ -99,7 +113,7 @@ export default function ForeclosurePage() {
   return (
     <>
       <FAQJsonLd />
-      {/* ══════════ HERO ══════════ */}
+
       <section className="relative overflow-hidden pt-28 pb-14 sm:pt-36 sm:pb-20 lg:pt-40 lg:pb-24">
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-stone-50 via-forest-50/20 to-stone-50" />
         <div className="pointer-events-none absolute -top-20 -right-20 h-[400px] w-[400px] rounded-full bg-forest-100/30 blur-3xl" />
@@ -113,26 +127,25 @@ export default function ForeclosurePage() {
                     <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-forest-500 opacity-75" />
                     <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-forest-500" />
                   </span>
-                  Behind on Payments
+                  Behind on payments
                 </div>
               </FadeIn>
 
               <FadeIn delay={80}>
                 <h1 className="font-display text-hero text-ink-700 text-balance">
-                  Facing Foreclosure?
-                  <br />
-                  <span className="text-forest-500">
-                    You Have Options.
-                  </span>
+                  Behind on Payments in Spokane? Sell Before Foreclosure - Fast Cash
                 </h1>
+              </FadeIn>
+
+              <FadeIn delay={120}>
+                <SellTrustStrip />
               </FadeIn>
 
               <FadeIn delay={160}>
                 <p className="mt-5 max-w-lg text-lg leading-relaxed text-ink-400">
-                  If you&apos;re behind on your mortgage or have received a foreclosure
-                  notice, a fast cash sale may be able to stop the process before it
-                  goes further. We buy houses in Spokane and Kootenai County and can
-                  close quickly when timing matters.
+                  If you are behind on payments in Spokane and need a fast way to avoid
+                  foreclosure, we can review the property quickly and tell you if a cash
+                  sale can realistically beat the deadline. No judgment and no wasted time.
                 </p>
               </FadeIn>
 
@@ -141,10 +154,7 @@ export default function ForeclosurePage() {
                   <a href="#get-offer" className="btn-primary">
                     Get Your Cash Offer Now
                   </a>
-                  <a
-                    href={`tel:${phoneClean}`}
-                    className="btn-secondary inline-flex items-center gap-2"
-                  >
+                  <a href={`tel:${phoneClean}`} className="btn-secondary inline-flex items-center gap-2">
                     <PhoneIcon />
                     Call {SITE.phone}
                   </a>
@@ -177,7 +187,8 @@ export default function ForeclosurePage() {
         </div>
       </section>
 
-      {/* ══════════ HOW CASH SALE HELPS ══════════ */}
+      <SellerProofSection angle="foreclosure" />
+
       <section className="border-y border-stone-200 bg-stone-100/50">
         <div className="section-wrap">
           <FadeIn>
@@ -190,15 +201,15 @@ export default function ForeclosurePage() {
               </h2>
               <div className="mt-5 space-y-3 text-base leading-relaxed text-ink-400">
                 <p>
-                  When you sell your house for cash before the foreclosure completes,
-                  the proceeds go toward paying off your mortgage. In many cases, this
-                  lets you walk away clean — no foreclosure on your record, no deficiency
-                  judgment, and whatever equity is left goes to you.
+                  When you sell your house for cash before the foreclosure completes, the
+                  proceeds go toward paying off your mortgage. In many cases, that lets you
+                  walk away clean with no foreclosure on your record and any remaining equity
+                  coming back to you.
                 </p>
                 <p>
                   The key is timing. The earlier you reach out, the more options you have.
-                  Even if you&apos;re not sure where things stand, a quick phone call can help
-                  you understand what&apos;s realistic.
+                  Even if you are not sure where things stand, a quick call can help you
+                  understand what is realistic.
                 </p>
               </div>
             </div>
@@ -206,7 +217,6 @@ export default function ForeclosurePage() {
         </div>
       </section>
 
-      {/* ══════════ TIMELINE ══════════ */}
       <section className="section-wrap">
         <FadeIn>
           <div className="mx-auto max-w-3xl">
@@ -217,8 +227,8 @@ export default function ForeclosurePage() {
               Where Are You in the Process?
             </h2>
             <div className="mt-6 space-y-4">
-              {TIMELINE_STAGES.map((item, i) => (
-                <FadeIn key={item.stage} delay={i * 100}>
+              {TIMELINE_STAGES.map((item, index) => (
+                <FadeIn key={item.stage} delay={index * 100}>
                   <div className="rounded-xl border border-stone-200 bg-white p-5">
                     <h3 className="font-display text-base text-ink-600">{item.stage}</h3>
                     <p className="mt-2 text-sm leading-relaxed text-ink-400">{item.detail}</p>
@@ -230,7 +240,6 @@ export default function ForeclosurePage() {
         </FadeIn>
       </section>
 
-      {/* ══════════ WHAT TO HAVE READY ══════════ */}
       <section className="border-y border-stone-200 bg-stone-100/50">
         <div className="section-wrap">
           <FadeIn>
@@ -239,10 +248,10 @@ export default function ForeclosurePage() {
                 Before You Call
               </p>
               <h2 className="mt-2 font-display text-display text-ink-600 text-balance">
-                What to Have Ready When You Call
+                What to Have Ready
               </h2>
               <p className="mt-4 text-base text-ink-400">
-                You don&apos;t need everything figured out. But if you have any of this, it helps:
+                You do not need everything figured out. But if you have any of this, it helps:
               </p>
               <ul className="mt-4 space-y-2.5">
                 {[
@@ -258,14 +267,13 @@ export default function ForeclosurePage() {
                 ))}
               </ul>
               <p className="mt-4 text-sm text-ink-400">
-                If you don&apos;t have all of this, that&apos;s okay. We can work with what you know.
+                If you do not have all of this, that&apos;s okay. We can work with what you know.
               </p>
             </div>
           </FadeIn>
         </div>
       </section>
 
-      {/* ══════════ FAQ ══════════ */}
       <section>
         <div className="section-wrap">
           <FadeIn>
@@ -280,8 +288,8 @@ export default function ForeclosurePage() {
           </FadeIn>
 
           <div className="mx-auto mt-10 max-w-3xl space-y-4">
-            {FAQS.map((faq, i) => (
-              <FadeIn key={faq.q} delay={i * 60}>
+            {FAQS.map((faq, index) => (
+              <FadeIn key={faq.q} delay={index * 60}>
                 <div className="rounded-xl border border-stone-200 bg-white p-5">
                   <h3 className="font-display text-base text-ink-600">{faq.q}</h3>
                   <p className="mt-2 text-sm leading-relaxed text-ink-400">{faq.a}</p>
@@ -292,7 +300,6 @@ export default function ForeclosurePage() {
         </div>
       </section>
 
-      {/* ══════════ FINAL CTA ══════════ */}
       <section className="section-wrap">
         <FadeIn>
           <div className="relative overflow-hidden rounded-2xl bg-ink-600 px-7 py-14 text-center sm:px-14">
@@ -301,8 +308,8 @@ export default function ForeclosurePage() {
               Not Sure Where You Stand? Call Us.
             </h2>
             <p className="mx-auto mt-3 max-w-lg text-base text-stone-400">
-              We&apos;ll listen to your situation, tell you what&apos;s realistic, and give you
-              a straight answer. No pressure, no obligation, no judgment.
+              We&apos;ll listen to your situation, tell you what&apos;s realistic, and give
+              you a straight answer. No pressure, no obligation, no judgment.
             </p>
             <div className="mt-7 flex flex-wrap items-center justify-center gap-3">
               <a href="#get-offer" className="btn-primary !bg-white !text-ink-600 hover:!bg-stone-100">
@@ -310,7 +317,7 @@ export default function ForeclosurePage() {
               </a>
               <a
                 href={`tel:${phoneClean}`}
-                className="text-sm font-semibold text-stone-300 hover:text-amber-400 transition-colors inline-flex items-center gap-1.5"
+                className="inline-flex items-center gap-1.5 text-sm font-semibold text-stone-300 transition-colors hover:text-amber-400"
               >
                 <PhoneIcon />
                 Call {SITE.phone}
@@ -319,6 +326,8 @@ export default function ForeclosurePage() {
           </div>
         </FadeIn>
       </section>
+
+      <SellStickyBar />
     </>
   );
 }

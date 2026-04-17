@@ -3,6 +3,9 @@ import Link from "next/link";
 import { FadeIn } from "@/components/animations/FadeIn";
 import { LeadForm } from "@/components/forms/LeadForm";
 import { BreadcrumbJsonLd } from "@/components/seo/BreadcrumbJsonLd";
+import { SellerProofSection } from "@/components/sell/SellerProofSection";
+import { SellStickyBar } from "@/components/sell/SellStickyBar";
+import { SellTrustStrip } from "@/components/sell/SellTrustStrip";
 import { SITE } from "@/lib/constants";
 
 export const metadata: Metadata = {
@@ -185,16 +188,20 @@ export default function SellAsIsPage() {
 
               <FadeIn delay={80}>
                 <h1 className="font-display text-hero text-ink-700 text-balance">
-                  How To Sell A House As-Is In Spokane
+                  Sell Your House As-Is in Spokane - Any Condition, No Repairs
                 </h1>
+              </FadeIn>
+
+              <FadeIn delay={120}>
+                <SellTrustStrip />
               </FadeIn>
 
               <FadeIn delay={160}>
                 <p className="mt-5 max-w-lg text-lg leading-relaxed text-ink-400">
-                  If your Spokane house needs work, you usually have two real options:
-                  fix it up and list it, or sell it in its current condition. We buy
-                  houses directly across Spokane County, so this page is built to help
-                  you compare those paths honestly.
+                  If your Spokane house needs work, you can skip the repair list and
+                  sell it exactly as it sits today. We buy houses across Spokane County
+                  in any condition, so you do not have to clean, fix, or prep the
+                  property before getting a cash offer.
                 </p>
               </FadeIn>
 
@@ -238,6 +245,8 @@ export default function SellAsIsPage() {
           </div>
         </div>
       </section>
+
+      <SellerProofSection angle="as-is" />
 
       <section className="border-y border-stone-200 bg-white">
         <div className="section-wrap">
@@ -450,6 +459,8 @@ export default function SellAsIsPage() {
           </div>
         </FadeIn>
       </section>
+
+      <SellStickyBar />
     </>
   );
 }

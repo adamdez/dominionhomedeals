@@ -7,13 +7,13 @@ import { recordDominionLeadSubmission } from '@/lib/dominion-leads'
 
 interface LeadPayload {
   address: string
-  city: string
-  state: string
-  zip: string
-  condition: string
-  timeline: string
+  city?: string
+  state?: string
+  zip?: string
+  condition?: string
+  timeline?: string
   firstName: string
-  lastName: string
+  lastName?: string
   phone: string
   email: string
   tcpaConsent: boolean
@@ -54,6 +54,15 @@ function sanitize(str: string): string {
     .replace(/'/g, '&#39;')
 }
 
+function withTimeout<T>(promise: Promise<T>, timeoutMs: number, label: string): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<T>((_, reject) => {
+      setTimeout(() => reject(new Error(`${label} timed out after ${timeoutMs}ms`)), timeoutMs)
+    }),
+  ])
+}
+
 // Rate limiting
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>()
 
@@ -80,6 +89,8 @@ async function sendEmailNotification(lead: Record<string, unknown>) {
   }
 
   const priorityLabel = lead.timeline === 'ASAP' ? '🔴 URGENT' : lead.timeline === 'Soon' ? '🟡 SOON' : '🟢 NORMAL'
+
+  const propertyLine = [lead.city, lead.state, lead.zip].filter(Boolean).join(' ').trim() || 'Not provided'
 
   const htmlBody = `
     <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -115,7 +126,7 @@ async function sendEmailNotification(lead: Record<string, unknown>) {
           </tr>
           <tr>
             <td style="padding: 6px 0; color: #666;">City / State</td>
-            <td style="padding: 6px 0;">${lead.city}, ${lead.state} ${lead.zip}</td>
+            <td style="padding: 6px 0;">${propertyLine}</td>
           </tr>
           <tr>
             <td style="padding: 6px 0; color: #666;">Condition</td>
@@ -136,6 +147,7 @@ async function sendEmailNotification(lead: Record<string, unknown>) {
           Source: ${lead.source} | Page: ${lead.landingPage}
         </p>
         ${lead.utmSource ? `<p style="margin: 8px 0 0; font-size: 12px; color: #888;">UTM: ${lead.utmSource} / ${lead.utmMedium} / ${lead.utmCampaign}</p>` : ''}
+        ${lead.gclid ? `<p style="margin: 8px 0 0; font-size: 12px; color: #888;">GCLID: ${lead.gclid}</p>` : ''}
       </div>
     </div>
   `
@@ -313,13 +325,7 @@ export async function POST(request: NextRequest) {
     // Validation
     const errors: string[] = []
     if (!body.address || body.address.trim().length < 3) errors.push('Address required')
-    if (!body.city || body.city.trim().length < 2) errors.push('City required')
-    if (!body.state || !['WA', 'ID'].includes(body.state)) errors.push('Invalid state')
-    if (!body.zip || body.zip.length < 5) errors.push('ZIP required')
-    if (!body.condition) errors.push('Condition required')
-    if (!body.timeline) errors.push('Timeline required')
     if (!body.firstName?.trim()) errors.push('First name required')
-    if (!body.lastName?.trim()) errors.push('Last name required')
     if (!body.phone || !validatePhone(body.phone)) errors.push('Valid phone required')
     if (!body.email || !validateEmail(body.email)) errors.push('Valid email required')
     if (!body.tcpaConsent) errors.push('Consent required')
@@ -331,13 +337,13 @@ export async function POST(request: NextRequest) {
     // Build lead object
     const lead = {
       address: sanitize(body.address),
-      city: sanitize(body.city),
-      state: body.state,
-      zip: sanitize(body.zip),
-      condition: sanitize(body.condition),
-      timeline: sanitize(body.timeline),
+      city: sanitize(body.city || ''),
+      state: sanitize(body.state || 'WA'),
+      zip: sanitize(body.zip || ''),
+      condition: sanitize(body.condition || 'Not provided'),
+      timeline: sanitize(body.timeline || 'Not provided'),
       firstName: sanitize(body.firstName),
-      lastName: sanitize(body.lastName),
+      lastName: sanitize(body.lastName || ''),
       phone: body.phone.replace(/\D/g, '').substring(0, 11),
       email: sanitize(body.email).toLowerCase(),
       tcpaConsented: true,
@@ -362,10 +368,10 @@ export async function POST(request: NextRequest) {
     // Send email + SMS + forward to Sentinel CRM in parallel
     // All are best-effort — failures don't block the response
     const sideEffects = await Promise.allSettled([
-      sendEmailNotification(lead),
-      sendSmsNotification(lead),
-      forwardToSentinel(lead),
-      recordDominionLeadSubmission({
+      withTimeout(sendEmailNotification(lead), 1500, 'email notification'),
+      withTimeout(sendSmsNotification(lead), 1500, 'sms notification'),
+      withTimeout(forwardToSentinel(lead), 1500, 'sentinel forward'),
+      withTimeout(recordDominionLeadSubmission({
         firstName: lead.firstName,
         lastName: lead.lastName,
         phone: lead.phone,
@@ -381,8 +387,9 @@ export async function POST(request: NextRequest) {
         utmSource: lead.utmSource,
         utmMedium: lead.utmMedium,
         utmCampaign: lead.utmCampaign,
+        gclid: lead.gclid,
         submittedAt: lead.submittedAt,
-      }),
+      }), 1500, 'lead control write'),
     ])
 
     const [, , , controlWrite] = sideEffects

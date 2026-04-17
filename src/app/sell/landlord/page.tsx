@@ -1,7 +1,9 @@
-// src/app/sell/landlord/page.tsx
 import type { Metadata } from "next";
 import { FadeIn } from "@/components/animations/FadeIn";
 import { LeadForm } from "@/components/forms/LeadForm";
+import { SellerProofSection } from "@/components/sell/SellerProofSection";
+import { SellStickyBar } from "@/components/sell/SellStickyBar";
+import { SellTrustStrip } from "@/components/sell/SellTrustStrip";
 import { SITE } from "@/lib/constants";
 
 export const metadata: Metadata = {
@@ -12,7 +14,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Tired of Being a Landlord? We Buy Rental Properties As-Is",
     description:
-      "Sell your rental property for cash — tenants in place, no repairs, no property management headaches. Local Spokane team.",
+      "Sell your rental property for cash - tenants in place, no repairs, no property management headaches. Local Spokane team.",
     url: `${SITE.url}/sell/landlord`,
     type: "website",
   },
@@ -20,7 +22,13 @@ export const metadata: Metadata = {
 
 function CheckIcon() {
   return (
-    <svg className="mt-0.5 h-4 w-4 flex-shrink-0 text-forest-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+    <svg
+      className="mt-0.5 h-4 w-4 flex-shrink-0 text-forest-500"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+      strokeWidth={2.5}
+    >
       <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
     </svg>
   );
@@ -29,7 +37,11 @@ function CheckIcon() {
 function PhoneIcon() {
   return (
     <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"
+      />
     </svg>
   );
 }
@@ -41,41 +53,33 @@ const PAIN_POINTS = [
   "Property management eating into your margins",
   "Vacancy between tenants costing you money",
   "Out-of-state ownership making everything harder",
-  "Just ready to move on and do something else with the capital",
+  "Just ready to move on and redeploy the capital",
 ];
 
 const FAQS = [
   {
     q: "Can you buy my rental with tenants still living there?",
-    a: "Yes — we buy with tenants in place. You don't need to evict anyone or wait for a lease to end. We take over the property and handle the tenant situation from there.",
+    a: "Yes - we buy with tenants in place. You don't need to evict anyone or wait for a lease to end. We take over the property and handle the tenant situation from there.",
   },
   {
     q: "What if the tenants aren't paying rent?",
-    a: "That's actually one of the most common reasons landlords call us. Non-paying tenants don't stop us from buying. We factor the situation into our offer and handle it after closing.",
+    a: "That's one of the most common reasons landlords call us. Non-paying tenants do not stop us from buying. We factor the situation into our offer and handle it after closing.",
   },
   {
     q: "Do I need to make repairs first?",
-    a: "No. We buy rental properties in any condition — deferred maintenance, tenant damage, aging systems, all of it. You don't need to fix a thing.",
+    a: "No. We buy rental properties in any condition - deferred maintenance, tenant damage, aging systems, all of it. You do not need to fix a thing.",
   },
   {
     q: "What about the lease agreements?",
-    a: "We work with existing leases. Whether your tenants are month-to-month or mid-lease, we can structure the purchase around the current agreements. We'll walk you through how it works.",
+    a: "We work with existing leases. Whether your tenants are month-to-month or mid-lease, we can structure the purchase around the current agreements and walk you through it.",
   },
   {
     q: "How do you determine the offer on a rental?",
-    a: "We look at the property value, current condition, rental income (or lack of it), tenant situation, and comparable sales. We'll give you a clear breakdown of how we got to our number.",
+    a: "We look at the property value, current condition, rental income or lack of it, tenant situation, and comparable sales. We'll give you a clear breakdown of how we got to our number.",
   },
   {
     q: "How fast can you close?",
-    a: "If the title is clear, we can close in as little as two to three weeks. If you need more time to coordinate, that's fine too — you pick the date.",
-  },
-  {
-    q: "Will I have to deal with the tenants at all during the sale?",
-    a: "Minimally. In most cases, we handle tenant communication after the purchase agreement is signed. You don't need to notify them or manage any transition — we take care of that.",
-  },
-  {
-    q: "What if I have multiple rental properties to sell?",
-    a: "We can buy one or all of them. If you're looking to offload a portfolio, we can make offers on each property individually or as a package. Call us and we'll figure out the best approach.",
+    a: "If the title is clear, we can close in as little as two to three weeks. If you need more time to coordinate, that's fine too - you pick the date.",
   },
 ];
 
@@ -89,7 +93,10 @@ function FAQJsonLd() {
       acceptedAnswer: { "@type": "Answer", text: faq.a },
     })),
   };
-  return <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }} />;
+
+  return (
+    <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }} />
+  );
 }
 
 export default function LandlordExitPage() {
@@ -98,7 +105,7 @@ export default function LandlordExitPage() {
   return (
     <>
       <FAQJsonLd />
-      {/* ══════════ HERO ══════════ */}
+
       <section className="relative overflow-hidden pt-28 pb-14 sm:pt-36 sm:pb-20 lg:pt-40 lg:pb-24">
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-stone-50 via-forest-50/20 to-stone-50" />
         <div className="pointer-events-none absolute -top-20 -right-20 h-[400px] w-[400px] rounded-full bg-forest-100/30 blur-3xl" />
@@ -112,26 +119,25 @@ export default function LandlordExitPage() {
                     <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-forest-500 opacity-75" />
                     <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-forest-500" />
                   </span>
-                  Landlord Exit
+                  Landlord exit
                 </div>
               </FadeIn>
 
               <FadeIn delay={80}>
                 <h1 className="font-display text-hero text-ink-700 text-balance">
-                  Tired of Being a Landlord?
-                  <br />
-                  <span className="text-forest-500">
-                    We Buy Rentals. Tenants &amp; All.
-                  </span>
+                  Tired of Being a Landlord in Spokane? Sell Your Rental As-Is for Cash
                 </h1>
+              </FadeIn>
+
+              <FadeIn delay={120}>
+                <SellTrustStrip />
               </FadeIn>
 
               <FadeIn delay={160}>
                 <p className="mt-5 max-w-lg text-lg leading-relaxed text-ink-400">
-                  Sell your rental property for cash — even with tenants in place.
-                  No evictions, no repairs, no more midnight maintenance calls.
-                  We buy rental properties in Spokane and Kootenai County and
-                  let you walk away clean.
+                  If you are done with tenants, turnover work, or one more repair cycle,
+                  we can buy your Spokane rental as-is and give you a clean exit. We
+                  buy with tenants in place and work around the timing that fits you.
                 </p>
               </FadeIn>
 
@@ -140,10 +146,7 @@ export default function LandlordExitPage() {
                   <a href="#get-offer" className="btn-primary">
                     Get Your Cash Offer
                   </a>
-                  <a
-                    href={`tel:${phoneClean}`}
-                    className="btn-secondary inline-flex items-center gap-2"
-                  >
+                  <a href={`tel:${phoneClean}`} className="btn-secondary inline-flex items-center gap-2">
                     <PhoneIcon />
                     Call {SITE.phone}
                   </a>
@@ -155,7 +158,7 @@ export default function LandlordExitPage() {
                   {[
                     "Buy with tenants in place",
                     "No repairs needed",
-                    "Close in 2–3 weeks",
+                    "Close in 2-3 weeks",
                     "No commissions",
                   ].map((item) => (
                     <span key={item} className="flex items-center gap-1.5">
@@ -176,7 +179,8 @@ export default function LandlordExitPage() {
         </div>
       </section>
 
-      {/* ══════════ PAIN POINTS ══════════ */}
+      <SellerProofSection angle="landlord" />
+
       <section className="border-y border-stone-200 bg-stone-100/50">
         <div className="section-wrap">
           <FadeIn>
@@ -188,8 +192,8 @@ export default function LandlordExitPage() {
                 Owning Rentals Isn&apos;t Always Worth It
               </h2>
               <p className="mt-4 text-base leading-relaxed text-ink-400">
-                Being a landlord can be rewarding — until it isn&apos;t. If any of
-                these sound like your situation, you&apos;re not alone:
+                Being a landlord can be rewarding - until it isn&apos;t. If any of these
+                sound like your situation, you&apos;re not alone:
               </p>
               <ul className="mt-5 space-y-2.5">
                 {PAIN_POINTS.map((item) => (
@@ -200,15 +204,14 @@ export default function LandlordExitPage() {
                 ))}
               </ul>
               <p className="mt-5 text-base leading-relaxed text-ink-400">
-                Whatever the reason, we can give you a clean exit. No judgment —
-                just a fair cash offer and a closing date that works for you.
+                Whatever the reason, we can give you a clean exit. No judgment - just a
+                fair cash offer and a closing date that works for you.
               </p>
             </div>
           </FadeIn>
         </div>
       </section>
 
-      {/* ══════════ HOW IT WORKS ══════════ */}
       <section className="section-wrap">
         <FadeIn>
           <div className="mx-auto max-w-3xl">
@@ -223,28 +226,31 @@ export default function LandlordExitPage() {
                 {
                   step: "1",
                   title: "Tell us about the property",
-                  detail: "Address, tenant situation, condition, what you're looking to accomplish. Takes 5 minutes.",
+                  detail:
+                    "Address, tenant situation, condition, and what you want to accomplish. Takes about 5 minutes.",
                 },
                 {
                   step: "2",
                   title: "We make you a cash offer",
-                  detail: "Usually within 24–48 hours. We factor in the tenants, condition, and rental income (or lack of it).",
+                  detail:
+                    "Usually within 24-48 hours. We factor in the tenants, condition, and rental income or lack of it.",
                 },
                 {
                   step: "3",
                   title: "Close on your schedule",
-                  detail: "We handle the tenants, the title work, and the closing. You walk away with cash and no more landlord headaches.",
+                  detail:
+                    "We handle the tenants, the title work, and the closing. You walk away with cash and no more landlord headaches.",
                 },
-              ].map((item, i) => (
-                <FadeIn key={item.step} delay={i * 100}>
+              ].map((item, index) => (
+                <FadeIn key={item.step} delay={index * 100}>
                   <div className="rounded-xl border border-stone-200 bg-white p-5">
-                    <div className="flex items-center gap-3 mb-2">
+                    <div className="mb-2 flex items-center gap-3">
                       <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-forest-500 font-display text-sm text-white">
                         {item.step}
                       </span>
                       <h3 className="font-display text-base text-ink-600">{item.title}</h3>
                     </div>
-                    <p className="text-sm leading-relaxed text-ink-400 pl-11">{item.detail}</p>
+                    <p className="pl-11 text-sm leading-relaxed text-ink-400">{item.detail}</p>
                   </div>
                 </FadeIn>
               ))}
@@ -253,7 +259,6 @@ export default function LandlordExitPage() {
         </FadeIn>
       </section>
 
-      {/* ══════════ FAQ ══════════ */}
       <section className="border-t border-stone-200 bg-stone-100/50">
         <div className="section-wrap">
           <FadeIn>
@@ -268,8 +273,8 @@ export default function LandlordExitPage() {
           </FadeIn>
 
           <div className="mx-auto mt-10 max-w-3xl space-y-4">
-            {FAQS.map((faq, i) => (
-              <FadeIn key={faq.q} delay={i * 60}>
+            {FAQS.map((faq, index) => (
+              <FadeIn key={faq.q} delay={index * 60}>
                 <div className="rounded-xl border border-stone-200 bg-white p-5">
                   <h3 className="font-display text-base text-ink-600">{faq.q}</h3>
                   <p className="mt-2 text-sm leading-relaxed text-ink-400">{faq.a}</p>
@@ -280,7 +285,6 @@ export default function LandlordExitPage() {
         </div>
       </section>
 
-      {/* ══════════ FINAL CTA ══════════ */}
       <section className="section-wrap">
         <FadeIn>
           <div className="relative overflow-hidden rounded-2xl bg-ink-600 px-7 py-14 text-center sm:px-14">
@@ -290,8 +294,7 @@ export default function LandlordExitPage() {
             </h2>
             <p className="mx-auto mt-3 max-w-lg text-base text-stone-400">
               Call us. Tell us about the property, the tenants, and what you&apos;re
-              looking to do. We&apos;ll give you a fair cash offer — no obligation,
-              no pressure.
+              looking to do. We&apos;ll give you a fair cash offer - no obligation and no pressure.
             </p>
             <div className="mt-7 flex flex-wrap items-center justify-center gap-3">
               <a href="#get-offer" className="btn-primary !bg-white !text-ink-600 hover:!bg-stone-100">
@@ -299,7 +302,7 @@ export default function LandlordExitPage() {
               </a>
               <a
                 href={`tel:${phoneClean}`}
-                className="text-sm font-semibold text-stone-300 hover:text-amber-400 transition-colors inline-flex items-center gap-1.5"
+                className="inline-flex items-center gap-1.5 text-sm font-semibold text-stone-300 transition-colors hover:text-amber-400"
               >
                 <PhoneIcon />
                 Call {SITE.phone}
@@ -308,6 +311,8 @@ export default function LandlordExitPage() {
           </div>
         </FadeIn>
       </section>
+
+      <SellStickyBar />
     </>
   );
 }

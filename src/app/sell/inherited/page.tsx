@@ -1,7 +1,9 @@
-// src/app/sell/inherited/page.tsx
 import type { Metadata } from "next";
 import { FadeIn } from "@/components/animations/FadeIn";
 import { LeadForm } from "@/components/forms/LeadForm";
+import { SellerProofSection } from "@/components/sell/SellerProofSection";
+import { SellStickyBar } from "@/components/sell/SellStickyBar";
+import { SellTrustStrip } from "@/components/sell/SellTrustStrip";
 import { SITE } from "@/lib/constants";
 
 export const metadata: Metadata = {
@@ -10,7 +12,7 @@ export const metadata: Metadata = {
     "We work with inherited and estate properties regularly in Spokane and Kootenai County. We understand the process takes time. No pressure, no hurry. Call 509-822-5460.",
   alternates: { canonical: `${SITE.url}/sell/inherited` },
   openGraph: {
-    title: "Selling an Inherited Property — Spokane & CDA",
+    title: "Selling an Inherited Property - Spokane & CDA",
     description:
       "Local team experienced with inherited properties, probate, and estate situations. No rush, no pressure.",
     url: `${SITE.url}/sell/inherited`,
@@ -20,7 +22,13 @@ export const metadata: Metadata = {
 
 function CheckIcon() {
   return (
-    <svg className="mt-0.5 h-4 w-4 flex-shrink-0 text-forest-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+    <svg
+      className="mt-0.5 h-4 w-4 flex-shrink-0 text-forest-500"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+      strokeWidth={2.5}
+    >
       <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
     </svg>
   );
@@ -29,7 +37,11 @@ function CheckIcon() {
 function PhoneIcon() {
   return (
     <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"
+      />
     </svg>
   );
 }
@@ -37,11 +49,11 @@ function PhoneIcon() {
 const FAQS = [
   {
     q: "Can you buy a house that's still in probate?",
-    a: "It depends on where you are in the probate process. In many cases, yes — we can work with the estate executor or administrator and coordinate around the probate timeline. The best way to find out is to call us and walk through the situation.",
+    a: "It depends on where you are in the probate process. In many cases, yes - we can work with the estate executor or administrator and coordinate around the probate timeline. The best way to find out is to call us and walk through the situation.",
   },
   {
     q: "What if multiple family members inherited the property?",
-    a: "This is common. In general, all owners who are on title need to agree to a sale. We don't step into family disagreements — but we can clearly explain the offer and the process so everyone has the same information to work with.",
+    a: "This is common. In general, all owners who are on title need to agree to a sale. We don't step into family disagreements - but we can clearly explain the offer and the process so everyone has the same information to work with.",
   },
   {
     q: "The house needs a lot of work. Does that matter?",
@@ -49,11 +61,11 @@ const FAQS = [
   },
   {
     q: "We haven't decided yet. Can we just ask questions?",
-    a: "Yes — that's actually the most common first call we get. Call us, tell us what you're dealing with, and we'll answer honestly. There's no obligation, no pitch, no timeline we're trying to push you into.",
+    a: "Yes - that's actually the most common first call we get. Call us, tell us what you're dealing with, and we'll answer honestly. There's no obligation, no pitch, no timeline we're trying to push you into.",
   },
   {
     q: "What about personal belongings left in the house?",
-    a: "You take whatever you want. Anything left behind we handle — you don't need to empty the house before closing if that's not practical.",
+    a: "You take whatever you want. Anything left behind we handle - you don't need to empty the house before closing if that's not practical.",
   },
   {
     q: "How long does a cash sale take with an inherited property?",
@@ -71,7 +83,10 @@ function FAQJsonLd() {
       acceptedAnswer: { "@type": "Answer", text: faq.a },
     })),
   };
-  return <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }} />;
+
+  return (
+    <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }} />
+  );
 }
 
 export default function InheritedPropertyPage() {
@@ -80,7 +95,7 @@ export default function InheritedPropertyPage() {
   return (
     <>
       <FAQJsonLd />
-      {/* ══════════ HERO ══════════ */}
+
       <section className="relative overflow-hidden pt-28 pb-14 sm:pt-36 sm:pb-20 lg:pt-40 lg:pb-24">
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-stone-50 via-forest-50/20 to-stone-50" />
         <div className="pointer-events-none absolute -top-20 -right-20 h-[400px] w-[400px] rounded-full bg-forest-100/30 blur-3xl" />
@@ -94,27 +109,25 @@ export default function InheritedPropertyPage() {
                     <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-forest-500 opacity-75" />
                     <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-forest-500" />
                   </span>
-                  Inherited &amp; Estate Properties
+                  Inherited and probate property help
                 </div>
               </FadeIn>
 
               <FadeIn delay={80}>
                 <h1 className="font-display text-hero text-ink-700 text-balance">
-                  Selling an Inherited Property?
-                  <br />
-                  <span className="text-forest-500">
-                    We Understand. No Rush.
-                  </span>
+                  Sell an Inherited House in Spokane - Cash Offer in 24 Hours
                 </h1>
+              </FadeIn>
+
+              <FadeIn delay={120}>
+                <SellTrustStrip />
               </FadeIn>
 
               <FadeIn delay={160}>
                 <p className="mt-5 max-w-lg text-lg leading-relaxed text-ink-400">
-                  We work with inherited and estate properties regularly in
-                  Spokane and Kootenai County. Whether you&apos;re still working
-                  through paperwork, sorting things out with family, or just
-                  starting to figure out your options — we can meet you where
-                  you are. No pressure, no rush.
+                  If you inherited a Spokane house and do not want to juggle repairs,
+                  probate stress, or a long listing timeline, we can make a cash offer
+                  quickly and work around the pace that makes sense for your family.
                 </p>
               </FadeIn>
 
@@ -123,10 +136,7 @@ export default function InheritedPropertyPage() {
                   <a href="#get-offer" className="btn-primary">
                     Talk Through Your Options
                   </a>
-                  <a
-                    href={`tel:${phoneClean}`}
-                    className="btn-secondary inline-flex items-center gap-2"
-                  >
+                  <a href={`tel:${phoneClean}`} className="btn-secondary inline-flex items-center gap-2">
                     <PhoneIcon />
                     Call {SITE.phone}
                   </a>
@@ -159,7 +169,8 @@ export default function InheritedPropertyPage() {
         </div>
       </section>
 
-      {/* ══════════ WHAT MAKES IT DIFFERENT ══════════ */}
+      <SellerProofSection angle="inherited" />
+
       <section className="border-y border-stone-200 bg-stone-100/50">
         <div className="section-wrap">
           <FadeIn>
@@ -172,16 +183,16 @@ export default function InheritedPropertyPage() {
               </h2>
               <div className="mt-5 space-y-3 text-base leading-relaxed text-ink-400">
                 <p>
-                  When a property passes to a family member, there&apos;s often more
-                  going on than just selling a house. There may be estate paperwork,
-                  probate timelines, decisions that involve other family members, or
-                  simply the emotional weight of dealing with someone&apos;s home.
+                  When a property passes to a family member, there&apos;s often more going on than
+                  just selling a house. There may be estate paperwork, probate timelines,
+                  decisions that involve other family members, or simply the emotional weight
+                  of dealing with someone&apos;s home.
                 </p>
                 <p>
-                  We don&apos;t rush this process. If you&apos;re just starting to explore
-                  your options, that&apos;s a perfectly fine place to start a conversation.
-                  We can explain what a cash sale looks like and let you decide if it
-                  makes sense — on your timeline.
+                  We don&apos;t rush this process. If you&apos;re just starting to explore your
+                  options, that&apos;s a perfectly fine place to start a conversation. We can
+                  explain what a cash sale looks like and let you decide if it makes sense -
+                  on your timeline.
                 </p>
               </div>
             </div>
@@ -189,7 +200,6 @@ export default function InheritedPropertyPage() {
         </div>
       </section>
 
-      {/* ══════════ WHAT WE ASK ══════════ */}
       <section className="section-wrap">
         <FadeIn>
           <div className="mx-auto max-w-3xl">
@@ -216,14 +226,13 @@ export default function InheritedPropertyPage() {
               ))}
             </ul>
             <p className="mt-4 text-sm text-ink-400">
-              That&apos;s it to start. We&apos;ll take it from there and let you know
-              if it&apos;s something we can work with.
+              That&apos;s it to start. We&apos;ll take it from there and let you know if it&apos;s
+              something we can work with.
             </p>
           </div>
         </FadeIn>
       </section>
 
-      {/* ══════════ FAQ ══════════ */}
       <section className="border-t border-stone-200 bg-stone-100/50">
         <div className="section-wrap">
           <FadeIn>
@@ -238,8 +247,8 @@ export default function InheritedPropertyPage() {
           </FadeIn>
 
           <div className="mx-auto mt-10 max-w-3xl space-y-4">
-            {FAQS.map((faq, i) => (
-              <FadeIn key={faq.q} delay={i * 60}>
+            {FAQS.map((faq, index) => (
+              <FadeIn key={faq.q} delay={index * 60}>
                 <div className="rounded-xl border border-stone-200 bg-white p-5">
                   <h3 className="font-display text-base text-ink-600">{faq.q}</h3>
                   <p className="mt-2 text-sm leading-relaxed text-ink-400">{faq.a}</p>
@@ -250,7 +259,6 @@ export default function InheritedPropertyPage() {
         </div>
       </section>
 
-      {/* ══════════ FINAL CTA ══════════ */}
       <section className="section-wrap">
         <FadeIn>
           <div className="relative overflow-hidden rounded-2xl bg-ink-600 px-7 py-14 text-center sm:px-14">
@@ -259,8 +267,8 @@ export default function InheritedPropertyPage() {
               Ready to Talk Through Your Situation?
             </h2>
             <p className="mx-auto mt-3 max-w-lg text-base text-stone-400">
-              Call us. We&apos;ll listen, answer your questions honestly, and tell you
-              what we can offer. There&apos;s no pressure and no rush.
+              Call us. We&apos;ll listen, answer your questions honestly, and tell you what
+              we can offer. There&apos;s no pressure and no rush.
             </p>
             <div className="mt-7 flex flex-wrap items-center justify-center gap-3">
               <a href="#get-offer" className="btn-primary !bg-white !text-ink-600 hover:!bg-stone-100">
@@ -268,7 +276,7 @@ export default function InheritedPropertyPage() {
               </a>
               <a
                 href={`tel:${phoneClean}`}
-                className="text-sm font-semibold text-stone-300 hover:text-amber-400 transition-colors inline-flex items-center gap-1.5"
+                className="inline-flex items-center gap-1.5 text-sm font-semibold text-stone-300 transition-colors hover:text-amber-400"
               >
                 <PhoneIcon />
                 Call {SITE.phone}
@@ -277,6 +285,8 @@ export default function InheritedPropertyPage() {
           </div>
         </FadeIn>
       </section>
+
+      <SellStickyBar />
     </>
   );
 }

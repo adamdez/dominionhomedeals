@@ -1,7 +1,8 @@
 import Script from "next/script";
 
 const GA_MEASUREMENT_ID = "G-5GJ6T8KXLE";
-const GOOGLE_ADS_PRIMARY_ID = "AW-17989282213";
+const GOOGLE_ADS_SITEWIDE_ID = "AW-18000167888";
+const GOOGLE_ADS_CALL_ID = "AW-17989282213";
 const GADS_CALL_LABEL = process.env.NEXT_PUBLIC_GADS_CALL_LABEL || "10-DCJvTz4UcEKCdm4dD";
 
 export function GoogleAnalytics() {
@@ -13,9 +14,29 @@ export function GoogleAnalytics() {
           window.gtag = window.gtag || function(){window.dataLayer.push(arguments);};
           window.gtag('js', new Date());
           window.gtag('config', '${GA_MEASUREMENT_ID}');
+          window.gtag('config', '${GOOGLE_ADS_SITEWIDE_ID}');
         `}
       </Script>
       <Script src={`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`} strategy="lazyOnload" />
+      <Script id="gclid-capture" strategy="afterInteractive">
+        {`
+          (function() {
+            function getParam(name) {
+              var url = new URL(window.location.href);
+              return url.searchParams.get(name);
+            }
+
+            var gclid = getParam('gclid');
+
+            if (gclid) {
+              try {
+                localStorage.setItem('gclid', gclid);
+                localStorage.setItem('gclid_ts', Date.now().toString());
+              } catch (error) {}
+            }
+          })();
+        `}
+      </Script>
       <Script id="phone-click-tracking" strategy="afterInteractive">
         {`
           (function () {
@@ -46,7 +67,7 @@ export function GoogleAnalytics() {
               });
 
               window.gtag('event', 'conversion', {
-                send_to: '${GOOGLE_ADS_PRIMARY_ID}/${GADS_CALL_LABEL}',
+                send_to: '${GOOGLE_ADS_CALL_ID}/${GADS_CALL_LABEL}',
                 value: 1.0,
                 currency: 'USD',
               });

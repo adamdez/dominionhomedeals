@@ -1,32 +1,19 @@
 'use client'
 
-import { useState, useEffect, useRef, FormEvent } from 'react'
+import { FormEvent, useEffect, useState } from 'react'
 import Link from 'next/link'
-import { trackLeadFormSubmission, trackFormStep } from '@/lib/tracking'
+import { trackFormStep, trackLeadFormSubmission } from '@/lib/tracking'
 
-/* ------------------------------------------------------------------ */
-/* Types                                                               */
-/* ------------------------------------------------------------------ */
+type Stage = 'address' | 'name' | 'phone' | 'email' | 'details'
+
 interface FormData {
-  // Step 1
   address: string
-  city: string
-  state: string
-  zip: string
-  // Step 2
-  condition: string
-  timeline: string
-  // Step 3
-  firstName: string
-  lastName: string
+  fullName: string
   phone: string
   email: string
-  // Compliance
-  tcpaConsent: boolean
-  smsOptIn: boolean
-  // Honeypot
+  condition: string
+  timeline: string
   honeypot: string
-  // UTM + Attribution
   utmSource: string
   utmMedium: string
   utmCampaign: string
@@ -34,21 +21,18 @@ interface FormData {
   utmContent: string
   gclid: string
   landingPage: string
+  city: string
+  state: string
+  zip: string
 }
 
 const initialFormData: FormData = {
   address: '',
-  city: '',
-  state: 'WA',
-  zip: '',
-  condition: '',
-  timeline: '',
-  firstName: '',
-  lastName: '',
+  fullName: '',
   phone: '',
   email: '',
-  tcpaConsent: false,
-  smsOptIn: true, // ← Pre-checked by default
+  condition: '',
+  timeline: '',
   honeypot: '',
   utmSource: '',
   utmMedium: '',
@@ -57,533 +41,431 @@ const initialFormData: FormData = {
   utmContent: '',
   gclid: '',
   landingPage: '',
+  city: '',
+  state: 'WA',
+  zip: '',
 }
 
+const stages: Stage[] = ['address', 'name', 'phone', 'email', 'details']
+
 const conditionOptions = [
-  { value: 'Great Shape', emoji: '✨', label: 'Great Shape' },
-  { value: 'Minor Repairs', emoji: '🔧', label: 'Minor Repairs' },
-  { value: 'Needs Work', emoji: '🏗', label: 'Needs Work' },
-  { value: 'Major Issues', emoji: '⚠️', label: 'Major Issues' },
-]
+  'Great shape',
+  'Minor repairs',
+  'Needs work',
+  'Major issues',
+] as const
 
 const timelineOptions = [
-  { value: 'ASAP', label: 'ASAP', sub: 'Under 2 weeks' },
-  { value: 'Soon', label: 'Soon', sub: '2–4 weeks' },
-  { value: 'A Few Months', label: 'A Few Months', sub: '1–3 months' },
-  { value: 'Flexible', label: 'Flexible', sub: 'No rush' },
-]
+  'ASAP',
+  '2-4 weeks',
+  '1-3 months',
+  'Just exploring',
+] as const
 
-/* ------------------------------------------------------------------ */
-/* Component                                                           */
-/* ------------------------------------------------------------------ */
+function splitFullName(fullName: string) {
+  const trimmed = fullName.trim()
+  if (!trimmed) {
+    return { firstName: '', lastName: '' }
+  }
+
+  const parts = trimmed.split(/\s+/)
+  return {
+    firstName: parts[0] || '',
+    lastName: parts.slice(1).join(' '),
+  }
+}
+
+function formatPhone(value: string) {
+  const cleaned = value.replace(/\D/g, '').slice(0, 10)
+  if (cleaned.length >= 7) {
+    return `(${cleaned.slice(0, 3)}) ${cleaned.slice(3, 6)}-${cleaned.slice(6)}`
+  }
+  if (cleaned.length >= 4) {
+    return `(${cleaned.slice(0, 3)}) ${cleaned.slice(3)}`
+  }
+  if (cleaned.length > 0) {
+    return `(${cleaned}`
+  }
+  return ''
+}
+
+function inferCityStateZip(address: string) {
+  const zipMatch = address.match(/\b(\d{5})(?:-\d{4})?\b/)
+  const stateMatch = address.match(/\b([A-Z]{2})\b/)
+  const cityStateMatch = address.match(/,\s*([^,]+?),\s*[A-Z]{2}\b/)
+
+  return {
+    city: cityStateMatch?.[1]?.trim() || '',
+    state: stateMatch?.[1] || 'WA',
+    zip: zipMatch?.[1] || '',
+  }
+}
+
 export function LeadForm() {
-  const [step, setStep] = useState(1)
+  const [stage, setStage] = useState<Stage>('address')
   const [formData, setFormData] = useState<FormData>(initialFormData)
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle')
   const [errorMessage, setErrorMessage] = useState('')
-  const hasTrackedConversion = useRef(false)
 
-  // Capture UTM params on mount
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const params = new URLSearchParams(window.location.search)
-      setFormData((prev) => ({
-        ...prev,
-        utmSource: params.get('utm_source') || '',
-        utmMedium: params.get('utm_medium') || '',
-        utmCampaign: params.get('utm_campaign') || '',
-        utmTerm: params.get('utm_term') || '',
-        utmContent: params.get('utm_content') || '',
-        gclid: params.get('gclid') || '',
-        landingPage: window.location.pathname + window.location.search,
-      }))
-    }
+    if (typeof window === 'undefined') return
+
+    const params = new URLSearchParams(window.location.search)
+    const gclidFromQuery = params.get('gclid') || ''
+    let storedGclid = ''
+
+    try {
+      storedGclid = localStorage.getItem('gclid') || ''
+    } catch (error) {}
+
+    setFormData((prev) => ({
+      ...prev,
+      utmSource: params.get('utm_source') || '',
+      utmMedium: params.get('utm_medium') || '',
+      utmCampaign: params.get('utm_campaign') || '',
+      utmTerm: params.get('utm_term') || '',
+      utmContent: params.get('utm_content') || '',
+      gclid: gclidFromQuery || storedGclid || '',
+      landingPage: window.location.pathname + window.location.search,
+    }))
   }, [])
 
-  const updateField = (field: keyof FormData, value: string | boolean) => {
+  const updateField = (field: keyof FormData, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
   }
 
-  // Format phone as user types
-  const formatPhone = (value: string) => {
-    const cleaned = value.replace(/\D/g, '').substring(0, 10)
-    if (cleaned.length >= 7) {
-      return `(${cleaned.slice(0, 3)}) ${cleaned.slice(3, 6)}-${cleaned.slice(6)}`
-    } else if (cleaned.length >= 4) {
-      return `(${cleaned.slice(0, 3)}) ${cleaned.slice(3)}`
-    } else if (cleaned.length > 0) {
-      return `(${cleaned}`
-    }
-    return ''
-  }
-
-  // Check if phone has enough digits to show SMS opt-in
-  const phoneHasDigits = formData.phone.replace(/\D/g, '').length >= 4
-
-  const canAdvanceStep1 =
-    formData.address.trim().length >= 3 &&
-    formData.city.trim().length >= 2 &&
-    formData.zip.length >= 5
-
-  const canAdvanceStep2 = formData.condition !== '' && formData.timeline !== ''
-
-  // TCPA consent is still required; SMS opt-in is NOT required
-  const canSubmit =
-    formData.firstName.trim() &&
-    formData.lastName.trim() &&
-    formData.phone.replace(/\D/g, '').length >= 10 &&
-    formData.email.includes('@')
-
-  const handleStep1Submit = (e: FormEvent) => {
-    e.preventDefault()
-    if (canAdvanceStep1) {
-      setStep(2)
-      trackFormStep(2, 'property_details')
+  const canContinueCurrentStage = () => {
+    switch (stage) {
+      case 'address':
+        return formData.address.trim().length >= 6
+      case 'name':
+        return formData.fullName.trim().length >= 2
+      case 'phone':
+        return formData.phone.replace(/\D/g, '').length >= 10
+      case 'email':
+        return /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i.test(formData.email)
+      case 'details':
+        return true
+      default:
+        return false
     }
   }
 
-  const handleStep2Continue = () => {
-    if (canAdvanceStep2) {
-      setStep(3)
-      trackFormStep(3, 'contact_info')
-    }
+  const advanceStage = () => {
+    const currentIndex = stages.indexOf(stage)
+    const nextStage = stages[currentIndex + 1]
+    if (!nextStage) return
+
+    trackFormStep(currentIndex + 2, nextStage)
+    setStage(nextStage)
   }
 
-  const handleFinalSubmit = async (e: FormEvent) => {
-    e.preventDefault()
-    if (!canSubmit || isSubmitting) return
+  const goBack = () => {
+    const currentIndex = stages.indexOf(stage)
+    const previousStage = stages[currentIndex - 1]
+    if (!previousStage) return
+    setStage(previousStage)
+  }
+
+  const submitLead = async () => {
+    if (isSubmitting) return
 
     setIsSubmitting(true)
     setErrorMessage('')
+
+    const { firstName, lastName } = splitFullName(formData.fullName)
+    const inferredAddressParts = inferCityStateZip(formData.address)
 
     try {
       const response = await fetch('/api/leads', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          ...formData,
-          // Immutable consent timestamps for TCPA + 10DLC audit
-          tcpaConsent: true, // Submitting = consent (by-submit model)
+          address: formData.address,
+          city: formData.city || inferredAddressParts.city,
+          state: formData.state || inferredAddressParts.state,
+          zip: formData.zip || inferredAddressParts.zip,
+          condition: formData.condition,
+          timeline: formData.timeline,
+          firstName,
+          lastName,
+          phone: formData.phone,
+          email: formData.email,
+          tcpaConsent: true,
           tcpaTimestamp: new Date().toISOString(),
-          smsOptIn: formData.smsOptIn,
-          smsOptInTimestamp: formData.smsOptIn ? new Date().toISOString() : null,
+          smsOptIn: false,
+          smsOptInTimestamp: null,
+          honeypot: formData.honeypot,
           source: 'website',
+          landingPage: formData.landingPage,
+          utmSource: formData.utmSource,
+          utmMedium: formData.utmMedium,
+          utmCampaign: formData.utmCampaign,
+          utmTerm: formData.utmTerm,
+          utmContent: formData.utmContent,
+          gclid: formData.gclid,
         }),
       })
 
       const data = await response.json()
 
-      if (response.ok && data.success) {
-        setSubmitStatus('success')
-
-        // Fire conversion tracking once — GA4 generate_lead + Google Ads conversion
-        // Ref guard ensures this fires exactly once even on retries or re-renders
-        if (!hasTrackedConversion.current) {
-          hasTrackedConversion.current = true
-          trackLeadFormSubmission({
-            landingPage: formData.landingPage,
-            utmSource: formData.utmSource,
-            utmMedium: formData.utmMedium,
-            utmCampaign: formData.utmCampaign,
-            propertyCity: formData.city,
-            propertyState: formData.state,
-            sellerTimeline: formData.timeline,
-            propertyCondition: formData.condition,
-          })
-        }
-      } else {
+      if (!response.ok || !data.success) {
         setErrorMessage(data.error || 'Something went wrong. Please call us at 509-822-5460.')
-        setSubmitStatus('error')
+        return
       }
-    } catch {
+
+      trackLeadFormSubmission({
+        landingPage: formData.landingPage,
+        utmSource: formData.utmSource,
+        utmMedium: formData.utmMedium,
+        utmCampaign: formData.utmCampaign,
+        propertyCity: formData.city || inferredAddressParts.city,
+        propertyState: formData.state || inferredAddressParts.state,
+        sellerTimeline: formData.timeline || 'Not provided',
+        propertyCondition: formData.condition || 'Not provided',
+      })
+
+      window.location.assign('/sell/thank-you')
+    } catch (error) {
       setErrorMessage('Network error. Please call us at 509-822-5460.')
-      setSubmitStatus('error')
     } finally {
       setIsSubmitting(false)
     }
   }
 
-  // ---- SUCCESS STATE ----
-  if (submitStatus === 'success') {
-    return (
-      <div className="text-center py-8 px-4">
-        <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-forest-50">
-          <svg className="h-8 w-8 text-forest-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-          </svg>
-        </div>
-        <h3 className="font-display text-2xl text-ink-700">We Got Your Info!</h3>
-        <p className="mt-2 text-ink-400">
-          One of our team — Adam or Logan — will reach out within 15 minutes to discuss your property at{' '}
-          <span className="font-medium text-ink-600">{formData.address}, {formData.city}</span>.
-        </p>
-        <p className="mt-4 text-sm text-ink-300">
-          Need to talk sooner?{' '}
-          <a href="tel:5098225460" className="font-medium text-forest-600 hover:text-forest-700">
-            Call or text 509-822-5460
-          </a>
-        </p>
-      </div>
-    )
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+
+    if (!canContinueCurrentStage()) return
+
+    if (stage === 'details') {
+      await submitLead()
+      return
+    }
+
+    advanceStage()
   }
 
+  const progressIndex = stages.indexOf(stage)
+
   return (
-    <div id="get-offer">
-      <p className="mb-4 text-center text-sm text-ink-400">
-        Takes about 60 seconds — no obligation
+    <div id="get-offer" className="rounded-[28px] border border-stone-200 bg-white p-6 shadow-soft sm:p-8">
+      <p className="text-center text-sm font-medium text-forest-600">
+        Start with the address. We will ask one thing at a time.
       </p>
 
-      {/* Step Indicator */}
-      <div className="mb-6 flex items-center justify-center gap-0">
-        {[
-          { num: 1, label: 'Property' },
-          { num: 2, label: 'Details' },
-          { num: 3, label: 'Contact' },
-        ].map((s, i) => (
-          <div key={s.num} className="flex items-center">
-            <div className="flex items-center gap-1.5">
-              <span
-                className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold ${
-                  step >= s.num ? 'bg-forest-500 text-white' : 'bg-stone-200 text-stone-400'
-                }`}
-              >
-                {s.num}
-              </span>
-              <span
-                className={`text-sm font-medium ${
-                  step >= s.num ? 'text-ink-600' : 'text-stone-300'
-                }`}
-              >
-                {s.label}
-              </span>
-            </div>
-            {i < 2 && (
-              <div
-                className={`mx-3 h-px w-10 ${
-                  step > s.num ? 'bg-forest-500' : 'bg-stone-200'
-                }`}
-              />
-            )}
-          </div>
+      <div className="mt-6 flex items-center justify-center gap-2.5">
+        {stages.map((item, index) => (
+          <span
+            key={item}
+            className={`h-2.5 rounded-full transition-all ${
+              index <= progressIndex ? 'w-8 bg-forest-500' : 'w-2.5 bg-stone-200'
+            }`}
+          />
         ))}
       </div>
 
-      {/* ============ STEP 1: Property Address ============ */}
-      {step === 1 && (
-        <form onSubmit={handleStep1Submit} className="space-y-3.5">
+      <div className="mt-6 rounded-2xl bg-stone-50 px-4 py-3 text-sm text-ink-400">
+        {stage === 'address' && 'What is the property address?'}
+        {stage === 'name' && `Property: ${formData.address}`}
+        {stage === 'phone' && `Got it. Who should we ask for? ${formData.fullName}`}
+        {stage === 'email' &&
+          `Thanks ${formData.fullName.split(/\s+/)[0] || ''}. What is the best number to reach you? ${formData.phone}`}
+        {stage === 'details' &&
+          `Where should we send the offer follow-up? ${formData.email}`}
+      </div>
+
+      <form onSubmit={handleSubmit} className="mt-5 space-y-4">
+        {stage === 'address' && (
           <div>
-            <label htmlFor="address" className="mb-1 block text-sm font-semibold text-ink-500">
-              Property Address
+            <label htmlFor="address" className="mb-2 block text-sm font-semibold text-ink-500">
+              What&apos;s the property address?
             </label>
             <input
               id="address"
               name="address"
               type="text"
               required
-              placeholder="123 Main St"
+              autoComplete="street-address"
+              placeholder="123 Main St, Spokane, WA 99205"
               value={formData.address}
-              onChange={(e) => updateField('address', e.target.value)}
-              className="w-full rounded-lg border border-stone-200 bg-stone-50 px-3.5 py-3 text-ink-600 placeholder:text-stone-300 focus:border-forest-400 focus:ring-forest-400 transition-colors text-[15px]"
+              onChange={(event) => updateField('address', event.target.value)}
+              className="w-full rounded-2xl border border-stone-200 bg-stone-50 px-4 py-4 text-base text-ink-600 placeholder:text-stone-300 transition-colors focus:border-forest-400 focus:ring-forest-400"
             />
           </div>
+        )}
 
-          <div className="grid grid-cols-5 gap-2.5">
-            <div className="col-span-2">
-              <label htmlFor="city" className="sr-only">City</label>
-              <input
-                id="city"
-                name="city"
-                type="text"
-                required
-                placeholder="City"
-                value={formData.city}
-                onChange={(e) => updateField('city', e.target.value)}
-                className="w-full rounded-lg border border-stone-200 bg-stone-50 px-3.5 py-3 text-ink-600 placeholder:text-stone-300 focus:border-forest-400 focus:ring-forest-400 transition-colors text-[15px]"
-              />
-            </div>
-
-            <label htmlFor="state" className="sr-only">State</label>
-            <select
-              id="state"
-              name="state"
-              value={formData.state}
-              onChange={(e) => updateField('state', e.target.value)}
-              className="rounded-lg border border-stone-200 bg-stone-50 px-2 py-3 text-ink-600 focus:border-forest-400 focus:ring-forest-400 text-[15px]"
-            >
-              <option value="WA">WA</option>
-              <option value="ID">ID</option>
-            </select>
-
-            <div className="col-span-2">
-              <label htmlFor="zip" className="sr-only">ZIP code</label>
-              <input
-                id="zip"
-                name="zip"
-                type="text"
-                required
-                placeholder="ZIP"
-                maxLength={5}
-                value={formData.zip}
-                onChange={(e) => updateField('zip', e.target.value.replace(/\D/g, ''))}
-                className="w-full rounded-lg border border-stone-200 bg-stone-50 px-3.5 py-3 text-ink-600 placeholder:text-stone-300 focus:border-forest-400 focus:ring-forest-400 transition-colors text-[15px]"
-              />
-            </div>
-          </div>
-
-          {/* Honeypot — hidden from real users */}
-          <input
-            type="text"
-            name="company_website"
-            value={formData.honeypot}
-            onChange={(e) => updateField('honeypot', e.target.value)}
-            tabIndex={-1}
-            autoComplete="off"
-            aria-hidden="true"
-            style={{ position: 'absolute', left: '-9999px', opacity: 0, height: 0, width: 0 }}
-          />
-
-          <button
-            type="submit"
-            disabled={!canAdvanceStep1}
-            className="w-full rounded-xl bg-forest-600 py-3.5 text-[15px] font-semibold text-white transition hover:bg-forest-700 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            Continue →
-          </button>
-        </form>
-      )}
-
-      {/* ============ STEP 2: Property Details ============ */}
-      {step === 2 && (
-        <div className="space-y-5">
+        {stage === 'name' && (
           <div>
-            <p className="mb-3 text-sm font-semibold text-ink-500">
-              What condition is the property in?
-            </p>
-            <div className="grid grid-cols-2 gap-2.5">
-              {conditionOptions.map((opt) => (
-                <button
-                  key={opt.value}
-                  type="button"
-                  onClick={() => updateField('condition', opt.value)}
-                  className={`flex items-center gap-2 rounded-lg border px-3.5 py-3 text-left text-[15px] transition ${
-                    formData.condition === opt.value
-                      ? 'border-forest-500 bg-forest-50 text-forest-700 font-medium'
-                      : 'border-stone-200 bg-white text-ink-500 hover:border-stone-300'
-                  }`}
-                >
-                  <span>{opt.emoji}</span> {opt.label}
-                </button>
-              ))}
-            </div>
+            <label htmlFor="fullName" className="mb-2 block text-sm font-semibold text-ink-500">
+              What&apos;s your name?
+            </label>
+            <input
+              id="fullName"
+              name="fullName"
+              type="text"
+              required
+              autoComplete="name"
+              placeholder="Your name"
+              value={formData.fullName}
+              onChange={(event) => updateField('fullName', event.target.value)}
+              className="w-full rounded-2xl border border-stone-200 bg-stone-50 px-4 py-4 text-base text-ink-600 placeholder:text-stone-300 transition-colors focus:border-forest-400 focus:ring-forest-400"
+            />
           </div>
+        )}
 
+        {stage === 'phone' && (
           <div>
-            <p className="mb-3 text-sm font-semibold text-ink-500">
-              How soon do you want to sell?
-            </p>
-            <div className="grid grid-cols-2 gap-2.5">
-              {timelineOptions.map((opt) => (
-                <button
-                  key={opt.value}
-                  type="button"
-                  onClick={() => updateField('timeline', opt.value)}
-                  className={`rounded-lg border px-3.5 py-3 text-left transition ${
-                    formData.timeline === opt.value
-                      ? 'border-forest-500 bg-forest-50 text-forest-700'
-                      : 'border-stone-200 bg-white text-ink-500 hover:border-stone-300'
-                  }`}
-                >
-                  <span className={`text-[15px] ${formData.timeline === opt.value ? 'font-medium' : ''}`}>
-                    {opt.label}
-                  </span>
-                  <span className="block text-xs text-ink-300">{opt.sub}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <button
-            type="button"
-            onClick={handleStep2Continue}
-            disabled={!canAdvanceStep2}
-            className="w-full rounded-xl bg-forest-600 py-3.5 text-[15px] font-semibold text-white transition hover:bg-forest-700 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            Continue →
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setStep(1)}
-            className="w-full text-center text-sm text-ink-400 hover:text-ink-600"
-          >
-            ← Back
-          </button>
-        </div>
-      )}
-
-      {/* ============ STEP 3: Contact + SMS Opt-In + TCPA ============ */}
-      {step === 3 && (
-        <form onSubmit={handleFinalSubmit} className="space-y-3.5">
-          <div className="grid grid-cols-2 gap-2.5">
-            <div>
-              <label htmlFor="firstName" className="sr-only">First name</label>
-              <input
-                id="firstName"
-                name="firstName"
-                type="text"
-                required
-                placeholder="First name"
-                value={formData.firstName}
-                onChange={(e) => updateField('firstName', e.target.value)}
-                className="w-full rounded-lg border border-stone-200 bg-stone-50 px-3.5 py-3 text-ink-600 placeholder:text-stone-300 focus:border-forest-400 focus:ring-forest-400 transition-colors text-[15px]"
-              />
-            </div>
-            <div>
-              <label htmlFor="lastName" className="sr-only">Last name</label>
-              <input
-                id="lastName"
-                name="lastName"
-                type="text"
-                required
-                placeholder="Last name"
-                value={formData.lastName}
-                onChange={(e) => updateField('lastName', e.target.value)}
-                className="w-full rounded-lg border border-stone-200 bg-stone-50 px-3.5 py-3 text-ink-600 placeholder:text-stone-300 focus:border-forest-400 focus:ring-forest-400 transition-colors text-[15px]"
-              />
-            </div>
-          </div>
-
-          <div>
-            <label htmlFor="phone" className="mb-1 block text-sm font-semibold text-ink-500">
-              Phone
+            <label htmlFor="phone" className="mb-2 block text-sm font-semibold text-ink-500">
+              What&apos;s the best phone number?
             </label>
             <input
               id="phone"
               name="phone"
               type="tel"
               required
+              autoComplete="tel"
               placeholder="(509) 555-1234"
               value={formData.phone}
-              onChange={(e) => updateField('phone', formatPhone(e.target.value))}
-              className="w-full rounded-lg border border-stone-200 bg-stone-50 px-3.5 py-3 text-ink-600 placeholder:text-stone-300 focus:border-forest-400 focus:ring-forest-400 transition-colors text-[15px]"
+              onChange={(event) => updateField('phone', formatPhone(event.target.value))}
+              className="w-full rounded-2xl border border-stone-200 bg-stone-50 px-4 py-4 text-base text-ink-600 placeholder:text-stone-300 transition-colors focus:border-forest-400 focus:ring-forest-400"
             />
           </div>
+        )}
 
-          {/* ── SMS OPT-IN: slides in after phone has 4+ digits ── */}
-          <div
-            className={`overflow-hidden transition-all duration-300 ease-in-out ${
-              phoneHasDigits ? 'max-h-20 opacity-100' : 'max-h-0 opacity-0'
-            }`}
-          >
-            <label className="flex items-center gap-2.5 cursor-pointer py-1">
-              <input
-                type="checkbox"
-                name="smsOptIn"
-                checked={formData.smsOptIn}
-                onChange={(e) => updateField('smsOptIn', e.target.checked)}
-                className="h-4 w-4 shrink-0 rounded border-stone-300 text-forest-600 focus:ring-forest-500"
-              />
-              <span className="text-[12px] leading-snug text-ink-400">
-                Text me updates about my offer
-                <span className="text-ink-300"> — Msg &amp; data rates may apply. Reply STOP anytime.</span>
-              </span>
-            </label>
-          </div>
-
+        {stage === 'email' && (
           <div>
-            <label htmlFor="email" className="mb-1 block text-sm font-semibold text-ink-500">
-              Email
+            <label htmlFor="email" className="mb-2 block text-sm font-semibold text-ink-500">
+              What&apos;s the best email for the offer?
             </label>
             <input
               id="email"
               name="email"
               type="email"
               required
+              autoComplete="email"
               placeholder="you@email.com"
               value={formData.email}
-              onChange={(e) => updateField('email', e.target.value)}
-              className="w-full rounded-lg border border-stone-200 bg-stone-50 px-3.5 py-3 text-ink-600 placeholder:text-stone-300 focus:border-forest-400 focus:ring-forest-400 transition-colors text-[15px]"
+              onChange={(event) => updateField('email', event.target.value)}
+              className="w-full rounded-2xl border border-stone-200 bg-stone-50 px-4 py-4 text-base text-ink-600 placeholder:text-stone-300 transition-colors focus:border-forest-400 focus:ring-forest-400"
             />
           </div>
+        )}
 
-          {/* Error message */}
-          {submitStatus === 'error' && errorMessage && (
-            <div role="alert" className="rounded-lg border border-red-200 bg-red-50 px-3.5 py-2.5 text-sm text-red-700">
-              {errorMessage}
+        {stage === 'details' && (
+          <div className="space-y-5">
+            <div>
+              <p className="text-sm font-semibold text-ink-500">
+                Optional: what condition is the property in?
+              </p>
+              <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                {conditionOptions.map((option) => (
+                  <button
+                    key={option}
+                    type="button"
+                    onClick={() =>
+                      updateField('condition', formData.condition === option ? '' : option)
+                    }
+                    className={`rounded-2xl border px-4 py-3 text-left text-sm transition-colors ${
+                      formData.condition === option
+                        ? 'border-forest-500 bg-forest-50 text-forest-700'
+                        : 'border-stone-200 bg-stone-50 text-ink-500 hover:border-stone-300'
+                    }`}
+                  >
+                    {option}
+                  </button>
+                ))}
+              </div>
             </div>
-          )}
 
-          {/* ── TCPA / 10DLC disclosure — above button (by-submit model) ── */}
-          <p className="text-[11px] leading-relaxed text-center text-ink-400 px-2">
-            By clicking &ldquo;Get My Cash Offer,&rdquo; you consent to receive calls
-            {formData.smsOptIn ? ', texts, and emails' : ' and emails'} from
-            Dominion Homes, LLC at the number provided, including by autodialer.
-            Consent is not a condition of purchase. Msg &amp; data rates may apply.
-            Message frequency varies. Reply STOP to opt out. Reply HELP for help.{' '}
+            <div>
+              <p className="text-sm font-semibold text-ink-500">
+                Optional: when do you want to sell?
+              </p>
+              <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                {timelineOptions.map((option) => (
+                  <button
+                    key={option}
+                    type="button"
+                    onClick={() =>
+                      updateField('timeline', formData.timeline === option ? '' : option)
+                    }
+                    className={`rounded-2xl border px-4 py-3 text-left text-sm transition-colors ${
+                      formData.timeline === option
+                        ? 'border-forest-500 bg-forest-50 text-forest-700'
+                        : 'border-stone-200 bg-stone-50 text-ink-500 hover:border-stone-300'
+                    }`}
+                  >
+                    {option}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        <input
+          type="text"
+          name="company_website"
+          value={formData.honeypot}
+          onChange={(event) => updateField('honeypot', event.target.value)}
+          tabIndex={-1}
+          autoComplete="off"
+          aria-hidden="true"
+          style={{ position: 'absolute', left: '-9999px', opacity: 0, height: 0, width: 0 }}
+        />
+
+        <input type="hidden" name="gclid" value={formData.gclid} readOnly />
+        <input type="hidden" name="utm_source" value={formData.utmSource} readOnly />
+        <input type="hidden" name="utm_medium" value={formData.utmMedium} readOnly />
+        <input type="hidden" name="utm_campaign" value={formData.utmCampaign} readOnly />
+        <input type="hidden" name="landing_page" value={formData.landingPage} readOnly />
+
+        {errorMessage ? (
+          <div role="alert" className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            {errorMessage}
+          </div>
+        ) : null}
+
+        <button
+          type="submit"
+          disabled={!canContinueCurrentStage() || isSubmitting}
+          className="w-full rounded-2xl bg-forest-600 px-5 py-4 text-base font-semibold text-white transition hover:bg-forest-700 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          {isSubmitting ? 'Submitting...' : stage === 'address' ? 'Get My Cash Offer' : stage === 'details' ? 'Get My Cash Offer' : 'Continue'}
+        </button>
+
+        {stage !== 'address' ? (
+          <button
+            type="button"
+            onClick={goBack}
+            className="w-full text-center text-sm text-ink-400 transition-colors hover:text-ink-600"
+          >
+            Back
+          </button>
+        ) : null}
+
+        {stage === 'details' ? (
+          <p className="px-2 text-center text-[11px] leading-relaxed text-ink-400">
+            By clicking &ldquo;Get My Cash Offer,&rdquo; you consent to receive calls and emails
+            from Dominion Homes, LLC at the number and email provided, including by
+            autodialer. Consent is not a condition of purchase. Message and data rates may
+            apply.{' '}
             <Link href="/privacy" className="underline hover:text-ink-500">
               Privacy Policy
-            </Link>
-            {' · '}
+            </Link>{' '}
+            ·{' '}
             <Link href="/terms" className="underline hover:text-ink-500">
               Terms
             </Link>
           </p>
+        ) : null}
+      </form>
 
-          {/* Submit button */}
-          <button
-            type="submit"
-            disabled={!canSubmit || isSubmitting}
-            className="w-full rounded-xl bg-forest-600 py-3.5 text-[15px] font-semibold text-white transition hover:bg-forest-700 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {isSubmitting ? (
-              <span className="flex items-center justify-center gap-2">
-                <svg aria-hidden="true" className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                  <path
-                    className="opacity-75"
-                    fill="currentColor"
-                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
-                  />
-                </svg>
-                Submitting...
-              </span>
-            ) : (
-              'Get My Cash Offer →'
-            )}
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setStep(2)}
-            className="w-full text-center text-sm text-ink-400 hover:text-ink-600"
-          >
-            ← Back
-          </button>
-        </form>
-      )}
-
-      {/* Trust badges */}
-      <div className="mt-4 flex items-center justify-center gap-4 text-xs text-ink-300">
-        <span className="flex items-center gap-1">
-          <svg
-            aria-hidden="true"
-            className="h-3.5 w-3.5 text-forest-500"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            strokeWidth={2}
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
-            />
-          </svg>
-          Secure &amp; private
-        </span>
-        <span>No obligation</span>
-        <span>Local team calls you</span>
+      <div className="mt-5 flex flex-wrap items-center justify-center gap-3 text-xs text-ink-300">
+        <span className="rounded-full bg-stone-100 px-3 py-1.5">Private and secure</span>
+        <span className="rounded-full bg-stone-100 px-3 py-1.5">No obligation</span>
+        <span className="rounded-full bg-stone-100 px-3 py-1.5">Local team follow-up</span>
       </div>
     </div>
   )

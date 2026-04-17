@@ -1,0 +1,553 @@
+DOMINION HOME DEALS - EXECUTION DOCUMENT
+
+This is your single source of truth. Print it, work through it top to bottom.
+
+---
+
+PART 1 - GOOGLE ADS EXECUTION (you click, ~10 min)
+
+Open Google Ads -> account 854-009-0319 -> campaign Spokane Seller Search.
+
+1.1 Campaign Settings (kill the AI bleeding)
+
+Path: Campaign -> Settings.
+
+1. AI Max for Search: toggle OFF. Save.
+2. Expand Asset optimization (or "Automatically created assets"):
+   - Text Customization: uncheck. Save.
+   - Final URL Expansion: uncheck. Save.
+3. Expand Locations: confirm "Spokane County, Washington" - Presence: People in or regularly in your targeted locations. If it shows "Presence or interest," change it. Save.
+4. Networks: Google Search Network ON, Search Partners OFF, Display Network OFF. Save.
+5. Bidding: leave at Maximize Clicks for now (no conversion data yet). Once tag fires and you get 15+ conversions in 30 days, switch to Maximize Conversions, then later to tCPA $40.
+6. Budget: stays at $20/day. Do not change.
+7. Dynamic Search Ads section: if there's a DSA setting with an empty domain field, delete the DSA setup entirely - it's inert and a future footgun.
+
+1.2 Fix the broken RSA Final URL
+
+Path: Ad groups -> Foreclosure / Behind on Payments -> Ads.
+
+- Edit the RSA. Final URL currently: https://www.dominionhomedeals.com/sell -> change to https://www.dominionhomedeals.com/sell/foreclosure.
+- Save.
+
+1.3 Delete the duplicate Inherited/Probate RSA
+
+Path: Ad groups -> Inherited / Probate -> Ads.
+
+- You have two RSAs both pointing to /sell/inherited. The one with 1.65% CTR (the lower one) -> click the three-dot menu -> Remove.
+- Keep the 2.75% CTR ad.
+
+1.4 Pause the broad-match keyword leakage
+
+These are bleeding budget on realtor/info traffic. Path: Ad groups -> [group] -> Keywords -> status toggle to Paused.
+
+As-Is / Repairs ad group - pause these:
+- sell house as is (broad)
+- sell my house as is (broad)
+- sell ugly house (broad)
+- we buy ugly houses (broad)
+- sell house in any condition (broad)
+
+Keep their phrase-match "..." and exact-match [...] versions. If a keyword only exists in broad, pause it.
+
+Inherited / Probate ad group - pause these:
+- sell inherited house (broad)
+- sell inherited property (broad)
+- inherited house (broad)
+- probate house sale (broad)
+- selling deceased parents house (broad)
+
+Same rule: keep phrase + exact, kill broad.
+
+1.5 Ad group structural cleanup
+
+Path: Ad groups view.
+
+- Sell As-Is / Ugly House (paused, 0 impr) - duplicate of As-Is/Repairs -> Remove.
+- Inherited / Probate Property (paused, 0 impr) - duplicate of Inherited/Probate -> Remove.
+- AD GROUP 4 (Eligible, 0 impr, Landlord Exit themed) -> Rename to "Landlord Exit". Then check its keywords - likely all broad/zero quality score. Add these exact keywords to it:
+  - [sell rental property spokane]
+  - [sell tenant occupied house spokane]
+  - [tired landlord spokane]
+  - "sell my rental property"
+  - "sell house with tenants"
+  - "landlord wants to sell"
+- Sell My House (8 impr, 0% CTR) - this is too generic. Either pause it entirely or strip it down to one tightly-themed angle. Recommend pause for now; revisit after 30 days of clean data.
+
+1.6 Bulk-paste negatives (the single highest-leverage action)
+
+Path: Tools -> Shared library -> Negative keyword lists -> either edit your existing list OR create a new list called "Spokane Seller - Master Negatives v2" and attach it to the Spokane Seller Search campaign.
+
+Paste the entire block in PART 2 below into the bulk-add box. Google will auto-parse one keyword per line.
+
+1.7 Verification checklist (run after all changes)
+
+- [ ] AI Max OFF, Text Customization OFF, Final URL Expansion OFF
+- [ ] Search Partners OFF, Display OFF
+- [ ] Foreclosure RSA points to /sell/foreclosure
+- [ ] Only one RSA in Inherited/Probate
+- [ ] Broad-match leakage keywords paused in As-Is and Inherited
+- [ ] Two duplicate ad groups removed
+- [ ] AD GROUP 4 renamed and properly keyworded
+- [ ] All ~180 negatives applied at campaign level
+- [ ] Budget still $20/day
+- [ ] Geo still Spokane County, Presence-only
+
+---
+
+PART 2 - NEGATIVE KEYWORD BULK-PASTE LIST
+
+Copy everything between the two lines. Paste into Google Ads bulk negative tool. Google reads one per line; brackets = exact, quotes = phrase, no marks = broad. Use the marks exactly as written.
+
+============ COPY BELOW ============
+
+# Realtor / agent / brokerage intent
+"realtor"
+"real estate agent"
+"realtor.com"
+"redfin"
+"zillow"
+"trulia"
+"homes.com"
+"mls"
+"list my house"
+"list my home"
+"listing agent"
+"selling agent"
+"buyers agent"
+"realtor near me"
+"agent near me"
+"realtor commission"
+"realtor fees"
+"how to find a realtor"
+"best realtor"
+"top realtor"
+"realtor reviews"
+"realtor spokane"
+"spokane realtor"
+"spokane real estate agent"
+"keller williams"
+"coldwell banker"
+"re/max"
+"remax"
+"century 21"
+"berkshire hathaway"
+"compass real estate"
+"john l scott"
+"windermere"
+"exp realty"
+"haven real estate"
+"professional realty services"
+"4 degrees real estate"
+
+# For sale by owner (FSBO is not your audience)
+"fsbo"
+"for sale by owner"
+"sell house without realtor"
+"sell home without agent"
+"sell by owner"
+"flat fee mls"
+"flat fee listing"
+
+# Information / research seekers
+"how to sell"
+"how do i sell"
+"how much is my house worth"
+"home value estimator"
+"house value calculator"
+"zestimate"
+"home appraisal"
+"free home valuation"
+"what is my home worth"
+"what's my house worth"
+"home worth"
+"market value"
+"comparable sales"
+"recent home sales"
+
+# Buyer / renter intent (wrong side of the trade)
+"homes for sale"
+"houses for sale"
+"buy a house"
+"buy house"
+"buy home"
+"home for sale"
+"house for sale"
+"new homes"
+"new construction"
+"open house"
+"houses for rent"
+"homes for rent"
+"apartments for rent"
+"rental property"
+"rent to own"
+"rental"
+"for rent"
+"rentals"
+
+# Jobs / career / education
+"jobs"
+"careers"
+"hiring"
+"salary"
+"how to become"
+"real estate license"
+"real estate school"
+"real estate course"
+"real estate investing course"
+"flipping houses course"
+"real estate coaching"
+
+# DIY / repair / contractor
+"home repair"
+"house repair"
+"contractor"
+"remodel"
+"renovation"
+"diy"
+"how to fix"
+"home improvement"
+"handyman"
+"foundation repair"
+"roof repair"
+
+# Wrong service category
+"home insurance"
+"homeowners insurance"
+"mortgage"
+"refinance"
+"heloc"
+"home equity loan"
+"property tax"
+"tax assessment"
+"property management"
+"home warranty"
+"moving company"
+"movers"
+"storage units"
+"cleaning service"
+"junk removal"
+"estate sale company"
+"estate liquidator"
+
+# Free / cheap / scam intent
+"free"
+"cheap"
+"scam"
+"complaint"
+"complaints"
+"reviews"
+"review"
+"bbb"
+"better business bureau"
+"reddit"
+"yelp"
+"forum"
+
+# Wrong geography (anti-Idaho, anti-out-of-county)
+"seattle"
+"tacoma"
+"bellevue"
+"olympia"
+"vancouver wa"
+"portland"
+"boise"
+"coeur d'alene"
+"coeur dalene"
+"cda"
+"post falls"
+"hayden"
+"rathdrum"
+"sandpoint"
+"moscow idaho"
+"lewiston"
+"pullman"
+"yakima"
+"tri cities"
+"kennewick"
+"richland"
+"pasco"
+"wenatchee"
+"walla walla"
+"moses lake"
+"ellensburg"
+"bellingham"
+"everett"
+
+# National "we buy houses" competitors (don't pay to lose to brand)
+"opendoor"
+"offerpad"
+"homevestors"
+"we buy ugly houses commercial"
+"sundae"
+"orchard"
+"knock"
+"flyhomes"
+"redfinnow"
+
+# Wrong intent verbs
+"value of"
+"history of"
+"address lookup"
+"who owns"
+"property records"
+"county assessor"
+"tax records"
+"deed search"
+"title search"
+"public records"
+
+# Legal / professional services (not your funnel)
+"real estate attorney"
+"real estate lawyer"
+"probate attorney"
+"probate lawyer"
+"estate planning"
+"will and testament"
+"living trust"
+"power of attorney"
+
+# Negative match types - exact blocks for high-cost queries
+[realtor]
+[zillow]
+[redfin]
+[opendoor]
+[home value]
+[my home worth]
+[for sale by owner]
+[houses for sale spokane]
+[homes for sale spokane]
+[spokane homes for sale]
+[spokane houses for sale]
+[apartments spokane]
+[rentals spokane]
+[real estate spokane]
+
+============ COPY ABOVE ============
+
+---
+
+PART 3 - AUDIT SECTIONS 10-14
+
+Section 10 - Corrective Actions Ranked (by leverage x cost-to-implement)
+
+1. Install the Google Ads conversion tag on the live site (Part 4 below). Without this, every other change is half-blind. The account has been running with zero conversion signal - Google's algorithm has nothing to optimize toward. Leverage: maximum. Time: 30 min via Cursor.
+2. Apply the 180-negative bulk list. You're paying for realtor, FSBO, buyer, renter, info, and out-of-county queries today. Cuts an estimated 50-65% of wasted spend. Leverage: massive. Time: 5 min.
+3. Kill AI Max + Text Customization + Final URL Expansion. These features are dragging your tightly-themed ad groups into junk queries with junk landing page matches. Leverage: high. Time: 2 min.
+4. Fix Foreclosure RSA URL (currently sending foreclosure traffic to a generic /sell page - message-match destroyed). Leverage: high per-click. Time: 1 min.
+5. Delete duplicate ad groups + duplicate RSA. Cleans the ad-rotation algorithm and stops your own ads competing with each other. Leverage: medium. Time: 3 min.
+6. Pause broad-match keywords in As-Is and Inherited. Your search-term report shows broad is the leakage source. Leverage: high. Time: 3 min.
+7. Rebuild Landlord Exit ad group with proper keywords + matching landing page. Currently 0 impressions because keywords are too tight or wrong match types. Leverage: medium-high (untapped angle). Time: 5 min in Ads, 2 hr for landing page.
+8. Landing page CRO (Part 4 deliverables: video, testimonials, trust strip, single-step form, sticky CTA, thank-you page). Leverage: this is what moves you from base case to upside case. Time: ~6 hours via Cursor.
+9. GCLID capture into hidden form field so you can match Google clicks to closed deals later. Leverage: medium now, massive in 90 days. Time: 20 min via Cursor.
+10. Thank-you page (/sell/thank-you) for both conversion firing and lead nurture. Leverage: required for tag method. Time: 1 hr via Cursor.
+
+Section 11 - 14-Day Sprint Plan
+
+Day 0 (today): Execute Part 1 (Google Ads UI changes) + Part 2 (negatives). Hand Part 4 to Cursor.
+
+Day 1: Cursor delivers conversion tag + GCLID capture + thank-you page. You verify in Google Tag Assistant that the Submit lead form conversion fires when you submit a test form.
+
+Day 2: Confirm in Google Ads -> Conversions that the test fire registered (typically 3-24 hr lag). Status changes from "Needs attention" to "Recording conversions."
+
+Day 3-7: Run with $20/day. Do NOT touch settings. Let the algorithm see clean signal. Check search-terms report every 48 hr - add any new junk queries to negatives.
+
+Day 8: Review what's working. Pull search terms report. If conversion data is showing (>=3 conversions), keep going on Maximize Clicks until 15+ conversions in trailing 30 days, then switch to Maximize Conversions.
+
+Day 9-11: Cursor delivers landing page CRO upgrades (video on each /sell/[angle] page, 3 testimonials with photos, trust strip, sticky CTA, single-question form first).
+
+Day 12-13: Test every form submission path manually. Verify thank-you page loads. Verify conversion fires in Tag Assistant.
+
+Day 14: Snapshot performance. Compare to baseline (33 clicks / 0 conv / $305 over prior 14 days). You should see meaningful CTR lift on cleaned-up ad groups and at least 1-4 conversions from clean traffic.
+
+Section 12 - 30-Day Roadmap
+
+Days 15-21: Add 2-3 more ad group angles based on what's converting. Likely candidates: Divorce, Job Relocation, Tax Lien / Behind on Payments expansion. Each gets its own /sell/[angle] page with matching ad copy.
+
+Days 22-28: First bid strategy migration. If you have 15+ conversions in the trailing 30 days, switch from Maximize Clicks to Maximize Conversions. Hold for 7 days, watch CPA stabilize.
+
+Day 30 review: Pull these numbers - clicks, CPC, CTR, conversion rate (form fills / clicks), cost per lead, % of leads that became real conversations. If cost per lead is under $80 and conversion rate is over 8%, you're on the path to 14 leads/month at $40/day. Then we revisit budget increase.
+
+Days 30+: Twilio DNI for call tracking (the deferred item). Once form leads are stable and tagged, layer call tracking in so you have full attribution.
+
+Section 13 - Motivated Seller PPC Conversion Principles
+
+The non-negotiables for this category:
+
+Distress angle = ad group = landing page = form. One promise per funnel. A foreclosure searcher never sees a generic "we buy houses" page. A landlord never sees inherited copy. Message match is 60% of the conversion rate fight in this category.
+
+Speed beats polish. A motivated seller in distress is calling 3-5 buyers. The investor who responds in <5 min wins disproportionately. Your form-to-call SLA matters more than your headline.
+
+Friction kills. One-question first form ("What's the property address?") then progressive disclosure. Multi-field forms above the fold cut conversion rate by 40-60% in this category.
+
+Trust signals are required, not optional. Distressed sellers are paranoid about scams. Real photo of the owner (you), real phone number, BBB or Google review screenshots, "we've bought X houses in Spokane since [year]," and at least one testimonial with a face. Stock photos are conversion poison.
+
+Phone secondary, form primary - for now. You said it: nobody calls anymore. Build the form funnel right and you'll get 70-85% of leads via form. Phone call tracking is a Phase 2 problem.
+
+Negative keywords are the entire game at small budgets. At $20/day, every wasted click is 8-15% of your daily budget. Aggressive negatives aren't optional - they're the difference between profitable and dead.
+
+Geographic discipline. Spokane County only, Presence-only targeting. The biggest budget waste at small spend is paying for clicks from people who aren't in your buy-box.
+
+Section 14 - Final Verdict
+
+The account is recoverable, and the path is unambiguous.
+
+The honest read: you've been running a campaign with no conversion signal (the tag isn't on the site), with AI Max amplifying garbage queries, with broad-match keywords pulling in realtor and info traffic, with one RSA pointed at the wrong landing page, and with a landing page that lacks the trust signals, video, and single-step form that this category requires. Every one of those is fixable, and most of them are fixable today.
+
+Base case (>=50% probability) with everything in this document executed correctly: at $20/day, you reach 5-8 qualified seller leads per month within 60 days. Cost per lead in the $70-$110 range.
+
+Upside case (~20% probability) with everything executed and the landing page CRO done well (video, testimonials, single-question form, fast follow-up): at $20/day you reach 8-12 leads/month. To hit 14 leads/month you almost certainly need $40/day plus the full CRO package - at which point 14 becomes the base case, not the upside.
+
+The single biggest failure mode is executing Part 1 and Part 2 but not Part 4. The Google Ads cleanup without the website work gets you to maybe 3-5 leads/month. The website work without the Google Ads cleanup gets you to maybe 2-4 leads/month. Doing both is non-linear - they multiply.
+
+Don't half-execute this.
+
+---
+
+PART 4 - CURSOR-READY WEBSITE TO-DO LIST
+
+This is the demanding spec. Hand it to Cursor verbatim. Every item has acceptance criteria. If you skip any item, you forfeit the upside case.
+
+CURSOR PROMPT - DOMINION HOME DEALS WEBSITE UPGRADE
+
+Context: dominionhomedeals.com is a real estate investor lead-generation site for Dominion Home Deals, targeting Spokane County, WA homeowners selling distressed/inherited/landlord/foreclosure properties. Current site has GA4 (G-5GJ6T8KXLE) installed but is missing the Google Ads conversion infrastructure and lacks several CRO must-haves for the category. Implement every item below. Do not skip. Do not "improve" the spec without explicit instruction. After implementation, run the acceptance checklist at the end.
+
+TASK 1 - Install Google Ads gtag.js sitewide
+
+Add the following to the <head> of every page on the site, as high in the head as possible, after the existing GA4 tag:
+
+<!-- Google tag (gtag.js) for Google Ads -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=AW-18000167888"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'AW-18000167888');
+</script>
+
+If GA4 already uses gtag.js (it does - G-5GJ6T8KXLE), do NOT duplicate the loader script. Instead just add the additional gtag('config', 'AW-18000167888'); line inside the existing gtag init block. Both IDs can share one gtag instance.
+
+Acceptance: Open any page in Chrome, install Tag Assistant Companion extension, refresh the page. Tag Assistant must show two active Google tags: G-5GJ6T8KXLE (GA4) and AW-18000167888 (Google Ads). If only one shows, the install is broken.
+
+TASK 2 - Build a thank-you page at /sell/thank-you
+
+Create a new page at the route /sell/thank-you with:
+- H1: "Thanks - we got your info. We'll reach out within 1 business hour."
+- Subhead: "Keep an eye on your phone and email. If it's urgent, call us at [PHONE]."
+- Trust strip: "Locally owned in Spokane - We've helped [N] families - No obligation"
+- Three reassurance bullets: (1) "No fees, no commissions, no repairs." (2) "We close on your timeline - 7 days or 60 days." (3) "Your info stays private."
+- Embed the conversion event firing snippet (Task 3) on this page.
+- Set the page meta to noindex, nofollow so it doesn't get indexed by Google.
+
+Acceptance: Navigate directly to /sell/thank-you - page loads, has the H1, has the snippet, has noindex.
+
+TASK 3 - Fire the Google Ads conversion event on the thank-you page
+
+Inside /sell/thank-you, add this script in the body (or end of head):
+
+<!-- Google Ads conversion event: lead form submission -->
+<script>
+  gtag('event', 'conversion', {
+    'send_to': 'AW-18000301728/LJHYCOnlx4QcEKCdm4dD',
+    'value': 1.0,
+    'currency': 'USD'
+  });
+</script>
+
+This fires once when the thank-you page loads, which only happens after a successful form submission.
+
+Acceptance: Submit a real form on /sell or any /sell/[angle] page -> user is redirected to /sell/thank-you -> Tag Assistant shows the conversion event firing with send_to: AW-18000301728/LJHYCOnlx4QcEKCdm4dD. Within 24 hours, the "Submit lead form" conversion in Google Ads changes status from "Needs attention" to "Recording conversions."
+
+TASK 4 - Redirect every form on the site to /sell/thank-you after submission
+
+Every form on the site (currently on /sell, /sell/inherited, /sell/as-is, /sell/landlord, /sell/foreclosure, and any other /sell/* pages) must, on successful submission, redirect the user to /sell/thank-you. No popups, no in-page success messages - full redirect. This is required for Task 3 to fire.
+
+Acceptance: Submit a test form on each landing page. Each one ends on /sell/thank-you. URL bar reflects the new path.
+
+TASK 5 - GCLID capture in hidden form field
+
+Add to the head of every page (or in your global JS):
+
+<script>
+(function() {
+  function getParam(name) {
+    var url = new URL(window.location.href);
+    return url.searchParams.get(name);
+  }
+  var gclid = getParam('gclid');
+  if (gclid) {
+    try {
+      localStorage.setItem('gclid', gclid);
+      localStorage.setItem('gclid_ts', Date.now().toString());
+    } catch(e) {}
+  }
+  document.addEventListener('DOMContentLoaded', function() {
+    var stored = null;
+    try { stored = localStorage.getItem('gclid'); } catch(e) {}
+    if (!stored) return;
+    var forms = document.querySelectorAll('form');
+    forms.forEach(function(f) {
+      if (f.querySelector('input[name="gclid"]')) return;
+      var input = document.createElement('input');
+      input.type = 'hidden';
+      input.name = 'gclid';
+      input.value = stored;
+      f.appendChild(input);
+    });
+  });
+})();
+</script>
+
+Acceptance: Visit https://www.dominionhomedeals.com/sell?gclid=TEST123 -> open DevTools -> Application -> Local Storage -> confirm gclid: TEST123 is stored. Then inspect any form on the page -> confirm a hidden input <input type="hidden" name="gclid" value="TEST123"> was added to the form. Submit the form -> confirm gclid=TEST123 shows up in whatever backend / email receives the lead.
+
+TASK 6 - Single-question first form ("address-first")
+
+Every landing page form must lead with one question only: "What's the property address?" with a single text input and a button labeled "Get My Cash Offer."
+
+After clicking the button, progressively reveal the next fields one at a time (name -> phone -> email -> optional condition/timeline). Do NOT show all fields at once. Industry data on this category shows 40-60% lift in form starts when the first ask is just an address.
+
+Acceptance: Each /sell/* page shows ONE input field above the fold (address) and one button. After clicking, additional fields appear inline. Form is submittable at the end of the sequence and redirects to /sell/thank-you per Task 4.
+
+TASK 7 - Sticky mobile CTA bar
+
+On mobile viewports only, add a sticky bar at the bottom of every /sell/* page with: phone number on the left (tap to call), "Get Cash Offer" button on the right (scrolls to form).
+
+Acceptance: Open any /sell/* page on a mobile viewport (DevTools mobile emulation). A bar is fixed at the bottom of the viewport, visible at all scroll positions, with both elements functional.
+
+TASK 8 - Above-the-fold trust strip on every /sell/* page
+
+Directly below the H1, before the form, add a horizontal strip with: "Locally Owned in Spokane - [N] Families Helped Since [Year] - No Fees, No Repairs, No Obligation - Cash Offer in 24 Hours."
+
+Use real numbers - if you've helped 12 families since 2022, write 12 and 2022. Do not invent.
+
+Acceptance: Strip is visible above the fold on desktop AND mobile, on every /sell/* page.
+
+TASK 9 - Owner photo + 30-second intro video on every /sell/* page
+
+Embed (a) a real headshot of the owner (you) with first name + "Founder, Dominion Home Deals" and (b) a 30-second self-shot video where you say: "Hi, I'm [Name]. I buy houses in Spokane County. If you're dealing with [angle: inheritance / landlord situation / foreclosure / a house that needs work], fill out the form and I'll personally call you back within an hour with a no-obligation cash offer. No fees, no repairs, no surprises."
+
+The video can be the same clip across all pages, OR a per-angle version (better). Host on YouTube as unlisted, embed via iframe.
+
+Acceptance: Video plays on each /sell/* page. Owner photo is visible. No stock photos of generic smiling people anywhere on the site.
+
+TASK 10 - Three real testimonials with photos
+
+Below the form on each /sell/* page, add three testimonial cards with: real first name, neighborhood (e.g., "Maria, Hillyard"), 2-3 sentence testimonial, photo (real preferred, illustrated avatar acceptable if real isn't available). Do not use stock photos. Do not invent testimonials - if you don't have three real ones, get them from past sellers this week, even if it's via text.
+
+Acceptance: Three testimonial cards visible on each /sell/* page, each with name, neighborhood, quote, and image.
+
+TASK 11 - Match landing page H1 + first paragraph to the ad group
+
+Each /sell/[angle] page must lead with copy matching the angle. Specifically:
+
+- /sell/inherited H1: "Sell an Inherited House in Spokane - Cash Offer in 24 Hours"
+- /sell/as-is H1: "Sell Your House As-Is in Spokane - Any Condition, No Repairs"
+- /sell/landlord H1: "Tired of Being a Landlord in Spokane? Sell Your Rental As-Is for Cash"
+- /sell/foreclosure H1: "Behind on Payments in Spokane? Sell Before Foreclosure - Fast Cash"
+
+The first paragraph of body copy must echo the H1 angle in plain language.
+
+Acceptance: Each page's H1 matches above. First paragraph echoes the angle. No generic "we buy houses" copy at the top of any angle-specific page.
+
+TASK 12 - Page speed
+
+After all changes, run PageSpeed Insights on /sell/inherited (the highest-traffic page). Mobile score must be >= 70.

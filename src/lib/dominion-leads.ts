@@ -30,6 +30,7 @@ export interface DominionLeadRecord {
   utmSource: string;
   utmMedium: string;
   utmCampaign: string;
+  gclid: string;
   status: DominionLeadStatus;
   owner: DominionLeadOwner;
   firstTouchAt: string | null;
@@ -57,6 +58,7 @@ export interface DominionLeadSubmissionInput {
   utmSource?: string | null;
   utmMedium?: string | null;
   utmCampaign?: string | null;
+  gclid?: string | null;
   submittedAt: string;
 }
 
@@ -142,6 +144,7 @@ function rowToDominionLead(row: {
     utmSource: shortText(content.utmSource, 160),
     utmMedium: shortText(content.utmMedium, 160),
     utmCampaign: shortText(content.utmCampaign, 160),
+    gclid: shortText(content.gclid, 160),
     status: normalizeStatus(content.status),
     owner: normalizeOwner(content.owner),
     firstTouchAt: normalizeTimestamp(content.firstTouchAt),
@@ -179,6 +182,7 @@ function dominionLeadToContent(
     utmSource: record.utmSource.trim(),
     utmMedium: record.utmMedium.trim(),
     utmCampaign: record.utmCampaign.trim(),
+    gclid: record.gclid.trim(),
     status: normalizeStatus(record.status),
     owner: normalizeOwner(record.owner),
     firstTouchAt: normalizeTimestamp(record.firstTouchAt),
@@ -212,6 +216,7 @@ export async function recordDominionLeadSubmission(
     utmSource: shortText(input.utmSource, 160),
     utmMedium: shortText(input.utmMedium, 160),
     utmCampaign: shortText(input.utmCampaign, 160),
+    gclid: shortText(input.gclid, 160),
     status: "new",
     owner: "unassigned",
     firstTouchAt: null,

@@ -2,13 +2,10 @@
  * Conversion and event tracking helpers.
  *
  * We keep the global GA tag lightweight on initial page load, then send
- * Google Ads conversions explicitly with `send_to` only when the user
- * actually submits a form or taps a phone link.
+ * explicit Google Ads conversions only where they are required.
  */
 
 const GOOGLE_ADS_PRIMARY_ID = 'AW-17989282213'
-const GADS_FORM_SEND_TO =
-  process.env.NEXT_PUBLIC_GADS_FORM_SEND_TO || 'AW-18000301728/LJHYCOnlx4QcEKCdm4dD'
 const GADS_CALL_LABEL = process.env.NEXT_PUBLIC_GADS_CALL_LABEL || '10-DCJvTz4UcEKCdm4dD'
 
 declare global {
@@ -49,14 +46,6 @@ export function trackLeadFormSubmission(data: LeadTrackingData): void {
     currency: 'USD',
     value: 1,
   })
-
-  if (GADS_FORM_SEND_TO) {
-    gtag('event', 'conversion', {
-      send_to: GADS_FORM_SEND_TO,
-      value: 1.0,
-      currency: 'USD',
-    })
-  }
 }
 
 export function trackFormStep(stepNumber: number, stepName: string): void {
