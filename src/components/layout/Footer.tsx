@@ -1,5 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
+import Script from "next/script";
 import { SITE } from "@/lib/constants";
 import { getByCounty } from "@/lib/neighborhoods";
 
@@ -15,7 +16,7 @@ export function Footer() {
   ] as const;
 
   return (
-    <footer className="border-t border-stone-200 bg-ink-600 text-stone-300">
+    <footer className="border-t border-stone-200 bg-ink-600 pb-24 text-stone-300 sm:pb-20">
       <div className="mx-auto max-w-6xl px-5 py-14 sm:px-6 lg:px-8">
         <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-4">
           <div>
@@ -90,6 +91,16 @@ export function Footer() {
         </div>
       </div>
 
+      <div className="border-t border-stone-500/20 bg-ink-700/50">
+        <div className="mx-auto flex max-w-6xl flex-col gap-1 px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6 sm:py-3.5 lg:px-8">
+          <p className="text-[15px] leading-snug text-stone-200 sm:text-base">
+            <span className="font-semibold text-amber-400">Questions?</span> Use the chat button in the corner — we
+            typically reply within minutes during business hours.
+          </p>
+          <p className="shrink-0 text-xs text-stone-500 sm:text-sm">No signup required.</p>
+        </div>
+      </div>
+
       <div className="border-t border-stone-500/20">
         <div className="mx-auto max-w-6xl px-5 py-5 sm:px-6 lg:px-8">
           <div className="space-y-2 text-[11px] leading-relaxed text-stone-500">
@@ -132,6 +143,14 @@ export function Footer() {
           </div>
         </div>
       </div>
+
+      <Script
+        id="leadconnector-chat"
+        src="https://widgets.leadconnectorhq.com/loader.js"
+        strategy="lazyOnload"
+        data-resources-url="https://widgets.leadconnectorhq.com/chat-widget/loader.js"
+        data-widget-id="69e18ffea4d201d81948ea87"
+      />
     </footer>
   );
 }
