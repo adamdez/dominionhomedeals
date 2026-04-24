@@ -94,6 +94,7 @@ export function DealInterestForm({
 
     setStatus('loading')
     try {
+      const consentedAt = new Date().toISOString()
       const res = await fetch('/api/leads', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -110,7 +111,9 @@ export function DealInterestForm({
           phone: form.phone,
           message: form.message,
           tcpaConsent: form.tcpaConsent,
-          tcpaTimestamp: new Date().toISOString(),
+          tcpaTimestamp: consentedAt,
+          smsOptIn: form.tcpaConsent,
+          smsOptInTimestamp: form.tcpaConsent ? consentedAt : null,
           landingPage,
           source,
         }),
@@ -251,7 +254,9 @@ export function DealInterestForm({
             className="mt-0.5 h-4 w-4 shrink-0 rounded border-stone-300 text-forest-500 focus:ring-forest-400"
           />
           <span className="text-xs leading-relaxed text-ink-400">
-            By submitting, you consent to be contacted by Dominion Homes via phone, text, and email.{' '}
+            By submitting, you consent to receive calls, text messages (SMS/MMS), and
+            emails from Dominion Homes, LLC about this property. Message frequency varies.
+            Message and data rates may apply. Reply STOP to opt out, HELP for help.{' '}
             <span className="text-red-500">*</span>
           </span>
         </label>

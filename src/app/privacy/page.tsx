@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 };
 
 export default function PrivacyPolicyPage() {
-  const lastUpdated = "February 23, 2026";
+  const lastUpdated = "April 23, 2026";
 
   return (
     <div className="bg-stone-50">
@@ -112,6 +112,9 @@ export default function PrivacyPolicyPage() {
 
             <h2>5. How We Share Your Information</h2>
             <p>We do not sell your personal information. We may share your information with:</p>
+            <p>
+              No mobile information, including phone numbers and SMS opt-in consent, will be shared with third parties or affiliates for marketing or promotional purposes. Information sharing with subcontractors strictly in support of our services (for example, message delivery via Twilio) is permitted. SMS opt-in data and consent are excluded from all other sharing categories.
+            </p>
             <ul>
               <li><strong>Service providers:</strong> Third parties who help us operate our business, including title companies (e.g., WFG National Title), communication platforms, analytics providers, and CRM systems, subject to confidentiality obligations.</li>
               <li><strong>Transaction parties:</strong> Title companies, closing agents, attorneys, and other parties necessary to complete a real estate transaction, if you accept our offer.</li>

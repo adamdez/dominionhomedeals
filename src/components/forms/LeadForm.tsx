@@ -175,6 +175,7 @@ export function LeadForm() {
 
     const { firstName, lastName } = splitFullName(formData.fullName)
     const inferredAddressParts = inferCityStateZip(formData.address)
+    const consentedAt = new Date().toISOString()
 
     try {
       const response = await fetch('/api/leads', {
@@ -192,9 +193,9 @@ export function LeadForm() {
           phone: formData.phone,
           email: formData.email,
           tcpaConsent: true,
-          tcpaTimestamp: new Date().toISOString(),
-          smsOptIn: false,
-          smsOptInTimestamp: null,
+          tcpaTimestamp: consentedAt,
+          smsOptIn: true,
+          smsOptInTimestamp: consentedAt,
           honeypot: formData.honeypot,
           source: 'website',
           landingPage: formData.landingPage,
@@ -447,17 +448,20 @@ export function LeadForm() {
 
         {stage === 'details' ? (
           <p className="px-2 text-center text-[11px] leading-relaxed text-ink-400">
-            By clicking &ldquo;Get My Cash Offer,&rdquo; you consent to receive calls and emails
-            from Dominion Homes, LLC at the number and email provided, including by
-            autodialer. Consent is not a condition of purchase. Message and data rates may
-            apply.{' '}
+            By clicking &ldquo;Get My Cash Offer,&rdquo; you consent to receive calls, text
+            messages (SMS/MMS), and emails from Dominion Homes, LLC at the phone number
+            and email provided, including messages sent using autodialer or automated
+            technology. Consent is not a condition of purchase. Message frequency varies,
+            up to 10 msgs/month. Message and data rates may apply. Reply STOP to opt out,
+            HELP for help. See our{' '}
             <Link href="/privacy" className="underline hover:text-ink-500">
               Privacy Policy
             </Link>{' '}
-            ·{' '}
+            and{' '}
             <Link href="/terms" className="underline hover:text-ink-500">
               Terms
             </Link>
+            .
           </p>
         ) : null}
       </form>

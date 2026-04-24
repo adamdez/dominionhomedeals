@@ -63,7 +63,7 @@ export const TRUST_STATS = [
 ] as const;
 
 export const TCPA_CONSENT_TEXT =
-  "By submitting this form, you consent to receive calls, texts, and emails from Dominion Homes, LLC at the number and email provided, including by autodialer and prerecorded messages, for the purpose of discussing the sale of your property. Consent is not a condition of purchase. Message and data rates may apply. Message frequency varies. Reply STOP to opt out. Reply HELP for help." as const;
+  "By submitting this form, you consent to receive calls, text messages (SMS/MMS), and emails from Dominion Homes, LLC at the phone number and email provided, including messages sent using autodialer or automated technology, for the purpose of discussing the sale of your property. Consent is not a condition of purchase. Message frequency varies, up to 10 msgs/month. Message and data rates may apply. Reply STOP to opt out, HELP for help." as const;
 
 /** Situations we help with - for the "We Buy Houses In Any Situation" section */
 export const SITUATIONS = [
