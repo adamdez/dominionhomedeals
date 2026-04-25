@@ -34,6 +34,7 @@ export function Footer() {
             <ul className="space-y-2">
               {[
                 { label: "Get a Cash Offer", href: "/#get-offer" },
+                { label: "Buyers & Investors", href: "/buyers" },
                 { label: "How It Works", href: "/how-we-work" },
                 { label: "Seller Guide", href: "/sell/guide" },
                 { label: "Seller Stories", href: "/stories" },

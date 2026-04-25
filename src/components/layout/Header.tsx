@@ -4,6 +4,7 @@ import { SITE } from "@/lib/constants";
 
 const NAV = [
   { label: "How It Works", href: "/how-we-work" },
+  { label: "Buyers & Investors", href: "/buyers" },
   { label: "Seller Guide", href: "/sell/guide" },
   { label: "Seller Stories", href: "/stories" },
   { label: "Areas We Serve", href: "/neighborhoods" },
