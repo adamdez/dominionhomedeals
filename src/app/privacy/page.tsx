@@ -47,7 +47,7 @@ export default function PrivacyPolicyPage() {
             <p>
               {SITE.legalName} is a real estate investment company based in {SITE.address.city}, {SITE.address.state} {SITE.address.zip}. We are principals — we buy properties directly. We are not licensed real estate agents or brokers, and we are not affiliated with any government agency. Our phone number is{" "}
               <a href={`tel:${SITE.phone.replace(/-/g, "")}`}>{SITE.phone}</a> and our email is{" "}
-              <a href={`mailto:${SITE.email}`}>{SITE.email}</a>.
+              <a href={`mailto:${SITE.adminEmail}`}>{SITE.adminEmail}</a>.
             </p>
 
             <h2>2. Information We Collect</h2>
@@ -100,7 +100,7 @@ export default function PrivacyPolicyPage() {
             </p>
             <p>
               <strong>To opt out of calls:</strong> Tell us during any call or contact us at{" "}
-              <a href={`mailto:${SITE.email}`}>{SITE.email}</a> or{" "}
+              <a href={`mailto:${SITE.adminEmail}`}>{SITE.adminEmail}</a> or{" "}
               <a href={`tel:${SITE.phone.replace(/-/g, "")}`}>{SITE.phone}</a>.
             </p>
             <p>
@@ -150,7 +150,7 @@ export default function PrivacyPolicyPage() {
             </ul>
             <p>
               To exercise any of these rights, contact us at{" "}
-              <a href={`mailto:${SITE.email}`}>{SITE.email}</a> or call{" "}
+              <a href={`mailto:${SITE.adminEmail}`}>{SITE.adminEmail}</a> or call{" "}
               <a href={`tel:${SITE.phone.replace(/-/g, "")}`}>{SITE.phone}</a>.
               We will respond to your request within 30 days.
             </p>
@@ -186,7 +186,7 @@ export default function PrivacyPolicyPage() {
               <strong>{SITE.legalName}</strong><br />
               {SITE.address.city}, {SITE.address.state} {SITE.address.zip}<br />
               Phone: <a href={`tel:${SITE.phone.replace(/-/g, "")}`}>{SITE.phone}</a><br />
-              Email: <a href={`mailto:${SITE.email}`}>{SITE.email}</a>
+              Email: <a href={`mailto:${SITE.adminEmail}`}>{SITE.adminEmail}</a>
             </p>
 
           </div>

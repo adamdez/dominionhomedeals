@@ -74,7 +74,7 @@ export default function TermsPage() {
             </p>
             <p>
               <strong>Consent is not a condition of receiving an offer.</strong> You may opt out at any time: reply STOP to text messages, request removal during a phone call, click unsubscribe in emails, or contact us at{" "}
-              <a href={`mailto:${SITE.email}`}>{SITE.email}</a>. Message and data rates may apply. Message frequency varies. See our{" "}
+              <a href={`mailto:${SITE.adminEmail}`}>{SITE.adminEmail}</a>. Message and data rates may apply. Message frequency varies. See our{" "}
               <Link href="/privacy">Privacy Policy</Link> for full details.
             </p>
 
@@ -146,7 +146,7 @@ export default function TermsPage() {
               <strong>{SITE.legalName}</strong><br />
               {SITE.address.city}, {SITE.address.state} {SITE.address.zip}<br />
               Phone: <a href={`tel:${SITE.phone.replace(/-/g, "")}`}>{SITE.phone}</a><br />
-              Email: <a href={`mailto:${SITE.email}`}>{SITE.email}</a>
+              Email: <a href={`mailto:${SITE.adminEmail}`}>{SITE.adminEmail}</a>
             </p>
 
           </div>

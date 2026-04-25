@@ -8,7 +8,8 @@ export const SITE = {
     "Spokane-area team that buys houses directly. No commissions, no repairs, close on your timeline. We meet you in person.",
   url: "https://dominionhomedeals.com",
   phone: "509-822-5460",
-  email: "offers@dominionhomedeals.com", 
+  email: "leads@dominionhomedeals.com",
+  adminEmail: "admin@dominionhomedeals.com",
   address: {
     city: "Spokane",
     state: "WA",

@@ -123,7 +123,7 @@ Go to http://localhost:3000
 
 In `src/lib/constants.ts`, find and replace:
 - `(509) 555-0123` → your real phone number
-- `offers@dominionhomedeals.com` → your real email
+- `leads@dominionhomedeals.com` → your real public lead email
 
 In `src/components/sections/Testimonials.tsx`:
 - Replace the placeholder testimonial quotes with your 2 real ones
