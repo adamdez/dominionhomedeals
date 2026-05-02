@@ -6,7 +6,7 @@ export const SITE = {
   tagline: "Local Spokane Team · Direct Home Buyers",
   description:
     "Spokane-area team that buys houses directly. No commissions, no repairs, close on your timeline. We meet you in person.",
-  url: "https://dominionhomedeals.com",
+  url: "https://www.dominionhomedeals.com",
   phone: "509-822-5460",
   email: "leads@dominionhomedeals.com",
   adminEmail: "admin@dominionhomedeals.com",
