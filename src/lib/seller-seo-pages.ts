@@ -31,6 +31,8 @@ export interface SellerSeoPage {
   }>;
 }
 
+export const SELLER_SEO_LAST_UPDATED = "2026-05-02" as const;
+
 const commonRelated = [
   { label: "Sell as-is in Spokane", href: "/sell/as-is" },
   { label: "Inherited property help", href: "/sell/inherited" },

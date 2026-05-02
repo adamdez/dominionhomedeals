@@ -3,6 +3,7 @@ import { FadeIn } from "@/components/animations/FadeIn";
 import { LeadForm } from "@/components/forms/LeadForm";
 import { BreadcrumbJsonLd } from "@/components/seo/BreadcrumbJsonLd";
 import type { SellerSeoPage } from "@/lib/seller-seo-pages";
+import { SELLER_SEO_LAST_UPDATED } from "@/lib/seller-seo-pages";
 import { getSellerSeoUrl } from "@/lib/seller-seo-pages";
 import { SITE } from "@/lib/constants";
 
@@ -49,10 +50,23 @@ function StructuredData({ page }: { page: SellerSeoPage }) {
     url: pageUrl,
   };
 
+  const webPageSchema = {
+    "@context": "https://schema.org",
+    "@type": "WebPage",
+    "@id": `${pageUrl}#webpage`,
+    url: pageUrl,
+    name: page.metaTitle,
+    description: page.description,
+    dateModified: SELLER_SEO_LAST_UPDATED,
+    about: { "@id": `${pageUrl}#service` },
+    publisher: { "@id": `${SITE.url}/#business` },
+  };
+
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(serviceSchema) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(webPageSchema) }} />
     </>
   );
 }
@@ -92,6 +106,17 @@ export function SellerSeoLandingPage({ page }: { page: SellerSeoPage }) {
 
               <FadeIn delay={140}>
                 <p className="mt-5 max-w-xl text-lg leading-relaxed text-ink-400">{page.intro}</p>
+              </FadeIn>
+
+              <FadeIn delay={170}>
+                <p className="mt-4 text-sm font-medium text-ink-300">
+                  Last updated {new Date(`${SELLER_SEO_LAST_UPDATED}T12:00:00`).toLocaleDateString("en-US", {
+                    month: "long",
+                    day: "numeric",
+                    year: "numeric",
+                  })}
+                  {" "}for Spokane-area sellers.
+                </p>
               </FadeIn>
 
               <FadeIn delay={200}>

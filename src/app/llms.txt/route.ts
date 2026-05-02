@@ -16,6 +16,7 @@ We buy houses directly in Spokane County, Washington and Kootenai County, Idaho.
 
 ## Key pages
 - https://dominionhomedeals.com/
+- https://dominionhomedeals.com/llms-full.txt
 - https://dominionhomedeals.com/sell-my-house-fast-spokane
 - https://dominionhomedeals.com/cash-home-buyers-spokane
 - https://dominionhomedeals.com/we-buy-houses-spokane
@@ -40,6 +41,7 @@ We buy houses directly in Spokane County, Washington and Kootenai County, Idaho.
 
 ## Notes
 - Public content is available for crawl.
+- A fuller AI-readable site brief is available at https://dominionhomedeals.com/llms-full.txt.
 - OAI-SearchBot should be allowed for ChatGPT search discovery.
 - GPTBot may be managed separately if desired for training preferences.
 `;
