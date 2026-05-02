@@ -30,6 +30,16 @@ const nextConfig: NextConfig = {
         permanent: true,
       },
       {
+        source: "/contact",
+        destination: "/",
+        permanent: true,
+      },
+      {
+        source: "/sell-your-house-fast",
+        destination: "/sell-my-house-fast-spokane",
+        permanent: true,
+      },
+      {
         source: "/al/:path*",
         has: [{ type: "host", value: "(?:www\\.)?dominionhomedeals\\.com" }],
         destination: `https://${AL_CANONICAL_HOST}/:path*`,
