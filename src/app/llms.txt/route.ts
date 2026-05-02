@@ -4,14 +4,24 @@ Dominion Homes is a local house-buying business based in Post Falls, Idaho.
 We buy houses directly in Spokane County, Washington and Kootenai County, Idaho.
 
 ## Primary topics
+- sell my house fast in Spokane
+- we buy houses in Spokane
 - sell a house as-is in Spokane
 - cash home buyers in Spokane
+- probate house sales in Spokane
+- houses with back taxes in Spokane
 - inherited property sales in Spokane County
 - landlord and rental property sales
 - relocation and vacant house sales
 
 ## Key pages
 - https://dominionhomedeals.com/
+- https://dominionhomedeals.com/sell-my-house-fast-spokane
+- https://dominionhomedeals.com/cash-home-buyers-spokane
+- https://dominionhomedeals.com/we-buy-houses-spokane
+- https://dominionhomedeals.com/sell-house-probate-spokane
+- https://dominionhomedeals.com/sell-house-with-back-taxes-spokane
+- https://dominionhomedeals.com/sell-rental-property-spokane
 - https://dominionhomedeals.com/sell
 - https://dominionhomedeals.com/sell/as-is
 - https://dominionhomedeals.com/sell/inherited

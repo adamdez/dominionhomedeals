@@ -13,6 +13,7 @@ interface FormData {
   email: string
   condition: string
   timeline: string
+  smsConsent: boolean
   honeypot: string
   utmSource: string
   utmMedium: string
@@ -33,6 +34,7 @@ const initialFormData: FormData = {
   email: '',
   condition: '',
   timeline: '',
+  smsConsent: false,
   honeypot: '',
   utmSource: '',
   utmMedium: '',
@@ -130,7 +132,7 @@ export function LeadForm() {
     }))
   }, [])
 
-  const updateField = (field: keyof FormData, value: string) => {
+  const updateField = (field: keyof FormData, value: string | boolean) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
   }
 
@@ -175,7 +177,8 @@ export function LeadForm() {
 
     const { firstName, lastName } = splitFullName(formData.fullName)
     const inferredAddressParts = inferCityStateZip(formData.address)
-    const consentedAt = new Date().toISOString()
+    const submittedAt = new Date().toISOString()
+    const smsConsentTimestamp = submittedAt
 
     try {
       const response = await fetch('/api/leads', {
@@ -192,10 +195,12 @@ export function LeadForm() {
           lastName,
           phone: formData.phone,
           email: formData.email,
-          tcpaConsent: true,
-          tcpaTimestamp: consentedAt,
-          smsOptIn: true,
-          smsOptInTimestamp: consentedAt,
+          tcpaConsent: false,
+          tcpaTimestamp: null,
+          sms_consent: formData.smsConsent,
+          sms_consent_timestamp: smsConsentTimestamp,
+          smsOptIn: formData.smsConsent,
+          smsOptInTimestamp: smsConsentTimestamp,
           honeypot: formData.honeypot,
           source: 'website',
           landingPage: formData.landingPage,
@@ -405,6 +410,32 @@ export function LeadForm() {
           </div>
         )}
 
+        {stage === 'details' ? (
+          <div className="rounded-2xl border border-stone-200 bg-stone-50 px-4 py-4">
+            <label htmlFor="smsConsent" className="flex cursor-pointer items-start gap-3">
+              <input
+                id="smsConsent"
+                name="smsConsent"
+                type="checkbox"
+                checked={formData.smsConsent}
+                onChange={(event) => updateField('smsConsent', event.target.checked)}
+                className="mt-1 h-4 w-4 shrink-0 rounded border-stone-300 text-forest-600 focus:ring-forest-400"
+              />
+              <span className="text-[11px] leading-relaxed text-ink-500">
+                I agree to receive recurring marketing and informational text messages (such as cash offer follow-ups, appointment scheduling, transaction status updates, and document-signing links) from Dominion Homes, LLC at the phone number provided, sent via autodialer or automated technology. Consent is not a condition of purchase. Message frequency varies, up to 10 msgs/month. Msg &amp; data rates may apply. Reply STOP to opt out, HELP for help. See our{' '}
+                <Link href="/privacy" className="underline hover:text-ink-600">
+                  Privacy Policy
+                </Link>{' '}
+                and{' '}
+                <Link href="/terms" className="underline hover:text-ink-600">
+                  Terms
+                </Link>
+                .
+              </span>
+            </label>
+          </div>
+        ) : null}
+
         <input
           type="text"
           name="company_website"
@@ -446,24 +477,6 @@ export function LeadForm() {
           </button>
         ) : null}
 
-        {stage === 'details' ? (
-          <p className="px-2 text-center text-[11px] leading-relaxed text-ink-400">
-            By clicking &ldquo;Get My Cash Offer,&rdquo; you consent to receive calls, text
-            messages (SMS/MMS), and emails from Dominion Homes, LLC at the phone number
-            and email provided, including messages sent using autodialer or automated
-            technology. Consent is not a condition of purchase. Message frequency varies,
-            up to 10 msgs/month. Message and data rates may apply. Reply STOP to opt out,
-            HELP for help. See our{' '}
-            <Link href="/privacy" className="underline hover:text-ink-500">
-              Privacy Policy
-            </Link>{' '}
-            and{' '}
-            <Link href="/terms" className="underline hover:text-ink-500">
-              Terms
-            </Link>
-            .
-          </p>
-        ) : null}
       </form>
 
       <div className="mt-5 flex flex-wrap items-center justify-center gap-3 text-xs text-ink-300">

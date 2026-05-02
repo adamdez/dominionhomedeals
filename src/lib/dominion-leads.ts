@@ -31,6 +31,9 @@ export interface DominionLeadRecord {
   utmMedium: string;
   utmCampaign: string;
   gclid: string;
+  smsConsent: boolean;
+  smsConsentTimestamp: string | null;
+  smsConsentIP: string;
   status: DominionLeadStatus;
   owner: DominionLeadOwner;
   firstTouchAt: string | null;
@@ -59,6 +62,9 @@ export interface DominionLeadSubmissionInput {
   utmMedium?: string | null;
   utmCampaign?: string | null;
   gclid?: string | null;
+  smsConsent?: boolean | null;
+  smsConsentTimestamp?: string | null;
+  smsConsentIP?: string | null;
   submittedAt: string;
 }
 
@@ -145,6 +151,9 @@ function rowToDominionLead(row: {
     utmMedium: shortText(content.utmMedium, 160),
     utmCampaign: shortText(content.utmCampaign, 160),
     gclid: shortText(content.gclid, 160),
+    smsConsent: content.smsConsent === true,
+    smsConsentTimestamp: normalizeTimestamp(content.smsConsentTimestamp),
+    smsConsentIP: shortText(content.smsConsentIP, 80),
     status: normalizeStatus(content.status),
     owner: normalizeOwner(content.owner),
     firstTouchAt: normalizeTimestamp(content.firstTouchAt),
@@ -183,6 +192,9 @@ function dominionLeadToContent(
     utmMedium: record.utmMedium.trim(),
     utmCampaign: record.utmCampaign.trim(),
     gclid: record.gclid.trim(),
+    smsConsent: record.smsConsent === true,
+    smsConsentTimestamp: normalizeTimestamp(record.smsConsentTimestamp),
+    smsConsentIP: record.smsConsentIP.trim(),
     status: normalizeStatus(record.status),
     owner: normalizeOwner(record.owner),
     firstTouchAt: normalizeTimestamp(record.firstTouchAt),
@@ -217,6 +229,9 @@ export async function recordDominionLeadSubmission(
     utmMedium: shortText(input.utmMedium, 160),
     utmCampaign: shortText(input.utmCampaign, 160),
     gclid: shortText(input.gclid, 160),
+    smsConsent: input.smsConsent === true,
+    smsConsentTimestamp: normalizeTimestamp(input.smsConsentTimestamp),
+    smsConsentIP: shortText(input.smsConsentIP, 80),
     status: "new",
     owner: "unassigned",
     firstTouchAt: null,

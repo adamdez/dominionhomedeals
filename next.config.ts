@@ -46,6 +46,15 @@ const nextConfig: NextConfig = {
   async headers() {
     return [
       {
+        source: "/compliance/sms-consent-screenshot.png",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, max-age=31536000, immutable",
+          },
+        ],
+      },
+      {
         source: "/(.*)",
         headers: [
           { key: "X-Frame-Options", value: "DENY" },

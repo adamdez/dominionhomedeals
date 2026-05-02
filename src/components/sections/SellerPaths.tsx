@@ -3,11 +3,18 @@ import { FadeIn } from "@/components/animations/FadeIn";
 
 const SELLER_PATHS = [
   {
+    title: "Need to sell fast in Spokane",
+    description:
+      "When repairs, timing, taxes, or family paperwork make the normal listing process feel too slow or uncertain.",
+    href: "/sell-my-house-fast-spokane",
+    label: "Read the fast-sale Spokane guide",
+  },
+  {
     title: "Inherited or estate property",
     description:
       "Questions around probate, family decision-making, cleanup, and whether now is even the right time to sell.",
-    href: "/sell/inherited",
-    label: "Read the inherited-property guide",
+    href: "/sell-house-probate-spokane",
+    label: "Read the probate house guide",
   },
   {
     title: "House needs major repairs",
@@ -27,8 +34,8 @@ const SELLER_PATHS = [
     title: "Tired landlord situation",
     description:
       "Tenants, turnover, repairs, and the question every landlord eventually asks: is it still worth holding?",
-    href: "/sell/landlord",
-    label: "Read the landlord seller guide",
+    href: "/sell-rental-property-spokane",
+    label: "Read the rental property guide",
   },
 ] as const;
 

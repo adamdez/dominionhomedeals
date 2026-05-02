@@ -1,6 +1,7 @@
 import type { MetadataRoute } from 'next'
 import { SELLER_STORIES } from '@/lib/seller-stories'
 import { getAllSlugs } from '@/lib/neighborhoods'
+import { SELLER_SEO_PAGES } from '@/lib/seller-seo-pages'
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const baseUrl = 'https://dominionhomedeals.com'
@@ -36,5 +37,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority: 0.7,
   }))
 
-  return [...staticPages, ...storyPages, ...neighborhoodPages]
+  const sellerSeoPages = SELLER_SEO_PAGES.map((page) => ({
+    url: `${baseUrl}/${page.slug}`,
+    lastModified: new Date(),
+    changeFrequency: 'monthly' as const,
+    priority: page.slug === 'sell-my-house-fast-spokane' ? 0.95 : 0.88,
+  }))
+
+  return [...staticPages, ...sellerSeoPages, ...storyPages, ...neighborhoodPages]
 }

@@ -4,8 +4,8 @@ import { SITE } from "@/lib/constants";
 
 const NAV = [
   { label: "How It Works", href: "/how-we-work" },
+  { label: "Sell Fast", href: "/sell-my-house-fast-spokane" },
   { label: "Buyers & Investors", href: "/buyers" },
-  { label: "Seller Guide", href: "/sell/guide" },
   { label: "Seller Stories", href: "/stories" },
   { label: "Areas We Serve", href: "/neighborhoods" },
   { label: "About Us", href: "/about" },
@@ -33,7 +33,7 @@ export function Header() {
           </div>
         </Link>
 
-        <nav className="hidden items-center gap-7 md:flex">
+        <nav className="hidden items-center gap-5 md:flex">
           {NAV.map((link) => (
             <Link
               key={link.href}
@@ -43,7 +43,7 @@ export function Header() {
               {link.label}
             </Link>
           ))}
-          <a href={`tel:${SITE.phone.replace(/\D/g, "")}`} className="text-sm font-semibold text-ink-500">
+          <a href={`tel:${SITE.phone.replace(/\D/g, "")}`} className="whitespace-nowrap text-sm font-semibold text-ink-500">
             {SITE.phone}
           </a>
           <a href="/#get-offer" className="btn-primary text-sm !px-5 !py-2.5">

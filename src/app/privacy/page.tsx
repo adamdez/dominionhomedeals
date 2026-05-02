@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 };
 
 export default function PrivacyPolicyPage() {
-  const lastUpdated = "April 23, 2026";
+  const lastUpdated = "April 29, 2026";
 
   return (
     <div className="bg-stone-50">
@@ -88,15 +88,12 @@ export default function PrivacyPolicyPage() {
               <li>Prevent fraud and protect the security of our Site</li>
             </ul>
 
-            <h2>4. Consent to Communications (TCPA Compliance)</h2>
+            <h2>4. Consent to Communications</h2>
             <p>
-              <strong>By submitting a form on our Site or providing your phone number to us, you provide your express written consent</strong> to receive calls, text messages (including SMS and MMS), and emails from {SITE.legalName} at the phone number(s) and/or email address you provide. This may include communications sent using an automatic telephone dialing system and/or prerecorded or artificial voice messages.
+              We may contact you by phone or email to respond to your inquiry, discuss your property, provide a cash offer, coordinate appointments, and support any transaction you choose to pursue with us.
             </p>
             <p>
-              <strong>Consent is not a condition of purchase or receiving an offer.</strong> You may receive up to 10 messages per month. Message and data rates may apply. Message frequency varies based on your inquiry and transaction status.
-            </p>
-            <p>
-              <strong>To opt out of text messages:</strong> Reply STOP to any text message you receive from us. You will receive a confirmation message and no further texts will be sent unless you re-consent.
+              <strong>Consent is not a condition of purchase or receiving an offer.</strong> SMS/text messaging consent is handled separately in the SMS / Text Messaging Program section below and is not required to submit a lead form.
             </p>
             <p>
               <strong>To opt out of calls:</strong> Tell us during any call or contact us at{" "}
@@ -110,10 +107,33 @@ export default function PrivacyPolicyPage() {
               All consent records are maintained in our system with immutable timestamps for compliance purposes.
             </p>
 
+            <h2 id="sms-terms">SMS / Text Messaging Program</h2>
+            <p>
+              By providing your phone number and ticking the SMS consent checkbox on our lead form, you consent to receive recurring marketing and informational text messages from Dominion Homes, LLC, including cash offer follow-ups, appointment scheduling, transaction status updates, and document-signing links.
+            </p>
+            <p>
+              Message frequency varies based on your interaction with us, up to a maximum of 10 messages per month.
+            </p>
+            <p>
+              Message and data rates may apply. Carriers are not liable for delayed or undelivered messages.
+            </p>
+            <p>
+              You may opt out of SMS messages at any time by replying STOP to any message you receive from us. Reply HELP for assistance, or contact us at{" "}
+              <a href={`mailto:${SITE.adminEmail}`}>{SITE.adminEmail}</a> or{" "}
+              <a href={`tel:${SITE.phone.replace(/-/g, "")}`}>{SITE.phone}</a>. After replying STOP you will receive a final confirmation message and no further texts will be sent unless you re-subscribe.
+            </p>
+            <p>
+              No mobile information will be shared with third parties or affiliates for marketing or promotional purposes. All categories listed in this Privacy Policy exclude text messaging originator opt-in data and consent; this information will not be shared with any third parties.
+            </p>
+            <p>
+              For additional terms that apply to your use of our website and services, please review our{" "}
+              <Link href="/terms">Terms</Link>.
+            </p>
+
             <h2>5. How We Share Your Information</h2>
             <p>We do not sell your personal information. We may share your information with:</p>
             <p>
-              No mobile information, including phone numbers and SMS opt-in consent, will be shared with third parties or affiliates for marketing or promotional purposes. Information sharing with subcontractors strictly in support of our services (for example, message delivery via Twilio) is permitted. SMS opt-in data and consent are excluded from all other sharing categories.
+              Text messaging originator opt-in data and consent are excluded from the categories below and are governed by the SMS / Text Messaging Program section of this Privacy Policy.
             </p>
             <ul>
               <li><strong>Service providers:</strong> Third parties who help us operate our business, including title companies (e.g., WFG National Title), communication platforms, analytics providers, and CRM systems, subject to confidentiality obligations.</li>

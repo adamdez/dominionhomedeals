@@ -7,11 +7,12 @@ export function Footer() {
   const year = new Date().getFullYear();
   const topNeighborhoods = getByCounty("Spokane County").slice(0, 8);
   const promises = [
-    "No commissions or fees",
-    "Buy in any condition",
-    "Close on your timeline",
-    "Local team - we meet in person",
-    "No pressure, no obligation",
+    { label: "Sell My House Fast Spokane", href: "/sell-my-house-fast-spokane" },
+    { label: "Cash Home Buyers Spokane", href: "/cash-home-buyers-spokane" },
+    { label: "We Buy Houses Spokane", href: "/we-buy-houses-spokane" },
+    { label: "Sell a Probate House", href: "/sell-house-probate-spokane" },
+    { label: "House With Back Taxes", href: "/sell-house-with-back-taxes-spokane" },
+    { label: "Sell a Rental Property", href: "/sell-rental-property-spokane" },
   ] as const;
 
   return (
@@ -69,21 +70,13 @@ export function Footer() {
           </div>
 
           <div>
-            <h3 className="mb-3 text-xs font-bold uppercase tracking-widest text-stone-400">Our Promise</h3>
+            <h3 className="mb-3 text-xs font-bold uppercase tracking-widest text-stone-400">Seller Guides</h3>
             <ul className="space-y-2 text-sm text-stone-400">
               {promises.map((item) => (
-                <li key={item} className="flex items-center gap-2">
-                  <svg
-                    aria-hidden="true"
-                    className="h-4 w-4 shrink-0 text-forest-400"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                    strokeWidth={2.5}
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                  </svg>
-                  {item}
+                <li key={item.href}>
+                  <Link href={item.href} className="text-stone-400 transition-colors hover:text-amber-400">
+                    {item.label}
+                  </Link>
                 </li>
               ))}
             </ul>

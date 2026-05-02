@@ -16,8 +16,10 @@ interface LeadPayload {
   lastName?: string
   phone: string
   email: string
-  tcpaConsent: boolean
-  tcpaTimestamp: string
+  tcpaConsent?: boolean
+  tcpaTimestamp?: string | null
+  sms_consent?: boolean
+  sms_consent_timestamp?: string | null
   smsOptIn?: boolean
   smsOptInTimestamp?: string | null
   honeypot?: string
@@ -140,10 +142,11 @@ async function sendEmailNotification(lead: Record<string, unknown>) {
       </div>
 
       <div style="padding: 24px; border: 1px solid #e5e3df; border-top: none; border-radius: 0 0 8px 8px;">
-        <h2 style="margin: 0 0 12px; font-size: 16px; color: #1a3a2a;">TCPA Consent ✅</h2>
+        <h2 style="margin: 0 0 12px; font-size: 16px; color: #1a3a2a;">SMS Consent</h2>
         <p style="margin: 0; font-size: 12px; color: #888;">
-          Consented at: ${lead.tcpaTimestamp}<br/>
-          IP: ${lead.tcpaIP}<br/>
+          SMS consent: ${lead.smsConsent ? 'Yes' : 'No'}<br/>
+          SMS consent captured at: ${lead.smsConsentTimestamp}<br/>
+          SMS consent IP: ${lead.smsConsentIP}<br/>
           Source: ${lead.source} | Page: ${lead.landingPage}
         </p>
         ${lead.utmSource ? `<p style="margin: 8px 0 0; font-size: 12px; color: #888;">UTM: ${lead.utmSource} / ${lead.utmMedium} / ${lead.utmCampaign}</p>` : ''}
@@ -281,6 +284,9 @@ async function forwardToSentinel(lead: Record<string, unknown>): Promise<void> {
         // Raw payload for audit
         raw_source_ref: `website_${lead.submittedAt}`,
         received_at: lead.submittedAt,
+        sms_consent: lead.smsConsent,
+        sms_consent_timestamp: lead.smsConsentTimestamp,
+        sms_consent_ip: lead.smsConsentIP,
       }),
     })
 
@@ -328,11 +334,14 @@ export async function POST(request: NextRequest) {
     if (!body.firstName?.trim()) errors.push('First name required')
     if (!body.phone || !validatePhone(body.phone)) errors.push('Valid phone required')
     if (!body.email || !validateEmail(body.email)) errors.push('Valid email required')
-    if (!body.tcpaConsent) errors.push('Consent required')
 
     if (errors.length > 0) {
       return NextResponse.json({ error: 'Validation failed', details: errors }, { status: 400 })
     }
+
+    const submittedAt = new Date().toISOString()
+    const smsConsent = body.sms_consent === true || body.smsOptIn === true
+    const smsConsentTimestamp = body.sms_consent_timestamp || body.smsOptInTimestamp || submittedAt
 
     // Build lead object
     const lead = {
@@ -346,11 +355,14 @@ export async function POST(request: NextRequest) {
       lastName: sanitize(body.lastName || ''),
       phone: body.phone.replace(/\D/g, '').substring(0, 11),
       email: sanitize(body.email).toLowerCase(),
-      tcpaConsented: true,
-      tcpaTimestamp: new Date().toISOString(),
+      tcpaConsented: body.tcpaConsent === true,
+      tcpaTimestamp: body.tcpaTimestamp || null,
       tcpaIP: ip,
-      smsOptIn: body.smsOptIn ?? false,
-      smsOptInTimestamp: body.smsOptInTimestamp || null,
+      smsConsent,
+      smsConsentTimestamp,
+      smsConsentIP: ip,
+      smsOptIn: smsConsent,
+      smsOptInTimestamp: smsConsentTimestamp,
       source: sanitize(body.source || 'website'),
       landingPage: sanitize(body.landingPage || '/'),
       utmSource: sanitize(body.utmSource || ''),
@@ -359,17 +371,16 @@ export async function POST(request: NextRequest) {
       utmTerm: sanitize(body.utmTerm || ''),
       utmContent: sanitize(body.utmContent || ''),
       gclid: body.gclid ? sanitize(body.gclid) : null,
-      submittedAt: new Date().toISOString(),
+      submittedAt,
     }
 
     // Log non-PII summary (visible in Vercel logs)
     console.log('[NEW LEAD]', lead.firstName, lead.lastName, '—', lead.city, lead.state, '—', lead.timeline, '—', lead.condition)
 
-    // Send email + SMS + forward to Sentinel CRM in parallel
+    // Send email + optional SMS + forward to Sentinel CRM in parallel
     // All are best-effort — failures don't block the response
-    const sideEffects = await Promise.allSettled([
+    const sideEffectPromises = [
       withTimeout(sendEmailNotification(lead), 1500, 'email notification'),
-      withTimeout(sendSmsNotification(lead), 1500, 'sms notification'),
       withTimeout(forwardToSentinel(lead), 1500, 'sentinel forward'),
       withTimeout(recordDominionLeadSubmission({
         firstName: lead.firstName,
@@ -388,11 +399,20 @@ export async function POST(request: NextRequest) {
         utmMedium: lead.utmMedium,
         utmCampaign: lead.utmCampaign,
         gclid: lead.gclid,
+        smsConsent: lead.smsConsent,
+        smsConsentTimestamp: lead.smsConsentTimestamp,
+        smsConsentIP: lead.smsConsentIP,
         submittedAt: lead.submittedAt,
       }), 1500, 'lead control write'),
-    ])
+    ]
 
-    const [, , , controlWrite] = sideEffects
+    if (lead.smsConsent) {
+      sideEffectPromises.splice(1, 0, withTimeout(sendSmsNotification(lead), 1500, 'sms notification'))
+    }
+
+    const sideEffects = await Promise.allSettled(sideEffectPromises)
+
+    const controlWrite = sideEffects[sideEffects.length - 1]
     if (controlWrite?.status === 'rejected') {
       console.error('[LEAD CONTROL ERROR]', {
         message:
