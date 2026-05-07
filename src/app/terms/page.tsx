@@ -70,11 +70,14 @@ export default function TermsPage() {
 
             <h2>4. Communications Consent</h2>
             <p>
-              By submitting a form on our Site or providing your contact information, you consent to receive communications from {SITE.legalName}, including phone calls, text messages (SMS/MMS), and emails, regarding your property inquiry. This may include messages sent using automated technology.
+              By submitting a form on our Site or providing your contact information, you consent to receive non-SMS communications from {SITE.legalName}, including phone calls and emails, regarding your property inquiry.
             </p>
             <p>
-              <strong>Consent is not a condition of receiving an offer.</strong> You may opt out at any time: reply STOP to text messages, request removal during a phone call, click unsubscribe in emails, or contact us at{" "}
-              <a href={`mailto:${SITE.adminEmail}`}>{SITE.adminEmail}</a>. Message and data rates may apply. Message frequency varies. See our{" "}
+              SMS/text messaging consent is separate. You only opt in to recurring SMS/MMS messages by ticking the unchecked SMS consent checkbox on our lead form. Messages may include cash offer follow-ups, appointment scheduling, transaction status updates, and document-signing links. Consent is not a condition of purchase or receiving an offer. Message frequency varies, up to 10 msgs/month. Message and data rates may apply.
+            </p>
+            <p>
+              You may opt out at any time: reply STOP to text messages, request removal during a phone call, click unsubscribe in emails, or contact us at{" "}
+              <a href={`mailto:${SITE.adminEmail}`}>{SITE.adminEmail}</a>. See our{" "}
               <Link href="/privacy">Privacy Policy</Link> for full details.
             </p>
 

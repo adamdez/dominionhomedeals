@@ -64,6 +64,40 @@ const timelineOptions = [
   'Just exploring',
 ] as const
 
+function SmsConsentCheckbox({
+  checked,
+  onChange,
+}: {
+  checked: boolean
+  onChange: (checked: boolean) => void
+}) {
+  return (
+    <div className="rounded-2xl border border-forest-200 bg-forest-50 px-4 py-4">
+      <label htmlFor="smsConsent" className="flex cursor-pointer items-start gap-3">
+        <input
+          id="smsConsent"
+          name="smsConsent"
+          type="checkbox"
+          checked={checked}
+          onChange={(event) => onChange(event.target.checked)}
+          className="mt-1 h-4 w-4 shrink-0 rounded border-stone-300 text-forest-600 focus:ring-forest-400"
+        />
+        <span className="text-[11px] leading-relaxed text-ink-600">
+          I agree to receive recurring marketing and informational text messages from Dominion Homes, LLC about my property inquiry, including cash offer follow-ups, appointment scheduling, transaction status updates, and document-signing links, at the phone number provided. Messages may be sent using automated technology. Consent is not required to receive an offer. Message frequency varies, up to 10 msgs/month. Msg &amp; data rates may apply. Reply STOP to opt out or HELP for help. We do not sell or share SMS opt-in information. See our{' '}
+          <Link href="/privacy#sms-terms" className="font-semibold underline hover:text-ink-700">
+            Privacy Policy
+          </Link>{' '}
+          and{' '}
+          <Link href="/terms" className="font-semibold underline hover:text-ink-700">
+            Terms
+          </Link>
+          .
+        </span>
+      </label>
+    </div>
+  )
+}
+
 function splitFullName(fullName: string) {
   const trimmed = fullName.trim()
   if (!trimmed) {
@@ -321,20 +355,26 @@ export function LeadForm() {
         )}
 
         {stage === 'phone' && (
-          <div>
-            <label htmlFor="phone" className="mb-2 block text-sm font-semibold text-ink-500">
-              What&apos;s the best phone number?
-            </label>
-            <input
-              id="phone"
-              name="phone"
-              type="tel"
-              required
-              autoComplete="tel"
-              placeholder="(509) 555-1234"
-              value={formData.phone}
-              onChange={(event) => updateField('phone', formatPhone(event.target.value))}
-              className="w-full rounded-2xl border border-stone-200 bg-stone-50 px-4 py-4 text-base text-ink-600 placeholder:text-stone-300 transition-colors focus:border-forest-400 focus:ring-forest-400"
+          <div className="space-y-3">
+            <div>
+              <label htmlFor="phone" className="mb-2 block text-sm font-semibold text-ink-500">
+                What&apos;s the best phone number?
+              </label>
+              <input
+                id="phone"
+                name="phone"
+                type="tel"
+                required
+                autoComplete="tel"
+                placeholder="(509) 555-1234"
+                value={formData.phone}
+                onChange={(event) => updateField('phone', formatPhone(event.target.value))}
+                className="w-full rounded-2xl border border-stone-200 bg-stone-50 px-4 py-4 text-base text-ink-600 placeholder:text-stone-300 transition-colors focus:border-forest-400 focus:ring-forest-400"
+              />
+            </div>
+            <SmsConsentCheckbox
+              checked={formData.smsConsent}
+              onChange={(checked) => updateField('smsConsent', checked)}
             />
           </div>
         )}
@@ -411,29 +451,10 @@ export function LeadForm() {
         )}
 
         {stage === 'details' ? (
-          <div className="rounded-2xl border border-stone-200 bg-stone-50 px-4 py-4">
-            <label htmlFor="smsConsent" className="flex cursor-pointer items-start gap-3">
-              <input
-                id="smsConsent"
-                name="smsConsent"
-                type="checkbox"
-                checked={formData.smsConsent}
-                onChange={(event) => updateField('smsConsent', event.target.checked)}
-                className="mt-1 h-4 w-4 shrink-0 rounded border-stone-300 text-forest-600 focus:ring-forest-400"
-              />
-              <span className="text-[11px] leading-relaxed text-ink-500">
-                I agree to receive recurring marketing and informational text messages (such as cash offer follow-ups, appointment scheduling, transaction status updates, and document-signing links) from Dominion Homes, LLC at the phone number provided, sent via autodialer or automated technology. Consent is not a condition of purchase. Message frequency varies, up to 10 msgs/month. Msg &amp; data rates may apply. Reply STOP to opt out, HELP for help. See our{' '}
-                <Link href="/privacy" className="underline hover:text-ink-600">
-                  Privacy Policy
-                </Link>{' '}
-                and{' '}
-                <Link href="/terms" className="underline hover:text-ink-600">
-                  Terms
-                </Link>
-                .
-              </span>
-            </label>
-          </div>
+          <SmsConsentCheckbox
+            checked={formData.smsConsent}
+            onChange={(checked) => updateField('smsConsent', checked)}
+          />
         ) : null}
 
         <input
