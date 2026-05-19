@@ -81,7 +81,7 @@ const listings: Record<string, OffMarketListing> = {
     conditionSummary:
       '7.5-acre, two-parcel Nine Mile Falls land opportunity at $99,000 with power and water already part of the story. The simple play may be removing the old manufactured home and setting a cleaner one, or using the parcels for a new-build plan. Buyer to verify the exact county path.',
     summary:
-      'Private disposition opportunity at 6714 Virgil Way in Nine Mile Falls, WA. Asking $99,000 for a 7.5-acre, two-parcel setup with power and water ready, an existing manufactured home on site, and several clear buyer paths to underwrite.',
+      'Private sale opportunity at 6714 Virgil Way in Nine Mile Falls, WA. Asking $99,000 for 7.5 acres across two parcels with power and water ready, an existing manufactured home on site, and a few practical ways a buyer could make it work.',
     paragraphs: [
       '6714 Virgil Way is not just raw land. It is 7.5 acres across a two-parcel setup with power and water ready, plus an older manufactured home already sitting there. That gives a buyer something to work from instead of starting at zero.',
       'The cleanest buyer angle may be a mobile home swap: remove the rough existing home, bring in a cleaner manufactured home, and reuse whatever site pieces can be reused. That only works if the county, utility, and septic path checks out, but it is the first thing a practical buyer should look at.',
@@ -104,28 +104,28 @@ const listings: Record<string, OffMarketListing> = {
     ],
     buyerOptions: [
       {
-        title: 'Mobile home swap',
-        body: 'This is probably the first play to check. Remove the rough existing manufactured home, bring in a cleaner one, and reuse whatever power, water, driveway, and site work can legally be reused. Buyer needs to call the county and verify septic, permits, age/title rules, setup requirements, and utility details.',
+        title: 'Bring in a better mobile home',
+        body: 'The simplest win may be replacing what is there with a cleaner manufactured home. The land already has the kind of setup buyers usually spend time hunting for: room, access, power, and water. If the county and septic path check out, this could be a much faster project than starting with raw dirt.',
       },
       {
-        title: 'New manufactured or modular',
-        body: 'If the site can accept a newer manufactured or modular home, the deal may work for someone who wants a faster path than a full stick-built project. The question is not whether the idea sounds good. The question is what the county, septic, and utility providers will actually approve.',
+        title: 'Set a new manufactured or modular home',
+        body: 'A newer manufactured or modular home could fit the buyer who wants acreage without taking on a full custom build. At $99,000, the appeal is buying the land first, then putting the right home on it instead of paying retail for someone else\'s finished version.',
       },
       {
-        title: 'Stick-built home',
-        body: 'A buyer could also look at it as a small new-build site. Power and water being part of the story helps, but the buyer still needs to verify setbacks, access, septic feasibility, driveway, permits, and whether the existing setup saves real money.',
+        title: 'Build something new',
+        body: 'For a builder or owner-user, 7.5 acres in Nine Mile Falls gives you a real canvas. The old home is not the prize. The land is. A buyer can look at whether the existing driveway, power, and water help shorten the path to a new home.',
       },
       {
-        title: 'Two-parcel angle',
-        body: 'The two-parcel setup is the hook. A buyer should check whether the parcels can be used separately, combined, sold later, or used to support the main build plan. Do not assume it. Verify parcel lines, legal access, and county rules.',
+        title: 'Keep options open with two parcels',
+        body: 'Two parcels gives the deal more flexibility than a single chunk of land. Maybe one parcel carries the main home and the other adds elbow room. Maybe there is a future resale angle. The right buyer will want to check exactly what the county allows.',
       },
       {
-        title: 'Clean it up and resell',
-        body: 'Some buyers may not want to build. There may still be a land cleanup/resale play if they can make the property easier for the next buyer to understand: clear junk, confirm utilities, pull records, and package the permit path better.',
+        title: 'Clean it up and make it easier to buy',
+        body: 'There may be value in doing the work most buyers do not want to do: clean up the property, confirm the utility story, gather the records, and make the next step obvious. A clearer, cleaner 7.5-acre site is easier for the next buyer to say yes to.',
       },
       {
-        title: 'Hold for future use',
-        body: 'For a buyer who wants a place near Nine Mile Falls and can sit on it, this may work as a hold while they sort out the final plan. The downside is carrying time while permits, septic, and cleanup get figured out.',
+        title: 'Buy the land and take your time',
+        body: 'Not every buyer needs to swing a hammer on day one. Someone who wants acreage near Nine Mile Falls may simply want to control the land now, clean it up, and decide later whether to build, replace the home, or hold it for the next move.',
       },
     ],
     facts: [

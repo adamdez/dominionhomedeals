@@ -216,7 +216,7 @@ export default async function OffMarketListingPage({ params }: { params: Promise
               </div>
               {l.buyerOptions?.length ? (
                 <div>
-                  <h2 className="font-display text-heading text-ink-600 mb-5">Ways to look at the deal</h2>
+                  <h2 className="font-display text-heading text-ink-600 mb-5">Why buyers may like it</h2>
                   <div className="grid gap-4 sm:grid-cols-2">
                     {l.buyerOptions.map((option) => (
                       <div key={option.title} className="rounded-2xl border border-stone-200 bg-white p-5 shadow-soft">
