@@ -13,6 +13,7 @@ export type OffMarketListing = {
   locationLine: string
   priceDisplay: string
   priceNumeric: number
+  buyNowDisplay?: string
   eyebrow: string
   tags: string[]
   beds: string
@@ -66,8 +67,9 @@ const listings: Record<string, OffMarketListing> = {
     locationLine: 'Nine Mile Falls, WA 99026',
     priceDisplay: '$99,000',
     priceNumeric: 99000,
+    buyNowDisplay: '$85,000',
     eyebrow: 'Private offering · Two-parcel land play',
-    tags: ['$99,000 asking', '7.5 acres', 'Two parcels', 'Power and water ready', 'Mobile home swap path'],
+    tags: ['$85K Buy Now', '$99,000 asking', '7.5 acres', 'Two parcels', 'Power and water ready', 'Mobile home swap path'],
     beds: 'Land',
     baths: 'N/A',
     sqft: 'Build site',
@@ -79,9 +81,9 @@ const listings: Record<string, OffMarketListing> = {
     state: 'WA',
     zip: '99026',
     conditionSummary:
-      '7.5-acre, two-parcel Nine Mile Falls land opportunity at $99,000 with power and water already part of the story. The simple play may be removing the old manufactured home and setting a cleaner one, or using the parcels for a new-build plan. Buyer to verify the exact county path.',
+      '7.5-acre, two-parcel Nine Mile Falls land opportunity with an $85,000 Buy Now option and a $99,000 asking price. Power and water are already part of the story. The simple play may be removing the old manufactured home and setting a cleaner one, or using the parcels for a new-build plan. Buyer to verify the exact county path.',
     summary:
-      'Private sale opportunity at 6714 Virgil Way in Nine Mile Falls, WA. Asking $99,000 for 7.5 acres across two parcels with power and water ready, an existing manufactured home on site, and a few practical ways a buyer could make it work.',
+      'Private sale opportunity at 6714 Virgil Way in Nine Mile Falls, WA. Buy Now at $85,000, or review the $99,000 asking price for 7.5 acres across two parcels with power and water ready, an existing manufactured home on site, and a few practical ways a buyer could make it work.',
     paragraphs: [
       '6714 Virgil Way is not just raw land. It is 7.5 acres across a two-parcel setup with power and water ready, plus an older manufactured home already sitting there. That gives a buyer something to work from instead of starting at zero.',
       'The cleanest buyer angle may be a mobile home swap: remove the rough existing home, bring in a cleaner manufactured home, and reuse whatever site pieces can be reused. That only works if the county, utility, and septic path checks out, but it is the first thing a practical buyer should look at.',
@@ -90,6 +92,7 @@ const listings: Record<string, OffMarketListing> = {
     ],
     highlights: [
       { text: '$99,000 asking price for 7.5 acres across two parcels' },
+      { text: '$85,000 Buy Now option for a buyer ready to move quickly' },
       { text: 'The land is the hook: enough acreage to make this more than a tiny-lot mobile home deal' },
       { text: 'Power and water are already part of the setup - buyer to verify service details' },
       { text: 'Two parcels give the deal more angles than a single-lot dirt purchase' },
@@ -109,7 +112,7 @@ const listings: Record<string, OffMarketListing> = {
       },
       {
         title: 'Set a new manufactured or modular home',
-        body: 'A newer manufactured or modular home could fit the buyer who wants acreage without taking on a full custom build. At $99,000, the appeal is buying the land first, then putting the right home on it instead of paying retail for someone else\'s finished version.',
+        body: 'A newer manufactured or modular home could fit the buyer who wants acreage without taking on a full custom build. At $85,000 Buy Now, the appeal is buying the land first, then putting the right home on it instead of paying retail for someone else\'s finished version.',
       },
       {
         title: 'Build something new',
@@ -134,6 +137,7 @@ const listings: Record<string, OffMarketListing> = {
       ['State', 'Washington'],
       ['ZIP Code', '99026'],
       ['County', 'Stevens County'],
+      ['Buy Now option', '$85,000'],
       ['Asking price', '$99,000'],
       ['Sale type', 'Private as-is disposition'],
       ['Property type', 'Land / manufactured-home replacement / build-site opportunity'],
@@ -152,6 +156,7 @@ const listings: Record<string, OffMarketListing> = {
     neighborhoodBody:
       'Nine Mile Falls offers a quieter northwest-of-Spokane setting with access to outdoor recreation, residential acreage, and the broader Spokane buyer pool. This opportunity is framed around a two-parcel build path with power and water ready, subject to buyer verification of all land-use and utility assumptions.',
     distanceChips: [
+      { label: 'Buy Now', value: '$85K' },
       { label: 'Asking', value: '$99K' },
       { label: 'Land', value: '7.5 acres' },
       { label: 'Parcels', value: 'Two' },
@@ -173,19 +178,19 @@ const listings: Record<string, OffMarketListing> = {
     primaryCtaLabel: 'Request terms',
     secondaryCtaLabel: 'Text Adam',
     smsBody:
-      'I want to review 6714 Virgil Way at the $99,000 asking price. I saw it is 7.5 acres across two parcels with power/water ready and options to build new or replace the manufactured home.',
+      'I want to review 6714 Virgil Way. I saw the $85,000 Buy Now option and the $99,000 asking price for 7.5 acres across two parcels with power/water ready.',
     actionTitle: 'How to move on this',
     actionIntro:
       'Send your contact info, intended use, proof-of-funds path, and timing. Adam will respond with the next step.',
     actionSteps: [
-      ['1', 'Review the photos, 7.5 acres, two-parcel setup, and $99,000 asking price.'],
+      ['1', 'Review the photos, 7.5 acres, two-parcel setup, $85,000 Buy Now option, and $99,000 asking price.'],
       ['2', 'Pick your likely play: mobile home swap, new manufactured/modular, stick-built home, cleanup/resale, or hold.'],
       ['3', 'Text or submit the form with your intended use, proof-of-funds path, timing, and what you still need to verify.'],
       ['4', 'Call the county/utility/septic contacts before relying on any build or replacement plan.'],
     ],
     submitLabel: 'Request terms',
     sourceNote:
-      'Source note as of 2026-05-19: Property details are based on the current Dominion disposition notes and linked Stevens County property record. Asking price is $99,000. Buyer should verify parcel IDs, acreage, existing manufactured home status, utilities, access, septic feasibility, zoning, replacement rules, new-construction rules, and buildability independently.',
+      'Source note as of 2026-05-19: Property details are based on the current Dominion disposition notes and linked Stevens County property record. Buy Now option is $85,000 and asking price is $99,000. Buyer should verify parcel IDs, acreage, existing manufactured home status, utilities, access, septic feasibility, zoning, replacement rules, new-construction rules, and buildability independently.',
     dueDiligenceNote:
       'Photos, map, and property-record links are for review only. Buyer must verify parcel boundaries, acreage, legal access, easements, road maintenance, power, water, septic feasibility, manufactured home replacement rules, utility reuse, utility costs, zoning, setbacks, permits, title, closing costs, and all building assumptions independently. This is a private as-is disposition opportunity and not a retail MLS listing.',
   },

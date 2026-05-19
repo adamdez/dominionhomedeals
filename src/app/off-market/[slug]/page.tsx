@@ -150,9 +150,14 @@ export default async function OffMarketListingPage({ params }: { params: Promise
           <div className="mt-10 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <p className="text-xs font-semibold uppercase tracking-widest text-stone-400">
-                {l.priceNumeric > 0 ? 'Asking price' : 'Status'}
+                {l.buyNowDisplay ? 'Buy Now option' : l.priceNumeric > 0 ? 'Asking price' : 'Status'}
               </p>
-              <p className="font-display text-4xl font-semibold text-white sm:text-5xl">{l.priceDisplay}</p>
+              <p className="font-display text-4xl font-semibold text-white sm:text-5xl">
+                {l.buyNowDisplay ?? l.priceDisplay}
+              </p>
+              {l.buyNowDisplay ? (
+                <p className="mt-1 text-sm font-semibold text-amber-100">Asking price: {l.priceDisplay}</p>
+              ) : null}
               <p className="mt-2 max-w-xl text-sm text-stone-300">{l.conditionSummary}</p>
             </div>
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
