@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 };
 
 export default function TermsPage() {
-  const lastUpdated = "February 23, 2026";
+  const lastUpdated = "May 19, 2026";
 
   return (
     <div className="bg-stone-50">
@@ -77,7 +77,9 @@ export default function TermsPage() {
             </p>
             <p>
               You may opt out at any time: reply STOP to text messages, request removal during a phone call, click unsubscribe in emails, or contact us at{" "}
-              <a href={`mailto:${SITE.adminEmail}`}>{SITE.adminEmail}</a>. See our{" "}
+              <a href={`mailto:${SITE.adminEmail}`}>{SITE.adminEmail}</a>. For SMS help, reply HELP or contact us at{" "}
+              <a href={`mailto:${SITE.adminEmail}`}>{SITE.adminEmail}</a> or{" "}
+              <a href={`tel:${SITE.phone.replace(/-/g, "")}`}>{SITE.phone}</a>. See our{" "}
               <Link href="/privacy">Privacy Policy</Link> for full details.
             </p>
 
