@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { recordDominionLeadSubmission } from '@/lib/dominion-leads'
+import { syncSellerLeadToMailchimp } from '@/lib/mailchimp'
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -15,7 +16,7 @@ interface LeadPayload {
   firstName: string
   lastName?: string
   phone: string
-  email: string
+  email?: string
   tcpaConsent?: boolean
   tcpaTimestamp?: string | null
   sms_consent?: boolean
@@ -93,6 +94,10 @@ async function sendEmailNotification(lead: Record<string, unknown>) {
   const priorityLabel = lead.timeline === 'ASAP' ? '🔴 URGENT' : lead.timeline === 'Soon' ? '🟡 SOON' : '🟢 NORMAL'
 
   const propertyLine = [lead.city, lead.state, lead.zip].filter(Boolean).join(' ').trim() || 'Not provided'
+  const email = typeof lead.email === 'string' && lead.email ? lead.email : ''
+  const emailCell = email
+    ? `<a href="mailto:${email}" style="color: #1a3a2a;">${email}</a>`
+    : 'Not provided'
 
   const htmlBody = `
     <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -114,7 +119,7 @@ async function sendEmailNotification(lead: Record<string, unknown>) {
           </tr>
           <tr>
             <td style="padding: 6px 0; color: #666;">Email</td>
-            <td style="padding: 6px 0;"><a href="mailto:${lead.email}" style="color: #1a3a2a;">${lead.email}</a></td>
+            <td style="padding: 6px 0;">${emailCell}</td>
           </tr>
         </table>
       </div>
@@ -333,7 +338,7 @@ export async function POST(request: NextRequest) {
     if (!body.address || body.address.trim().length < 3) errors.push('Address required')
     if (!body.firstName?.trim()) errors.push('First name required')
     if (!body.phone || !validatePhone(body.phone)) errors.push('Valid phone required')
-    if (!body.email || !validateEmail(body.email)) errors.push('Valid email required')
+    if (body.email && !validateEmail(body.email)) errors.push('Valid email required')
 
     if (errors.length > 0) {
       return NextResponse.json({ error: 'Validation failed', details: errors }, { status: 400 })
@@ -354,7 +359,7 @@ export async function POST(request: NextRequest) {
       firstName: sanitize(body.firstName),
       lastName: sanitize(body.lastName || ''),
       phone: body.phone.replace(/\D/g, '').substring(0, 11),
-      email: sanitize(body.email).toLowerCase(),
+      email: body.email ? sanitize(body.email).toLowerCase() : '',
       tcpaConsented: body.tcpaConsent === true,
       tcpaTimestamp: body.tcpaTimestamp || null,
       tcpaIP: ip,
@@ -382,6 +387,7 @@ export async function POST(request: NextRequest) {
     const sideEffectPromises = [
       withTimeout(sendEmailNotification(lead), 1500, 'email notification'),
       withTimeout(forwardToSentinel(lead), 1500, 'sentinel forward'),
+      withTimeout(syncSellerLeadToMailchimp(lead), 1500, 'mailchimp seller sync'),
       withTimeout(recordDominionLeadSubmission({
         firstName: lead.firstName,
         lastName: lead.lastName,

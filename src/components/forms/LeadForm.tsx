@@ -4,7 +4,7 @@ import { FormEvent, useEffect, useState } from 'react'
 import Link from 'next/link'
 import { trackFormStep, trackLeadFormSubmission } from '@/lib/tracking'
 
-type Stage = 'address' | 'name' | 'phone' | 'email' | 'details'
+type Stage = 'address' | 'name' | 'phone' | 'details'
 
 interface FormData {
   address: string
@@ -48,7 +48,7 @@ const initialFormData: FormData = {
   zip: '',
 }
 
-const stages: Stage[] = ['address', 'name', 'phone', 'email', 'details']
+const stages: Stage[] = ['address', 'name', 'phone', 'details']
 
 const conditionOptions = [
   'Great shape',
@@ -178,10 +178,11 @@ export function LeadForm() {
         return formData.fullName.trim().length >= 2
       case 'phone':
         return formData.phone.replace(/\D/g, '').length >= 10
-      case 'email':
-        return /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i.test(formData.email)
       case 'details':
-        return true
+        return (
+          !formData.email.trim() ||
+          /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i.test(formData.email)
+        )
       default:
         return false
     }
@@ -309,10 +310,8 @@ export function LeadForm() {
         {stage === 'address' && 'What is the property address?'}
         {stage === 'name' && `Property: ${formData.address}`}
         {stage === 'phone' && `Got it. Who should we ask for? ${formData.fullName}`}
-        {stage === 'email' &&
-          `Thanks ${formData.fullName.split(/\s+/)[0] || ''}. What is the best number to reach you? ${formData.phone}`}
         {stage === 'details' &&
-          `Where should we send the offer follow-up? ${formData.email}`}
+          'Optional details help us review the property, but your phone number is enough to get started.'}
       </div>
 
       <form onSubmit={handleSubmit} className="mt-5 space-y-4">
@@ -379,27 +378,24 @@ export function LeadForm() {
           </div>
         )}
 
-        {stage === 'email' && (
-          <div>
-            <label htmlFor="email" className="mb-2 block text-sm font-semibold text-ink-500">
-              What&apos;s the best email for the offer?
-            </label>
-            <input
-              id="email"
-              name="email"
-              type="email"
-              required
-              autoComplete="email"
-              placeholder="you@email.com"
-              value={formData.email}
-              onChange={(event) => updateField('email', event.target.value)}
-              className="w-full rounded-2xl border border-stone-200 bg-stone-50 px-4 py-4 text-base text-ink-600 placeholder:text-stone-300 transition-colors focus:border-forest-400 focus:ring-forest-400"
-            />
-          </div>
-        )}
-
         {stage === 'details' && (
           <div className="space-y-5">
+            <div>
+              <label htmlFor="email" className="mb-2 block text-sm font-semibold text-ink-500">
+                Optional: what&apos;s the best email for follow-up?
+              </label>
+              <input
+                id="email"
+                name="email"
+                type="email"
+                autoComplete="email"
+                placeholder="you@email.com"
+                value={formData.email}
+                onChange={(event) => updateField('email', event.target.value)}
+                className="w-full rounded-2xl border border-stone-200 bg-stone-50 px-4 py-4 text-base text-ink-600 placeholder:text-stone-300 transition-colors focus:border-forest-400 focus:ring-forest-400"
+              />
+            </div>
+
             <div>
               <p className="text-sm font-semibold text-ink-500">
                 Optional: what condition is the property in?
@@ -449,13 +445,6 @@ export function LeadForm() {
             </div>
           </div>
         )}
-
-        {stage === 'details' ? (
-          <SmsConsentCheckbox
-            checked={formData.smsConsent}
-            onChange={(checked) => updateField('smsConsent', checked)}
-          />
-        ) : null}
 
         <input
           type="text"
