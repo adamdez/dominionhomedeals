@@ -36,6 +36,9 @@ export type DealInterestFormProps = {
   propertyLabel: string
   submitLabel?: string
   variant?: 'default' | 'prestige'
+  contactName?: string
+  contactPhone?: string
+  contactPhoneDisplay?: string
 }
 
 export function DealInterestForm({
@@ -48,6 +51,9 @@ export function DealInterestForm({
   propertyLabel,
   submitLabel = 'Request more info',
   variant = 'default',
+  contactName = 'our team',
+  contactPhone = '5098225460',
+  contactPhoneDisplay = '509-822-5460',
 }: DealInterestFormProps) {
   const [form, setForm] = useState<FormState>(initialState)
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
@@ -150,11 +156,11 @@ export function DealInterestForm({
         </div>
         <h3 className="font-display text-xl font-semibold text-forest-800 mb-2">We received your inquiry</h3>
         <p className="text-ink-500 text-sm leading-relaxed">
-          Thanks for your interest in {propertyLabel}. Logan or someone on his team will be in touch within a few hours.
+          Thanks for your interest in {propertyLabel}. {contactName} will be in touch within a few hours.
           <br />
           Questions now? Call or text{' '}
-          <a href="tel:509-822-5460" className="font-semibold text-forest-600 underline underline-offset-2">
-            509-822-5460
+          <a href={`tel:${contactPhone}`} className="font-semibold text-forest-600 underline underline-offset-2">
+            {contactPhoneDisplay}
           </a>
           .
         </p>
@@ -288,10 +294,10 @@ export function DealInterestForm({
       <p className="text-center text-xs text-ink-300">
         Or call/text:{' '}
         <a
-          href="tel:509-822-5460"
+          href={`tel:${contactPhone}`}
           className="font-semibold text-forest-500 hover:text-forest-600 underline underline-offset-2"
         >
-          509-822-5460
+          {contactPhoneDisplay}
         </a>
       </p>
     </form>

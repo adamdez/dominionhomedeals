@@ -1,9 +1,15 @@
+"use client";
+
 import Link from "next/link";
 import Image from "next/image";
+import { usePathname } from "next/navigation";
 import { SITE } from "@/lib/constants";
 import { getByCounty } from "@/lib/neighborhoods";
 
 export function Footer() {
+  const pathname = usePathname();
+  const isRiversideDispo = pathname === "/off-market/34124-n-newport-highway-trailer-29";
+  const phone = isRiversideDispo ? "509-590-7091" : SITE.phone;
   const year = new Date().getFullYear();
   const topNeighborhoods = getByCounty("Spokane County").slice(0, 8);
   const promises = [
@@ -27,7 +33,7 @@ export function Footer() {
             <p className="text-sm leading-relaxed text-stone-400">
               Your local cash home buyers serving Spokane County, WA and Kootenai County, ID. Based in Spokane.
             </p>
-            <p className="mt-3 text-sm font-semibold text-amber-400">{SITE.phone}</p>
+            <p className="mt-3 text-sm font-semibold text-amber-400">{phone}</p>
           </div>
 
           <div>

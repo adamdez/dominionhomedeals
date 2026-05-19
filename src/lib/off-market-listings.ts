@@ -1,11 +1,14 @@
 ﻿// src/lib/off-market-listings.ts
 import { SITE } from '@/lib/constants'
-import torrensTrail472Photos from '@/data/torrens-trail-472-photos.json'
+import riversideTrailer29Photos from '@/data/riverside-trailer-29-photos.json'
+import cleveland3314Photos from '@/data/3314-e-cleveland-photos.json'
+import virgilWay6714Photos from '@/data/6714-virgil-way-photos.json'
 
 export type OffMarketPhoto = { src: string; alt: string }
 
 export type OffMarketListing = {
   slug: string
+  status: 'active' | 'sold' | 'draft'
   title: string
   locationLine: string
   priceDisplay: string
@@ -26,96 +29,374 @@ export type OffMarketListing = {
   summary: string
   paragraphs: string[]
   highlights: { text: string }[]
+  buyerOptions?: { title: string; body: string }[]
   facts: [string, string][]
   photos: OffMarketPhoto[]
   neighborhoodTitle: string
   neighborhoodBody: string
   distanceChips: { label: string; value: string }[]
+  compLinks?: { label: string; href: string }[]
   mapQuery: string
   leadSource: string
   lat: number
   lng: number
   cardImageSrc: string
+  countySearchUrl?: string
+  countySearchLabel?: string
+  contactName?: string
+  contactPhone?: string
+  contactPhoneDisplay?: string
+  contactEmail?: string
+  primaryCtaLabel?: string
+  secondaryCtaLabel?: string
+  smsBody?: string
+  actionTitle?: string
+  actionIntro?: string
+  actionSteps?: [string, string][]
+  submitLabel?: string
+  sourceNote?: string
+  dueDiligenceNote?: string
 }
 
 const listings: Record<string, OffMarketListing> = {
-  'torrens-trail-472': {
-    slug: 'torrens-trail-472',
-    title: '472 Torrens Trail',
-    locationLine: 'Spirit Lake, Idaho 83869',
-    priceDisplay: '$460,000',
-    priceNumeric: 460000,
-    eyebrow: 'Private offering · Off-market',
-    tags: ['5 acres', '2016 build', 'Kootenai County'],
-    beds: '2',
-    baths: '2',
-    sqft: '1,952',
-    lot: '5 acres',
-    year: '2016',
-    county: 'Kootenai County',
-    streetAddress: '472 Torrens Trail',
-    city: 'Spirit Lake',
-    state: 'ID',
-    zip: '83869',
-    conditionSummary: 'Move-in ready — some interior finishing work remaining',
+  '6714-virgil-way': {
+    slug: '6714-virgil-way',
+    status: 'active',
+    title: '6714 Virgil Way',
+    locationLine: 'Nine Mile Falls, WA 99026',
+    priceDisplay: '$99,000',
+    priceNumeric: 99000,
+    eyebrow: 'Private offering · Build-ready land opportunity',
+    tags: ['$99,000 asking', 'Two parcels', 'Power and water ready', 'Build new or replace manufactured'],
+    beds: 'Land',
+    baths: 'N/A',
+    sqft: 'Build site',
+    lot: '2 parcels',
+    year: 'Ready',
+    county: 'Stevens County',
+    streetAddress: '6714 Virgil Way',
+    city: 'Nine Mile Falls',
+    state: 'WA',
+    zip: '99026',
+    conditionSummary:
+      'Two-parcel Nine Mile Falls land opportunity at $99,000 with power and water ready for a buyer looking to build. Buyer to verify parcel boundaries, utility service, septic feasibility, access, and building requirements.',
     summary:
-      'Move-in ready 2-bedroom, 2-bath home on 5 private acres in Spirit Lake, ID. Built 2016, 1,952 sq ft, asking $460,000. Direct from Dominion Homes.',
+      'Private disposition opportunity at 6714 Virgil Way in Nine Mile Falls, WA. Asking $99,000 for two parcels with power and water ready, positioned for a buyer who wants a cleaner path toward building in the Nine Mile Falls area.',
     paragraphs: [
-      'Set on five private acres in Spirit Lake, Idaho, this 2016-built home offers nearly 2,000 square feet of living space with the quiet of rural North Idaho — minutes from town.',
-      'The home is move-in ready with some finishing work still needed, giving a buyer room to personalize while the structure, systems, and land do the heavy lifting.',
-      'Two bedrooms and two full baths on a usable five-acre parcel suit a primary residence, vacation property, or long-term hold in a growing North Idaho corridor.',
+      '6714 Virgil Way is being offered as a private land disposition in Nine Mile Falls. The asking price is $99,000 for a two-parcel setup with power and water ready.',
+      'The clean value story is usability. Rather than starting from raw dirt, a buyer can evaluate a site where the key utility pieces are already lined up for a build plan, subject to buyer verification with the county and utility providers.',
+      'There is currently a manufactured home on the property, which may give a buyer a practical path to remove and replace it with an updated manufactured home. With two parcels, buyers can also evaluate a new-build plan, a builder/investor land play, or other permitted layouts. Buyer should verify replacement rules, new-construction rules, permits, setbacks, utility reuse, and all county requirements independently.',
+      'This should be reviewed as an as-is land opportunity. Buyer should verify parcel lines, legal access, utility connection details, septic feasibility, permits, setbacks, road maintenance, and all intended building assumptions before closing.',
     ],
     highlights: [
-      { text: 'Move-in ready — some interior finishing work remaining' },
-      { text: '2016 construction — modern build with predictable systems' },
-      { text: 'Five acres — privacy, trees, and usable land' },
-      { text: 'Spirit Lake, ID — strong Kootenai County demand for acreage' },
-      { text: 'Priced at $460,000 — direct from wholesaler, no MLS commissions' },
-      { text: 'Fast close available — we can work to your timeline' },
+      { text: '$99,000 asking price for the two-parcel opportunity' },
+      { text: 'Ready to build with power and water available' },
+      { text: 'Two parcels give a buyer more flexibility than a single-lot setup' },
+      { text: 'Existing manufactured home on site may be a swap candidate for an updated manufactured home - buyer to verify' },
+      { text: 'Two parcels also create a broader new-build or builder/investor path, subject to county approval' },
+      { text: 'Nine Mile Falls location with a rural/residential feel' },
+      { text: 'Property photos available for quick visual review' },
+      { text: 'Direct private sale path through Dominion' },
+      { text: 'Good fit for a builder, owner-user, land buyer, or investor who can complete land due diligence quickly' },
+      { text: 'Buyer to verify utility service, septic, access, boundaries, and buildability independently' },
     ],
     facts: [
-      ['Address', '472 Torrens Trail'],
-      ['City', 'Spirit Lake'],
-      ['State', 'Idaho'],
-      ['ZIP Code', '83869'],
-      ['County', 'Kootenai County'],
-      ['Bedrooms', '2'],
-      ['Bathrooms', '2 full'],
-      ['Square footage', '1,952 sq ft'],
-      ['Lot size', '5 acres'],
-      ['Year built', '2016'],
-      ['Condition', 'Move-in ready; some finishing needed'],
-      ['Asking price', '$460,000'],
-      ['Property type', 'Single-family residential'],
+      ['Address', '6714 Virgil Way'],
+      ['City', 'Nine Mile Falls'],
+      ['State', 'Washington'],
+      ['ZIP Code', '99026'],
+      ['County', 'Stevens County'],
+      ['Asking price', '$99,000'],
+      ['Sale type', 'Private as-is disposition'],
+      ['Property type', 'Land / build-site opportunity'],
+      ['Parcel count', 'Two parcels - buyer to verify parcel IDs and boundaries'],
+      ['Existing home', 'Manufactured home currently on site; potential replacement path - buyer to verify rules and permits'],
+      ['Build options', 'Evaluate new construction, manufactured home replacement, or parcel-specific plans - buyer to verify'],
+      ['Power', 'Ready / available - buyer to verify provider, meter status, and connection details'],
+      ['Water', 'Ready / available - buyer to verify source, service, and connection details'],
+      ['Septic', 'Buyer to verify feasibility, permits, and requirements'],
+      ['Access', 'Buyer to verify legal and physical access'],
+      ['Best-fit buyer', 'Builder, owner-user, land buyer, or investor ready for land due diligence'],
     ],
-    photos: torrensTrail472Photos as OffMarketPhoto[],
-    neighborhoodTitle: 'Spirit Lake, Idaho',
+    photos: virgilWay6714Photos as OffMarketPhoto[],
+    neighborhoodTitle: 'Nine Mile Falls / Stevens County',
     neighborhoodBody:
-      "Spirit Lake sits in the heart of Kootenai County — about 35 miles north of Coeur d'Alene and under an hour from Spokane. Demand for acreage and newer construction remains strong as buyers seek space without giving up regional access.",
+      'Nine Mile Falls offers a quieter northwest-of-Spokane setting with access to outdoor recreation, residential acreage, and the broader Spokane buyer pool. This opportunity is framed around a two-parcel build path with power and water ready, subject to buyer verification of all land-use and utility assumptions.',
     distanceChips: [
-      { label: "To Coeur d'Alene", value: '~35 mi' },
-      { label: 'To Spokane', value: '~55 mi' },
-      { label: 'County', value: 'Kootenai' },
-      { label: 'State', value: 'Idaho' },
+      { label: 'Asking', value: '$99K' },
+      { label: 'Parcels', value: 'Two' },
+      { label: 'Utilities', value: 'Power + water' },
+      { label: 'Use', value: 'Build / replace' },
     ],
-    mapQuery: '472 Torrens Trail Spirit Lake ID 83869',
-    leadSource: 'off-market-torrens-trail-472',
-    lat: 47.9232,
-    lng: -116.8685,
-    cardImageSrc: torrensTrail472Photos[0]?.src ?? '/images/torrens-trail/exterior-front.svg',
+    mapQuery: '6714 Virgil Way Nine Mile Falls WA 99026',
+    leadSource: 'off-market-6714-virgil-way',
+    lat: 47.83,
+    lng: -117.62,
+    cardImageSrc: virgilWay6714Photos[0]?.src ?? '/images/6714-virgil-way/001.webp',
+    countySearchUrl:
+      'https://propertysearch.trueautomation.com/PropertyAccess/Property.aspx?cid=0&year=2025&prop_id=59368',
+    countySearchLabel: 'Stevens County property record',
+    contactName: 'Adam',
+    contactPhone: '5095907091',
+    contactPhoneDisplay: '509-590-7091',
+    contactEmail: 'adam@dominionhomedeals.com',
+    primaryCtaLabel: 'Request terms',
+    secondaryCtaLabel: 'Text Adam',
+    smsBody:
+      'I want to review 6714 Virgil Way at the $99,000 asking price. I saw it is two parcels with power/water ready and options to build new or replace the manufactured home.',
+    actionTitle: 'How to move on this',
+    actionIntro:
+      'Send your contact info, intended use, proof-of-funds path, and timing. Adam will respond with the next step.',
+    actionSteps: [
+      ['1', 'Review the photos, two-parcel setup, and $99,000 asking price.'],
+      ['2', 'Confirm whether you are evaluating it to build new, replace the manufactured home, hold land, or pursue another permitted two-parcel strategy.'],
+      ['3', 'Text or submit the form with your intended build, replacement manufactured home, or use plan plus proof-of-funds path and timing.'],
+      ['4', 'Verify parcel lines, utilities, septic feasibility, access, manufactured home replacement rules, permits, setbacks, and title independently.'],
+    ],
+    submitLabel: 'Request terms',
+    sourceNote:
+      'Source note as of 2026-05-19: Property details are based on the current Dominion disposition notes and linked Stevens County property record. Asking price is $99,000. Buyer should verify parcel IDs, acreage, existing manufactured home status, utilities, access, septic feasibility, zoning, replacement rules, new-construction rules, and buildability independently.',
+    dueDiligenceNote:
+      'Photos, map, and property-record links are for review only. Buyer must verify parcel boundaries, acreage, legal access, easements, road maintenance, power, water, septic feasibility, manufactured home replacement rules, utility reuse, utility costs, zoning, setbacks, permits, title, closing costs, and all building assumptions independently. This is a private as-is disposition opportunity and not a retail MLS listing.',
+  },
+  '3314-e-cleveland': {
+    slug: '3314-e-cleveland',
+    status: 'active',
+    title: '3314 E Cleveland Ave',
+    locationLine: 'Spokane, WA 99217',
+    priceDisplay: '$160,000',
+    priceNumeric: 160000,
+    eyebrow: 'Private offering · Investor opportunity',
+    tags: ['$160K sale price', '4 bed / 2 bath', '1,872 sq ft', '$340K ARV', '$11K roof quote', 'R1 multifamily / ADU upside'],
+    beds: '4',
+    baths: '2',
+    sqft: '1,872',
+    lot: '7,100 sq ft',
+    year: '1971',
+    county: 'Spokane County',
+    streetAddress: '3314 E Cleveland Ave',
+    city: 'Spokane',
+    state: 'WA',
+    zip: '99217',
+    conditionSummary:
+      'Private as-is opportunity with clear investor plays: flip it as a 4/2, keep it as a rental, or explore a basement ADU. Roof quote is $11K including re-sheeting.',
+    summary:
+      'Private as-is Dominion disposition opportunity at 3314 E Cleveland Ave in Spokane, WA. Sale price is $160,000. The 4 bed, 2 bath home is being presented as approximately 1,872 sq ft with a full upstairs/downstairs layout, $340K ARV, city-confirmed R1 multifamily / ADU upside, and an $11K roof quote including re-sheeting.',
+    paragraphs: [
+      '3314 E Cleveland Ave has more than one way to win at a $160,000 sale price. It already lays out as a 4 bed / 2 bath home and is being presented as approximately 1,872 sq ft with a full upstairs/downstairs layout.',
+      'The simple play is to renovate it back into a clean 4 bed / 2 bath resale around the $340K ARV target. The extra upside is the basement ADU path. A buyer may be able to keep the 4/2 layout and still add income potential. City confirmed R1 zoning with multifamily / ADU potential.',
+      'Utilities come from Cleveland, not the alley. That matters if you are looking at a basement ADU or future utility split. Roof quote is $11K including re-sheeting. Review the photos, look at the comps, then contact Adam with your close path.',
+    ],
+    highlights: [
+      { text: 'Multiple exit paths: flip it, rent it, add a basement ADU, BRRRR/refi, or explore broader R1 upside' },
+      { text: '$340K ARV target supported by nearby retail comp links below' },
+      { text: 'Keep the 4/2 layout and still explore basement ADU upside' },
+      { text: '1,872 sq ft upstairs/downstairs layout gives the buyer more to work with' },
+      { text: 'City-confirmed R1 zoning with multifamily / ADU potential' },
+      { text: 'Utilities come from Cleveland, not the alley. That matters for a basement ADU or future utility split.' },
+      { text: '$11K roof quote in hand, including re-sheeting' },
+      { text: 'Cleaned-out photos are included so buyers can see the project clearly' },
+      { text: 'Private/direct sale path through Dominion for cash or hard-money buyers who can move quickly' },
+    ],
+    buyerOptions: [
+      {
+        title: 'Clean 4/2 flip',
+        body: 'Fix it up as a 4 bed / 2 bath house and aim at the $340K ARV target. The cleaned-out photos, 1,872 sq ft layout, and comp links make the finished-value story easy to check.',
+      },
+      {
+        title: 'Keep the 4/2 and add basement ADU',
+        body: 'This is the big upside angle. A buyer may be able to keep the 4 bed / 2 bath house and still explore a clean basement ADU. You are not forced to choose between a strong resale layout and extra income potential.',
+      },
+      {
+        title: 'Keep it as a rental',
+        body: 'A larger 4/2 can also work as a hold. Rehab it to be durable, rent it, and keep the R1 / ADU upside for later instead of needing every dollar to come from resale.',
+      },
+      {
+        title: 'BRRRR or refi play',
+        body: 'A buyer could buy, rehab, rent, and try to refinance after the work is done. The $340K ARV target, 1,872 sq ft layout, and R1 upside are the pieces to run your numbers against.',
+      },
+      {
+        title: 'R1 / utility upside',
+        body: 'The City confirmed R1 zoning with multifamily / ADU potential. Utilities come from Cleveland, not the alley. That is useful if you are looking at a basement ADU, future utility split, or another permitted setup.',
+      },
+      {
+        title: 'Roof quote in hand',
+        body: 'Roof quote is $11K including re-sheeting. Buyer to verify final scope, but this gives you a real number to plug into your repair budget.',
+      },
+    ],
+    facts: [
+      ['Address', '3314 E Cleveland Ave'],
+      ['City', 'Spokane'],
+      ['State', 'Washington'],
+      ['ZIP Code', '99217'],
+      ['County', 'Spokane County'],
+      ['Status', 'Available'],
+      ['Sale price', '$160,000'],
+      ['Sale type', 'Private as-is disposition'],
+      ['ARV', '$340,000 target - buyer to verify'],
+      ['Zoning', 'R1 - City confirmed multifamily / ADU potential; buyer to verify permit path'],
+      ['ADU upside', 'Potential to keep 4/2 layout and explore clean basement ADU path - buyer to verify'],
+      ['Utilities', 'Utilities come from Cleveland, not the alley - buyer to verify'],
+      ['Roof quote', '$11,000 quote in hand including re-sheeting - buyer to verify scope'],
+      ['Bedrooms', '4 - buyer to verify'],
+      ['Bathrooms', '2 - buyer to verify'],
+      ['House square footage', 'Approximately 1,872 sq ft - buyer to verify'],
+      ['Approx. total upper/lower footprint', 'About 1,872 sq ft with full upstairs/downstairs layout - buyer to verify'],
+      ['Basement', 'Full basement; partially finished / additional finishable upside - buyer to verify'],
+      ['Lot size', '7,100 sq ft reported publicly - buyer to verify'],
+      ['Year built', '1971 reported publicly - buyer to verify'],
+      ['Property type', 'Single-family residential reported publicly - buyer to verify'],
+      ['Best-fit buyer', 'Cash or hard-money buyer ready for direct due diligence'],
+    ],
+    photos: cleveland3314Photos as OffMarketPhoto[],
+    neighborhoodTitle: 'Northeast Spokane / 99217',
+    neighborhoodBody:
+      'The property sits in the 99217 area of northeast Spokane, with practical access to nearby arterials, neighborhood services, and the broader Spokane buyer and rental pool. This is a 1,872 sq ft 4/2 with a $340K ARV target, city-confirmed R1 zoning, and a possible basement ADU path that may let a buyer keep the 4/2 layout while adding income upside. Utilities come from Cleveland, not the alley, and the $11K roof quote is already in hand. Buyers should verify the permit path, finished area, and repair scope, but the main plays are easy to see.',
+    distanceChips: [
+      { label: 'ARV', value: '$340K' },
+      { label: 'Price', value: '$160K' },
+      { label: 'Beds/Baths', value: '4 / 2' },
+      { label: 'Sq Ft', value: '1,872' },
+    ],
+    compLinks: [
+      {
+        label: '4230 E Marietta Ave',
+        href: 'https://www.zillow.com/homedetails/4230-E-Marietta-Ave-Spokane-WA-99217/23518139_zpid/',
+      },
+      {
+        label: '3832 E Grace Ave',
+        href: 'https://www.zillow.com/homedetails/3832-E-Grace-Ave-Spokane-WA-99217/23517746_zpid/',
+      },
+      {
+        label: '2516 N Rebecca St',
+        href: 'https://www.zillow.com/homedetails/2516-N-Rebecca-St-Spokane-WA-99217/23517965_zpid/',
+      },
+      {
+        label: '4109 E Marietta Ave',
+        href: 'https://www.zillow.com/homedetails/4109-E-Marietta-Ave-Spokane-WA-99217/23517870_zpid/',
+      },
+    ],
+    mapQuery: '3314 E Cleveland Ave Spokane WA 99217',
+    leadSource: 'off-market-3314-e-cleveland',
+    lat: 47.692,
+    lng: -117.354,
+    cardImageSrc: cleveland3314Photos[0]?.src ?? '/images/3314-e-cleveland/001.webp',
+    countySearchUrl: 'https://cp.spokanecounty.org/scout/propertyinformation/',
+    countySearchLabel: 'Spokane County property search',
+    contactName: 'Adam',
+    contactPhone: '5095907091',
+    contactPhoneDisplay: '509-590-7091',
+    contactEmail: 'adam@dominionhomedeals.com',
+    primaryCtaLabel: 'Request terms',
+    secondaryCtaLabel: 'Text Adam',
+    smsBody: 'I want to review 3314 E Cleveland Ave at the $160,000 sale price.',
+    actionTitle: 'How to move on this',
+    actionIntro: 'Send your contact info, proof-of-funds path, and timing. Adam will get you the next step.',
+    actionSteps: [
+      ['1', 'Review the cleaned-out photos, $340K ARV target, comp links, and $11K roof quote.'],
+      ['2', 'Decide which play fits you best: flip it, rent it, add a basement ADU, or BRRRR/refi after repairs.'],
+      ['3', 'Text or submit the form with your name, proof-of-funds path, and timing.'],
+      ['4', 'Verify square footage, R1/ADU permit path, utilities, roof scope, repairs, and resale numbers.'],
+    ],
+    submitLabel: 'Request terms',
+    sourceNote:
+      'Source note as of 2026-05-18: Sale price is $160,000. The 4 bed / 2 bath layout is based on the current walkthrough understanding. The house is being presented as approximately 1,872 sq ft with a full upstairs/downstairs layout. Seller reports the City confirmed R1 zoning with multifamily / ADU potential and utilities from Cleveland rather than the alley. Seller also reports an $11,000 roof quote including re-sheeting. Buyer should verify ARV, comparable sales, square footage, room count, lower-level condition, permits, utility service, roof scope, and measurements independently.',
+    dueDiligenceNote:
+      'Photos and public links are for review only. Buyer must verify condition, access, title, utilities, permits, room count, square footage, lot size, repair scope, occupancy, closing costs, and all investment assumptions independently. This is a private as-is disposition opportunity and not a retail MLS listing.',
+  },
+  '34124-n-newport-highway-trailer-29': {
+    slug: '34124-n-newport-highway-trailer-29',
+    status: 'active',
+    title: '34124 N Newport Highway, Trailer 29',
+    locationLine: 'Chattaroy / Riverside area, WA 99003',
+    priceDisplay: '$25,000',
+    priceNumeric: 25000,
+    eyebrow: 'Private offering · Investor opportunity',
+    tags: ['Buy now: $25K', 'Photos available', 'Backup walkthrough May 9', '3 bed / 1 bath'],
+    beds: '3',
+    baths: '1',
+    sqft: '924',
+    lot: 'Rented space',
+    year: '1978',
+    county: 'Spokane County',
+    streetAddress: '34124 N Newport Highway, Trailer 29',
+    city: 'Chattaroy',
+    state: 'WA',
+    zip: '99003',
+    conditionSummary: 'Buy now at $25,000 from the photos. Saturday walkthrough is tentative and only happens if the home is not claimed first.',
+    summary:
+      'Private investor opportunity at 34124 N Newport Highway, Trailer 29 in the Chattaroy/Riverside corridor. 3 bed, 1 bath, 1978 mobile home measuring 66 ft x 14 ft. Buy-now price is $25,000 from the photos. If it is not claimed at the buy-now price, the fallback walkthrough is tentatively Saturday, May 9 from 9-11 AM.',
+    paragraphs: [
+      'This is a private investor offering for Trailer 29 at 34124 N Newport Highway in the north Spokane County corridor near Riverside and Chattaroy. The cleanest path is a buyer claiming it now at the $25,000 buy-now price from the photos.',
+      'The home is a 1978 mobile home measuring 66 ft x 14 ft, with 3 bedrooms, 1 bathroom, kitchen, laundry area, living space, exterior space, and a small shed. The buy-now price is $25,000.',
+      'If a buyer takes it at $25,000, the Saturday walkthrough will be cancelled and the contract will be assigned. If nobody claims the buy-now price first, the fallback walkthrough is tentatively scheduled for Saturday, May 9 from 9-11 AM, and buyers can submit offers after seeing it.',
+      'This should be evaluated as an investor/mobile-home opportunity. Buyer should verify park approval, lot rent, title status, transfer requirements, utilities, measurements, and all condition items before closing.',
+    ],
+    highlights: [
+      { text: '$25,000 buy-now price - photos are available for review now' },
+      { text: 'Buy-now buyer gets priority and the Saturday walkthrough gets cancelled' },
+      { text: 'Fallback walkthrough only if unsold: Saturday, May 9 from 9-11 AM' },
+      { text: '1978 mobile home measuring 66 ft x 14 ft' },
+      { text: '3 bedrooms and 1 bathroom' },
+      { text: 'Kitchen, laundry area, living space, exterior, shed, and mechanical photos included' },
+      { text: 'Value-add condition with room for cleanup, refresh, rental, resale, or owner-user exit depending on park rules' },
+    ],
+    facts: [
+      ['Address', '34124 N Newport Highway, Trailer 29'],
+      ['Area', 'Chattaroy / Riverside corridor'],
+      ['State', 'Washington'],
+      ['ZIP Code', '99003'],
+      ['County', 'Spokane County'],
+      ['Bedrooms', '3'],
+      ['Bathrooms', '1'],
+      ['Size', "66' x 14'"],
+      ['Approx. square footage', '924 sq ft'],
+      ['Lot type', 'Mobile home space - buyer to verify lot rent and park terms'],
+      ['Year built', '1978'],
+      ['Condition', 'Value-add / dated interior; photos available'],
+      ['Buy-now price', '$25,000'],
+      ['Buy-now process', 'Review photos and contact Adam to claim at $25,000'],
+      ['Fallback walkthrough', 'Tentative: Saturday, May 9, 9-11 AM, only if not sold at buy-now price first'],
+      ['Best-fit buyer', 'Cash/mobile-home buyer ready to verify park approval and transfer requirements quickly'],
+      ['Property type', 'Mobile home / manufactured home opportunity'],
+    ],
+    photos: riversideTrailer29Photos as OffMarketPhoto[],
+    neighborhoodTitle: 'North Spokane County Corridor',
+    neighborhoodBody:
+      'The property sits along the Newport Highway corridor north of Spokane, with regional access toward Mead, Chattaroy, Riverside, and Deer Park. Mobile-home buyers should verify park rules and transfer requirements directly before relying on any resale or rental plan.',
+    distanceChips: [
+      { label: 'Buy now', value: '$25K' },
+      { label: 'Corridor', value: 'Newport Hwy' },
+      { label: 'Beds/Baths', value: '3 / 1' },
+      { label: 'Fallback', value: 'May 9' },
+    ],
+    mapQuery: '34124 N Newport Highway Trailer 29 Chattaroy WA 99003',
+    leadSource: 'off-market-34124-n-newport-highway-trailer-29',
+    lat: 47.9975,
+    lng: -117.346,
+    cardImageSrc: riversideTrailer29Photos[0]?.src ?? '/images/riverside-trailer-29/039.webp',
+    countySearchUrl: 'https://cp.spokanecounty.org/scout/propertyinformation/',
+    countySearchLabel: 'Spokane County property search',
+    contactName: 'Adam',
+    contactPhone: '5095907091',
+    contactPhoneDisplay: '509-590-7091',
+    contactEmail: 'adam@dominionhomedeals.com',
   },
 }
 
 export function getOffMarketSlugs(): string[] {
-  return Object.keys(listings)
+  return Object.values(listings)
+    .filter((listing) => listing.status === 'active')
+    .map((listing) => listing.slug)
 }
 
 export function getOffMarketListing(slug: string): OffMarketListing | undefined {
-  return listings[slug]
+  const listing = listings[slug]
+  return listing?.status === 'active' ? listing : undefined
 }
 
 export function getAllOffMarketListings(): OffMarketListing[] {
-  return Object.values(listings)
+  return Object.values(listings).filter((listing) => listing.status === 'active')
 }
 
 export function getSiteUrl(): string {

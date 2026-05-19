@@ -49,7 +49,9 @@ function JsonLd({ l }: { l: OffMarketListing }) {
     description: l.summary,
     url: `${base}/off-market/${l.slug}`,
     image: `${base}${l.photos[0]?.src ?? l.cardImageSrc}`,
-    offers: { '@type': 'Offer', price: String(l.priceNumeric), priceCurrency: 'USD' },
+    ...(l.priceNumeric > 0
+      ? { offers: { '@type': 'Offer', price: String(l.priceNumeric), priceCurrency: 'USD' } }
+      : {}),
     address: {
       '@type': 'PostalAddress',
       streetAddress: l.streetAddress,
@@ -61,7 +63,8 @@ function JsonLd({ l }: { l: OffMarketListing }) {
     seller: {
       '@type': 'Organization',
       name: SITE.legalName,
-      telephone: SITE.phone,
+      telephone: l.contactPhone ?? SITE.phone,
+      email: l.contactEmail ?? SITE.email,
       url: SITE.url,
     },
   }
@@ -76,14 +79,36 @@ export default async function OffMarketListingPage({ params }: { params: Promise
   if (!l) notFound()
 
   const mapsEmbed = `https://www.google.com/maps?q=${encodeURIComponent(l.mapQuery)}&output=embed`
-  const mapsSatellite = `https://www.google.com/maps/@${l.lat},${l.lng},18z/data=!3m1!1e3`
+  const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(l.mapQuery)}`
   const earthUrl = `https://earth.google.com/web/search/${encodeURIComponent(`${l.streetAddress}, ${l.city}, ${l.state} ${l.zip}`)}`
-  const countyUrl = 'https://id-kootenai.publicaccessnow.com/Assessor/PropertySearch.aspx'
+  const countyUrl = l.countySearchUrl
+  const countyLabel = l.countySearchLabel ?? 'County property search'
+  const contactName = l.contactName ?? 'Dominion Homes'
+  const contactPhone = l.contactPhone ?? SITE.phone
+  const contactPhoneDisplay = l.contactPhoneDisplay ?? SITE.phone
+  const contactEmail = l.contactEmail ?? SITE.email
+  const primaryCtaLabel = l.primaryCtaLabel ?? 'Claim buy now'
+  const secondaryCtaLabel = l.secondaryCtaLabel ?? `Text ${contactName} to claim`
+  const smsBody =
+    l.smsBody ?? `I want to claim ${l.streetAddress} at ${l.priceDisplay}.`
+  const actionTitle = l.actionTitle ?? 'How to move on this'
+  const actionIntro =
+    l.actionIntro ?? `Send your contact info and decision path. ${contactName} will respond as quickly as possible.`
+  const actionSteps =
+    l.actionSteps ?? [
+      ['1', 'Review the photos and facts now.'],
+      ['2', `Text ${contactName} with "I want it at $25K" if you want to claim the buy-now price.`],
+      ['3', 'If claimed at buy now, the Saturday walkthrough is cancelled and the contract is assigned.'],
+      ['4', 'If not claimed first, the May 9 walkthrough becomes the fallback showing window.'],
+    ]
+  const dueDiligenceNote =
+    l.dueDiligenceNote ??
+    'Aerial and map layers are for convenience only. Property lines, acreage, easements, and condition must be verified by buyer with the county, title, park management, and qualified inspectors. This is a private off-market opportunity and not a retail MLS listing.'
 
   return (
     <>
       <JsonLd l={l} />
-      <OffMarketStickyBar propertyTitle={l.title} phone={SITE.phone} phoneDisplay={SITE.phone} />
+      <OffMarketStickyBar propertyTitle={l.title} phone={contactPhone} phoneDisplay={contactPhoneDisplay} />
 
       <section className="relative min-h-[56vh] overflow-hidden bg-[#0a1410] pt-28 pb-16 sm:pt-32 sm:pb-20">
         <div className="absolute inset-0">
@@ -124,7 +149,9 @@ export default async function OffMarketListingPage({ params }: { params: Promise
           </div>
           <div className="mt-10 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-widest text-stone-400">Asking price</p>
+              <p className="text-xs font-semibold uppercase tracking-widest text-stone-400">
+                {l.priceNumeric > 0 ? 'Asking price' : 'Status'}
+              </p>
               <p className="font-display text-4xl font-semibold text-white sm:text-5xl">{l.priceDisplay}</p>
               <p className="mt-2 max-w-xl text-sm text-stone-300">{l.conditionSummary}</p>
             </div>
@@ -133,13 +160,19 @@ export default async function OffMarketListingPage({ params }: { params: Promise
                 href="#inquire"
                 className="inline-flex items-center justify-center rounded-xl bg-white px-8 py-3.5 text-[15px] font-semibold text-ink-700 shadow-elevated transition hover:bg-stone-100"
               >
-                Request private details
+                {primaryCtaLabel}
               </a>
               <a
-                href={`tel:${SITE.phone}`}
+                href={`sms:${contactPhone}?&body=${encodeURIComponent(smsBody)}`}
+                className="inline-flex items-center justify-center rounded-xl bg-forest-500 px-8 py-3.5 text-[15px] font-semibold text-white shadow-elevated transition hover:bg-forest-600"
+              >
+                {secondaryCtaLabel}
+              </a>
+              <a
+                href={`tel:${contactPhone}`}
                 className="inline-flex items-center justify-center rounded-xl border border-white/30 px-8 py-3.5 text-[15px] font-semibold text-white transition hover:bg-white/10"
               >
-                Call {SITE.phone}
+                Call {contactPhoneDisplay}
               </a>
             </div>
           </div>
@@ -171,14 +204,6 @@ export default async function OffMarketListingPage({ params }: { params: Promise
           <div className="mt-14 grid grid-cols-1 gap-12 lg:grid-cols-3 lg:gap-14">
             <div className="lg:col-span-2 space-y-12">
               <div>
-                <h2 className="font-display text-heading text-ink-600 mb-6">About this property</h2>
-                <div className="space-y-5 text-ink-500 leading-relaxed">
-                  {l.paragraphs.map((p, i) => (
-                    <p key={i}>{p}</p>
-                  ))}
-                </div>
-              </div>
-              <div>
                 <h2 className="font-display text-heading text-ink-600 mb-5">Highlights</h2>
                 <ul className="space-y-3">
                   {l.highlights.map((h) => (
@@ -189,6 +214,19 @@ export default async function OffMarketListingPage({ params }: { params: Promise
                   ))}
                 </ul>
               </div>
+              {l.buyerOptions?.length ? (
+                <div>
+                  <h2 className="font-display text-heading text-ink-600 mb-5">Ways to look at the deal</h2>
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    {l.buyerOptions.map((option) => (
+                      <div key={option.title} className="rounded-2xl border border-stone-200 bg-white p-5 shadow-soft">
+                        <h3 className="font-display text-lg font-semibold text-ink-700">{option.title}</h3>
+                        <p className="mt-2 text-sm leading-relaxed text-ink-500">{option.body}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
               <div>
                 <h2 className="font-display text-heading text-ink-600 mb-5">Property facts</h2>
                 <div className="overflow-hidden rounded-2xl border border-stone-200">
@@ -203,6 +241,24 @@ export default async function OffMarketListingPage({ params }: { params: Promise
                     </tbody>
                   </table>
                 </div>
+                {l.sourceNote ? (
+                  <p className="mt-3 rounded-xl border border-stone-200 bg-white px-4 py-3 text-xs leading-relaxed text-ink-500">
+                    {l.sourceNote}
+                  </p>
+                ) : null}
+              </div>
+              <div className="rounded-2xl border border-amber-200/80 bg-amber-50/80 p-6">
+                <h2 className="font-display text-xl font-semibold text-ink-700 mb-4">{actionTitle}</h2>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  {actionSteps.map(([step, text]) => (
+                    <div key={step} className="flex gap-3 rounded-xl bg-white/75 p-4 text-sm text-ink-600">
+                      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-forest-700 text-xs font-semibold text-white">
+                        {step}
+                      </span>
+                      <p className="leading-relaxed">{text}</p>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
 
@@ -211,9 +267,9 @@ export default async function OffMarketListingPage({ params }: { params: Promise
               <div className="lg:sticky lg:top-28">
                 <div className="rounded-2xl border border-stone-200/90 bg-white p-1 shadow-elevated">
                   <div className="rounded-[14px] bg-forest-800 px-6 py-6">
-                    <h2 className="font-display text-lg font-semibold text-white">Private inquiry</h2>
+                    <h2 className="font-display text-lg font-semibold text-white">{primaryCtaLabel}</h2>
                     <p className="mt-2 text-xs leading-relaxed text-stone-300">
-                      We respond within hours. No obligation — ask questions or request a showing.
+                      {actionIntro}
                     </p>
                   </div>
                   <div className="px-5 py-6">
@@ -225,18 +281,21 @@ export default async function OffMarketListingPage({ params }: { params: Promise
                       landingPage={`/off-market/${l.slug}`}
                       source={l.leadSource}
                       propertyLabel={l.title}
-                      submitLabel="Request private details"
+                      submitLabel={l.submitLabel ?? 'Claim / ask Adam'}
                       variant="prestige"
+                      contactName={contactName}
+                      contactPhone={contactPhone}
+                      contactPhoneDisplay={contactPhoneDisplay}
                     />
                   </div>
                 </div>
                 <div className="mt-4 rounded-xl border border-amber-200/80 bg-amber-50/90 px-5 py-4 text-center">
                   <p className="text-xs font-semibold text-amber-900/90">Prefer to talk first?</p>
                   <a
-                    href={`tel:${SITE.phone}`}
+                    href={`tel:${contactPhone}`}
                     className="mt-1 inline-block font-display text-lg font-semibold text-forest-800 hover:text-forest-600"
                   >
-                    {SITE.phone}
+                    {contactPhoneDisplay}
                   </a>
                 </div>
               </div>
@@ -278,12 +337,12 @@ export default async function OffMarketListingPage({ params }: { params: Promise
               </p>
               <div className="mt-4 flex flex-wrap gap-3">
                 <a
-                  href={mapsSatellite}
+                  href={mapsUrl}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-sm font-semibold text-amber-200/95 hover:text-amber-100 underline underline-offset-2"
                 >
-                  Satellite view in Google Maps
+                  Open in Google Maps
                 </a>
                 <a
                   href={earthUrl}
@@ -293,22 +352,42 @@ export default async function OffMarketListingPage({ params }: { params: Promise
                 >
                   Open in Google Earth
                 </a>
-                <a
-                  href={countyUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-sm font-semibold text-amber-200/95 hover:text-amber-100 underline underline-offset-2"
-                >
-                  Kootenai County parcel search
-                </a>
+                {countyUrl ? (
+                  <a
+                    href={countyUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sm font-semibold text-amber-200/95 hover:text-amber-100 underline underline-offset-2"
+                  >
+                    {countyLabel}
+                  </a>
+                ) : null}
               </div>
+              {l.compLinks?.length ? (
+                <div className="mt-6 rounded-2xl border border-white/10 bg-white/5 p-5">
+                  <h3 className="text-sm font-semibold uppercase tracking-widest text-forest-300 mb-3">
+                    Retail comps
+                  </h3>
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    {l.compLinks.map((comp) => (
+                      <a
+                        key={comp.href}
+                        href={comp.href}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-semibold text-amber-200/95 transition hover:border-amber-200/40 hover:bg-white/10 hover:text-amber-100"
+                      >
+                        {comp.label}
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
             </div>
             <div className="flex flex-col justify-center rounded-2xl border border-white/10 bg-white/5 p-8 backdrop-blur-sm">
               <h3 className="font-display text-xl text-white mb-3">Due diligence</h3>
               <p className="text-sm text-stone-300 leading-relaxed">
-                Aerial and map layers are for convenience only. Property lines, acreage, easements, and condition must be
-                verified by buyer with the county, title, and qualified inspectors. Dominion Homes is a licensed
-                wholesaler; this is not a retail MLS listing.
+                {dueDiligenceNote}
               </p>
             </div>
           </div>
@@ -319,13 +398,13 @@ export default async function OffMarketListingPage({ params }: { params: Promise
         <div className="mx-auto max-w-6xl px-5 sm:px-6 lg:px-8 text-center">
           <h2 className="font-display text-display text-ink-600 mb-4">Ready to move forward?</h2>
           <p className="mx-auto max-w-lg text-ink-500 mb-8">
-            Local team — no call center. Call or send a private inquiry above.
+            Contact {contactName} directly. Call, text, or send a private inquiry above.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <a href={`tel:${SITE.phone}`} className="btn-primary text-base px-8 py-4">
-              Call {SITE.phone}
+            <a href={`tel:${contactPhone}`} className="btn-primary text-base px-8 py-4">
+              Call {contactPhoneDisplay}
             </a>
-            <a href={`sms:${SITE.phone}`} className="btn-secondary text-base px-8 py-4">
+            <a href={`sms:${contactPhone}`} className="btn-secondary text-base px-8 py-4">
               Send a text
             </a>
           </div>
@@ -334,10 +413,10 @@ export default async function OffMarketListingPage({ params }: { params: Promise
 
       <div className="border-t border-stone-200 bg-stone-200/80">
         <div className="mx-auto max-w-6xl px-5 py-6 text-center text-xs text-ink-500 leading-relaxed">
-          Dominion Homes is a licensed wholesaler. This is not a retail MLS listing. Property details are provided
-          for informational purposes. Buyer is encouraged to conduct independent due diligence. Questions:{' '}
-          <a href={`mailto:${SITE.email}`} className="underline underline-offset-2 hover:text-ink-700">
-            {SITE.email}
+          This is a private off-market opportunity, not a retail MLS listing. Property details are provided for
+          informational purposes. Buyer is encouraged to conduct independent due diligence. Questions:{' '}
+          <a href={`mailto:${contactEmail}`} className="underline underline-offset-2 hover:text-ink-700">
+            {contactEmail}
           </a>
           .
         </div>

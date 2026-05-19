@@ -1,5 +1,8 @@
+"use client";
+
 import Link from "next/link";
 import Image from "next/image";
+import { usePathname } from "next/navigation";
 import { SITE } from "@/lib/constants";
 
 const NAV = [
@@ -12,6 +15,11 @@ const NAV = [
 ] as const;
 
 export function Header() {
+  const pathname = usePathname();
+  const isRiversideDispo = pathname === "/off-market/34124-n-newport-highway-trailer-29";
+  const phone = isRiversideDispo ? "509-590-7091" : SITE.phone;
+  const phoneHref = phone.replace(/\D/g, "");
+
   return (
     <header className="fixed left-0 right-0 top-0 z-50 border-b border-stone-200/70 bg-stone-50/95 py-3 backdrop-blur-md shadow-soft">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-5 sm:px-6 lg:px-8">
@@ -43,8 +51,8 @@ export function Header() {
               {link.label}
             </Link>
           ))}
-          <a href={`tel:${SITE.phone.replace(/\D/g, "")}`} className="whitespace-nowrap text-sm font-semibold text-ink-500">
-            {SITE.phone}
+          <a href={`tel:${phoneHref}`} className="whitespace-nowrap text-sm font-semibold text-ink-500">
+            {phone}
           </a>
           <a href="/#get-offer" className="btn-primary text-sm !px-5 !py-2.5">
             Get My Cash Offer
@@ -71,10 +79,10 @@ export function Header() {
               </Link>
             ))}
             <a
-              href={`tel:${SITE.phone.replace(/\D/g, "")}`}
+              href={`tel:${phoneHref}`}
               className="rounded-lg px-4 py-2.5 text-[15px] font-semibold text-ink-500"
             >
-              {SITE.phone}
+              {phone}
             </a>
             <a href="/#get-offer" className="btn-primary mt-2 text-center">
               Get My Cash Offer
