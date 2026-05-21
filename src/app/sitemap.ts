@@ -2,9 +2,10 @@ import type { MetadataRoute } from 'next'
 import { SELLER_STORIES } from '@/lib/seller-stories'
 import { getAllSlugs } from '@/lib/neighborhoods'
 import { SELLER_SEO_PAGES } from '@/lib/seller-seo-pages'
+import { SITE } from '@/lib/constants'
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const baseUrl = 'https://dominionhomedeals.com'
+  const baseUrl = SITE.url
 
   const staticPages = [
     { url: baseUrl, lastModified: new Date(), changeFrequency: 'weekly' as const, priority: 1.0 },

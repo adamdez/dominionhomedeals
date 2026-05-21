@@ -27,8 +27,10 @@ Last updated: ${SELLER_SEO_LAST_UPDATED}
 Canonical site: ${SITE.url}
 Phone: ${SITE.phone}
 Email: ${SITE.email}
-Primary service area: Spokane County, WA and Kootenai County, ID
+Primary service area: ${SITE.serviceArea}
 Primary service: direct cash purchase of houses in as-is condition
+Google Business Profile: ${SITE.profiles.googleBusiness}
+Review status: Google Business Profile is live; public review volume is still early and growing
 
 ## Business summary
 Dominion Homes, LLC is a local direct home-buying company serving Spokane County, Washington and nearby North Idaho. Dominion buys houses directly from sellers who want a simpler path than listing with an agent, making repairs, hosting showings, or waiting on buyer financing.

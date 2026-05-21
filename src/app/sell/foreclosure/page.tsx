@@ -9,7 +9,7 @@ import { SITE } from "@/lib/constants";
 export const metadata: Metadata = {
   title: "Behind on Payments or Facing Foreclosure in Spokane?",
   description:
-    "If you're behind on your mortgage or facing foreclosure in Spokane or Kootenai County, a fast cash sale can stop the process. Local team, no judgment. Call 509-822-5460.",
+    "If you're behind on your mortgage or facing foreclosure in Spokane or Kootenai County, a fast cash sale can stop the process. Local team, no judgment. Call 509-666-9518.",
   alternates: { canonical: `${SITE.url}/sell/foreclosure` },
   openGraph: {
     title: "Facing Foreclosure? You May Have More Options Than You Think",

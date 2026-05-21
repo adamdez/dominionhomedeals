@@ -121,7 +121,7 @@ export const SELLER_SEO_PAGES: SellerSeoPage[] = [
   {
     slug: "cash-home-buyers-spokane",
     title: "Cash Home Buyers Spokane",
-    metaTitle: "Cash Home Buyers in Spokane, WA | Dominion Homes",
+    metaTitle: "Cash Home Buyers in Spokane, WA",
     description:
       "Compare cash home buyers in Spokane and learn how Dominion Homes makes direct as-is offers with local title closing and no commissions.",
     eyebrow: "Spokane cash home buyers",
@@ -198,7 +198,7 @@ export const SELLER_SEO_PAGES: SellerSeoPage[] = [
   {
     slug: "we-buy-houses-spokane",
     title: "We Buy Houses Spokane",
-    metaTitle: "We Buy Houses in Spokane, WA | Dominion Homes",
+    metaTitle: "We Buy Houses in Spokane, WA",
     description:
       "Dominion Homes buys houses in Spokane as-is. No repairs, no showings, no commissions, and a local title-company closing.",
     eyebrow: "We buy Spokane houses",
@@ -275,7 +275,7 @@ export const SELLER_SEO_PAGES: SellerSeoPage[] = [
   {
     slug: "sell-house-probate-spokane",
     title: "Sell House Probate Spokane",
-    metaTitle: "Sell a Probate House in Spokane, WA | Dominion Homes",
+    metaTitle: "Sell a Probate House in Spokane, WA",
     description:
       "Selling a Spokane house after an owner passes away? Learn how probate, title, heirs, and a direct cash sale usually fit together.",
     eyebrow: "Spokane probate house sale",
@@ -353,7 +353,7 @@ export const SELLER_SEO_PAGES: SellerSeoPage[] = [
   {
     slug: "sell-house-with-back-taxes-spokane",
     title: "Sell House With Back Taxes Spokane",
-    metaTitle: "Sell a House With Back Taxes in Spokane, WA | Dominion Homes",
+    metaTitle: "Sell a House With Back Taxes in Spokane, WA",
     description:
       "Behind on Spokane County property taxes? Learn how back taxes are usually handled in a direct sale and when title can pay them at closing.",
     eyebrow: "Back taxes and Spokane house sales",
@@ -430,7 +430,7 @@ export const SELLER_SEO_PAGES: SellerSeoPage[] = [
   {
     slug: "sell-rental-property-spokane",
     title: "Sell Rental Property Spokane",
-    metaTitle: "Sell a Rental Property in Spokane, WA | Dominion Homes",
+    metaTitle: "Sell a Rental Property in Spokane, WA",
     description:
       "Tired of managing a Spokane rental? Dominion Homes buys rental properties as-is, including homes with tenants, deferred maintenance, or landlord fatigue.",
     eyebrow: "Spokane rental property sale",

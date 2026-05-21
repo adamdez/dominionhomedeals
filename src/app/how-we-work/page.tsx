@@ -5,11 +5,11 @@ export const metadata: Metadata = {
   title: "How We Buy Houses for Cash in Spokane & CDA",
   description:
     "Our simple 3-step process: tell us about your property, get a fair cash offer, and close on your schedule. No agents, no commissions, no repairs. Based in Spokane, WA.",
-  alternates: { canonical: "https://dominionhomedeals.com/how-we-work" },
+  alternates: { canonical: "https://www.dominionhomedeals.com/how-we-work" },
   openGraph: {
     title: "How We Buy Houses for Cash | Dominion Homes",
     description: "Fair cash offer, fast. Close in as fast as 2 weeks. No repairs, no commissions. See exactly how it works.",
-    url: "https://dominionhomedeals.com/how-we-work",
+    url: "https://www.dominionhomedeals.com/how-we-work",
     type: "website",
   },
 };
@@ -20,7 +20,7 @@ const steps = [
     time: "60 seconds",
     title: "Tell Us About Your Property",
     description:
-      "Fill out our short form or call/text us at 509-822-5460. We just need a property address and a little context. No inspections, no prep work, no cleaning.",
+      "Fill out our short form or call/text us at 509-666-9518. We just need a property address and a little context. No repair prep, no listing work, no cleaning before you ask for an offer.",
     details: [
       "Takes about 60 seconds with no obligation",
       "We never share your information with third parties",
@@ -299,10 +299,10 @@ export default function HowWeWorkPage() {
               Get My Cash Offer
             </Link>
             <a
-              href="sms:5098225460"
+              href="sms:5096669518"
               className="inline-flex items-center gap-2 text-lg font-medium text-white/90 transition hover:text-white"
             >
-              Or text us: 509-822-5460
+              Or text us: 509-666-9518
             </a>
           </div>
         </div>

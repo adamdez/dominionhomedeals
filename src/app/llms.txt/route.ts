@@ -1,7 +1,7 @@
 const body = `# Dominion Homes
 
-Dominion Homes is a local house-buying business based in Post Falls, Idaho.
-We buy houses directly in Spokane County, Washington and Kootenai County, Idaho.
+Dominion Homes is a local direct house-buying business serving Spokane County, Washington and Kootenai County, Idaho.
+We buy houses directly for cash or investor-backed offers when a seller wants a simpler path than listing, repairs, showings, and buyer financing delays.
 
 ## Primary topics
 - sell my house fast in Spokane
@@ -15,33 +15,35 @@ We buy houses directly in Spokane County, Washington and Kootenai County, Idaho.
 - relocation and vacant house sales
 
 ## Key pages
-- https://dominionhomedeals.com/
-- https://dominionhomedeals.com/llms-full.txt
-- https://dominionhomedeals.com/sell-my-house-fast-spokane
-- https://dominionhomedeals.com/cash-home-buyers-spokane
-- https://dominionhomedeals.com/we-buy-houses-spokane
-- https://dominionhomedeals.com/sell-house-probate-spokane
-- https://dominionhomedeals.com/sell-house-with-back-taxes-spokane
-- https://dominionhomedeals.com/sell-rental-property-spokane
-- https://dominionhomedeals.com/sell
-- https://dominionhomedeals.com/sell/as-is
-- https://dominionhomedeals.com/sell/inherited
-- https://dominionhomedeals.com/sell/landlord
-- https://dominionhomedeals.com/sell/guide
-- https://dominionhomedeals.com/stories
-- https://dominionhomedeals.com/how-we-work
-- https://dominionhomedeals.com/about
-- https://dominionhomedeals.com/neighborhoods
+- https://www.dominionhomedeals.com/
+- https://www.dominionhomedeals.com/llms-full.txt
+- https://www.dominionhomedeals.com/sell-my-house-fast-spokane
+- https://www.dominionhomedeals.com/cash-home-buyers-spokane
+- https://www.dominionhomedeals.com/we-buy-houses-spokane
+- https://www.dominionhomedeals.com/sell-house-probate-spokane
+- https://www.dominionhomedeals.com/sell-house-with-back-taxes-spokane
+- https://www.dominionhomedeals.com/sell-rental-property-spokane
+- https://www.dominionhomedeals.com/sell
+- https://www.dominionhomedeals.com/sell/as-is
+- https://www.dominionhomedeals.com/sell/inherited
+- https://www.dominionhomedeals.com/sell/landlord
+- https://www.dominionhomedeals.com/sell/guide
+- https://www.dominionhomedeals.com/stories
+- https://www.dominionhomedeals.com/how-we-work
+- https://www.dominionhomedeals.com/about
+- https://www.dominionhomedeals.com/neighborhoods
 
 ## Business facts
-- phone: 509-822-5460
-- location base: Post Falls, ID
+- phone: 509-666-9518
+- public local market: Spokane, WA and nearby North Idaho
 - service area: Spokane County, WA and Kootenai County, ID
 - closing path: direct purchase through title
+- Google Business Profile: https://www.google.com/maps?cid=5032019384215942012
+- review footprint: live and growing; review volume is still early
 
 ## Notes
 - Public content is available for crawl.
-- A fuller AI-readable site brief is available at https://dominionhomedeals.com/llms-full.txt.
+- A fuller AI-readable site brief is available at https://www.dominionhomedeals.com/llms-full.txt.
 - OAI-SearchBot should be allowed for ChatGPT search discovery.
 - GPTBot may be managed separately if desired for training preferences.
 `;

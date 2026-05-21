@@ -6,12 +6,12 @@ export const metadata: Metadata = {
   title: "About Us - Meet the Team | Spokane, WA",
   description:
     "Meet Logan and the local Dominion Homes team serving Spokane County and Kootenai County. Based in Spokane, WA.",
-  alternates: { canonical: "https://dominionhomedeals.com/about" },
+  alternates: { canonical: "https://www.dominionhomedeals.com/about" },
   openGraph: {
-    title: "About Us — Meet the Team | Dominion Homes",
+    title: "About Us - Meet the Team | Dominion Homes",
     description:
       "Based in Spokane, WA. We buy houses for cash across Spokane County, WA and Kootenai County, ID. No agents, no games - just a local team.",
-    url: "https://dominionhomedeals.com/about",
+    url: "https://www.dominionhomedeals.com/about",
     type: "website",
   },
 };
@@ -71,8 +71,8 @@ export default function AboutPage() {
             name: "Dominion Homes, LLC",
             description:
               "Local cash home buyers serving Spokane County, WA and Kootenai County, ID. We buy houses in any condition - no agents, no commissions, no repairs.",
-            url: "https://dominionhomedeals.com",
-            telephone: "+1-509-822-5460",
+            url: "https://www.dominionhomedeals.com",
+            telephone: "+1-509-666-9518",
             address: {
               "@type": "PostalAddress",
               addressLocality: "Spokane",
@@ -168,7 +168,7 @@ export default function AboutPage() {
                     </svg>
                   </div>
                   <div>
-                    <p className="font-medium text-ink-600">Call or text 509-822-5460</p>
+                    <p className="font-medium text-ink-600">Call or text 509-666-9518</p>
                     <p className="mt-1 text-sm text-ink-400">A real person answers.</p>
                   </div>
                 </div>
@@ -277,10 +277,10 @@ export default function AboutPage() {
               Read seller stories
             </Link>
             <a
-              href="sms:5098225460"
+              href="sms:5096669518"
               className="inline-flex items-center gap-2 text-lg font-medium text-white/90 transition hover:text-white"
             >
-              Or text us: 509-822-5460
+              Or text us: 509-666-9518
             </a>
           </div>
         </div>

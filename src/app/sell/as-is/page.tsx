@@ -9,7 +9,7 @@ import { SellTrustStrip } from "@/components/sell/SellTrustStrip";
 import { SITE } from "@/lib/constants";
 
 export const metadata: Metadata = {
-  title: "How To Sell A House As-Is In Spokane, WA | Dominion Homes",
+  title: "How To Sell A House As-Is In Spokane, WA",
   description:
     "Learn how to sell a house as-is in Spokane, WA without repairs or cleaning. Dominion Homes buys houses directly in any condition across Spokane County.",
   alternates: { canonical: `${SITE.url}/sell/as-is` },

@@ -1,4 +1,4 @@
-﻿// src/lib/constants.ts
+// src/lib/constants.ts
 
 export const SITE = {
   name: "Dominion Homes",
@@ -7,7 +7,7 @@ export const SITE = {
   description:
     "Spokane-area team that buys houses directly. No commissions, no repairs, close on your timeline. We meet you in person.",
   url: "https://www.dominionhomedeals.com",
-  phone: "509-822-5460",
+  phone: "509-666-9518",
   email: "leads@dominionhomedeals.com",
   adminEmail: "admin@dominionhomedeals.com",
   address: {
@@ -15,9 +15,13 @@ export const SITE = {
     state: "WA",
     zip: "99201",
   },
-  // Add your profile URLs here once live (GBP, Facebook, etc.)
+  serviceArea: "Spokane County, WA and Kootenai County, ID",
+  profiles: {
+    googleBusiness: "https://www.google.com/maps?cid=5032019384215942012",
+  },
+  // Add profile URLs here once live (GBP, Facebook, etc.)
   // Schema sameAs in layout.tsx reads from this array.
-  sameAs: [] as readonly string[],
+  sameAs: ["https://www.google.com/maps?cid=5032019384215942012"] as readonly string[],
 } as const;
 
 /** Team - real people, real bios, honest */
@@ -36,7 +40,7 @@ export const PROCESS_STEPS = [
     number: "1",
     title: "Tell Us About Your Home",
     description:
-      "Fill out our quick form or give us a call. Takes about 60 seconds. No inspections needed upfront - we buy houses in any condition across Spokane County and Kootenai County.",
+      "Fill out our quick form or give us a call. Takes about 60 seconds. No repair prep or listing work upfront - we review the details and talk through the next step.",
     duration: "60 seconds",
   },
   {
@@ -84,7 +88,7 @@ export const SELL_PAGE_FAQS = [
   },
   {
     q: "Do I need to make any repairs first?",
-    a: "No. We buy houses in any condition - roof issues, foundation problems, outdated everything, or just a house you don't want to deal with anymore. You don't need to fix, clean, or stage anything.",
+    a: "No. We review houses in any condition - roof issues, foundation problems, outdated everything, or just a house you don't want to deal with anymore. You don't need to fix, clean, or stage anything before asking for an offer.",
   },
   {
     q: "How does the cash offer work?",
@@ -100,7 +104,7 @@ export const SELL_PAGE_FAQS = [
   },
   {
     q: "Who are you, exactly?",
-    a: "Logan leads Dominion Homes, a local Spokane team that buys houses directly across Spokane County and North Idaho. No call center, no scripts, no middlemen. Call or text us at 509-822-5460 and you'll hear from Logan or someone on his team. Every conversation is direct, and there's never any obligation.",
+    a: "Logan leads Dominion Homes, a local Spokane team that buys houses directly across Spokane County and North Idaho. No call center, no scripts, no middlemen. Call or text us at 509-666-9518 and you'll hear from Logan or someone on his team. Every conversation is direct, and there's never any obligation.",
   },
 ] as const;
 

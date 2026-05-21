@@ -123,7 +123,7 @@ function blockedCountryResponse(request: NextRequest): NextResponse {
     <main>
       <h1>Access Restricted</h1>
       <p>Dominion Homes currently serves visitors located in the United States only.</p>
-      <p>If you believe this is a mistake, please call or text 509-822-5460.</p>
+      <p>If you believe this is a mistake, please call or text 509-666-9518.</p>
       <p>Request country: <strong>${country}</strong></p>
     </main>
   </body>

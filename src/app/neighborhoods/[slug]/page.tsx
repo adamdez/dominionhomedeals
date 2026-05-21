@@ -21,12 +21,12 @@ export async function generateMetadata({
 
   return {
     title: `Sell Your ${data.name} Home Fast - Direct Buyer in ${data.state}`,
-    description: `Local Spokane team that buys ${data.name} homes directly. No agents, no commissions, no repairs. Close on your schedule. Call 509-822-5460.`,
-    alternates: { canonical: `https://dominionhomedeals.com/neighborhoods/${slug}` },
+    description: `Local Spokane team that buys ${data.name} homes directly. No agents, no commissions, no repairs. Close on your schedule. Call 509-666-9518.`,
+    alternates: { canonical: `https://www.dominionhomedeals.com/neighborhoods/${slug}` },
     openGraph: {
       title: `Sell Your ${data.name} Home for Cash`,
       description: `We buy houses in ${data.name} in any condition. Fair cash offer, close in as fast as 2 weeks. ${data.county}.`,
-      url: `https://dominionhomedeals.com/neighborhoods/${slug}`,
+      url: `https://www.dominionhomedeals.com/neighborhoods/${slug}`,
       type: "website",
     },
   };
@@ -54,8 +54,8 @@ export default async function NeighborhoodPage({
             "@type": "LocalBusiness",
             name: "Dominion Homes, LLC",
             description: `Cash home buyers in ${data.name}, ${data.county}, ${data.state}. We buy houses in any condition.`,
-            telephone: "+1-509-822-5460",
-            url: `https://dominionhomedeals.com/neighborhoods/${slug}`,
+            telephone: "+1-509-666-9518",
+            url: `https://www.dominionhomedeals.com/neighborhoods/${slug}`,
             address: {
               "@type": "PostalAddress",
               addressLocality: "Spokane",
@@ -90,19 +90,19 @@ export default async function NeighborhoodPage({
                 "@type": "ListItem",
                 position: 1,
                 name: "Home",
-                item: "https://dominionhomedeals.com",
+                item: "https://www.dominionhomedeals.com",
               },
               {
                 "@type": "ListItem",
                 position: 2,
                 name: "Areas We Serve",
-                item: "https://dominionhomedeals.com/neighborhoods",
+                item: "https://www.dominionhomedeals.com/neighborhoods",
               },
               {
                 "@type": "ListItem",
                 position: 3,
                 name: data.name,
-                item: `https://dominionhomedeals.com/neighborhoods/${slug}`,
+                item: `https://www.dominionhomedeals.com/neighborhoods/${slug}`,
               },
             ],
           }),
@@ -134,10 +134,10 @@ export default async function NeighborhoodPage({
               Get Your Cash Offer
             </Link>
             <a
-              href="sms:5098225460"
+              href="sms:5096669518"
               className="inline-flex items-center gap-2 text-lg font-medium text-ink-500 transition hover:text-forest-700"
             >
-              Or text us: 509-822-5460
+              Or text us: 509-666-9518
             </a>
           </div>
         </div>
@@ -290,10 +290,10 @@ export default async function NeighborhoodPage({
               Get My Cash Offer
             </Link>
             <a
-              href="sms:5098225460"
+              href="sms:5096669518"
               className="inline-flex items-center gap-2 text-lg font-medium text-ink-500 transition hover:text-forest-700"
             >
-              Or text us: 509-822-5460
+              Or text us: 509-666-9518
             </a>
           </div>
         </div>

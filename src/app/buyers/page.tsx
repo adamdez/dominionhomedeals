@@ -43,7 +43,7 @@ const faqs = [
 ];
 
 export const metadata: Metadata = {
-  title: "Spokane Buyer & Investor List | Off-Market Deals | Dominion Homes",
+  title: "Spokane Buyer & Investor List | Off-Market Deals",
   description:
     "Join Dominion Homes' buyer and investor list for potential off-market real estate deals, assignable opportunities, and real estate conversations in Spokane and North Idaho.",
   alternates: { canonical: `${SITE.url}/buyers` },

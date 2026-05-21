@@ -9,7 +9,7 @@ export const metadata: Metadata = {
     "A practical guide for Spokane and North Idaho homeowners: when a cash sale makes sense, what to ask a buyer, and where to start if the house is inherited, distressed, or tenant-occupied.",
   alternates: { canonical: `${SITE.url}/sell/guide` },
   openGraph: {
-    title: "Spokane Seller Guide | Dominion Homes",
+    title: "Spokane Seller Guide",
     description:
       "Read the local seller guide before you decide. Compare a direct cash sale, understand the process, and learn what to ask any buyer.",
     url: `${SITE.url}/sell/guide`,

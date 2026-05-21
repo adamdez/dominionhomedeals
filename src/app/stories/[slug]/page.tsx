@@ -25,7 +25,7 @@ export async function generateMetadata({ params }: StoryPageProps): Promise<Meta
     description: story.summary,
     alternates: { canonical: `${SITE.url}/stories/${story.slug}` },
     openGraph: {
-      title: `${story.title} | Dominion Homes`,
+      title: story.title,
       description: story.summary,
       url: `${SITE.url}/stories/${story.slug}`,
       type: "article",

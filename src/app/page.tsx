@@ -32,7 +32,7 @@ const HOMEPAGE_AREAS: { name: string; slug: string }[] = [
 ];
 
 export const metadata: Metadata = {
-  title: "Sell Your Spokane Home Fast — No Repairs, No Fees | Dominion Homes",
+  title: "Sell Your Spokane Home Fast - No Repairs, No Fees",
   description:
     "Local Spokane team that buys houses directly for cash. No agents, no commissions, no repairs, and you choose the closing date.",
 };

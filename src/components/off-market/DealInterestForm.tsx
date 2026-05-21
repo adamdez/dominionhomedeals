@@ -1,4 +1,4 @@
-﻿'use client'
+'use client'
 
 import { useState, FormEvent } from 'react'
 import { cn } from '@/lib/utils'
@@ -52,8 +52,8 @@ export function DealInterestForm({
   submitLabel = 'Request more info',
   variant = 'default',
   contactName = 'our team',
-  contactPhone = '5098225460',
-  contactPhoneDisplay = '509-822-5460',
+  contactPhone = '5096669518',
+  contactPhoneDisplay = '509-666-9518',
 }: DealInterestFormProps) {
   const [form, setForm] = useState<FormState>(initialState)
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')

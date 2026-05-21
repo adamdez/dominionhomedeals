@@ -9,7 +9,7 @@ import { SITE } from "@/lib/constants";
 export const metadata: Metadata = {
   title: "Selling an Inherited or Estate Property in Spokane",
   description:
-    "We work with inherited and estate properties regularly in Spokane and Kootenai County. We understand the process takes time. No pressure, no hurry. Call 509-822-5460.",
+    "We work with inherited and estate properties regularly in Spokane and Kootenai County. We understand the process takes time. No pressure, no hurry. Call 509-666-9518.",
   alternates: { canonical: `${SITE.url}/sell/inherited` },
   openGraph: {
     title: "Selling an Inherited Property - Spokane & CDA",

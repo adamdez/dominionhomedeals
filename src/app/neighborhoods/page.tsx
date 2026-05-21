@@ -4,15 +4,15 @@ import { BreadcrumbJsonLd } from '@/components/seo/BreadcrumbJsonLd'
 import { getByCounty } from '@/lib/neighborhoods'
 
 export const metadata: Metadata = {
-  title: 'Areas We Serve — Spokane County & Kootenai County',
+  title: 'Areas We Serve - Spokane County & Kootenai County',
   description:
     'We buy houses for cash across Spokane County, WA and Kootenai County, ID. Spokane Valley, North Spokane, South Hill, Post Falls, CDA, Hayden, and more.',
-  alternates: { canonical: 'https://dominionhomedeals.com/neighborhoods' },
+  alternates: { canonical: 'https://www.dominionhomedeals.com/neighborhoods' },
   openGraph: {
     title: 'Areas We Serve | Dominion Homes',
     description:
       'Local cash home buyers in Spokane & CDA. We buy houses in every neighborhood across Spokane County and Kootenai County.',
-    url: 'https://dominionhomedeals.com/neighborhoods',
+    url: 'https://www.dominionhomedeals.com/neighborhoods',
     type: 'website',
   },
 }
@@ -25,8 +25,8 @@ export default function NeighborhoodsPage() {
     <>
       <BreadcrumbJsonLd
         items={[
-          { name: 'Home', url: 'https://dominionhomedeals.com' },
-          { name: 'Areas We Serve', url: 'https://dominionhomedeals.com/neighborhoods' },
+          { name: 'Home', url: 'https://www.dominionhomedeals.com' },
+          { name: 'Areas We Serve', url: 'https://www.dominionhomedeals.com/neighborhoods' },
         ]}
       />
       {/* JSON-LD */}
@@ -38,8 +38,8 @@ export default function NeighborhoodsPage() {
             '@type': 'LocalBusiness',
             name: 'Dominion Homes, LLC',
             description: 'Cash home buyers serving Spokane County, WA and Kootenai County, ID.',
-            telephone: '+1-509-822-5460',
-            url: 'https://dominionhomedeals.com',
+            telephone: '+1-509-666-9518',
+            url: 'https://www.dominionhomedeals.com',
             address: {
               '@type': 'PostalAddress',
               addressLocality: 'Spokane',
@@ -64,7 +64,7 @@ export default function NeighborhoodsPage() {
             Spokane County &amp; Kootenai&nbsp;County
           </h1>
           <p className="mx-auto mt-5 max-w-2xl text-lg text-ink-400">
-            From Spokane Valley to Coeur d&rsquo;Alene and everywhere in between — if
+            From Spokane Valley to Coeur d&rsquo;Alene and everywhere in between - if
             it&rsquo;s in our area, we want to hear about it. We buy houses for cash in
             every neighborhood across both&nbsp;counties.
           </p>
@@ -76,7 +76,7 @@ export default function NeighborhoodsPage() {
         <div className="mx-auto max-w-5xl px-5">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-full bg-forest-50">
-              <span className="text-lg">🏔️</span>
+              <span className="text-lg">ðŸ”ï¸</span>
             </div>
             <div>
               <h2 className="font-display text-2xl text-ink-700 md:text-3xl">
@@ -100,7 +100,7 @@ export default function NeighborhoodsPage() {
                 </h3>
                 <p className="mt-1 text-sm text-ink-400">{n.tagline}</p>
                 <p className="mt-3 text-sm font-medium text-forest-600 opacity-0 transition group-hover:opacity-100">
-                  See cash offers →
+                  See cash offers
                 </p>
               </Link>
             ))}
@@ -113,7 +113,7 @@ export default function NeighborhoodsPage() {
         <div className="mx-auto max-w-5xl px-5">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-full bg-forest-50">
-              <span className="text-lg">🌲</span>
+              <span className="text-lg">ðŸŒ²</span>
             </div>
             <div>
               <h2 className="font-display text-2xl text-ink-700 md:text-3xl">
@@ -137,7 +137,7 @@ export default function NeighborhoodsPage() {
                 </h3>
                 <p className="mt-1 text-sm text-ink-400">{n.tagline}</p>
                 <p className="mt-3 text-sm font-medium text-forest-600 opacity-0 transition group-hover:opacity-100">
-                  See cash offers →
+                  See cash offers
                 </p>
               </Link>
             ))}
@@ -152,7 +152,7 @@ export default function NeighborhoodsPage() {
             Don&rsquo;t See Your Area?
           </h2>
           <p className="mt-3 text-ink-400">
-            We buy houses across all of Spokane County and Kootenai County — even in
+            We buy houses across all of Spokane County and Kootenai County - even in
             unincorporated areas and rural properties. If you&rsquo;re within our
             service area, we want to talk.
           </p>
@@ -164,10 +164,10 @@ export default function NeighborhoodsPage() {
               Get Your Cash Offer
             </Link>
             <a
-              href="sms:5098225460"
+              href="sms:5096669518"
               className="inline-flex items-center gap-2 text-lg font-medium text-ink-500 transition hover:text-forest-700"
             >
-              Or text us: 509-822-5460
+              Or text us: 509-666-9518
             </a>
           </div>
         </div>
@@ -191,10 +191,10 @@ export default function NeighborhoodsPage() {
               Get My Cash Offer
             </Link>
             <a
-              href="sms:5098225460"
+              href="sms:5096669518"
               className="inline-flex items-center gap-2 text-lg font-medium text-white/90 transition hover:text-white"
             >
-              Or text us: 509-822-5460
+              Or text us: 509-666-9518
             </a>
           </div>
         </div>

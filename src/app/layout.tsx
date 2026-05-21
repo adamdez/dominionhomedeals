@@ -48,7 +48,7 @@ export const metadata: Metadata = {
     siteName: SITE.name,
     title: "Sell Your House Fast for Cash - Spokane & CDA",
     description: "Get a fair cash offer from your local team. No repairs, no fees, close on your schedule.",
-    images: [{ url: "/images/og-image.jpg", width: 1200, height: 630 }],
+    images: [{ url: "/opengraph-image", width: 1200, height: 630 }],
   },
   alternates: { canonical: SITE.url },
 };
@@ -70,6 +70,7 @@ function JsonLd() {
         alternateName: SITE.name,
         description: SITE.description,
         url: SITE.url,
+        hasMap: SITE.profiles.googleBusiness,
         telephone: SITE.phone,
         address: {
           "@type": "PostalAddress",

@@ -11,7 +11,7 @@ export const metadata: Metadata = {
     "Read grounded, privacy-safe deal snapshots based on the inherited, as-is, rental, and relocation situations Dominion Homes handles in Spokane County and North Idaho.",
   alternates: { canonical: `${SITE.url}/stories` },
   openGraph: {
-    title: "Local Deal Snapshots | Dominion Homes",
+    title: "Local Deal Snapshots",
     description:
       "Privacy-safe deal snapshots and common local situations for homeowners considering a direct sale.",
     url: `${SITE.url}/stories`,
