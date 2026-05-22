@@ -83,6 +83,9 @@ const FAQS = [
   },
 ];
 
+const DIRECT_ANSWER =
+  "Yes, Dominion Homes can evaluate a direct cash or investor-backed offer for a Spokane rental property with tenants still in place. You usually do not need to evict first or make repairs before asking for an offer; the lease, rent status, condition, and title situation are factored into the number and closing plan.";
+
 function FAQJsonLd() {
   const schema = {
     "@context": "https://schema.org",
@@ -180,6 +183,24 @@ export default function LandlordExitPage() {
       </section>
 
       <SellerProofSection angle="landlord" />
+
+      <section className="border-y border-stone-200 bg-white">
+        <div className="section-wrap">
+          <FadeIn>
+            <div className="mx-auto max-w-3xl">
+              <p className="text-xs font-bold uppercase tracking-widest text-forest-500">
+                Direct Answer
+              </p>
+              <h2 className="mt-2 font-display text-display text-ink-600 text-balance">
+                Can I sell a Spokane rental with tenants still there?
+              </h2>
+              <p className="mt-4 text-lg leading-relaxed text-ink-400">
+                {DIRECT_ANSWER}
+              </p>
+            </div>
+          </FadeIn>
+        </div>
+      </section>
 
       <section className="border-y border-stone-200 bg-stone-100/50">
         <div className="section-wrap">

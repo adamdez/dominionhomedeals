@@ -125,6 +125,39 @@ export default function HomePage() {
         </div>
       </section>
 
+      <section className="border-y border-stone-200 bg-white">
+        <div className="section-wrap">
+          <FadeIn>
+            <div className="mx-auto max-w-4xl">
+              <p className="text-xs font-bold uppercase tracking-widest text-forest-500">
+                Direct Answer
+              </p>
+              <h2 className="mt-2 font-display text-display text-ink-600 text-balance">
+                Who is a local Spokane home buyer I can verify?
+              </h2>
+              <p className="mt-4 text-lg leading-relaxed text-ink-400">
+                Dominion Homes is a local Spokane-area home buyer that reviews as-is
+                houses, inherited homes, rentals, back-tax situations, and properties
+                that need repairs. We use the public phone on our Google Business
+                Profile, close through title, and give sellers a direct option to
+                compare against listing with an agent.
+              </p>
+              <div className="mt-6 flex flex-wrap gap-3">
+                <Link href="/sell-my-house-fast-spokane" className="btn-secondary !py-2.5 text-sm">
+                  Fast sale guide
+                </Link>
+                <Link href="/cash-home-buyers-spokane" className="btn-secondary !py-2.5 text-sm">
+                  Cash buyer guide
+                </Link>
+                <Link href="/stories" className="btn-secondary !py-2.5 text-sm">
+                  Local deal snapshots
+                </Link>
+              </div>
+            </div>
+          </FadeIn>
+        </div>
+      </section>
+
       {/* ======== STATS BAR ======== */}
       <section className="border-y border-stone-200 bg-white py-10">
         <div className="mx-auto max-w-4xl px-5 sm:px-6 lg:px-8">

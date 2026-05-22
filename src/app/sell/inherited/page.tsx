@@ -73,6 +73,9 @@ const FAQS = [
   },
 ];
 
+const DIRECT_ANSWER =
+  "Yes, Dominion Homes can talk through a cash or investor-backed offer for an inherited house in Spokane or nearby North Idaho. The house can be as-is, full of belongings, or still tied to estate paperwork, but closing depends on who has legal authority to sign and what title needs to clear.";
+
 function FAQJsonLd() {
   const schema = {
     "@context": "https://schema.org",
@@ -170,6 +173,24 @@ export default function InheritedPropertyPage() {
       </section>
 
       <SellerProofSection angle="inherited" />
+
+      <section className="border-y border-stone-200 bg-white">
+        <div className="section-wrap">
+          <FadeIn>
+            <div className="mx-auto max-w-3xl">
+              <p className="text-xs font-bold uppercase tracking-widest text-forest-500">
+                Direct Answer
+              </p>
+              <h2 className="mt-2 font-display text-display text-ink-600 text-balance">
+                Can I sell an inherited house in Spokane for cash?
+              </h2>
+              <p className="mt-4 text-lg leading-relaxed text-ink-400">
+                {DIRECT_ANSWER}
+              </p>
+            </div>
+          </FadeIn>
+        </div>
+      </section>
 
       <section className="border-y border-stone-200 bg-stone-100/50">
         <div className="section-wrap">

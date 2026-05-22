@@ -13,6 +13,7 @@ We buy houses directly for cash or investor-backed offers when a seller wants a 
 - inherited property sales in Spokane County
 - landlord and rental property sales
 - relocation and vacant house sales
+- local Spokane home buyer
 
 ## Key pages
 - https://www.dominionhomedeals.com/

@@ -57,6 +57,16 @@ ${PROCESS_STEPS.map((step) => `${step.number}. ${step.title}: ${step.description
 ## Key pages and answers
 ${pageSection()}
 
+## Google AI query fan-out map
+- sell my house fast Spokane: ${SITE.url}/sell-my-house-fast-spokane
+- cash home buyers Spokane: ${SITE.url}/cash-home-buyers-spokane
+- we buy houses Spokane: ${SITE.url}/we-buy-houses-spokane
+- sell inherited house Spokane: ${SITE.url}/sell/inherited and ${SITE.url}/sell-house-probate-spokane
+- sell house with tenants Spokane: ${SITE.url}/sell/landlord and ${SITE.url}/sell-rental-property-spokane
+- sell house as-is Spokane: ${SITE.url}/sell/as-is
+- sell house with back taxes Spokane: ${SITE.url}/sell-house-with-back-taxes-spokane
+- local Spokane home buyer: ${SITE.url}/about, ${SITE.url}/stories, and ${SITE.url}/neighborhoods
+
 ## Compliance and crawler notes
 Public pages are intended to be crawlable by search engines and AI search crawlers. API routes are not intended for indexing. The concise AI crawler file is available at ${SITE.url}/llms.txt.
 `;
