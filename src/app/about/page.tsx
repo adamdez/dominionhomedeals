@@ -5,12 +5,12 @@ import Link from "next/link";
 export const metadata: Metadata = {
   title: "About Us - Meet the Team | Spokane, WA",
   description:
-    "Meet Logan and the local Dominion Homes team serving Spokane County and Kootenai County. Based in Spokane, WA.",
+    "Meet Logan and the local Dominion Homes team serving Spokane County and Kootenai County.",
   alternates: { canonical: "https://www.dominionhomedeals.com/about" },
   openGraph: {
     title: "About Us - Meet the Team | Dominion Homes",
     description:
-      "Based in Spokane, WA. We buy houses for cash across Spokane County, WA and Kootenai County, ID. No agents, no games - just a local team.",
+      "We buy houses for cash across Spokane County, WA and Kootenai County, ID. No agents, no games - just a local team.",
     url: "https://www.dominionhomedeals.com/about",
     type: "website",
   },
@@ -21,14 +21,14 @@ const team = [
     name: "Logan",
     role: "Founder & Owner",
     image: "/images/team/logan.jpg",
-    bio: "Logan leads Dominion Homes from Spokane. He works directly with sellers, keeps the process clear, and makes sure people know what to expect from the first call through closing day.",
+    bio: "Logan leads Dominion Homes across the Spokane-CDA corridor. He works directly with sellers, keeps the process clear, and makes sure people know what to expect from the first call through closing day.",
   },
 ] as const;
 
 const values = [
   {
     title: "Local First",
-    text: "We live here. We work here. Our base is in Spokane. When we say we will meet you at your kitchen table, we mean it.",
+    text: "We live here. We work here. Our team serves the Spokane-CDA corridor. When we say we will meet you at your kitchen table, we mean it.",
   },
   {
     title: "Fair and Transparent",
@@ -75,8 +75,10 @@ export default function AboutPage() {
             telephone: "+1-509-666-9518",
             address: {
               "@type": "PostalAddress",
-              addressLocality: "Spokane",
-              addressRegion: "WA",
+              streetAddress: "5307 East Dorado Avenue",
+              addressLocality: "Post Falls",
+              addressRegion: "ID",
+              postalCode: "83854",
               addressCountry: "US",
             },
             areaServed: [
@@ -97,7 +99,7 @@ export default function AboutPage() {
             We are your neighbors.
           </h1>
           <p className="mx-auto mt-5 max-w-2xl text-lg text-ink-400">
-            Dominion Homes is a small local team based in Spokane, Washington. We buy houses directly across
+            Dominion Homes is a small local team serving Spokane County and nearby North Idaho. We buy houses directly across
             Spokane County and Kootenai County, and we keep the process direct, local, and easy to follow.
           </p>
         </div>
@@ -115,7 +117,7 @@ export default function AboutPage() {
                   another state, the follow-up feels scripted, and nobody seems accountable when questions come up.
                 </p>
                 <p>
-                  Dominion Homes was built to be the opposite of that. We are based in Spokane, we know these
+                  Dominion Homes was built to be the opposite of that. We work directly in the Spokane-CDA corridor, we know these
                   neighborhoods, and when we say we will show up, it is us showing up.
                 </p>
                 <p>
@@ -135,7 +137,7 @@ export default function AboutPage() {
                     </svg>
                   </div>
                   <div>
-                    <p className="font-medium text-ink-600">Based in Spokane, Washington</p>
+                    <p className="font-medium text-ink-600">Serving Spokane County and North Idaho</p>
                     <p className="mt-1 text-sm text-ink-400">Not a national call center. A real local operation.</p>
                   </div>
                 </div>

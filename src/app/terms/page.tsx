@@ -1,7 +1,7 @@
 // src/app/terms/page.tsx
 import type { Metadata } from "next";
 import Link from "next/link";
-import { SITE } from "@/lib/constants";
+import { SITE, SMS_CONSENT_TEXT, SMS_PRIVACY_NON_SHARING_TEXT } from "@/lib/constants";
 
 export const metadata: Metadata = {
   title: "Terms & Conditions",
@@ -42,7 +42,7 @@ export default function TermsPage() {
 
             <h2>1. About Our Company</h2>
             <p>
-              {SITE.legalName} is a real estate investment company located in {SITE.address.city}, {SITE.address.state} {SITE.address.zip}. We buy residential properties directly from homeowners for cash. <strong>We are principals — not licensed real estate agents or brokers.</strong> We are not affiliated with any government agency. All transactions are conducted as principal-to-principal purchases.
+              {SITE.legalName} is a real estate investment company with a registered mailing address at {SITE.address.street}, {SITE.address.city}, {SITE.address.state} {SITE.address.zip}. We buy residential properties directly from homeowners for cash. <strong>We are principals — not licensed real estate agents or brokers.</strong> We are not affiliated with any government agency. All transactions are conducted as principal-to-principal purchases.
             </p>
 
             <h2>2. Use of Our Site</h2>
@@ -73,7 +73,12 @@ export default function TermsPage() {
               By submitting a form on our Site or providing your contact information, you consent to receive non-SMS communications from {SITE.legalName}, including phone calls and emails, regarding your property inquiry.
             </p>
             <p>
-              SMS/text messaging consent is separate. You only opt in to recurring SMS/MMS messages by ticking the unchecked SMS consent checkbox on our lead form. Messages may include cash offer follow-ups, appointment scheduling, transaction status updates, and document-signing links. Consent is not a condition of purchase or receiving an offer. Message frequency varies, up to 10 msgs/month. Message and data rates may apply.
+              SMS/text messaging consent is separate. You only opt in to recurring SMS/MMS messages by ticking the unchecked SMS consent checkbox on our lead form. Submitting the form without ticking the SMS consent checkbox does not enroll you in the SMS program.
+            </p>
+            <h3>4a. SMS/Text Messaging Terms</h3>
+            <p>{SMS_CONSENT_TEXT}</p>
+            <p>
+              {SMS_PRIVACY_NON_SHARING_TEXT}
             </p>
             <p>
               You may opt out at any time: reply STOP to text messages, request removal during a phone call, click unsubscribe in emails, or contact us at{" "}
@@ -149,6 +154,7 @@ export default function TermsPage() {
             <p>If you have any questions about these Terms, please contact us:</p>
             <p>
               <strong>{SITE.legalName}</strong><br />
+              {SITE.address.street}<br />
               {SITE.address.city}, {SITE.address.state} {SITE.address.zip}<br />
               Phone: <a href={`tel:${SITE.phone.replace(/-/g, "")}`}>{SITE.phone}</a><br />
               Email: <a href={`mailto:${SITE.adminEmail}`}>{SITE.adminEmail}</a>

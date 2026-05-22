@@ -30,7 +30,7 @@ export const metadata: Metadata = {
     template: "%s | Dominion Homes",
   },
   description:
-    "Local Spokane and Coeur d'Alene team that buys houses for cash in any condition. No commissions, no repairs, close on your timeline. Based in Spokane, WA.",
+    "Local Spokane and Coeur d'Alene area team that buys houses for cash in any condition. No commissions, no repairs, close on your timeline.",
   keywords: [
     "sell my house fast Spokane",
     "cash home buyers Spokane",
@@ -74,6 +74,7 @@ function JsonLd() {
         telephone: SITE.phone,
         address: {
           "@type": "PostalAddress",
+          streetAddress: SITE.address.street,
           addressLocality: SITE.address.city,
           addressRegion: SITE.address.state,
           postalCode: SITE.address.zip,

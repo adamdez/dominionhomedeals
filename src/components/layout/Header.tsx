@@ -8,7 +8,6 @@ import { SITE } from "@/lib/constants";
 const NAV = [
   { label: "How It Works", href: "/how-we-work" },
   { label: "Sell Fast", href: "/sell-my-house-fast-spokane" },
-  { label: "Buyers & Investors", href: "/buyers" },
   { label: "Seller Stories", href: "/stories" },
   { label: "Areas We Serve", href: "/neighborhoods" },
   { label: "About Us", href: "/about" },

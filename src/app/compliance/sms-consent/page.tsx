@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { SMS_CONSENT_TEXT } from "@/lib/constants";
 
 export const metadata: Metadata = {
   title: "SMS Consent Flow Evidence — Dominion Homes, LLC",
@@ -9,8 +10,7 @@ export const metadata: Metadata = {
   alternates: { canonical: "https://www.dominionhomedeals.com/compliance/sms-consent" },
 };
 
-const consentLanguage =
-  "I agree to receive recurring marketing and informational text messages from Dominion Homes, LLC about my property inquiry, including cash offer follow-ups, appointment scheduling, transaction status updates, and document-signing links, at the phone number provided. Messages may be sent using automated technology. Consent is not required to receive an offer. Message frequency varies, up to 10 msgs/month. Msg & data rates may apply. Reply STOP to opt out or HELP for help. We do not sell or share SMS opt-in information. See our Privacy Policy and Terms.";
+const consentLanguage = `${SMS_CONSENT_TEXT} See our Privacy Policy and Terms.`;
 
 export default function SmsConsentEvidencePage() {
   return (
@@ -25,7 +25,7 @@ export default function SmsConsentEvidencePage() {
           </h1>
 
           <p className="mt-6 text-sm leading-relaxed text-stone-600 sm:text-base">
-            This page documents the SMS opt-in flow used on dominionhomedeals.com for 10DLC / TCR campaign review. End users opt in by ticking an unchecked SMS consent checkbox shown directly under the phone number field in the cash offer lead form at https://www.dominionhomedeals.com/#get-offer. The same checkbox is also shown again before final submission. Consent is not a condition of purchase or receiving an offer. Form submission is not blocked if the checkbox is unticked; in that case, the user's phone number is not enrolled in the SMS program. The exact consent language displayed at submission time is reproduced below.
+            This page documents the SMS opt-in flow used on dominionhomedeals.com for 10DLC / TCR campaign review. End users opt in by ticking an unchecked SMS consent checkbox shown directly under the phone number field in the cash offer lead form at https://www.dominionhomedeals.com/#get-offer. The same checkbox remains available again on the final details step before submission. Consent is not a condition of purchase or receiving an offer. Form submission is not blocked if the checkbox is unticked; in that case, the user's phone number is not enrolled in the SMS program and no SMS consent timestamp is stored. The exact consent language displayed at submission time is reproduced below.
           </p>
 
           <div className="mt-8 overflow-hidden rounded-xl border border-stone-200 bg-stone-100">

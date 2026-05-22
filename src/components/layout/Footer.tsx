@@ -31,7 +31,7 @@ export function Footer() {
               <span className="font-display text-lg text-stone-100">Dominion Homes</span>
             </div>
             <p className="text-sm leading-relaxed text-stone-400">
-              Your local cash home buyers serving Spokane County, WA and Kootenai County, ID. Based in Spokane.
+              Your local cash home buyers serving Spokane County, WA and Kootenai County, ID.
             </p>
             <p className="mt-3 text-sm font-semibold text-amber-400">{phone}</p>
           </div>
@@ -41,7 +41,6 @@ export function Footer() {
             <ul className="space-y-2">
               {[
                 { label: "Get a Cash Offer", href: "/#get-offer" },
-                { label: "Buyers & Investors", href: "/buyers" },
                 { label: "How It Works", href: "/how-we-work" },
                 { label: "Seller Guide", href: "/sell/guide" },
                 { label: "Seller Stories", href: "/stories" },
@@ -128,6 +127,7 @@ export function Footer() {
               >
                 North Idaho Title
               </a>
+              . Legal mailing address: {SITE.address.street}, {SITE.address.city}, {SITE.address.state} {SITE.address.zip}.
             </p>
           </div>
         </div>

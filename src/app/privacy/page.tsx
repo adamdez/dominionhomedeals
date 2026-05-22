@@ -1,7 +1,7 @@
 // src/app/privacy/page.tsx
 import type { Metadata } from "next";
 import Link from "next/link";
-import { SITE } from "@/lib/constants";
+import { SITE, SMS_CONSENT_TEXT, SMS_PRIVACY_NON_SHARING_TEXT } from "@/lib/constants";
 
 export const metadata: Metadata = {
   title: "Privacy Policy",
@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 };
 
 export default function PrivacyPolicyPage() {
-  const lastUpdated = "April 29, 2026";
+  const lastUpdated = "May 22, 2026";
 
   return (
     <div className="bg-stone-50">
@@ -45,7 +45,7 @@ export default function PrivacyPolicyPage() {
 
             <h2>1. Who We Are</h2>
             <p>
-              {SITE.legalName} is a real estate investment company based in {SITE.address.city}, {SITE.address.state} {SITE.address.zip}. We are principals — we buy properties directly. We are not licensed real estate agents or brokers, and we are not affiliated with any government agency. Our phone number is{" "}
+              {SITE.legalName} is a real estate investment company with a registered mailing address at {SITE.address.street}, {SITE.address.city}, {SITE.address.state} {SITE.address.zip}. We are principals — we buy properties directly. We are not licensed real estate agents or brokers, and we are not affiliated with any government agency. Our phone number is{" "}
               <a href={`tel:${SITE.phone.replace(/-/g, "")}`}>{SITE.phone}</a> and our email is{" "}
               <a href={`mailto:${SITE.adminEmail}`}>{SITE.adminEmail}</a>.
             </p>
@@ -109,13 +109,13 @@ export default function PrivacyPolicyPage() {
 
             <h2 id="sms-terms">SMS / Text Messaging Program</h2>
             <p>
-              By providing your phone number and ticking the SMS consent checkbox on our lead form, you consent to receive recurring marketing and informational text messages from Dominion Homes, LLC, including cash offer follow-ups, appointment scheduling, transaction status updates, and document-signing links.
+              By providing your phone number and ticking the unchecked SMS consent checkbox on our lead form, you consent to the following SMS program:
             </p>
             <p>
-              Message frequency varies based on your interaction with us, up to a maximum of 10 messages per month.
+              {SMS_CONSENT_TEXT}
             </p>
             <p>
-              Message and data rates may apply. Carriers are not liable for delayed or undelivered messages.
+              Carriers are not liable for delayed or undelivered messages.
             </p>
             <p>
               You may opt out of SMS messages at any time by replying STOP to any message you receive from us. Reply HELP for assistance, or contact us at{" "}
@@ -123,7 +123,7 @@ export default function PrivacyPolicyPage() {
               <a href={`tel:${SITE.phone.replace(/-/g, "")}`}>{SITE.phone}</a>. After replying STOP you will receive a final confirmation message and no further texts will be sent unless you re-subscribe.
             </p>
             <p>
-              No mobile information will be shared with third parties or affiliates for marketing or promotional purposes. All categories listed in this Privacy Policy exclude text messaging originator opt-in data and consent; this information will not be shared with any third parties.
+              {SMS_PRIVACY_NON_SHARING_TEXT} All categories listed in this Privacy Policy exclude text messaging originator opt-in data and consent.
             </p>
             <p>
               For additional terms that apply to your use of our website and services, please review our{" "}
@@ -133,7 +133,7 @@ export default function PrivacyPolicyPage() {
             <h2>5. How We Share Your Information</h2>
             <p>We do not sell your personal information. We may share your information with:</p>
             <p>
-              Text messaging originator opt-in data and consent are excluded from the categories below and are governed by the SMS / Text Messaging Program section of this Privacy Policy.
+              Mobile information, text messaging originator opt-in data, and SMS consent records are excluded from the categories below and are governed by the SMS / Text Messaging Program section of this Privacy Policy.
             </p>
             <ul>
               <li><strong>Service providers:</strong> Third parties who help us operate our business, including title companies (e.g., WFG National Title), communication platforms, analytics providers, and CRM systems, subject to confidentiality obligations.</li>
@@ -204,6 +204,7 @@ export default function PrivacyPolicyPage() {
             <p>If you have any questions about this Privacy Policy or our data practices, please contact us:</p>
             <p>
               <strong>{SITE.legalName}</strong><br />
+              {SITE.address.street}<br />
               {SITE.address.city}, {SITE.address.state} {SITE.address.zip}<br />
               Phone: <a href={`tel:${SITE.phone.replace(/-/g, "")}`}>{SITE.phone}</a><br />
               Email: <a href={`mailto:${SITE.adminEmail}`}>{SITE.adminEmail}</a>

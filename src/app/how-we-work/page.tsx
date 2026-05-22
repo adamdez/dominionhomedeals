@@ -4,7 +4,7 @@ import Link from "next/link";
 export const metadata: Metadata = {
   title: "How We Buy Houses for Cash in Spokane & CDA",
   description:
-    "Our simple 3-step process: tell us about your property, get a fair cash offer, and close on your schedule. No agents, no commissions, no repairs. Based in Spokane, WA.",
+    "Our simple 3-step process: tell us about your property, get a fair cash offer, and close on your schedule. No agents, no commissions, no repairs.",
   alternates: { canonical: "https://www.dominionhomedeals.com/how-we-work" },
   openGraph: {
     title: "How We Buy Houses for Cash | Dominion Homes",

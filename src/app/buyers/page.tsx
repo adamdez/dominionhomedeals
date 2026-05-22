@@ -34,7 +34,7 @@ const faqs = [
   },
   {
     q: "What markets do you focus on?",
-    a: "We are based in Spokane and primarily watch Spokane County, Spokane Valley, the Spokane-CDA corridor, and nearby North Idaho markets.",
+    a: "We primarily watch Spokane County, Spokane Valley, the Spokane-CDA corridor, and nearby North Idaho markets.",
   },
   {
     q: "How fast will I hear from you?",
@@ -47,6 +47,7 @@ export const metadata: Metadata = {
   description:
     "Join Dominion Homes' buyer and investor list for potential off-market real estate deals, assignable opportunities, and real estate conversations in Spokane and North Idaho.",
   alternates: { canonical: `${SITE.url}/buyers` },
+  robots: { index: false, follow: false },
   keywords: [
     "cash buyers Spokane",
     "off-market real estate deals Spokane",
@@ -302,7 +303,7 @@ export default function BuyersPage() {
                   We are not a national call center.
                 </h2>
                 <p className="mt-4 text-base leading-relaxed text-ink-400">
-                  Dominion Homes is based in Spokane. We care about practical fit, clear communication,
+                  Dominion Homes works directly in the Spokane-CDA corridor. We care about practical fit, clear communication,
                   and long-term local relationships with buyers, lenders, and investors.
                 </p>
               </div>

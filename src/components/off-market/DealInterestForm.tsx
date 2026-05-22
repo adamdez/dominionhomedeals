@@ -118,8 +118,8 @@ export function DealInterestForm({
           message: form.message,
           tcpaConsent: form.tcpaConsent,
           tcpaTimestamp: consentedAt,
-          smsOptIn: form.tcpaConsent,
-          smsOptInTimestamp: form.tcpaConsent ? consentedAt : null,
+          smsOptIn: false,
+          smsOptInTimestamp: null,
           landingPage,
           source,
         }),
@@ -260,9 +260,8 @@ export function DealInterestForm({
             className="mt-0.5 h-4 w-4 shrink-0 rounded border-stone-300 text-forest-500 focus:ring-forest-400"
           />
           <span className="text-xs leading-relaxed text-ink-400">
-            By submitting, you consent to receive calls, text messages (SMS/MMS), and
-            emails from Dominion Homes, LLC about this property. Message frequency varies.
-            Message and data rates may apply. Reply STOP to opt out, HELP for help.{' '}
+            By submitting, you consent to receive calls and emails from Dominion Homes, LLC
+            about this property. SMS/text messaging is not part of this property inquiry form.{' '}
             <span className="text-red-500">*</span>
           </span>
         </label>

@@ -245,13 +245,13 @@ export default function SellPage() {
                   down. Sellers can tell the difference fast.
                 </p>
                 <p className="mt-3 text-base leading-relaxed text-ink-400">
-                  We are based in Spokane, we know these neighborhoods, and we keep
+                  We work directly in the Spokane-CDA corridor, we know these neighborhoods, and we keep
                   the process direct. If a cash sale is not the right fit, we would
                   rather say that clearly than push a bad deal.
                 </p>
                 <ul className="mt-5 space-y-2.5">
                   {[
-                    "Based in Spokane, WA - not a national call center",
+                    "Spokane-CDA area team - not a national call center",
                     "We meet sellers face-to-face",
                     "We close through WFG Title",
                     "No bait-and-switch. The offer is the offer.",

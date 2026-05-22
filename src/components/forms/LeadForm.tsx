@@ -3,6 +3,7 @@
 import { FormEvent, useEffect, useState } from 'react'
 import Link from 'next/link'
 import { trackFormStep, trackLeadFormSubmission } from '@/lib/tracking'
+import { SMS_CONSENT_TEXT } from '@/lib/constants'
 
 type Stage = 'address' | 'name' | 'phone' | 'details'
 
@@ -83,7 +84,7 @@ function SmsConsentCheckbox({
           className="mt-1 h-4 w-4 shrink-0 rounded border-stone-300 text-forest-600 focus:ring-forest-400"
         />
         <span className="text-[11px] leading-relaxed text-ink-600">
-          I agree to receive recurring marketing and informational text messages from Dominion Homes, LLC about my property inquiry, including cash offer follow-ups, appointment scheduling, transaction status updates, and document-signing links, at the phone number provided. Messages may be sent using automated technology. Consent is not required to receive an offer. Message frequency varies, up to 10 msgs/month. Msg &amp; data rates may apply. Reply STOP to opt out or HELP for help. We do not sell or share SMS opt-in information. See our{' '}
+          {SMS_CONSENT_TEXT} See our{' '}
           <Link href="/privacy#sms-terms" className="font-semibold underline hover:text-ink-700">
             Privacy Policy
           </Link>{' '}
@@ -213,7 +214,7 @@ export function LeadForm() {
     const { firstName, lastName } = splitFullName(formData.fullName)
     const inferredAddressParts = inferCityStateZip(formData.address)
     const submittedAt = new Date().toISOString()
-    const smsConsentTimestamp = submittedAt
+    const smsConsentTimestamp = formData.smsConsent ? submittedAt : null
 
     try {
       const response = await fetch('/api/leads', {
@@ -395,6 +396,11 @@ export function LeadForm() {
                 className="w-full rounded-2xl border border-stone-200 bg-stone-50 px-4 py-4 text-base text-ink-600 placeholder:text-stone-300 transition-colors focus:border-forest-400 focus:ring-forest-400"
               />
             </div>
+
+            <SmsConsentCheckbox
+              checked={formData.smsConsent}
+              onChange={(checked) => updateField('smsConsent', checked)}
+            />
 
             <div>
               <p className="text-sm font-semibold text-ink-500">

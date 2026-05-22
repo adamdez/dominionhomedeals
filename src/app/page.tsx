@@ -182,7 +182,7 @@ export default function HomePage() {
               {[
                 {
                   title: "Real local people",
-                  text: "Logan and his team are based in Spokane. When you call, someone local picks up — not a call center.",
+                  text: "Logan and his team serve the Spokane-CDA corridor. When you call, someone local picks up — not a call center.",
                 },
                 {
                   title: "We buy as-is",
@@ -281,13 +281,13 @@ export default function HomePage() {
                 <p className="mt-3 text-base leading-relaxed text-ink-400">
                   We live here. We raise our families here. When we say
                   we&apos;ll meet you at your kitchen table to talk through
-                  your options - we mean it. We&apos;re based in Spokane.
+                  your options - we mean it. We&apos;re local to the Spokane-CDA corridor.
                   We know the neighborhoods because we drive through
                   them every day.
                 </p>
                 <ul className="mt-5 space-y-2.5">
                   {[
-                    "Based in Spokane, WA - not a national call center",
+                    "Spokane-CDA area team - not a national call center",
                     "We meet every seller face-to-face",
                     "We close through WFG Title - a name you know",
                     "No bait-and-switch. The offer we make is the offer you get.",

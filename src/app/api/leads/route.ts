@@ -150,7 +150,7 @@ async function sendEmailNotification(lead: Record<string, unknown>) {
         <h2 style="margin: 0 0 12px; font-size: 16px; color: #1a3a2a;">SMS Consent</h2>
         <p style="margin: 0; font-size: 12px; color: #888;">
           SMS consent: ${lead.smsConsent ? 'Yes' : 'No'}<br/>
-          SMS consent captured at: ${lead.smsConsentTimestamp}<br/>
+          SMS consent captured at: ${lead.smsConsent ? lead.smsConsentTimestamp : 'Not opted in'}<br/>
           SMS consent IP: ${lead.smsConsentIP}<br/>
           Source: ${lead.source} | Page: ${lead.landingPage}
         </p>
@@ -346,7 +346,9 @@ export async function POST(request: NextRequest) {
 
     const submittedAt = new Date().toISOString()
     const smsConsent = body.sms_consent === true || body.smsOptIn === true
-    const smsConsentTimestamp = body.sms_consent_timestamp || body.smsOptInTimestamp || submittedAt
+    const smsConsentTimestamp = smsConsent
+      ? body.sms_consent_timestamp || body.smsOptInTimestamp || submittedAt
+      : null
 
     // Build lead object
     const lead = {

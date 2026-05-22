@@ -85,7 +85,7 @@ export const NEIGHBORHOODS: Record<string, NeighborhoodData> = {
     county: 'Kootenai County',
     tagline: "Sell Your CDA Home for Cash — Local Buyers Serving The Spokane-CDA Corridor",
     description:
-      "Coeur d'Alene is one of North Idaho's hottest markets, but that doesn't mean selling is always easy. Whether you own a lakeside property, a midtown ranch, or a home in the neighborhoods around CDA, we buy houses for cash — no agents, no staging, no open houses. We work this corridor constantly from our Spokane base.",
+      "Coeur d'Alene is one of North Idaho's hottest markets, but that doesn't mean selling is always easy. Whether you own a lakeside property, a midtown ranch, or a home in the neighborhoods around CDA, we buy houses for cash — no agents, no staging, no open houses. We work the Spokane-CDA corridor constantly.",
     highlights: [
       'Idaho\'s #1 tourism and lifestyle destination',
       'Strong property values but high market competition',
@@ -104,7 +104,7 @@ export const NEIGHBORHOODS: Record<string, NeighborhoodData> = {
     description:
       'Post Falls is a core part of our North Idaho service area. We know the neighborhoods, subdivisions, and traffic patterns well, and we buy houses in any condition across Post Falls. From older homes near the river to newer builds in Prairie, we keep the process direct and practical.',
     highlights: [
-      'Close to our Spokane base — we know Post Falls well',
+      'Core part of the Spokane-CDA corridor — we know Post Falls well',
       'One of the fastest-growing cities in Idaho',
       'Mix of established and new-construction neighborhoods',
       'Strong rental market and investor demand',

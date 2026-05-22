@@ -458,9 +458,9 @@ export function BuyerInvestorLeadForm() {
               className="mt-0.5 h-4 w-4 shrink-0 rounded border-stone-300 text-forest-500 focus:ring-forest-400"
             />
             <span className="text-xs leading-relaxed text-ink-400">
-              By submitting, you consent to receive calls, text messages, and emails from Dominion Homes, LLC
-              about potential real estate opportunities. Consent is not a condition of purchase. Message and data
-              rates may apply. Reply STOP to opt out, HELP for help.{" "}
+              By submitting, you consent to receive calls and emails from Dominion Homes, LLC
+              about potential real estate opportunities. SMS/text messaging is not part of this buyer and investor
+              list form.{" "}
               <Link href="/privacy" className="underline hover:text-ink-500">
                 Privacy Policy
               </Link>
