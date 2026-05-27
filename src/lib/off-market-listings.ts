@@ -66,10 +66,10 @@ const listings: Record<string, OffMarketListing> = {
     status: 'active',
     title: '2443 N Wiscomb St',
     locationLine: 'Spokane, WA 99207',
-    priceDisplay: '$154,000',
-    priceNumeric: 154000,
+    priceDisplay: '$159,000.00',
+    priceNumeric: 159000,
     eyebrow: 'Private offering · North Spokane investor opportunity',
-    tags: ['$154K asking', '$255K-$275K ARV target', '3 bed / 1 bath', '1,043 sq ft', 'Large corner lot', 'Quick flip lane'],
+    tags: ['$159K asking', '$255K-$275K ARV target', '3 bed / 1 bath', '1,043 sq ft', 'Large corner lot', 'Quick flip lane'],
     beds: '3',
     baths: '1',
     sqft: '1,043',
@@ -81,16 +81,16 @@ const listings: Record<string, OffMarketListing> = {
     state: 'WA',
     zip: '99207',
     conditionSummary:
-      'Asking $154,000 for a simple North Spokane 3/1 on a corner lot. We think the finished value is roughly $255K-$275K depending on repairs and how clean the finished product looks. This looks like a pretty basic, quick flip: clean it up, make it bright, tighten the curb appeal, and resell a small affordable house in Spokane city.',
+      'Asking $159,000.00 for a simple North Spokane 3/1 on a corner lot. We think the finished value is roughly $255K-$275K depending on repairs and how clean the finished product looks. This looks like a pretty basic, quick flip: clean it up, make it bright, tighten the curb appeal, and resell a small affordable house in Spokane city.',
     summary:
-      'Private off-market opportunity at 2443 N Wiscomb St in Spokane, WA. Asking price is $154,000. The property is a 3 bed, 1 bath, 1,043 sq ft bungalow on a corner lot with an estimated $255K-$275K ARV target. Straightforward quick-flip lane with possible lot and R1 upside to verify.',
+      'Private off-market opportunity at 2443 N Wiscomb St in Spokane, WA. Asking price is $159,000.00. The property is a 3 bed, 1 bath, 1,043 sq ft bungalow on a corner lot with an estimated $255K-$275K ARV target. Straightforward quick-flip lane with possible lot and R1 upside to verify.',
     paragraphs: [
       '2443 N Wiscomb St is the kind of house a lot of buyers can understand fast: small 3/1, corner lot, older but not mysterious from the photos. It needs cleanup, cosmetic work, and a clean finish, not a big story.',
-      'The main play is a quick flip. Buy at $154K, keep the remodel tight, make the first photo look good, and aim at the $255K-$275K ARV lane after repairs.',
+      'The main play is a quick flip. Buy at $159K, keep the remodel tight, make the first photo look good, and aim at the $255K-$275K ARV lane after repairs.',
       'The lot is the extra hook. It is a larger corner setup in Spokane city, so a buyer can also check R1, ADU, or future lot-use upside. That is not required for the basic flip to make sense, but it may give the right buyer another angle.',
     ],
     highlights: [
-      { text: '$154,000 asking price' },
+      { text: '$159,000.00 asking price' },
       { text: 'Working ARV target: $255K-$275K after a clean remodel' },
       { text: '3 bed / 1 bath / 1,043 sq ft Spokane city bungalow' },
       { text: 'Large corner lot with better street presence than a tight interior lot' },
@@ -129,10 +129,10 @@ const listings: Record<string, OffMarketListing> = {
       ['County', 'Spokane County'],
       ['Parcel', '35082.2701'],
       ['Status', 'Available for buyer review'],
-      ['Asking price', '$154,000'],
+      ['Asking price', '$159,000.00'],
       ['Sale type', 'Private as-is opportunity'],
       ['ARV target', '$255,000-$275,000 after a clean remodel - buyer to verify'],
-      ['Spread before repairs/costs', 'Roughly $101K-$121K between ask and ARV target'],
+      ['Spread before repairs/costs', 'Roughly $96K-$116K between ask and ARV target'],
       ['Bedrooms', '3 - buyer to verify'],
       ['Bathrooms', '1 - buyer to verify'],
       ['House square footage', '1,043 sq ft reported in prior county review - buyer to verify'],
@@ -146,9 +146,9 @@ const listings: Record<string, OffMarketListing> = {
     neighborhoodBody:
       '2443 N Wiscomb St sits in Spokane city north of the river, near the Logan / North Spokane buyer pool. The deal should be reviewed as a small 3/1 no-garage rehab first, with the lot and R1 zoning treated as upside only after a buyer verifies layout, access, utilities, permits, and build cost.',
     distanceChips: [
-      { label: 'Asking', value: '$154K' },
+      { label: 'Asking', value: '$159K' },
       { label: 'ARV target', value: '$255K-$275K' },
-      { label: 'Spread', value: '$101K-$121K' },
+      { label: 'Spread', value: '$96K-$116K' },
       { label: 'Beds/Baths', value: '3 / 1' },
       { label: 'Sq Ft', value: '1,043' },
       { label: 'Lot', value: 'Large corner' },
@@ -194,19 +194,19 @@ const listings: Record<string, OffMarketListing> = {
     primaryCtaLabel: 'Request access',
     secondaryCtaLabel: 'Text Adam',
     smsBody:
-      'I want to review 2443 N Wiscomb St at the $154,000 asking price. Can I get access/details?',
+      'I want to review 2443 N Wiscomb St at the $159,000.00 asking price. Can I get access/details?',
     actionTitle: 'How to move on this',
     actionIntro:
       'Send your contact info, close path, and when you can see it. Adam will get you the next step.',
     actionSteps: [
-      ['1', 'Review the photos, $154K asking price, and $255K-$275K ARV target.'],
+      ['1', 'Review the photos, $159K asking price, and $255K-$275K ARV target.'],
       ['2', 'Run it as a basic 3/1 quick flip first. Treat lot upside as extra.'],
       ['3', 'Text or submit the form with your proof-of-funds path and timing.'],
       ['4', 'Walk it, price your scope, and make your call.'],
     ],
     submitLabel: 'Request access',
     sourceNote:
-      'Asking price and ARV target are current working numbers as of 2026-05-26. Buyer should verify condition, repairs, square footage, lot size, zoning, resale value, and all investment assumptions independently.',
+      'Asking price and ARV target are current working numbers as of 2026-05-27. Buyer should verify condition, repairs, square footage, lot size, zoning, resale value, and all investment assumptions independently.',
     dueDiligenceNote:
       'This is a private as-is opportunity. Photos, comps, map, and zoning notes are for buyer review only. Buyer should verify the property, repairs, access, title, resale value, and any lot-use upside before closing.',
   },
