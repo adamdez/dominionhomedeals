@@ -64,7 +64,9 @@ export default function OffMarketHubPage() {
                 </div>
                 <div className="flex items-end justify-between gap-4 px-6 py-5">
                   <div>
-                    <p className="text-xs font-semibold uppercase tracking-wider text-ink-400">Asking</p>
+                    <p className="text-xs font-semibold uppercase tracking-wider text-ink-400">
+                      {l.buyNowDisplay ? 'Buy Now' : l.priceNumeric > 0 ? 'Asking' : 'Terms'}
+                    </p>
                     <p className="font-display text-2xl font-semibold text-ink-600">{l.priceDisplay}</p>
                   </div>
                   <span className="text-sm font-semibold text-forest-600 group-hover:underline">View details</span>

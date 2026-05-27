@@ -3,6 +3,7 @@ import { SITE } from '@/lib/constants'
 import riversideTrailer29Photos from '@/data/riverside-trailer-29-photos.json'
 import cleveland3314Photos from '@/data/3314-e-cleveland-photos.json'
 import virgilWay6714Photos from '@/data/6714-virgil-way-photos.json'
+import wiscomb2443Photos from '@/data/2443-n-wiscomb-st-photos.json'
 
 export type OffMarketPhoto = { src: string; alt: string }
 
@@ -60,6 +61,155 @@ export type OffMarketListing = {
 }
 
 const listings: Record<string, OffMarketListing> = {
+  '2443-n-wiscomb-st': {
+    slug: '2443-n-wiscomb-st',
+    status: 'active',
+    title: '2443 N Wiscomb St',
+    locationLine: 'Spokane, WA 99207',
+    priceDisplay: '$154,000',
+    priceNumeric: 154000,
+    eyebrow: 'Private offering · North Spokane investor opportunity',
+    tags: ['$154K asking', '$255K-$275K ARV target', '3 bed / 1 bath', '1,043 sq ft', 'Large corner lot', 'Quick flip lane'],
+    beds: '3',
+    baths: '1',
+    sqft: '1,043',
+    lot: '6,000 sq ft',
+    year: '1912',
+    county: 'Spokane County',
+    streetAddress: '2443 N Wiscomb St',
+    city: 'Spokane',
+    state: 'WA',
+    zip: '99207',
+    conditionSummary:
+      'Asking $154,000 for a simple North Spokane 3/1 on a corner lot. We think the finished value is roughly $255K-$275K depending on repairs and how clean the finished product looks. This looks like a pretty basic, quick flip: clean it up, make it bright, tighten the curb appeal, and resell a small affordable house in Spokane city.',
+    summary:
+      'Private off-market opportunity at 2443 N Wiscomb St in Spokane, WA. Asking price is $154,000. The property is a 3 bed, 1 bath, 1,043 sq ft bungalow on a corner lot with an estimated $255K-$275K ARV target. Straightforward quick-flip lane with possible lot and R1 upside to verify.',
+    paragraphs: [
+      '2443 N Wiscomb St is the kind of house a lot of buyers can understand fast: small 3/1, corner lot, older but not mysterious from the photos. It needs cleanup, cosmetic work, and a clean finish, not a big story.',
+      'The main play is a quick flip. Buy at $154K, keep the remodel tight, make the first photo look good, and aim at the $255K-$275K ARV lane after repairs.',
+      'The lot is the extra hook. It is a larger corner setup in Spokane city, so a buyer can also check R1, ADU, or future lot-use upside. That is not required for the basic flip to make sense, but it may give the right buyer another angle.',
+    ],
+    highlights: [
+      { text: '$154,000 asking price' },
+      { text: 'Working ARV target: $255K-$275K after a clean remodel' },
+      { text: '3 bed / 1 bath / 1,043 sq ft Spokane city bungalow' },
+      { text: 'Large corner lot with better street presence than a tight interior lot' },
+      { text: 'Simple buyer story: clean it out, freshen the house, sharpen the curb appeal, and resell' },
+      { text: 'Photos show the main rooms, bedrooms, bath, kitchen, panel, water heater, yard, and exterior' },
+      { text: 'R1 / ADU / lot-use upside may be worth a look, but the quick flip is the main lane' },
+      { text: 'Good fit for a cash or hard-money buyer who can walk it, price it, and move' },
+    ],
+    buyerOptions: [
+      {
+        title: 'Quick 3/1 flip',
+        body: 'This is the cleanest play. Keep it simple, make it bright, fix what needs fixing, and get it back on market as an affordable Spokane house.',
+      },
+      {
+        title: '$255K-$275K ARV target',
+        body: 'We think a clean finished product can land in this range if the rehab is tight and the first impression is strong. Buyers should run their own comps, but the spread is there to look at.',
+      },
+      {
+        title: 'Corner lot helps',
+        body: 'The corner lot gives the house more breathing room and a better curb-appeal shot than a cramped mid-block setup. That matters when the finished buyer is shopping by first photo.',
+      },
+      {
+        title: 'Basic rental backup',
+        body: 'If resale is not the only plan, a small Spokane 3/1 can also be checked as a rental. The right buyer can decide whether to flip it or hold it after seeing the repair number.',
+      },
+      {
+        title: 'Lot upside to check',
+        body: 'R1 zoning and the lot layout may give an ADU or future-use angle. Treat that as upside to verify, not something you need for the basic flip math.',
+      },
+    ],
+    facts: [
+      ['Address', '2443 N Wiscomb St'],
+      ['City', 'Spokane'],
+      ['State', 'Washington'],
+      ['ZIP Code', '99207'],
+      ['County', 'Spokane County'],
+      ['Parcel', '35082.2701'],
+      ['Status', 'Available for buyer review'],
+      ['Asking price', '$154,000'],
+      ['Sale type', 'Private as-is opportunity'],
+      ['ARV target', '$255,000-$275,000 after a clean remodel - buyer to verify'],
+      ['Spread before repairs/costs', 'Roughly $101K-$121K between ask and ARV target'],
+      ['Bedrooms', '3 - buyer to verify'],
+      ['Bathrooms', '1 - buyer to verify'],
+      ['House square footage', '1,043 sq ft reported in prior county review - buyer to verify'],
+      ['Lot', 'Corner lot; 6,000 sq ft / roughly 50 x 120 - buyer to verify'],
+      ['Year built', '1912 reported publicly - buyer to verify'],
+      ['Zoning / lot angle', 'R1 / ADU / lot-use upside may be worth checking - buyer to verify'],
+      ['Best-fit buyer', 'Cash or hard-money investor ready for a quick 3/1 flip'],
+    ],
+    photos: wiscomb2443Photos as OffMarketPhoto[],
+    neighborhoodTitle: 'North Spokane / 99207',
+    neighborhoodBody:
+      '2443 N Wiscomb St sits in Spokane city north of the river, near the Logan / North Spokane buyer pool. The deal should be reviewed as a small 3/1 no-garage rehab first, with the lot and R1 zoning treated as upside only after a buyer verifies layout, access, utilities, permits, and build cost.',
+    distanceChips: [
+      { label: 'Asking', value: '$154K' },
+      { label: 'ARV target', value: '$255K-$275K' },
+      { label: 'Spread', value: '$101K-$121K' },
+      { label: 'Beds/Baths', value: '3 / 1' },
+      { label: 'Sq Ft', value: '1,043' },
+      { label: 'Lot', value: 'Large corner' },
+      { label: 'Play', value: 'Quick flip' },
+    ],
+    compLinks: [
+      {
+        label: '1428 E North Ave',
+        href: 'https://www.redfin.com/WA/Spokane/1428-E-North-Ave-99207/home/116920769',
+      },
+      {
+        label: '2002 E Dalton Ave',
+        href: 'https://www.realtor.com/realestateandhomes-detail/2002-E-Dalton-Ave_Spokane_WA_99207_M13714-36288',
+      },
+      {
+        label: '3423 N Stone St',
+        href: 'https://www.redfin.com/WA/Spokane/3423-N-Stone-St-99207/home/117031106',
+      },
+      {
+        label: '2928 N Cook St',
+        href: 'https://www.redfin.com/WA/Spokane/2928-N-Cook-St-99207/home/116443374',
+      },
+      {
+        label: '2424 N Addison St',
+        href: 'https://www.zillow.com/homedetails/2424-N-Addison-St-Spokane-WA-99207/97811331_zpid/',
+      },
+      {
+        label: '1010 E Montgomery Ave',
+        href: 'https://www.redfin.com/WA/Spokane/1010-E-Montgomery-Ave-99207/home/170580847',
+      },
+    ],
+    mapQuery: '2443 N Wiscomb St Spokane WA 99207',
+    leadSource: 'off-market-2443-n-wiscomb-st',
+    lat: 47.68,
+    lng: -117.4023,
+    cardImageSrc: wiscomb2443Photos[0]?.src ?? '/images/2443-n-wiscomb-st/038.webp',
+    countySearchUrl: 'https://cp.spokanecounty.org/scout/propertyinformation/?PID=35082.2701',
+    countySearchLabel: 'Spokane County SCOUT record',
+    contactName: 'Adam',
+    contactPhone: '5095907091',
+    contactPhoneDisplay: '509-590-7091',
+    contactEmail: 'adam@dominionhomedeals.com',
+    primaryCtaLabel: 'Request access',
+    secondaryCtaLabel: 'Text Adam',
+    smsBody:
+      'I want to review 2443 N Wiscomb St at the $154,000 asking price. Can I get access/details?',
+    actionTitle: 'How to move on this',
+    actionIntro:
+      'Send your contact info, close path, and when you can see it. Adam will get you the next step.',
+    actionSteps: [
+      ['1', 'Review the photos, $154K asking price, and $255K-$275K ARV target.'],
+      ['2', 'Run it as a basic 3/1 quick flip first. Treat lot upside as extra.'],
+      ['3', 'Text or submit the form with your proof-of-funds path and timing.'],
+      ['4', 'Walk it, price your scope, and make your call.'],
+    ],
+    submitLabel: 'Request access',
+    sourceNote:
+      'Asking price and ARV target are current working numbers as of 2026-05-26. Buyer should verify condition, repairs, square footage, lot size, zoning, resale value, and all investment assumptions independently.',
+    dueDiligenceNote:
+      'This is a private as-is opportunity. Photos, comps, map, and zoning notes are for buyer review only. Buyer should verify the property, repairs, access, title, resale value, and any lot-use upside before closing.',
+  },
   '6714-virgil-way': {
     slug: '6714-virgil-way',
     status: 'active',
