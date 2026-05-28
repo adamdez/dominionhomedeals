@@ -3,6 +3,7 @@ import { getServiceClient } from "@/lib/supabase";
 const DOMINION_LEAD_CATEGORY = "dominion_lead_control";
 
 type JsonRecord = Record<string, unknown>;
+type StringMap = Record<string, string>;
 
 export type DominionLeadStatus =
   | "new"
@@ -30,7 +31,10 @@ export interface DominionLeadRecord {
   utmSource: string;
   utmMedium: string;
   utmCampaign: string;
+  utmTerm: string;
+  utmContent: string;
   gclid: string;
+  adAttribution: StringMap;
   smsConsent: boolean;
   smsConsentTimestamp: string | null;
   smsConsentIP: string;
@@ -61,7 +65,10 @@ export interface DominionLeadSubmissionInput {
   utmSource?: string | null;
   utmMedium?: string | null;
   utmCampaign?: string | null;
+  utmTerm?: string | null;
+  utmContent?: string | null;
   gclid?: string | null;
+  adAttribution?: Record<string, unknown> | null;
   smsConsent?: boolean | null;
   smsConsentTimestamp?: string | null;
   smsConsentIP?: string | null;
@@ -82,6 +89,17 @@ function parseContent(raw: string | null): JsonRecord {
 
 function shortText(value: unknown, max = 400): string {
   return typeof value === "string" && value.trim() ? value.trim().slice(0, max) : "";
+}
+
+function normalizeStringRecord(value: unknown): StringMap {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return {};
+
+  return Object.fromEntries(
+    Object.entries(value as Record<string, unknown>)
+      .map(([key, entry]) => [shortText(key, 80), shortText(entry, 300)] as const)
+      .filter(([key, entry]) => key && entry)
+      .slice(0, 80),
+  );
 }
 
 function normalizeStatus(value: unknown): DominionLeadStatus {
@@ -150,7 +168,10 @@ function rowToDominionLead(row: {
     utmSource: shortText(content.utmSource, 160),
     utmMedium: shortText(content.utmMedium, 160),
     utmCampaign: shortText(content.utmCampaign, 160),
+    utmTerm: shortText(content.utmTerm, 240),
+    utmContent: shortText(content.utmContent, 240),
     gclid: shortText(content.gclid, 160),
+    adAttribution: normalizeStringRecord(content.adAttribution),
     smsConsent: content.smsConsent === true,
     smsConsentTimestamp: normalizeTimestamp(content.smsConsentTimestamp),
     smsConsentIP: shortText(content.smsConsentIP, 80),
@@ -191,7 +212,10 @@ function dominionLeadToContent(
     utmSource: record.utmSource.trim(),
     utmMedium: record.utmMedium.trim(),
     utmCampaign: record.utmCampaign.trim(),
+    utmTerm: record.utmTerm.trim(),
+    utmContent: record.utmContent.trim(),
     gclid: record.gclid.trim(),
+    adAttribution: normalizeStringRecord(record.adAttribution),
     smsConsent: record.smsConsent === true,
     smsConsentTimestamp: normalizeTimestamp(record.smsConsentTimestamp),
     smsConsentIP: record.smsConsentIP.trim(),
@@ -228,7 +252,10 @@ export async function recordDominionLeadSubmission(
     utmSource: shortText(input.utmSource, 160),
     utmMedium: shortText(input.utmMedium, 160),
     utmCampaign: shortText(input.utmCampaign, 160),
+    utmTerm: shortText(input.utmTerm, 240),
+    utmContent: shortText(input.utmContent, 240),
     gclid: shortText(input.gclid, 160),
+    adAttribution: normalizeStringRecord(input.adAttribution),
     smsConsent: input.smsConsent === true,
     smsConsentTimestamp: normalizeTimestamp(input.smsConsentTimestamp),
     smsConsentIP: shortText(input.smsConsentIP, 80),
