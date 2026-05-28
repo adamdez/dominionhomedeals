@@ -32,6 +32,15 @@ interface LeadPayload {
   utmTerm?: string
   utmContent?: string
   gclid?: string
+  gbraid?: string
+  wbraid?: string
+  gadSource?: string
+  gadCampaignId?: string
+  keyword?: string
+  matchtype?: string
+  adgroup?: string
+  searchterm?: string
+  adAttribution?: Record<string, unknown>
 }
 
 /* ------------------------------------------------------------------ */
@@ -55,6 +64,62 @@ function sanitize(str: string): string {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;')
+}
+
+const AD_ATTRIBUTION_KEYS = new Set([
+  'utm_source',
+  'utm_medium',
+  'utm_campaign',
+  'utm_term',
+  'utm_content',
+  'gclid',
+  'gbraid',
+  'wbraid',
+  'gad_source',
+  'gad_campaignid',
+  'keyword',
+  'matchtype',
+  'adgroup',
+  'searchterm',
+])
+
+function sanitizeAttribution(raw: unknown): Record<string, string> {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return {}
+
+  const entries = Object.entries(raw as Record<string, unknown>)
+    .filter(([key, value]) => {
+      const normalizedKey = key.toLowerCase()
+      return (
+        typeof value === 'string' &&
+        value.trim().length > 0 &&
+        (AD_ATTRIBUTION_KEYS.has(normalizedKey) || normalizedKey.startsWith('hsa_'))
+      )
+    })
+    .map(([key, value]) => [sanitize(key).slice(0, 80), sanitize(String(value)).slice(0, 300)] as const)
+    .filter(([key, value]) => key && value)
+    .slice(0, 80)
+
+  return Object.fromEntries(entries)
+}
+
+function attributionSummary(adAttribution: Record<string, string>): string {
+  return Object.entries(adAttribution)
+    .map(([key, value]) => `${key}: ${value}`)
+    .join('\n')
+}
+
+function getTeamSmsRecipients(): string[] {
+  const configured = process.env.LEAD_SMS_RECIPIENTS
+    ?.split(',')
+    .map((recipient) => recipient.trim())
+    .filter(Boolean)
+
+  if (configured?.length) return configured
+
+  return [
+    '5095907091@mms.att.net', // Adam - AT&T MMS gateway is more reliable than txt.att.net.
+    '5096669518@vtext.com', // Logan - Verizon
+  ]
 }
 
 function withTimeout<T>(promise: Promise<T>, timeoutMs: number, label: string): Promise<T> {
@@ -98,6 +163,13 @@ async function sendEmailNotification(lead: Record<string, unknown>) {
   const emailCell = email
     ? `<a href="mailto:${email}" style="color: #1a3a2a;">${email}</a>`
     : 'Not provided'
+  const adAttribution =
+    lead.adAttribution && typeof lead.adAttribution === 'object' && !Array.isArray(lead.adAttribution)
+      ? (lead.adAttribution as Record<string, string>)
+      : {}
+  const adAttributionHtml = Object.entries(adAttribution)
+    .map(([key, value]) => `<br/>${key}: ${value}`)
+    .join('')
 
   const htmlBody = `
     <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -156,6 +228,7 @@ async function sendEmailNotification(lead: Record<string, unknown>) {
         </p>
         ${lead.utmSource ? `<p style="margin: 8px 0 0; font-size: 12px; color: #888;">UTM: ${lead.utmSource} / ${lead.utmMedium} / ${lead.utmCampaign}</p>` : ''}
         ${lead.gclid ? `<p style="margin: 8px 0 0; font-size: 12px; color: #888;">GCLID: ${lead.gclid}</p>` : ''}
+        ${adAttributionHtml ? `<p style="margin: 8px 0 0; font-size: 12px; color: #888;">Ad params:${adAttributionHtml}</p>` : ''}
       </div>
     </div>
   `
@@ -202,11 +275,8 @@ async function sendSmsNotification(lead: Record<string, unknown>) {
   // Keep it short — carrier SMS gateways truncate long messages
   const message = `${priorityEmoji} NEW LEAD: ${lead.firstName} ${lead.lastName}\n${lead.address}, ${lead.city} ${lead.state}\nPhone: ${lead.phone}\n${lead.condition} | ${lead.timeline}\n\nCall them back ASAP!`
 
-  // Email-to-SMS carrier gateways
-  const smsRecipients = [
-    '5095907091@txt.att.net',    // Adam — AT&T
-    '5096669518@vtext.com',      // Logan — Verizon
-  ]
+  // Internal team alert gateways. Seller SMS consent is tracked separately.
+  const smsRecipients = getTeamSmsRecipients()
 
   try {
     await Promise.allSettled(
@@ -252,6 +322,12 @@ async function forwardToSentinel(lead: Record<string, unknown>): Promise<void> {
   }
 
   try {
+    const adAttribution =
+      lead.adAttribution && typeof lead.adAttribution === 'object' && !Array.isArray(lead.adAttribution)
+        ? (lead.adAttribution as Record<string, string>)
+        : {}
+    const adNotes = attributionSummary(adAttribution)
+
     const res = await fetch(`${sentinelUrl}/api/inbound/webform`, {
       method: 'POST',
       headers: {
@@ -284,6 +360,7 @@ async function forwardToSentinel(lead: Record<string, unknown>): Promise<void> {
           `Condition: ${lead.condition}`,
           `Timeline: ${lead.timeline}`,
           lead.utmSource ? `UTM: ${lead.utmSource}/${lead.utmMedium}/${lead.utmCampaign}` : null,
+          adNotes ? `Ad attribution:\n${adNotes}` : null,
         ].filter(Boolean).join('\n'),
 
         // Raw payload for audit
@@ -292,6 +369,7 @@ async function forwardToSentinel(lead: Record<string, unknown>): Promise<void> {
         sms_consent: lead.smsConsent,
         sms_consent_timestamp: lead.smsConsentTimestamp,
         sms_consent_ip: lead.smsConsentIP,
+        ad_attribution: adAttribution,
       }),
     })
 
@@ -349,6 +427,23 @@ export async function POST(request: NextRequest) {
     const smsConsentTimestamp = smsConsent
       ? body.sms_consent_timestamp || body.smsOptInTimestamp || submittedAt
       : null
+    const adAttribution = sanitizeAttribution({
+      ...(body.adAttribution || {}),
+      utm_source: body.utmSource,
+      utm_medium: body.utmMedium,
+      utm_campaign: body.utmCampaign,
+      utm_term: body.utmTerm,
+      utm_content: body.utmContent,
+      gclid: body.gclid,
+      gbraid: body.gbraid,
+      wbraid: body.wbraid,
+      gad_source: body.gadSource,
+      gad_campaignid: body.gadCampaignId,
+      keyword: body.keyword,
+      matchtype: body.matchtype,
+      adgroup: body.adgroup,
+      searchterm: body.searchterm,
+    })
 
     // Build lead object
     const lead = {
@@ -377,17 +472,19 @@ export async function POST(request: NextRequest) {
       utmCampaign: sanitize(body.utmCampaign || ''),
       utmTerm: sanitize(body.utmTerm || ''),
       utmContent: sanitize(body.utmContent || ''),
-      gclid: body.gclid ? sanitize(body.gclid) : null,
+      gclid: adAttribution.gclid || (body.gclid ? sanitize(body.gclid) : null),
+      adAttribution,
       submittedAt,
     }
 
     // Log non-PII summary (visible in Vercel logs)
     console.log('[NEW LEAD]', lead.firstName, lead.lastName, '—', lead.city, lead.state, '—', lead.timeline, '—', lead.condition)
 
-    // Send email + optional SMS + forward to Sentinel CRM in parallel
+    // Send email + internal team SMS + forward to Sentinel CRM in parallel
     // All are best-effort — failures don't block the response
     const sideEffectPromises = [
       withTimeout(sendEmailNotification(lead), 1500, 'email notification'),
+      withTimeout(sendSmsNotification(lead), 3500, 'sms notification'),
       withTimeout(forwardToSentinel(lead), 1500, 'sentinel forward'),
       withTimeout(syncSellerLeadToMailchimp(lead), 1500, 'mailchimp seller sync'),
       withTimeout(recordDominionLeadSubmission({
@@ -406,17 +503,16 @@ export async function POST(request: NextRequest) {
         utmSource: lead.utmSource,
         utmMedium: lead.utmMedium,
         utmCampaign: lead.utmCampaign,
+        utmTerm: lead.utmTerm,
+        utmContent: lead.utmContent,
         gclid: lead.gclid,
+        adAttribution: lead.adAttribution,
         smsConsent: lead.smsConsent,
         smsConsentTimestamp: lead.smsConsentTimestamp,
         smsConsentIP: lead.smsConsentIP,
         submittedAt: lead.submittedAt,
       }), 1500, 'lead control write'),
     ]
-
-    if (lead.smsConsent) {
-      sideEffectPromises.splice(1, 0, withTimeout(sendSmsNotification(lead), 1500, 'sms notification'))
-    }
 
     const sideEffects = await Promise.allSettled(sideEffectPromises)
 

@@ -190,7 +190,7 @@ async function sendSmsNotification(lead: Record<string, unknown>) {
 
   const interestType = labelInterestType(lead.interestType as BuyerInvestorInterestType);
   const message = `NEW BUYER/INVESTOR: ${lead.fullName}\n${interestType} | ${lead.capitalRange}\n${lead.phone}\n${lead.preferredMarkets}\n${lead.timeline}`;
-  const smsRecipients = ["5095907091@txt.att.net", "5096669518@vtext.com"];
+  const smsRecipients = ["5095907091@mms.att.net", "5096669518@vtext.com"];
 
   try {
     await Promise.allSettled(
@@ -281,7 +281,7 @@ export async function POST(request: NextRequest) {
 
     const sideEffects = await Promise.allSettled([
       withTimeout(sendEmailNotification(lead), 1500, "buyer email notification"),
-      withTimeout(sendSmsNotification(lead), 1500, "buyer sms notification"),
+      withTimeout(sendSmsNotification(lead), 3500, "buyer sms notification"),
       withTimeout(
         recordBuyerInvestorLeadSubmission({
           fullName: lead.fullName,
