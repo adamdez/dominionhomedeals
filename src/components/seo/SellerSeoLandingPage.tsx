@@ -2,6 +2,7 @@ import Link from "next/link";
 import { FadeIn } from "@/components/animations/FadeIn";
 import { LeadForm } from "@/components/forms/LeadForm";
 import { BreadcrumbJsonLd } from "@/components/seo/BreadcrumbJsonLd";
+import { CashOfferMathSection, SellerProofBand, VerifyCashBuyerSection } from "@/components/sell/TrustAndOfferSections";
 import type { SellerSeoPage } from "@/lib/seller-seo-pages";
 import { SELLER_SEO_LAST_UPDATED } from "@/lib/seller-seo-pages";
 import { getSellerSeoUrl } from "@/lib/seller-seo-pages";
@@ -24,16 +25,6 @@ function CheckIcon() {
 
 function StructuredData({ page }: { page: SellerSeoPage }) {
   const pageUrl = getSellerSeoUrl(page.slug);
-  const faqSchema = {
-    "@context": "https://schema.org",
-    "@type": "FAQPage",
-    mainEntity: page.faqs.map((faq) => ({
-      "@type": "Question",
-      name: faq.q,
-      acceptedAnswer: { "@type": "Answer", text: faq.a },
-    })),
-  };
-
   const serviceSchema = {
     "@context": "https://schema.org",
     "@type": "Service",
@@ -64,7 +55,6 @@ function StructuredData({ page }: { page: SellerSeoPage }) {
 
   return (
     <>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(serviceSchema) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(webPageSchema) }} />
     </>
@@ -105,7 +95,7 @@ export function SellerSeoLandingPage({ page }: { page: SellerSeoPage }) {
               </FadeIn>
 
               <FadeIn delay={140}>
-                <p className="mt-5 max-w-xl text-lg leading-relaxed text-ink-400">{page.intro}</p>
+                <p className="mt-5 max-w-xl text-base leading-relaxed text-ink-400 sm:text-lg">{page.intro}</p>
               </FadeIn>
 
               <FadeIn delay={170}>
@@ -154,6 +144,8 @@ export function SellerSeoLandingPage({ page }: { page: SellerSeoPage }) {
         </div>
       </section>
 
+      <SellerProofBand />
+
       <section className="border-y border-stone-200 bg-white">
         <div className="section-wrap">
           <div className="mx-auto grid max-w-5xl gap-8 lg:grid-cols-[1fr_0.8fr]">
@@ -174,6 +166,10 @@ export function SellerSeoLandingPage({ page }: { page: SellerSeoPage }) {
           </div>
         </div>
       </section>
+
+      <CashOfferMathSection />
+
+      <VerifyCashBuyerSection />
 
       <section className="section-wrap">
         <div className="mx-auto max-w-5xl">

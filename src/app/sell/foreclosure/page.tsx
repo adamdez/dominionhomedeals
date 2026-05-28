@@ -91,29 +91,11 @@ const FAQS = [
   },
 ];
 
-function FAQJsonLd() {
-  const schema = {
-    "@context": "https://schema.org",
-    "@type": "FAQPage",
-    mainEntity: FAQS.map((faq) => ({
-      "@type": "Question",
-      name: faq.q,
-      acceptedAnswer: { "@type": "Answer", text: faq.a },
-    })),
-  };
-
-  return (
-    <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }} />
-  );
-}
-
 export default function ForeclosurePage() {
   const phoneClean = SITE.phone.replace(/\D/g, "");
 
   return (
     <>
-      <FAQJsonLd />
-
       <section className="relative overflow-hidden pt-28 pb-14 sm:pt-36 sm:pb-20 lg:pt-40 lg:pb-24">
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-stone-50 via-forest-50/20 to-stone-50" />
         <div className="pointer-events-none absolute -top-20 -right-20 h-[400px] w-[400px] rounded-full bg-forest-100/30 blur-3xl" />
@@ -312,7 +294,7 @@ export default function ForeclosurePage() {
               you a straight answer. No pressure, no obligation, no judgment.
             </p>
             <div className="mt-7 flex flex-wrap items-center justify-center gap-3">
-              <a href="#get-offer" className="btn-primary !bg-white !text-ink-600 hover:!bg-stone-100">
+              <a href="#get-offer" className="btn-primary">
                 Get My Cash Offer
               </a>
               <a

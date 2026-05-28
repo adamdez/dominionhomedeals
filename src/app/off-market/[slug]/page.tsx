@@ -163,13 +163,13 @@ export default async function OffMarketListingPage({ params }: { params: Promise
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
               <a
                 href="#inquire"
-                className="inline-flex items-center justify-center rounded-xl bg-white px-8 py-3.5 text-[15px] font-semibold text-ink-700 shadow-elevated transition hover:bg-stone-100"
+                className="btn-primary"
               >
                 {primaryCtaLabel}
               </a>
               <a
                 href={`sms:${contactPhone}?&body=${encodeURIComponent(smsBody)}`}
-                className="inline-flex items-center justify-center rounded-xl bg-forest-500 px-8 py-3.5 text-[15px] font-semibold text-white shadow-elevated transition hover:bg-forest-600"
+                className="inline-flex items-center justify-center rounded-xl border border-white/30 px-8 py-3.5 text-[15px] font-semibold text-white transition hover:bg-white/10"
               >
                 {secondaryCtaLabel}
               </a>

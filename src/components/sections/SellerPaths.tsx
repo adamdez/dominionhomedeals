@@ -10,6 +10,13 @@ const SELLER_PATHS = [
     label: "Read the fast-sale Spokane guide",
   },
   {
+    title: "Need to sell fast in Coeur d'Alene",
+    description:
+      "For CDA, Post Falls, Hayden, or Kootenai County sellers who need an as-is option without months of listing prep.",
+    href: "/sell-my-house-fast-coeur-d-alene",
+    label: "Read the CDA fast-sale guide",
+  },
+  {
     title: "Inherited or estate property",
     description:
       "Questions around probate, family decision-making, cleanup, and whether now is even the right time to sell.",

@@ -3,7 +3,7 @@
 import { FormEvent, useEffect, useState } from 'react'
 import Link from 'next/link'
 import { trackFormStep, trackLeadFormSubmission } from '@/lib/tracking'
-import { SMS_CONSENT_TEXT } from '@/lib/constants'
+import { SITE, SMS_CONSENT_TEXT } from '@/lib/constants'
 
 type Stage = 'address' | 'name' | 'phone' | 'details'
 
@@ -252,7 +252,7 @@ export function LeadForm() {
       const data = await response.json()
 
       if (!response.ok || !data.success) {
-        setErrorMessage(data.error || 'Something went wrong. Please call us at 509-822-5460.')
+        setErrorMessage(data.error || `Something went wrong. Please call us at ${SITE.phone}.`)
         return
       }
 
@@ -269,7 +269,7 @@ export function LeadForm() {
 
       window.location.assign('/sell/thank-you')
     } catch (error) {
-      setErrorMessage('Network error. Please call us at 509-822-5460.')
+      setErrorMessage(`Network error. Please call us at ${SITE.phone}.`)
     } finally {
       setIsSubmitting(false)
     }
@@ -291,7 +291,7 @@ export function LeadForm() {
   const progressIndex = stages.indexOf(stage)
 
   return (
-    <div id="get-offer" className="rounded-[28px] border border-stone-200 bg-white p-6 shadow-soft sm:p-8">
+    <div className="rounded-[28px] border border-stone-200 bg-white p-6 shadow-soft sm:p-8">
       <p className="text-center text-sm font-medium text-forest-600">
         Start with the address. We will ask one thing at a time.
       </p>
@@ -478,7 +478,7 @@ export function LeadForm() {
         <button
           type="submit"
           disabled={!canContinueCurrentStage() || isSubmitting}
-          className="w-full rounded-2xl bg-forest-600 px-5 py-4 text-base font-semibold text-white transition hover:bg-forest-700 disabled:cursor-not-allowed disabled:opacity-50"
+          className="btn-primary w-full rounded-2xl px-5 py-4 text-base disabled:cursor-not-allowed"
         >
           {isSubmitting ? 'Submitting...' : stage === 'address' ? 'Get My Cash Offer' : stage === 'details' ? 'Get My Cash Offer' : 'Continue'}
         </button>

@@ -12,11 +12,13 @@ declare global {
   interface Window {
     gtag?: (command: string, ...args: unknown[]) => void
     dataLayer?: unknown[]
+    __loadDominionAnalytics?: () => void
   }
 }
 
 function gtag(command: string, ...args: unknown[]) {
   if (typeof window !== 'undefined' && typeof window.gtag === 'function') {
+    window.__loadDominionAnalytics?.()
     window.gtag(command, ...args)
   }
 }

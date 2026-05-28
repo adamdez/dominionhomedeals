@@ -86,29 +86,11 @@ const FAQS = [
 const DIRECT_ANSWER =
   "Yes, Dominion Homes can evaluate a direct cash or investor-backed offer for a Spokane rental property with tenants still in place. You usually do not need to evict first or make repairs before asking for an offer; the lease, rent status, condition, and title situation are factored into the number and closing plan.";
 
-function FAQJsonLd() {
-  const schema = {
-    "@context": "https://schema.org",
-    "@type": "FAQPage",
-    mainEntity: FAQS.map((faq) => ({
-      "@type": "Question",
-      name: faq.q,
-      acceptedAnswer: { "@type": "Answer", text: faq.a },
-    })),
-  };
-
-  return (
-    <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }} />
-  );
-}
-
 export default function LandlordExitPage() {
   const phoneClean = SITE.phone.replace(/\D/g, "");
 
   return (
     <>
-      <FAQJsonLd />
-
       <section className="relative overflow-hidden pt-28 pb-14 sm:pt-36 sm:pb-20 lg:pt-40 lg:pb-24">
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-stone-50 via-forest-50/20 to-stone-50" />
         <div className="pointer-events-none absolute -top-20 -right-20 h-[400px] w-[400px] rounded-full bg-forest-100/30 blur-3xl" />
@@ -318,7 +300,7 @@ export default function LandlordExitPage() {
               looking to do. We&apos;ll give you a fair cash offer - no obligation and no pressure.
             </p>
             <div className="mt-7 flex flex-wrap items-center justify-center gap-3">
-              <a href="#get-offer" className="btn-primary !bg-white !text-ink-600 hover:!bg-stone-100">
+              <a href="#get-offer" className="btn-primary">
                 Get My Cash Offer
               </a>
               <a

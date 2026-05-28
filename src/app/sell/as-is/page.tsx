@@ -117,16 +117,6 @@ const INTERNAL_LINKS = [
 ] as const;
 
 function StructuredData() {
-  const faqSchema = {
-    "@context": "https://schema.org",
-    "@type": "FAQPage",
-    mainEntity: FAQS.map((faq) => ({
-      "@type": "Question",
-      name: faq.q,
-      acceptedAnswer: { "@type": "Answer", text: faq.a },
-    })),
-  };
-
   const howToSchema = {
     "@context": "https://schema.org",
     "@type": "HowTo",
@@ -142,16 +132,10 @@ function StructuredData() {
   };
 
   return (
-    <>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
-      />
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(howToSchema) }}
-      />
-    </>
+    <script
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{ __html: JSON.stringify(howToSchema) }}
+    />
   );
 }
 
@@ -444,7 +428,7 @@ export default function SellAsIsPage() {
             <div className="mt-7 flex flex-wrap items-center justify-center gap-3">
               <a
                 href="#get-offer"
-                className="btn-primary !bg-white !text-ink-600 hover:!bg-stone-100"
+                className="btn-primary"
               >
                 Get My Cash Offer
               </a>

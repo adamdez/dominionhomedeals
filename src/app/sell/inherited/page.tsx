@@ -76,29 +76,11 @@ const FAQS = [
 const DIRECT_ANSWER =
   "Yes, Dominion Homes can talk through a cash or investor-backed offer for an inherited house in Spokane or nearby North Idaho. The house can be as-is, full of belongings, or still tied to estate paperwork, but closing depends on who has legal authority to sign and what title needs to clear.";
 
-function FAQJsonLd() {
-  const schema = {
-    "@context": "https://schema.org",
-    "@type": "FAQPage",
-    mainEntity: FAQS.map((faq) => ({
-      "@type": "Question",
-      name: faq.q,
-      acceptedAnswer: { "@type": "Answer", text: faq.a },
-    })),
-  };
-
-  return (
-    <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }} />
-  );
-}
-
 export default function InheritedPropertyPage() {
   const phoneClean = SITE.phone.replace(/\D/g, "");
 
   return (
     <>
-      <FAQJsonLd />
-
       <section className="relative overflow-hidden pt-28 pb-14 sm:pt-36 sm:pb-20 lg:pt-40 lg:pb-24">
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-stone-50 via-forest-50/20 to-stone-50" />
         <div className="pointer-events-none absolute -top-20 -right-20 h-[400px] w-[400px] rounded-full bg-forest-100/30 blur-3xl" />
@@ -292,7 +274,7 @@ export default function InheritedPropertyPage() {
               we can offer. There&apos;s no pressure and no rush.
             </p>
             <div className="mt-7 flex flex-wrap items-center justify-center gap-3">
-              <a href="#get-offer" className="btn-primary !bg-white !text-ink-600 hover:!bg-stone-100">
+              <a href="#get-offer" className="btn-primary">
                 Get My Cash Offer
               </a>
               <a

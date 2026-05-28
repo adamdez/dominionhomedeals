@@ -7,15 +7,16 @@ import { Situations } from "@/components/sections/Situations";
 import { SellerProofSection } from "@/components/sell/SellerProofSection";
 import { SellStickyBar } from "@/components/sell/SellStickyBar";
 import { SellTrustStrip } from "@/components/sell/SellTrustStrip";
+import { CashOfferMathSection, SellerProofBand, VerifyCashBuyerSection } from "@/components/sell/TrustAndOfferSections";
 import { SITE, PROCESS_STEPS, TEAM, SELL_PAGE_FAQS } from "@/lib/constants";
 
 export const metadata: Metadata = {
-  title: "Sell Your House Fast For Cash In Spokane",
+  title: "Sell Your Spokane or CDA House As-Is",
   description:
-    "Local Spokane cash home buyers. Get a fair cash offer with no repairs, no fees, and a closing timeline that fits your situation.",
+    "Local Spokane and Coeur d'Alene cash home buyers. Get a fair cash offer with no repairs, no fees, and a closing timeline that fits your situation.",
   alternates: { canonical: `${SITE.url}/sell` },
   openGraph: {
-    title: "Sell Your Spokane Home For Cash",
+    title: "Sell Your Spokane or CDA House As-Is",
     description:
       "Local team buys houses in any condition across Spokane County. No commissions, no repairs. You pick the closing date.",
     url: `${SITE.url}/sell`,
@@ -50,31 +51,54 @@ const SELL_TRUST_STATS = [
   { value: "Local", label: "Spokane-Based Team" },
 ] as const;
 
+function SellStructuredData() {
+  const pageUrl = `${SITE.url}/sell`;
+  const serviceSchema = {
+    "@context": "https://schema.org",
+    "@type": "Service",
+    "@id": `${pageUrl}#service`,
+    name: "Sell Your Spokane or CDA House As-Is",
+    description: metadata.description,
+    provider: { "@id": `${SITE.url}/#business` },
+    areaServed: [
+      { "@type": "AdministrativeArea", name: "Spokane County, WA" },
+      { "@type": "AdministrativeArea", name: "Kootenai County, ID" },
+    ],
+    serviceType: "As-is cash home buying",
+    url: pageUrl,
+  };
+
+  const webPageSchema = {
+    "@context": "https://schema.org",
+    "@type": "WebPage",
+    "@id": `${pageUrl}#webpage`,
+    url: pageUrl,
+    name: "Sell Your Spokane or CDA House As-Is",
+    description: metadata.description,
+    dateModified: "2026-05-27",
+    about: { "@id": `${pageUrl}#service` },
+    publisher: { "@id": `${SITE.url}/#business` },
+  };
+
+  return (
+    <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(serviceSchema) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(webPageSchema) }} />
+    </>
+  );
+}
+
 export default function SellPage() {
   const phoneClean = SITE.phone.replace(/\D/g, "");
 
   return (
     <>
+      <SellStructuredData />
       <BreadcrumbJsonLd
         items={[
           { name: "Home", url: SITE.url },
           { name: "Sell Your House", url: `${SITE.url}/sell` },
         ]}
-      />
-
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify({
-            "@context": "https://schema.org",
-            "@type": "FAQPage",
-            mainEntity: SELL_PAGE_FAQS.map((faq) => ({
-              "@type": "Question",
-              name: faq.q,
-              acceptedAnswer: { "@type": "Answer", text: faq.a },
-            })),
-          }),
-        }}
       />
 
       <section className="relative overflow-hidden pt-28 pb-14 sm:pt-36 sm:pb-20 lg:pt-40 lg:pb-24">
@@ -97,9 +121,9 @@ export default function SellPage() {
 
               <FadeIn delay={80}>
                 <h1 className="font-display text-hero text-ink-700 text-balance">
-                  Sell Your Spokane Home
+                  Sell Your Spokane or CDA House
                   <br />
-                  <span className="text-forest-500">For Cash. As-Is.</span>
+                  <span className="text-forest-500">As-Is.</span>
                 </h1>
               </FadeIn>
 
@@ -108,7 +132,7 @@ export default function SellPage() {
               </FadeIn>
 
               <FadeIn delay={160}>
-                <p className="mt-5 max-w-lg text-lg leading-relaxed text-ink-400">
+                <p className="mt-5 max-w-lg text-base leading-relaxed text-ink-400 sm:text-lg">
                   We are a Spokane-based team that buys houses directly across
                   Spokane County and the Spokane-CDA corridor. No agents, no
                   commissions, no repairs. Tell us about the property and we will
@@ -157,6 +181,8 @@ export default function SellPage() {
         </div>
       </section>
 
+      <SellerProofBand />
+
       <SellerProofSection angle="default" />
 
       <section className="border-y border-stone-200 bg-white py-10">
@@ -175,6 +201,10 @@ export default function SellPage() {
           </div>
         </div>
       </section>
+
+      <CashOfferMathSection />
+
+      <VerifyCashBuyerSection />
 
       <section className="section-wrap">
         <FadeIn>
@@ -329,7 +359,7 @@ export default function SellPage() {
               One of us will get back to you directly.
             </p>
             <div className="mt-7 flex flex-wrap items-center justify-center gap-3">
-              <a href="#get-offer" className="btn-primary !bg-white !text-ink-600 hover:!bg-stone-100">
+              <a href="#get-offer" className="btn-primary">
                 Get My Cash Offer
               </a>
               <a

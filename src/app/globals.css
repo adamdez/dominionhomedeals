@@ -124,12 +124,31 @@
   /* Primary CTA — forest green, warm and confident */
   .btn-primary {
     @apply relative inline-flex items-center justify-center
-           px-7 py-3.5 font-body font-semibold text-white text-[15px]
-           bg-forest-500 rounded-xl
+           px-7 py-3.5 font-body font-semibold text-ink-700 text-[15px]
+           rounded-xl shadow-soft
            transition-all duration-200 ease-out
-           hover:bg-forest-600 hover:shadow-elevated
+           hover:shadow-elevated
            active:scale-[0.98]
-           focus-visible:ring-2 focus-visible:ring-forest-400 focus-visible:ring-offset-2;
+           focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-2;
+    border: 1px solid rgba(217, 119, 6, 0.18);
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.46) 0%, rgba(255, 255, 255, 0) 46%),
+      linear-gradient(180deg, #ffd978 0%, #f5ad1b 62%, #e7950a 100%);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.72),
+      inset 0 -1px 0 rgba(146, 64, 14, 0.14),
+      0 12px 24px rgba(217, 119, 6, 0.22);
+  }
+
+  .btn-primary:hover {
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.5) 0%, rgba(255, 255, 255, 0) 44%),
+      linear-gradient(180deg, #ffe08a 0%, #f6b21f 58%, #e9970c 100%);
+  }
+
+  .btn-primary:disabled {
+    color: var(--color-ink-700);
+    opacity: 1;
   }
 
   /* Secondary CTA — outlined */
@@ -139,16 +158,6 @@
            bg-transparent border-2 border-forest-200 rounded-xl
            transition-all duration-200 ease-out
            hover:border-forest-500 hover:bg-forest-50
-           active:scale-[0.98];
-  }
-
-  /* Amber accent button — for urgency */
-  .btn-amber {
-    @apply inline-flex items-center justify-center
-           px-7 py-3.5 font-body font-semibold text-ink-700 text-[15px]
-           bg-amber-300 rounded-xl
-           transition-all duration-200 ease-out
-           hover:bg-amber-400 hover:shadow-soft
            active:scale-[0.98];
   }
 
@@ -834,6 +843,15 @@
 .fade-in-none {
   --fade-x: 0;
   --fade-y: 0;
+}
+
+@media (max-width: 767px) {
+  .fade-in {
+    opacity: 1;
+    animation: none;
+    transform: none;
+    will-change: auto;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -6,42 +6,45 @@ import { SITE } from '@/lib/constants'
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const baseUrl = SITE.url
+  const contentLastUpdated = new Date('2026-05-27T12:00:00-07:00')
+  const legalLastUpdated = new Date('2026-05-22T12:00:00-07:00')
 
   const staticPages = [
-    { url: baseUrl, lastModified: new Date(), changeFrequency: 'weekly' as const, priority: 1.0 },
-    { url: `${baseUrl}/sell`, lastModified: new Date(), changeFrequency: 'weekly' as const, priority: 0.9 },
-    { url: `${baseUrl}/sell/guide`, lastModified: new Date(), changeFrequency: 'monthly' as const, priority: 0.85 },
-    { url: `${baseUrl}/stories`, lastModified: new Date(), changeFrequency: 'monthly' as const, priority: 0.8 },
-    { url: `${baseUrl}/sell/as-is`, lastModified: new Date(), changeFrequency: 'monthly' as const, priority: 0.9 },
-    { url: `${baseUrl}/sell/foreclosure`, lastModified: new Date(), changeFrequency: 'monthly' as const, priority: 0.9 },
-    { url: `${baseUrl}/sell/inherited`, lastModified: new Date(), changeFrequency: 'monthly' as const, priority: 0.9 },
-    { url: `${baseUrl}/sell/landlord`, lastModified: new Date(), changeFrequency: 'monthly' as const, priority: 0.9 },
-    { url: `${baseUrl}/how-we-work`, lastModified: new Date(), changeFrequency: 'monthly' as const, priority: 0.9 },
-    { url: `${baseUrl}/about`, lastModified: new Date(), changeFrequency: 'monthly' as const, priority: 0.8 },
-    { url: `${baseUrl}/neighborhoods`, lastModified: new Date(), changeFrequency: 'weekly' as const, priority: 0.9 },
-    { url: `${baseUrl}/privacy`, lastModified: new Date(), changeFrequency: 'yearly' as const, priority: 0.3 },
-    { url: `${baseUrl}/terms`, lastModified: new Date(), changeFrequency: 'yearly' as const, priority: 0.3 },
+    { url: baseUrl, lastModified: contentLastUpdated, changeFrequency: 'weekly' as const, priority: 1.0 },
+    { url: `${baseUrl}/sell`, lastModified: contentLastUpdated, changeFrequency: 'weekly' as const, priority: 0.9 },
+    { url: `${baseUrl}/sell/guide`, lastModified: contentLastUpdated, changeFrequency: 'monthly' as const, priority: 0.85 },
+    { url: `${baseUrl}/how-we-calculate-cash-offers-spokane-cda`, lastModified: contentLastUpdated, changeFrequency: 'monthly' as const, priority: 0.88 },
+    { url: `${baseUrl}/stories`, lastModified: contentLastUpdated, changeFrequency: 'monthly' as const, priority: 0.8 },
+    { url: `${baseUrl}/sell/as-is`, lastModified: contentLastUpdated, changeFrequency: 'monthly' as const, priority: 0.9 },
+    { url: `${baseUrl}/sell/foreclosure`, lastModified: contentLastUpdated, changeFrequency: 'monthly' as const, priority: 0.9 },
+    { url: `${baseUrl}/sell/inherited`, lastModified: contentLastUpdated, changeFrequency: 'monthly' as const, priority: 0.9 },
+    { url: `${baseUrl}/sell/landlord`, lastModified: contentLastUpdated, changeFrequency: 'monthly' as const, priority: 0.9 },
+    { url: `${baseUrl}/how-we-work`, lastModified: contentLastUpdated, changeFrequency: 'monthly' as const, priority: 0.9 },
+    { url: `${baseUrl}/about`, lastModified: contentLastUpdated, changeFrequency: 'monthly' as const, priority: 0.8 },
+    { url: `${baseUrl}/neighborhoods`, lastModified: contentLastUpdated, changeFrequency: 'weekly' as const, priority: 0.9 },
+    { url: `${baseUrl}/privacy`, lastModified: legalLastUpdated, changeFrequency: 'yearly' as const, priority: 0.3 },
+    { url: `${baseUrl}/terms`, lastModified: legalLastUpdated, changeFrequency: 'yearly' as const, priority: 0.3 },
   ]
 
   const neighborhoodPages = getAllSlugs().map((slug) => ({
     url: `${baseUrl}/neighborhoods/${slug}`,
-    lastModified: new Date(),
+    lastModified: contentLastUpdated,
     changeFrequency: 'weekly' as const,
     priority: 0.8,
   }))
 
   const storyPages = SELLER_STORIES.map((story) => ({
     url: `${baseUrl}/stories/${story.slug}`,
-    lastModified: new Date(),
+    lastModified: contentLastUpdated,
     changeFrequency: 'monthly' as const,
     priority: 0.7,
   }))
 
   const sellerSeoPages = SELLER_SEO_PAGES.map((page) => ({
     url: `${baseUrl}/${page.slug}`,
-    lastModified: new Date(),
+    lastModified: contentLastUpdated,
     changeFrequency: 'monthly' as const,
-    priority: page.slug === 'sell-my-house-fast-spokane' ? 0.95 : 0.88,
+    priority: page.slug === 'sell-my-house-fast-spokane' || page.slug === 'sell-my-house-fast-coeur-d-alene' ? 0.95 : 0.88,
   }))
 
   return [...staticPages, ...sellerSeoPages, ...storyPages, ...neighborhoodPages]

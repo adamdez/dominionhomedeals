@@ -1,21 +1,18 @@
-"use client";
-
 import Link from "next/link";
 import Image from "next/image";
-import { usePathname } from "next/navigation";
+import { FooterPhone } from "@/components/layout/PathAwareContact";
 import { SITE } from "@/lib/constants";
 import { getByCounty } from "@/lib/neighborhoods";
 
 export function Footer() {
-  const pathname = usePathname();
-  const isRiversideDispo = pathname === "/off-market/34124-n-newport-highway-trailer-29";
-  const phone = isRiversideDispo ? "509-590-7091" : SITE.phone;
-  const year = new Date().getFullYear();
+  const year = 2026;
   const topNeighborhoods = getByCounty("Spokane County").slice(0, 8);
   const promises = [
     { label: "Sell My House Fast Spokane", href: "/sell-my-house-fast-spokane" },
     { label: "Cash Home Buyers Spokane", href: "/cash-home-buyers-spokane" },
     { label: "We Buy Houses Spokane", href: "/we-buy-houses-spokane" },
+    { label: "Sell My House Fast CDA", href: "/sell-my-house-fast-coeur-d-alene" },
+    { label: "How Cash Offers Work", href: "/how-we-calculate-cash-offers-spokane-cda" },
     { label: "Sell a Probate House", href: "/sell-house-probate-spokane" },
     { label: "House With Back Taxes", href: "/sell-house-with-back-taxes-spokane" },
     { label: "Sell a Rental Property", href: "/sell-rental-property-spokane" },
@@ -33,7 +30,7 @@ export function Footer() {
             <p className="text-sm leading-relaxed text-stone-400">
               Your local cash home buyers serving Spokane County, WA and Kootenai County, ID.
             </p>
-            <p className="mt-3 text-sm font-semibold text-amber-400">{phone}</p>
+            <FooterPhone />
           </div>
 
           <div>

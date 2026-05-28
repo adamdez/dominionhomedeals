@@ -44,7 +44,7 @@ export function Situations() {
 
         <FadeIn delay={500}>
           <div className="mt-10 text-center">
-            <a href="#get-offer" className="btn-amber">
+            <a href="#get-offer" className="btn-primary">
               Get Your No-Obligation Offer
             </a>
           </div>

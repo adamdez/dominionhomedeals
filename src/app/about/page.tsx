@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
+import { SITE } from "@/lib/constants";
 
 export const metadata: Metadata = {
   title: "About Us - Meet the Team | Spokane, WA",
@@ -67,25 +68,12 @@ export default function AboutPage() {
         dangerouslySetInnerHTML={{
           __html: JSON.stringify({
             "@context": "https://schema.org",
-            "@type": "LocalBusiness",
-            name: "Dominion Homes, LLC",
-            description:
-              "Local cash home buyers serving Spokane County, WA and Kootenai County, ID. We buy houses in any condition - no agents, no commissions, no repairs.",
-            url: "https://www.dominionhomedeals.com",
-            telephone: "+1-509-666-9518",
-            address: {
-              "@type": "PostalAddress",
-              streetAddress: "5307 East Dorado Avenue",
-              addressLocality: "Post Falls",
-              addressRegion: "ID",
-              postalCode: "83854",
-              addressCountry: "US",
-            },
-            areaServed: [
-              { "@type": "County", name: "Spokane County", containedInPlace: { "@type": "State", name: "Washington" } },
-              { "@type": "County", name: "Kootenai County", containedInPlace: { "@type": "State", name: "Idaho" } },
-            ],
-            founder: { "@type": "Person", name: "Logan Anyan", jobTitle: "Founder & Owner" },
+            "@type": "AboutPage",
+            "@id": `${SITE.url}/about#webpage`,
+            name: "About Dominion Homes",
+            url: `${SITE.url}/about`,
+            about: { "@id": `${SITE.url}/#business` },
+            mainEntity: { "@id": `${SITE.url}/#business` },
           }),
         }}
       />
@@ -268,7 +256,7 @@ export default function AboutPage() {
           <div className="mt-8 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
             <Link
               href="/#get-offer"
-              className="inline-flex items-center rounded-xl bg-white px-8 py-4 text-lg font-semibold text-forest-700 shadow-lg transition hover:bg-cream-50 hover:shadow-xl"
+              className="btn-primary text-lg"
             >
               Get My Cash Offer
             </Link>

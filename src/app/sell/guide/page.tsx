@@ -245,7 +245,7 @@ export default function SellerGuidePage() {
               your situation.
             </p>
             <div className="mt-7 flex flex-wrap items-center justify-center gap-3">
-              <Link href="/#get-offer" className="btn-primary !bg-white !text-ink-600 hover:!bg-stone-100">
+              <Link href="/#get-offer" className="btn-primary">
                 Get My Cash Offer
               </Link>
               <a

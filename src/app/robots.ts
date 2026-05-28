@@ -20,6 +20,11 @@ export default function robots(): MetadataRoute.Robots {
         disallow: ["/api/"],
       },
       {
+        userAgent: "ChatGPT-User",
+        allow: "/",
+        disallow: ["/api/"],
+      },
+      {
         userAgent: "ClaudeBot",
         allow: "/",
         disallow: ["/api/"],

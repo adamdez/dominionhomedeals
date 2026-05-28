@@ -115,21 +115,6 @@ export default function HowWeWorkPage() {
           }),
         }}
       />
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify({
-            "@context": "https://schema.org",
-            "@type": "FAQPage",
-            mainEntity: faqs.map((faq) => ({
-              "@type": "Question",
-              name: faq.q,
-              acceptedAnswer: { "@type": "Answer", text: faq.a },
-            })),
-          }),
-        }}
-      />
-
       <section className="relative bg-cream-50 pt-32 pb-20 md:pt-40 md:pb-28">
         <div className="mx-auto max-w-4xl px-5 text-center">
           <p className="mb-4 text-sm font-semibold uppercase tracking-wider text-forest-600">Simple and Straightforward</p>
@@ -179,7 +164,7 @@ export default function HowWeWorkPage() {
           <div className="mt-16 text-center md:mt-24">
             <Link
               href="/#get-offer"
-              className="inline-flex items-center rounded-xl bg-forest-600 px-8 py-4 text-lg font-semibold text-white shadow-lg transition hover:bg-forest-700 hover:shadow-xl"
+              className="btn-primary text-lg"
             >
               Start Step 1 - It&apos;s Free
             </Link>
@@ -294,7 +279,7 @@ export default function HowWeWorkPage() {
           <div className="mt-8 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
             <Link
               href="/#get-offer"
-              className="inline-flex items-center rounded-xl bg-white px-8 py-4 text-lg font-semibold text-forest-700 shadow-lg transition hover:bg-cream-50 hover:shadow-xl"
+              className="btn-primary text-lg"
             >
               Get My Cash Offer
             </Link>

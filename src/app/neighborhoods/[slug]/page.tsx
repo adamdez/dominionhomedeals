@@ -51,17 +51,12 @@ export default async function NeighborhoodPage({
         dangerouslySetInnerHTML={{
           __html: JSON.stringify({
             "@context": "https://schema.org",
-            "@type": "LocalBusiness",
-            name: "Dominion Homes, LLC",
-            description: `Cash home buyers in ${data.name}, ${data.county}, ${data.state}. We buy houses in any condition.`,
-            telephone: "+1-509-666-9518",
+            "@type": "Service",
+            "@id": `https://www.dominionhomedeals.com/neighborhoods/${slug}#service`,
+            name: `Cash home buyers in ${data.name}, ${data.state}`,
+            description: `Cash home buying service for ${data.name}, ${data.county}. Dominion Homes buys houses in any condition across the Spokane-CDA corridor.`,
+            provider: { "@id": "https://www.dominionhomedeals.com/#business" },
             url: `https://www.dominionhomedeals.com/neighborhoods/${slug}`,
-            address: {
-              "@type": "PostalAddress",
-              addressLocality: "Spokane",
-              addressRegion: "WA",
-              addressCountry: "US",
-            },
             areaServed: {
               "@type": "City",
               name: data.name,
@@ -129,7 +124,7 @@ export default async function NeighborhoodPage({
           <div className="mt-8 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
             <Link
               href="/#get-offer"
-              className="inline-flex items-center rounded-xl bg-forest-600 px-8 py-4 text-lg font-semibold text-white shadow-lg transition hover:bg-forest-700 hover:shadow-xl"
+              className="btn-primary text-lg"
             >
               Get Your Cash Offer
             </Link>
@@ -202,7 +197,7 @@ export default async function NeighborhoodPage({
 
                 <Link
                   href="/#get-offer"
-                  className="mt-6 flex w-full items-center justify-center rounded-xl bg-forest-600 px-6 py-3.5 font-semibold text-white transition hover:bg-forest-700"
+                  className="btn-primary mt-6 flex w-full px-6 py-3.5"
                 >
                   Get My Cash Offer for {data.name}
                 </Link>
@@ -233,7 +228,7 @@ export default async function NeighborhoodPage({
           <div className="mt-10 text-center">
             <Link
               href="/#get-offer"
-              className="inline-flex items-center rounded-xl bg-white px-8 py-4 text-lg font-semibold text-forest-700 shadow-lg transition hover:bg-cream-50 hover:shadow-xl"
+              className="btn-primary text-lg"
             >
               Get Your No-Obligation Offer
             </Link>
@@ -285,7 +280,7 @@ export default async function NeighborhoodPage({
           <div className="mt-8 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
             <Link
               href="/#get-offer"
-              className="inline-flex items-center rounded-xl bg-forest-600 px-8 py-4 text-lg font-semibold text-white shadow-lg transition hover:bg-forest-700 hover:shadow-xl"
+              className="btn-primary text-lg"
             >
               Get My Cash Offer
             </Link>

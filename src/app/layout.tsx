@@ -17,36 +17,24 @@ const sourceSans = Source_Sans_3({
   subsets: ["latin"],
   style: "normal",
   display: "optional",
-  preload: false,
   variable: "--font-body",
 });
-
-export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE.url),
   title: {
-    default: "Sell Your House Fast for Cash in Spokane & CDA | Dominion Homes",
+    default: "Sell Your House Fast in Spokane & CDA | Dominion Homes",
     template: "%s | Dominion Homes",
   },
   description:
     "Local Spokane and Coeur d'Alene area team that buys houses for cash in any condition. No commissions, no repairs, close on your timeline.",
-  keywords: [
-    "sell my house fast Spokane",
-    "cash home buyers Spokane",
-    "we buy houses Spokane",
-    "sell house fast CDA",
-    "cash for houses Coeur d'Alene",
-    "sell house as-is Spokane",
-    "home buyers Spokane",
-  ],
   robots: { index: true, follow: true },
   openGraph: {
     type: "website",
     locale: "en_US",
     url: SITE.url,
     siteName: SITE.name,
-    title: "Sell Your House Fast for Cash - Spokane & CDA",
+    title: "Sell Your House Fast in Spokane & CDA",
     description: "Get a fair cash offer from your local team. No repairs, no fees, close on your schedule.",
     images: [{ url: "/opengraph-image", width: 1200, height: 630 }],
   },
@@ -80,11 +68,15 @@ function JsonLd() {
           postalCode: SITE.address.zip,
           addressCountry: "US",
         },
-        geo: { "@type": "GeoCoordinates", latitude: 47.6588, longitude: -117.426 },
         areaServed: [
           { "@type": "AdministrativeArea", name: "Spokane County, WA" },
           { "@type": "AdministrativeArea", name: "Kootenai County, ID" },
         ],
+        founder: {
+          "@type": "Person",
+          name: "Logan Anyan",
+          jobTitle: "Founder & Owner",
+        },
         openingHoursSpecification: {
           "@type": "OpeningHoursSpecification",
           dayOfWeek: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],
@@ -123,9 +115,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           Skip to main content
         </a>
         <GoogleAnalytics />
-        <SiteChrome>
-          <main id="main-content">{children}</main>
-        </SiteChrome>
+        <SiteChrome>{children}</SiteChrome>
       </body>
     </html>
   );

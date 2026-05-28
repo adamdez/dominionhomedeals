@@ -31,7 +31,7 @@ export interface SellerSeoPage {
   }>;
 }
 
-export const SELLER_SEO_LAST_UPDATED = "2026-05-02" as const;
+export const SELLER_SEO_LAST_UPDATED = "2026-05-27" as const;
 
 const commonRelated = [
   { label: "Sell as-is in Spokane", href: "/sell/as-is" },
@@ -48,7 +48,7 @@ export const SELLER_SEO_PAGES: SellerSeoPage[] = [
     description:
       "Need to sell a house fast in Spokane? Dominion Homes buys houses directly, as-is, with no commissions, no repairs, and closing through local title.",
     eyebrow: "Fast house sale in Spokane",
-    h1: "Need to sell a house fast in Spokane?",
+    h1: "Sell My House Fast Spokane",
     intro:
       "If the house is clean, updated, and you have time, listing with an agent may be the right move. But if you are dealing with repairs, probate, tenants, back taxes, or a deadline that will not wait, Dominion Homes can make a direct cash offer and close through local title.",
     directAnswer:
@@ -125,7 +125,7 @@ export const SELLER_SEO_PAGES: SellerSeoPage[] = [
     description:
       "Compare cash home buyers in Spokane and learn how Dominion Homes makes direct as-is offers with local title closing and no commissions.",
     eyebrow: "Spokane cash home buyers",
-    h1: "Cash home buyers in Spokane should be clear, local, and easy to verify.",
+    h1: "Cash Home Buyers Spokane",
     intro:
       "A good cash buyer should explain the number, close through title, and give you room to think. You should not have to deal with pressure, vague funding claims, or a buyer who disappears once inspections get inconvenient.",
     directAnswer:
@@ -202,7 +202,7 @@ export const SELLER_SEO_PAGES: SellerSeoPage[] = [
     description:
       "Dominion Homes buys houses in Spokane as-is. No repairs, no showings, no commissions, and a local title-company closing.",
     eyebrow: "We buy Spokane houses",
-    h1: "We buy houses in Spokane, including the ones that are hard to list.",
+    h1: "We Buy Houses Spokane",
     intro:
       "Some houses are easy to put on the MLS. Others come with old roofs, tired tenants, family paperwork, cleanup, liens, or years of deferred maintenance. Those are the houses Dominion Homes is built to look at.",
     directAnswer:
@@ -269,6 +269,85 @@ export const SELLER_SEO_PAGES: SellerSeoPage[] = [
     related: [
       { label: "Cash home buyers in Spokane", href: "/cash-home-buyers-spokane" },
       { label: "Sell rental property in Spokane", href: "/sell-rental-property-spokane" },
+      ...commonRelated,
+    ],
+  },
+  {
+    slug: "sell-my-house-fast-coeur-d-alene",
+    title: "Sell My House Fast Coeur d'Alene",
+    metaTitle: "Sell My House Fast in Coeur d'Alene, ID",
+    description:
+      "Need to sell a house fast in Coeur d'Alene or Kootenai County? Dominion Homes buys houses directly across the Spokane-CDA corridor, as-is, with local title closing.",
+    eyebrow: "Fast house sale in Coeur d'Alene",
+    h1: "Sell My House Fast Coeur d'Alene",
+    intro:
+      "A Coeur d'Alene house can look great on paper and still be hard to list if you are dealing with repairs, tenants, inherited paperwork, a fast move, or a property that needs cleanup. Dominion Homes works the Spokane-CDA corridor and can give you a direct as-is option to compare against listing.",
+    directAnswer:
+      "Dominion Homes buys houses for cash in Coeur d'Alene, Post Falls, Hayden, Rathdrum, and nearby Kootenai County communities. We buy as-is, close through title, and let sellers choose a practical timeline once title is clear.",
+    ctaLabel: "Get My CDA Cash Offer",
+    proofAngle:
+      "North Idaho sellers should be able to verify who they are talking to, where closing happens, and how the number was calculated. We keep those details clear before anyone signs.",
+    bullets: [
+      "Useful for CDA, Post Falls, Hayden, and Kootenai County homes",
+      "No repairs, showings, or cleanout required before asking for an offer",
+      "Closing handled through title or escrow with written terms",
+      "A direct option when listing would create more delay than certainty",
+    ],
+    sections: [
+      {
+        title: "CDA sellers often need certainty",
+        body:
+          "A fast sale may make sense when a house has deferred maintenance, family paperwork, a tenant issue, or a move date that does not leave time for repairs, showings, and multiple rounds of negotiation.",
+      },
+      {
+        title: "North Idaho details matter",
+        body:
+          "Kootenai County properties can involve different title, tax, and closing details than Spokane properties. We account for the local market, the condition, and the closing path instead of giving a generic online number.",
+      },
+      {
+        title: "Compare the direct sale to listing",
+        body:
+          "If the property is clean, updated, and you have time, listing may be the better move. A cash offer is strongest when speed, as-is certainty, and avoiding prep work matter more.",
+      },
+    ],
+    stepsTitle: "A practical CDA sale path",
+    steps: [
+      {
+        title: "Tell us about the property",
+        body: "Send the address and a little context about condition, occupancy, and timeline.",
+      },
+      {
+        title: "Review the local numbers",
+        body: "We look at nearby sales, repair scope, and the Kootenai County closing path before making an offer.",
+      },
+      {
+        title: "Close through title",
+        body: "If you accept, title or escrow handles payoffs, documents, and funds. You pick the timeline that fits.",
+      },
+    ],
+    faqs: [
+      {
+        q: "Do you buy houses in Coeur d'Alene for cash?",
+        a: "Yes. We buy houses directly in Coeur d'Alene and nearby Kootenai County communities, including Post Falls, Hayden, and Rathdrum.",
+      },
+      {
+        q: "Can I sell a CDA house as-is?",
+        a: "Yes. You do not need to repair, clean, or stage the property before asking for an offer. We price the as-is condition into the number.",
+      },
+      {
+        q: "How fast can a Coeur d'Alene cash sale close?",
+        a: "Many direct sales can close in about two weeks once title is clear, but title issues, liens, probate, or payoff delays can take longer.",
+      },
+      {
+        q: "Should I compare your offer to listing with an agent?",
+        a: "Yes. If the house is market-ready and you have time, listing may produce a higher gross price. A direct sale is about speed, certainty, and less prep work.",
+      },
+    ],
+    related: [
+      { label: "Cash home buyers in Spokane", href: "/cash-home-buyers-spokane" },
+      { label: "Coeur d'Alene area page", href: "/neighborhoods/coeur-d-alene" },
+      { label: "Post Falls area page", href: "/neighborhoods/post-falls" },
+      { label: "How we calculate offers", href: "/how-we-calculate-cash-offers-spokane-cda" },
       ...commonRelated,
     ],
   },

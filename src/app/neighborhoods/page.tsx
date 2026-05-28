@@ -35,18 +35,12 @@ export default function NeighborhoodsPage() {
         dangerouslySetInnerHTML={{
           __html: JSON.stringify({
             '@context': 'https://schema.org',
-            '@type': 'LocalBusiness',
-            name: 'Dominion Homes, LLC',
-            description: 'Cash home buyers serving Spokane County, WA and Kootenai County, ID.',
-            telephone: '+1-509-666-9518',
-            url: 'https://www.dominionhomedeals.com',
-            address: {
-              '@type': 'PostalAddress',
-              addressLocality: 'Spokane',
-              addressRegion: 'WA',
-              addressCountry: 'US',
-            },
-            areaServed: [
+            '@type': 'CollectionPage',
+            '@id': 'https://www.dominionhomedeals.com/neighborhoods#webpage',
+            name: 'Areas Dominion Homes Serves',
+            url: 'https://www.dominionhomedeals.com/neighborhoods',
+            about: { '@id': 'https://www.dominionhomedeals.com/#business' },
+            hasPart: [
               ...spokaneCounty.map((n) => ({ '@type': 'City', name: `${n.name}, WA` })),
               ...kootenaiCounty.map((n) => ({ '@type': 'City', name: `${n.name}, ID` })),
             ],
@@ -76,7 +70,7 @@ export default function NeighborhoodsPage() {
         <div className="mx-auto max-w-5xl px-5">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-full bg-forest-50">
-              <span className="text-lg">ðŸ”ï¸</span>
+              <span className="text-sm font-bold text-forest-700">WA</span>
             </div>
             <div>
               <h2 className="font-display text-2xl text-ink-700 md:text-3xl">
@@ -113,7 +107,7 @@ export default function NeighborhoodsPage() {
         <div className="mx-auto max-w-5xl px-5">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-full bg-forest-50">
-              <span className="text-lg">ðŸŒ²</span>
+              <span className="text-sm font-bold text-forest-700">ID</span>
             </div>
             <div>
               <h2 className="font-display text-2xl text-ink-700 md:text-3xl">
@@ -159,7 +153,7 @@ export default function NeighborhoodsPage() {
           <div className="mt-6 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
             <Link
               href="/#get-offer"
-              className="inline-flex items-center rounded-xl bg-forest-600 px-8 py-4 text-lg font-semibold text-white shadow-lg transition hover:bg-forest-700 hover:shadow-xl"
+              className="btn-primary text-lg"
             >
               Get Your Cash Offer
             </Link>
@@ -186,7 +180,7 @@ export default function NeighborhoodsPage() {
           <div className="mt-8 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
             <Link
               href="/#get-offer"
-              className="inline-flex items-center rounded-xl bg-white px-8 py-4 text-lg font-semibold text-forest-700 shadow-lg transition hover:bg-cream-50 hover:shadow-xl"
+              className="btn-primary text-lg"
             >
               Get My Cash Offer
             </Link>

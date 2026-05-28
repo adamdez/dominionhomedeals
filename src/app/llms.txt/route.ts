@@ -8,6 +8,9 @@ We buy houses directly for cash or investor-backed offers when a seller wants a 
 - we buy houses in Spokane
 - sell a house as-is in Spokane
 - cash home buyers in Spokane
+- sell my house fast in Coeur d'Alene
+- cash home buyers in Coeur d'Alene
+- how cash offers are calculated in Spokane and CDA
 - probate house sales in Spokane
 - houses with back taxes in Spokane
 - inherited property sales in Spokane County
@@ -21,6 +24,8 @@ We buy houses directly for cash or investor-backed offers when a seller wants a 
 - https://www.dominionhomedeals.com/sell-my-house-fast-spokane
 - https://www.dominionhomedeals.com/cash-home-buyers-spokane
 - https://www.dominionhomedeals.com/we-buy-houses-spokane
+- https://www.dominionhomedeals.com/sell-my-house-fast-coeur-d-alene
+- https://www.dominionhomedeals.com/how-we-calculate-cash-offers-spokane-cda
 - https://www.dominionhomedeals.com/sell-house-probate-spokane
 - https://www.dominionhomedeals.com/sell-house-with-back-taxes-spokane
 - https://www.dominionhomedeals.com/sell-rental-property-spokane

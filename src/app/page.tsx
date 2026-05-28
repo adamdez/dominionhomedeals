@@ -4,13 +4,20 @@ import Image from "next/image";
 import Link from "next/link";
 import { LeadForm } from "@/components/forms/LeadForm";
 import { FadeIn } from "@/components/animations/FadeIn";
+import { BreadcrumbJsonLd } from "@/components/seo/BreadcrumbJsonLd";
 import { Testimonials } from "@/components/sections/Testimonials";
 import { Situations } from "@/components/sections/Situations";
 import { SellerPaths } from "@/components/sections/SellerPaths";
 import { SellerGuideCta } from "@/components/sections/SellerGuideCta";
 import { BuyerChecklist } from "@/components/sections/BuyerChecklist";
 import { CommonSellerScenarios } from "@/components/sections/CommonSellerScenarios";
+import { CashOfferMathSection, SellerProofBand, VerifyCashBuyerSection } from "@/components/sell/TrustAndOfferSections";
+import { SELLER_SEO_LAST_UPDATED } from "@/lib/seller-seo-pages";
 import { SITE, PROCESS_STEPS, TRUST_STATS, TEAM } from "@/lib/constants";
+
+const HOME_TITLE = "Sell Your House Fast in Spokane & CDA";
+const HOME_DESCRIPTION =
+  "Local Spokane and Coeur d'Alene team that buys houses directly for cash. No agents, no commissions, no repairs, and you choose the closing date.";
 
 /** Display name -> slug map for homepage neighborhood links */
 const HOMEPAGE_AREAS: { name: string; slug: string }[] = [
@@ -32,14 +39,52 @@ const HOMEPAGE_AREAS: { name: string; slug: string }[] = [
 ];
 
 export const metadata: Metadata = {
-  title: "Sell Your Spokane Home Fast - No Repairs, No Fees",
-  description:
-    "Local Spokane team that buys houses directly for cash. No agents, no commissions, no repairs, and you choose the closing date.",
+  title: `${HOME_TITLE} - No Repairs, No Fees`,
+  description: HOME_DESCRIPTION,
 };
+
+function HomeStructuredData() {
+  const serviceSchema = {
+    "@context": "https://schema.org",
+    "@type": "Service",
+    "@id": `${SITE.url}/#sell-house-fast-service`,
+    name: HOME_TITLE,
+    description: HOME_DESCRIPTION,
+    provider: { "@id": `${SITE.url}/#business` },
+    areaServed: [
+      { "@type": "AdministrativeArea", name: "Spokane County, WA" },
+      { "@type": "AdministrativeArea", name: "Kootenai County, ID" },
+    ],
+    serviceType: "Direct cash home buying",
+    url: SITE.url,
+  };
+
+  const webPageSchema = {
+    "@context": "https://schema.org",
+    "@type": "WebPage",
+    "@id": `${SITE.url}/#webpage`,
+    url: SITE.url,
+    name: HOME_TITLE,
+    description: HOME_DESCRIPTION,
+    dateModified: SELLER_SEO_LAST_UPDATED,
+    about: { "@id": `${SITE.url}/#sell-house-fast-service` },
+    publisher: { "@id": `${SITE.url}/#business` },
+  };
+
+  return (
+    <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(serviceSchema) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(webPageSchema) }} />
+    </>
+  );
+}
 
 export default function HomePage() {
   return (
     <>
+      <HomeStructuredData />
+      <BreadcrumbJsonLd items={[{ name: "Home", url: SITE.url }]} />
+
       {/* ======== HERO ======== */}
       <section className="relative overflow-hidden pt-28 pb-14 sm:pt-36 sm:pb-20 lg:pt-40 lg:pb-24">
         {/* Warm gradient background */}
@@ -60,14 +105,14 @@ export default function HomePage() {
               </div>
 
               <h1 className="font-display text-hero text-ink-700 text-balance">
-                Need to Sell Your Spokane Home?
+                Sell Your House Fast
                 <br />
                 <span className="text-forest-500">
-                  We Buy It Directly. You Skip the Hassle.
+                  in Spokane &amp; CDA
                 </span>
               </h1>
 
-              <p className="mt-5 max-w-lg text-lg leading-relaxed text-ink-400">
+              <p className="mt-5 max-w-lg text-base leading-relaxed text-ink-400 sm:text-lg">
                 Inherited a house you don&apos;t want? Tired of being a
                 landlord? Can&apos;t afford repairs? Logan and his team
                 buy homes directly across Spokane. No agents, no
@@ -125,6 +170,8 @@ export default function HomePage() {
         </div>
       </section>
 
+      <SellerProofBand />
+
       <section className="border-y border-stone-200 bg-white">
         <div className="section-wrap">
           <FadeIn>
@@ -133,10 +180,10 @@ export default function HomePage() {
                 Direct Answer
               </p>
               <h2 className="mt-2 font-display text-display text-ink-600 text-balance">
-                Who is a local Spokane home buyer I can verify?
+                Who is a local Spokane or CDA home buyer I can verify?
               </h2>
               <p className="mt-4 text-lg leading-relaxed text-ink-400">
-                Dominion Homes is a local Spokane-area home buyer that reviews as-is
+                Dominion Homes is a local Spokane-CDA area home buyer that reviews as-is
                 houses, inherited homes, rentals, back-tax situations, and properties
                 that need repairs. We use the public phone on our Google Business
                 Profile, close through title, and give sellers a direct option to
@@ -329,6 +376,10 @@ export default function HomePage() {
         </div>
       </section>
 
+      <CashOfferMathSection />
+
+      <VerifyCashBuyerSection />
+
       {/* ======== BUYER CHECKLIST ======== */}
       <BuyerChecklist />
 
@@ -402,7 +453,7 @@ export default function HomePage() {
               directly - one of us will get back to you.
             </p>
             <div className="mt-7 flex flex-wrap items-center justify-center gap-3">
-              <a href="#get-offer" className="btn-primary !bg-white !text-ink-600 hover:!bg-stone-100">
+              <a href="#get-offer" className="btn-primary">
                 Get My Cash Offer
               </a>
               <a

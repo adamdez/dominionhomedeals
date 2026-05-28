@@ -369,7 +369,7 @@ export default function BuyersPage() {
               conversations may be relevant.
             </p>
             <div className="mt-7 flex flex-wrap items-center justify-center gap-3">
-              <a href="#join-list" className="btn-primary !bg-white !text-ink-600 hover:!bg-stone-100">
+              <a href="#join-list" className="btn-primary">
                 Join the List
               </a>
               <a

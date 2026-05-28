@@ -66,8 +66,7 @@ export function SellerProofSection({ angle }: { angle: SellAngle }) {
                     className="aspect-[9/16] w-full"
                     controls
                     playsInline
-                    preload="metadata"
-                    poster={founder.introVideoPoster || undefined}
+                    preload="none"
                   >
                     <source src={founder.introVideoSrc} type="video/mp4" />
                     Your browser does not support the video tag.

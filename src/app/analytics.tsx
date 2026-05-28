@@ -12,12 +12,43 @@ export function GoogleAnalytics() {
         {`
           window.dataLayer = window.dataLayer || [];
           window.gtag = window.gtag || function(){window.dataLayer.push(arguments);};
+          window.__dominionAnalyticsLoaded = false;
+          window.__loadDominionAnalytics = window.__loadDominionAnalytics || function() {
+            if (window.__dominionAnalyticsLoaded) return;
+            window.__dominionAnalyticsLoaded = true;
+            var script = document.createElement('script');
+            script.async = true;
+            script.src = 'https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}';
+            document.head.appendChild(script);
+          };
           window.gtag('js', new Date());
           window.gtag('config', '${GA_MEASUREMENT_ID}');
           window.gtag('config', '${GOOGLE_ADS_SITEWIDE_ID}');
         `}
       </Script>
-      <Script src={`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`} strategy="lazyOnload" />
+      <Script id="google-analytics-loader" strategy="lazyOnload">
+        {`
+          (function() {
+            function loadAnalytics() {
+              if (typeof window.__loadDominionAnalytics === 'function') {
+                window.__loadDominionAnalytics();
+              }
+            }
+
+            ['pointerdown', 'keydown', 'touchstart', 'scroll'].forEach(function(eventName) {
+              window.addEventListener(eventName, loadAnalytics, { once: true, passive: true });
+            });
+
+            if ('requestIdleCallback' in window) {
+              window.requestIdleCallback(function() {
+                window.setTimeout(loadAnalytics, 7000);
+              }, { timeout: 7000 });
+            } else {
+              window.setTimeout(loadAnalytics, 7000);
+            }
+          })();
+        `}
+      </Script>
       <Script id="gclid-capture" strategy="afterInteractive">
         {`
           (function() {
@@ -54,6 +85,10 @@ export function GoogleAnalytics() {
                 : null;
 
               if (!target || typeof window.gtag !== 'function') return;
+
+              if (typeof window.__loadDominionAnalytics === 'function') {
+                window.__loadDominionAnalytics();
+              }
 
               var linkText = (target.textContent || 'phone').trim() || 'phone';
               var pagePath = window.location ? window.location.pathname : '';

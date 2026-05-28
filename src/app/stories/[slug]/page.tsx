@@ -172,7 +172,7 @@ export default async function SellerStoryDetailPage({ params }: StoryPageProps) 
           <div className="mt-7 flex flex-wrap items-center justify-center gap-3">
             <Link
               href="/sell/guide"
-              className="btn-primary !bg-white !text-ink-600 hover:!bg-stone-100"
+              className="btn-primary"
             >
               Read the Seller Guide
             </Link>
