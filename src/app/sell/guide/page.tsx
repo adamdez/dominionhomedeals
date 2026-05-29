@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { SmsDisclosure } from "@/components/consent/SmsDisclosure";
 import { FadeIn } from "@/components/animations/FadeIn";
 import { SITE } from "@/lib/constants";
 
@@ -121,6 +122,7 @@ export default function SellerGuidePage() {
                 Call or Text {SITE.phone}
               </a>
             </div>
+            <SmsDisclosure />
           </FadeIn>
         </div>
       </section>
@@ -255,6 +257,7 @@ export default function SellerGuidePage() {
                 Or text us: {SITE.phone}
               </a>
             </div>
+            <SmsDisclosure tone="dark" />
           </div>
         </FadeIn>
       </section>

@@ -7,12 +7,12 @@ import { SITE } from "@/lib/constants";
 export const metadata: Metadata = {
   title: "How We Calculate Cash Offers in Spokane & CDA",
   description:
-    "See how Dominion Homes thinks through ARV, repairs, holding costs, closing costs, and when a cash offer may or may not be better than listing.",
+    "See how Dominion Homes looks at repairs, costs, timing, and when a cash offer may or may not be better than listing.",
   alternates: { canonical: `${SITE.url}/how-we-calculate-cash-offers-spokane-cda` },
   openGraph: {
     title: "How We Calculate Cash Offers in Spokane & CDA",
     description:
-      "A plain-English guide to cash offer math for Spokane and Coeur d'Alene area sellers.",
+      "A simple guide to cash offers for Spokane and Coeur d'Alene area sellers.",
     url: `${SITE.url}/how-we-calculate-cash-offers-spokane-cda`,
     type: "website",
   },
@@ -21,7 +21,7 @@ export const metadata: Metadata = {
 const comparisonRows = [
   ["Highest possible price", "Often listing after repairs", "Usually better for market-ready homes with time"],
   ["Fewest repairs", "Direct cash sale", "Useful when the house needs work or cleanup"],
-  ["Most certainty", "Direct cash sale", "Fewer financing, showing, and inspection variables"],
+  ["Fewest delays", "Direct cash sale", "Fewer financing, showing, and inspection issues"],
   ["Most time to decide", "Depends", "A good buyer should give you room to compare options"],
 ] as const;
 
@@ -58,8 +58,8 @@ export default function CashOfferGuidePage() {
             How We Calculate Cash Offers in Spokane &amp; CDA
           </h1>
           <p className="mx-auto mt-5 max-w-2xl text-lg leading-relaxed text-ink-400">
-            A direct cash offer is a tradeoff. You may give up some retail upside, but you can avoid repairs, showings,
-            commissions, financing risk, and months of uncertainty.
+            A cash offer is usually about a simpler sale. You may get less than a full retail listing, but you can avoid
+            repairs, showings, commissions, and months of waiting.
           </p>
           <div className="mt-7 flex flex-wrap justify-center gap-3">
             <Link href="/#get-offer" className="btn-primary">
@@ -78,7 +78,7 @@ export default function CashOfferGuidePage() {
         <div className="mx-auto max-w-4xl">
           <p className="text-xs font-bold uppercase tracking-widest text-forest-500">The Tradeoff</p>
           <h2 className="mt-2 font-display text-display text-ink-600 text-balance">
-            Cash Is Not Always The Highest Number
+            A cash offer is not always the highest price
           </h2>
           <p className="mt-4 text-base leading-relaxed text-ink-400">
             If the house is updated, clean, vacant, and you have time, listing can make more sense. If the house needs
@@ -90,7 +90,7 @@ export default function CashOfferGuidePage() {
             <div className="min-w-[640px]">
               <div className="grid grid-cols-3 bg-stone-100 px-4 py-3 text-xs font-bold uppercase tracking-widest text-ink-400">
                 <span>Seller Goal</span>
-                <span>Likely Path</span>
+                <span>Likely Choice</span>
                 <span>Why</span>
               </div>
               {comparisonRows.map(([goal, path, why]) => (

@@ -5,6 +5,7 @@ import { HeaderContactActions, HeaderMobileContactActions } from "@/components/l
 const NAV = [
   { label: "How It Works", href: "/how-we-work" },
   { label: "Sell Fast", href: "/sell-my-house-fast-spokane" },
+  { label: "Cash Buyers", href: "/cash-home-buyers-spokane" },
   { label: "Seller Stories", href: "/stories" },
   { label: "Areas We Serve", href: "/neighborhoods" },
   { label: "About Us", href: "/about" },

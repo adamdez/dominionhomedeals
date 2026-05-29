@@ -20,6 +20,12 @@ const nextConfig: NextConfig = {
   async redirects() {
     return [
       {
+        source: "/:path*",
+        has: [{ type: "host", value: "dominionhomedeals.com" }],
+        destination: "https://www.dominionhomedeals.com/:path*",
+        permanent: true,
+      },
+      {
         source: "/privacy-policy",
         destination: "/privacy",
         permanent: true,
@@ -35,8 +41,63 @@ const nextConfig: NextConfig = {
         permanent: true,
       },
       {
+        source: "/contact-us",
+        destination: "/#get-offer",
+        permanent: true,
+      },
+      {
+        source: "/how-we-buy-houses",
+        destination: "/how-we-work",
+        permanent: true,
+      },
+      {
+        source: "/how-we-buy-houses/:path*",
+        destination: "/how-we-work",
+        permanent: true,
+      },
+      {
         source: "/sell-your-house-fast",
         destination: "/sell-my-house-fast-spokane",
+        permanent: true,
+      },
+      {
+        source: "/sell-house-fast-spokane",
+        destination: "/sell-my-house-fast-spokane",
+        permanent: true,
+      },
+      {
+        source: "/sell-my-house-fast-spokane-wa",
+        destination: "/sell-my-house-fast-spokane",
+        permanent: true,
+      },
+      {
+        source: "/sell-my-house-cda",
+        destination: "/sell-my-house-fast-coeur-d-alene",
+        permanent: true,
+      },
+      {
+        source: "/sell-my-house-fast-cda",
+        destination: "/sell-my-house-fast-coeur-d-alene",
+        permanent: true,
+      },
+      {
+        source: "/sell-my-house-fast-coeur-dalene",
+        destination: "/sell-my-house-fast-coeur-d-alene",
+        permanent: true,
+      },
+      {
+        source: "/cash-for-homes-spokane",
+        destination: "/cash-home-buyers-spokane",
+        permanent: true,
+      },
+      {
+        source: "/direct-home-offers",
+        destination: "/cash-home-buyers-spokane",
+        permanent: true,
+      },
+      {
+        source: "/we-buy-houses-in-spokane",
+        destination: "/we-buy-houses-spokane",
         permanent: true,
       },
       {

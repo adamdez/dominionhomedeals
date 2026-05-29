@@ -115,11 +115,10 @@ export function SellerProofSection({ angle }: { angle: SellAngle }) {
 
             <div className="rounded-[28px] border border-stone-200 bg-white p-6 shadow-sm sm:p-8">
               <p className="text-xs font-bold uppercase tracking-[0.18em] text-forest-500">
-                Privacy-Safe Local Deal Snapshots
+                Common Local Situations
               </p>
               <p className="mt-3 text-sm leading-relaxed text-ink-400">
-                These are local seller scenarios we use for context when a seller has not
-                approved a public testimonial yet.
+                These examples show the kinds of seller situations we see often.
               </p>
               <div className="mt-5 space-y-4">
                 {SELLER_PROOF.localDealSnapshots.map((snapshot) => (

@@ -3,44 +3,44 @@ import { FadeIn } from "@/components/animations/FadeIn";
 
 const SELLER_PATHS = [
   {
-    title: "Need to sell fast in Spokane",
+    title: "Sell fast in Spokane",
     description:
-      "When repairs, timing, taxes, or family paperwork make the normal listing process feel too slow or uncertain.",
+      "For sellers dealing with repairs, taxes, tenants, family paperwork, or a tight deadline.",
     href: "/sell-my-house-fast-spokane",
     label: "Read the fast-sale Spokane guide",
   },
   {
-    title: "Need to sell fast in Coeur d'Alene",
+    title: "Sell fast in Coeur d'Alene",
     description:
-      "For CDA, Post Falls, Hayden, or Kootenai County sellers who need an as-is option without months of listing prep.",
+      "For CDA, Post Falls, Hayden, and Kootenai County sellers who want an as-is option.",
     href: "/sell-my-house-fast-coeur-d-alene",
     label: "Read the CDA fast-sale guide",
   },
   {
-    title: "Inherited or estate property",
+    title: "Inherited house",
     description:
-      "Questions around probate, family decision-making, cleanup, and whether now is even the right time to sell.",
+      "For probate, cleanup, family decisions, or an estate property nobody wants to manage.",
     href: "/sell-house-probate-spokane",
     label: "Read the probate house guide",
   },
   {
-    title: "House needs major repairs",
+    title: "House needs repairs",
     description:
-      "Roof issues, foundation problems, deferred maintenance, or a house that simply is not worth fixing before a sale.",
+      "For roof, foundation, cleanup, or deferred maintenance issues.",
     href: "/sell/as-is",
     label: "Read the as-is seller guide",
   },
   {
-    title: "Behind on payments or feeling squeezed",
+    title: "Behind on payments",
     description:
-      "When time matters and you need a clear path without listing prep, showings, or a long retail timeline.",
+      "For sellers who need options before the timeline gets worse.",
     href: "/sell/foreclosure",
     label: "Read the foreclosure-pressure guide",
   },
   {
-    title: "Tired landlord situation",
+    title: "Tired landlord",
     description:
-      "Tenants, turnover, repairs, and the question every landlord eventually asks: is it still worth holding?",
+      "For rentals with tenants, repairs, turnover, or landlord burnout.",
     href: "/sell-rental-property-spokane",
     label: "Read the rental property guide",
   },
@@ -52,15 +52,14 @@ export function SellerPaths() {
       <FadeIn>
         <div className="text-center">
           <p className="text-xs font-bold uppercase tracking-widest text-forest-500">
-            Seller Situations
+            Seller Guides
           </p>
           <h2 className="mt-2 font-display text-display text-ink-600 text-balance">
-            Most Sellers Do Not Start in the Same Place
+            Start with the page that fits your situation.
           </h2>
           <p className="mx-auto mt-3 max-w-2xl text-base text-ink-400">
-            Some people need speed. Some need clarity. Some just need to understand
-            their options before they decide anything. Start with the guide that
-            matches what you are dealing with.
+            Pick the guide closest to what you are dealing with. Each one
+            explains the options in plain English.
           </p>
         </div>
       </FadeIn>

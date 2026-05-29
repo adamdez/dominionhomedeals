@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { SmsDisclosure } from "@/components/consent/SmsDisclosure";
+import { PrioritySellerLinks } from "@/components/seo/PrioritySellerLinks";
 
 export const metadata: Metadata = {
   title: "How We Buy Houses for Cash in Spokane & CDA",
@@ -117,14 +119,19 @@ export default function HowWeWorkPage() {
       />
       <section className="relative bg-cream-50 pt-32 pb-20 md:pt-40 md:pb-28">
         <div className="mx-auto max-w-4xl px-5 text-center">
-          <p className="mb-4 text-sm font-semibold uppercase tracking-wider text-forest-600">Simple and Straightforward</p>
-          <h1 className="font-display text-display text-ink-700 text-balance">Here&apos;s exactly how it works</h1>
+          <p className="mb-4 text-sm font-semibold uppercase tracking-wider text-forest-600">How It Works</p>
+          <h1 className="font-display text-display text-ink-700 text-balance">Here is how selling to us works</h1>
           <p className="mx-auto mt-5 max-w-2xl text-lg text-ink-400">
-            Selling your home should be simple. With Dominion Homes, it is. Three steps, no surprises, and a local team
-            you can sit across the table from.
+            Tell us about the house, get an offer, and choose whether it works for you. No repairs, showings, or pressure.
           </p>
         </div>
       </section>
+
+      <PrioritySellerLinks
+        eyebrow="Seller Guides"
+        title="Find the page that matches your situation"
+        intro="These guides explain fast sales, cash buyers, as-is homes, and local area questions."
+      />
 
       <section className="bg-white py-20 md:py-28">
         <div className="mx-auto max-w-5xl px-5">
@@ -177,8 +184,8 @@ export default function HowWeWorkPage() {
         <div className="mx-auto max-w-5xl px-5">
           <div className="grid gap-6 md:grid-cols-2">
             <div className="rounded-2xl border border-sage-100 bg-cream-50 p-7">
-              <p className="text-sm font-semibold uppercase tracking-wider text-forest-600">Before You Decide</p>
-              <h2 className="mt-2 font-display text-3xl text-ink-700">Start with the seller guide if you want the longer version.</h2>
+              <p className="text-sm font-semibold uppercase tracking-wider text-forest-600">Seller Guide</p>
+              <h2 className="mt-2 font-display text-3xl text-ink-700">Want more detail before you decide?</h2>
               <p className="mt-4 text-sm leading-relaxed text-ink-400">
                 If you are still comparing options, the guide walks through when a direct sale makes sense, what to ask
                 a buyer, and what tends to matter most to sellers in real situations.
@@ -193,8 +200,8 @@ export default function HowWeWorkPage() {
             </div>
 
             <div className="rounded-2xl border border-sage-100 bg-white p-7 shadow-sm">
-              <p className="text-sm font-semibold uppercase tracking-wider text-forest-600">Want Real Context?</p>
-              <h2 className="mt-2 font-display text-3xl text-ink-700">Read the seller-story examples next.</h2>
+              <p className="text-sm font-semibold uppercase tracking-wider text-forest-600">Examples</p>
+              <h2 className="mt-2 font-display text-3xl text-ink-700">See common seller situations.</h2>
               <p className="mt-4 text-sm leading-relaxed text-ink-400">
                 The story pages are built around the types of inherited, rental, as-is, and relocation situations local
                 homeowners usually call about.
@@ -290,6 +297,7 @@ export default function HowWeWorkPage() {
               Or text us: 509-666-9518
             </a>
           </div>
+          <SmsDisclosure tone="dark" />
         </div>
       </section>
     </>

@@ -5,27 +5,27 @@ import { SELLER_PROOF } from "@/lib/sell-proof";
 const offerFactors = [
   {
     title: "After-repair value",
-    body: "We start with nearby sales and what the house could reasonably be worth after the right repairs are done.",
+    body: "We look at nearby sales and what the house could be worth after repairs.",
   },
   {
     title: "Repair and cleanup scope",
-    body: "Roof, systems, flooring, cleanout, code issues, tenant turnover, and deferred maintenance all change the number.",
+    body: "Roof, systems, flooring, cleanup, tenants, and old repairs all affect the offer.",
   },
   {
     title: "Holding and resale costs",
-    body: "Utilities, taxes, insurance, financing, closing costs, and resale risk are built into every direct cash offer.",
+    body: "Taxes, utilities, insurance, closing costs, and resale risk are part of the math.",
   },
   {
-    title: "Your timeline and certainty",
-    body: "A fast as-is sale trades some top-end retail upside for fewer delays, no showings, and a clearer closing path.",
+    title: "Your timeline",
+    body: "A fast as-is sale can mean fewer delays, no showings, and a clearer closing date.",
   },
 ] as const;
 
 const verifyItems = [
-  "Ask who is actually buying the property and whether the contract can be assigned.",
-  "Use a real title or escrow company and make sure closing funds move through that company.",
-  "Ask for written terms, earnest money, deadlines, and any inspection or cancellation rights.",
-  "Do not pay upfront fees to receive an offer, and do not let anyone pressure you into signing on the spot.",
+  "Ask who is actually buying the property.",
+  "Use a real title or escrow company.",
+  "Ask for written terms, deadlines, and any cancellation rights.",
+  "Do not pay upfront fees or sign under pressure.",
 ] as const;
 
 export function SellerProofBand() {
@@ -38,7 +38,7 @@ export function SellerProofBand() {
           <p className="text-xs font-bold uppercase tracking-widest text-forest-500">Verified Local Profile</p>
           <h2 className="mt-2 font-display text-xl text-ink-600">Google Business Profile</h2>
           <p className="mt-2 text-sm leading-relaxed text-ink-400">
-            The public profile, phone, and local business information should match what you see here.
+            The phone and business information should match what you see here.
           </p>
           <a
             href={SITE.profiles.googleBusiness}
@@ -54,7 +54,7 @@ export function SellerProofBand() {
           <p className="text-xs font-bold uppercase tracking-widest text-forest-500">Owner-Led</p>
           <h2 className="mt-2 font-display text-xl text-ink-600">{SELLER_PROOF.founder.name}</h2>
           <p className="mt-2 text-sm leading-relaxed text-ink-400">
-            You work with a local buyer serving Spokane County and Kootenai County, not a national call desk.
+            You work with a local buyer serving Spokane County and Kootenai County.
           </p>
           <Link href="/about" className="mt-4 inline-flex text-sm font-semibold text-forest-600 underline-offset-4 hover:underline">
             Meet the team
@@ -63,9 +63,9 @@ export function SellerProofBand() {
 
         <div className="rounded-xl border border-stone-200 bg-stone-50 p-5">
           <p className="text-xs font-bold uppercase tracking-widest text-forest-500">Title Closing</p>
-          <h2 className="mt-2 font-display text-xl text-ink-600">No side-door paperwork</h2>
+          <h2 className="mt-2 font-display text-xl text-ink-600">Clear paperwork</h2>
           <p className="mt-2 text-sm leading-relaxed text-ink-400">
-            Closings run through title so payoffs, taxes, documents, and funds are handled in the open.
+            Closings run through title so documents, payoffs, and funds are handled clearly.
           </p>
           <Link href="/how-we-work" className="mt-4 inline-flex text-sm font-semibold text-forest-600 underline-offset-4 hover:underline">
             See the process
@@ -96,8 +96,7 @@ export function CashOfferMathSection() {
             How We Calculate Cash Offers In Spokane &amp; CDA
           </h2>
           <p className="mt-4 text-base leading-relaxed text-ink-400">
-            A cash offer is not a magic number. It is based on what the house could be worth, what it will take to get
-            there, and whether speed and certainty are worth more to you than squeezing for a higher retail price.
+            A cash offer is based on the house, repairs, costs, timing, and how quickly you want to close.
           </p>
         </div>
 

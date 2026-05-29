@@ -2,9 +2,11 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
+import { SmsDisclosure } from "@/components/consent/SmsDisclosure";
 import { LeadForm } from "@/components/forms/LeadForm";
 import { FadeIn } from "@/components/animations/FadeIn";
 import { BreadcrumbJsonLd } from "@/components/seo/BreadcrumbJsonLd";
+import { PrioritySellerLinks } from "@/components/seo/PrioritySellerLinks";
 import { Testimonials } from "@/components/sections/Testimonials";
 import { Situations } from "@/components/sections/Situations";
 import { SellerPaths } from "@/components/sections/SellerPaths";
@@ -13,11 +15,29 @@ import { BuyerChecklist } from "@/components/sections/BuyerChecklist";
 import { CommonSellerScenarios } from "@/components/sections/CommonSellerScenarios";
 import { CashOfferMathSection, SellerProofBand, VerifyCashBuyerSection } from "@/components/sell/TrustAndOfferSections";
 import { SELLER_SEO_LAST_UPDATED } from "@/lib/seller-seo-pages";
-import { SITE, PROCESS_STEPS, TRUST_STATS, TEAM } from "@/lib/constants";
+import { SITE, PROCESS_STEPS, TRUST_STATS } from "@/lib/constants";
 
 const HOME_TITLE = "Sell Your House Fast in Spokane & CDA";
 const HOME_DESCRIPTION =
   "Local Spokane and Coeur d'Alene team that buys houses directly for cash. No agents, no commissions, no repairs, and you choose the closing date.";
+
+const VISUAL_PROOF_IMAGES = [
+  {
+    src: "/images/3314-e-cleveland/001.webp",
+    alt: "Spokane house exterior reviewed for an as-is cash offer",
+    label: "As-is homes",
+  },
+  {
+    src: "/images/2443-n-wiscomb-st/007.webp",
+    alt: "Kitchen condition reviewed during a Spokane cash offer walkthrough",
+    label: "Real repairs",
+  },
+  {
+    src: "/images/torrens-trail/472-web/007.webp",
+    alt: "North Idaho property exterior reviewed by Dominion Homes",
+    label: "North Idaho",
+  },
+] as const;
 
 /** Display name -> slug map for homepage neighborhood links */
 const HOMEPAGE_AREAS: { name: string; slug: string }[] = [
@@ -41,6 +61,13 @@ const HOMEPAGE_AREAS: { name: string; slug: string }[] = [
 export const metadata: Metadata = {
   title: `${HOME_TITLE} - No Repairs, No Fees`,
   description: HOME_DESCRIPTION,
+  alternates: { canonical: SITE.url },
+  openGraph: {
+    title: HOME_TITLE,
+    description: HOME_DESCRIPTION,
+    url: SITE.url,
+    type: "website",
+  },
 };
 
 function HomeStructuredData() {
@@ -86,37 +113,42 @@ export default function HomePage() {
       <BreadcrumbJsonLd items={[{ name: "Home", url: SITE.url }]} />
 
       {/* ======== HERO ======== */}
-      <section className="relative overflow-hidden pt-28 pb-14 sm:pt-36 sm:pb-20 lg:pt-40 lg:pb-24">
-        {/* Warm gradient background */}
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-stone-50 via-forest-50/20 to-stone-50" />
-        <div className="pointer-events-none absolute -top-20 -right-20 h-[400px] w-[400px] rounded-full bg-forest-100/30 blur-3xl" />
-        <div className="pointer-events-none absolute -bottom-20 -left-20 h-[350px] w-[350px] rounded-full bg-amber-100/20 blur-3xl" />
+      <section className="relative min-h-[calc(100vh-2rem)] overflow-hidden bg-ink-700 pt-28 pb-14 sm:pt-36 sm:pb-20 lg:pt-40 lg:pb-24">
+        <Image
+          src="/images/3314-e-cleveland/002.webp"
+          alt=""
+          fill
+          priority
+          sizes="100vw"
+          className="object-cover opacity-70"
+        />
+        <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(90deg,rgba(18,24,19,0.86)_0%,rgba(18,24,19,0.64)_38%,rgba(18,24,19,0.24)_68%,rgba(18,24,19,0.42)_100%)]" />
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-36 bg-gradient-to-t from-stone-50 to-transparent" />
 
         <div className="relative mx-auto max-w-6xl px-5 sm:px-6 lg:px-8">
           <div className="grid items-start gap-10 lg:grid-cols-2 lg:gap-14">
             {/* Copy */}
             <div className="pt-2">
-              <div className="trust-badge mb-5">
+              <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/12 px-3.5 py-1.5 text-xs font-semibold tracking-wide text-amber-100 backdrop-blur">
                 <span className="relative flex h-1.5 w-1.5">
-                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-forest-500 opacity-75" />
-                  <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-forest-500" />
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-amber-300 opacity-75" />
+                  <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-amber-300" />
                 </span>
-                Spokane-Based Team · We Buy Houses Directly
+                Spokane-Based Team - We Buy Houses Directly
               </div>
 
-              <h1 className="font-display text-hero text-ink-700 text-balance">
+              <h1 className="font-display text-hero text-white text-balance drop-shadow-sm">
                 Sell Your House Fast
                 <br />
-                <span className="text-forest-500">
+                <span className="text-amber-200">
                   in Spokane &amp; CDA
                 </span>
               </h1>
 
-              <p className="mt-5 max-w-lg text-base leading-relaxed text-ink-400 sm:text-lg">
+              <p className="mt-5 max-w-lg text-base leading-relaxed text-stone-100 sm:text-lg">
                 Inherited a house you don&apos;t want? Tired of being a
-                landlord? Can&apos;t afford repairs? Logan and his team
-                buy homes directly across Spokane. No agents, no
-                showings, no fees.
+                landlord? Can&apos;t afford repairs? We buy houses directly
+                in Spokane and North Idaho. No agents, no showings, no fees.
               </p>
 
               <div className="mt-7 flex flex-wrap items-center gap-3">
@@ -125,33 +157,34 @@ export default function HomePage() {
                 </a>
                 <a
                   href={`tel:${SITE.phone.replace(/\D/g, "")}`}
-                  className="btn-secondary"
+                  className="btn-secondary !border-white/55 !text-stone-100 hover:!border-amber-200 hover:!bg-white/10 hover:!text-white"
                 >
                   Call or Text {SITE.phone}
                 </a>
               </div>
+              <SmsDisclosure tone="dark" className="mx-0 max-w-lg text-left" />
 
-              <div className="mt-7 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-ink-300">
+              <div className="mt-7 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-stone-200">
                 <span className="flex items-center gap-1.5">
-                  <svg aria-hidden="true" className="h-4 w-4 text-forest-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <svg aria-hidden="true" className="h-4 w-4 text-amber-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                   </svg>
                   No commissions
                 </span>
                 <span className="flex items-center gap-1.5">
-                  <svg aria-hidden="true" className="h-4 w-4 text-forest-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <svg aria-hidden="true" className="h-4 w-4 text-amber-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                   </svg>
                   Any condition
                 </span>
                 <span className="flex items-center gap-1.5">
-                  <svg aria-hidden="true" className="h-4 w-4 text-forest-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <svg aria-hidden="true" className="h-4 w-4 text-amber-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                   </svg>
                   Close in 2 weeks
                 </span>
                 <span className="flex items-center gap-1.5">
-                  <svg aria-hidden="true" className="h-4 w-4 text-forest-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <svg aria-hidden="true" className="h-4 w-4 text-amber-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                   </svg>
                   We meet in person
@@ -161,7 +194,7 @@ export default function HomePage() {
 
             {/* Form */}
             <div id="get-offer" className="scroll-mt-24">
-              <p className="mb-3 text-center text-sm font-medium text-forest-600">
+              <p className="mb-3 text-center text-sm font-medium text-amber-100">
                 Takes about 60 seconds - no obligation
               </p>
               <LeadForm />
@@ -172,22 +205,27 @@ export default function HomePage() {
 
       <SellerProofBand />
 
+      <PrioritySellerLinks
+        title="Start with the Spokane or CDA seller guide that fits."
+        intro="Use these pages to compare a fast sale, a cash buyer, or how an offer is calculated."
+      />
+
       <section className="border-y border-stone-200 bg-white">
         <div className="section-wrap">
-          <FadeIn>
-            <div className="mx-auto max-w-4xl">
+          <div className="grid items-center gap-10 lg:grid-cols-[0.95fr_1.05fr]">
+            <FadeIn>
+              <div>
               <p className="text-xs font-bold uppercase tracking-widest text-forest-500">
                 Direct Answer
               </p>
               <h2 className="mt-2 font-display text-display text-ink-600 text-balance">
-                Who is a local Spokane or CDA home buyer I can verify?
+                A local buyer you can verify.
               </h2>
               <p className="mt-4 text-lg leading-relaxed text-ink-400">
-                Dominion Homes is a local Spokane-CDA area home buyer that reviews as-is
-                houses, inherited homes, rentals, back-tax situations, and properties
-                that need repairs. We use the public phone on our Google Business
-                Profile, close through title, and give sellers a direct option to
-                compare against listing with an agent.
+                Dominion Homes buys houses directly in Spokane and North Idaho. We
+                work with as-is homes, inherited houses, rentals, back taxes, and
+                properties that need repairs. You can call the same number listed on
+                our Google profile, and every closing goes through title.
               </p>
               <div className="mt-6 flex flex-wrap gap-3">
                 <Link href="/sell-my-house-fast-spokane" className="btn-secondary !py-2.5 text-sm">
@@ -201,7 +239,30 @@ export default function HomePage() {
                 </Link>
               </div>
             </div>
-          </FadeIn>
+            </FadeIn>
+
+            <FadeIn delay={120} direction="left">
+              <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-1">
+                {VISUAL_PROOF_IMAGES.map((image) => (
+                  <figure
+                    key={image.src}
+                    className="relative min-h-[11rem] overflow-hidden rounded-xl border border-stone-200 bg-stone-100 shadow-soft"
+                  >
+                    <Image
+                      src={image.src}
+                      alt={image.alt}
+                      fill
+                      sizes="(min-width: 1024px) 34vw, (min-width: 640px) 30vw, 100vw"
+                      className="object-cover"
+                    />
+                    <figcaption className="absolute bottom-3 left-3 rounded-full bg-white/90 px-3 py-1 text-xs font-bold uppercase tracking-widest text-forest-700 shadow-sm">
+                      {image.label}
+                    </figcaption>
+                  </figure>
+                ))}
+              </div>
+            </FadeIn>
+          </div>
         </div>
       </section>
 
@@ -229,27 +290,27 @@ export default function HomePage() {
               {[
                 {
                   title: "Real local people",
-                  text: "Logan and his team serve the Spokane-CDA corridor. When you call, someone local picks up — not a call center.",
+                  text: "Logan and his team serve Spokane and North Idaho. When you call, someone local picks up.",
                 },
                 {
                   title: "We buy as-is",
-                  text: "Roof damage, foundation issues, clutter, deferred maintenance — we don't ask you to fix anything.",
+                  text: "Roof damage, foundation issues, clutter, or old repairs. You do not need to fix anything first.",
                 },
                 {
                   title: "No commissions or fees",
-                  text: "The number we offer is the number you walk away with. No agent fees, no closing costs on your side.",
+                  text: "No agent fees, no closing costs on your side.",
                 },
                 {
                   title: "You pick the closing date",
-                  text: "Two weeks or two months — we work around your timeline, not the other way around.",
+                  text: "Two weeks or two months. We work around your timeline.",
                 },
                 {
                   title: "We close through title",
-                  text: "Every deal goes through WFG Title or North Idaho Title. Standard, transparent closing process.",
+                  text: "Every closing goes through a title company.",
                 },
                 {
                   title: "No pressure, ever",
-                  text: "If a direct sale isn't your best move, we'll tell you. We'd rather be straight with you than force a fit.",
+                  text: "If a direct sale is not your best move, we will tell you.",
                 },
               ].map((item) => (
                 <div key={item.title} className="rounded-xl border border-stone-200 bg-white p-5">
@@ -307,69 +368,81 @@ export default function HomePage() {
       </section>
 
       {/* ======== WHY LOCAL MATTERS ======== */}
-      <section className="border-y border-stone-200 bg-stone-100/50">
+      <section className="relative overflow-hidden border-y border-stone-200 bg-forest-700 text-white">
+        <Image
+          src="/images/torrens-trail/472-web/011.webp"
+          alt=""
+          fill
+          sizes="100vw"
+          className="object-cover opacity-18"
+        />
+        <div className="pointer-events-none absolute inset-0 bg-forest-800/85" />
         <div className="section-wrap">
-          <div className="grid items-center gap-10 lg:grid-cols-2">
+          <div className="relative grid items-center gap-10 lg:grid-cols-[0.9fr_1.1fr]">
             <FadeIn>
               <div>
-                <p className="text-xs font-bold uppercase tracking-widest text-forest-500">
+                <p className="text-xs font-bold uppercase tracking-widest text-amber-300">
                   Why It Matters
                 </p>
-                <h2 className="mt-2 font-display text-display text-ink-600 text-balance">
-                  We Live Here.
+                <h2 className="mt-2 font-display text-display text-white text-balance">
+                  Local People.
                   <br />
-                  That Changes Everything.
+                  Simple Process.
                 </h2>
-                <p className="mt-4 text-base leading-relaxed text-ink-400">
-                  Most &ldquo;we buy houses&rdquo; companies operate from out of state. They
-                  send strangers, use scripts, and treat your home like a
-                  spreadsheet line item.
+                <p className="mt-4 text-base leading-relaxed text-stone-200">
+                  Some cash buyers are hard to pin down. You talk to one person,
+                  then another, and nobody seems local.
                 </p>
-                <p className="mt-3 text-base leading-relaxed text-ink-400">
-                  We live here. We raise our families here. When we say
-                  we&apos;ll meet you at your kitchen table to talk through
-                  your options - we mean it. We&apos;re local to the Spokane-CDA corridor.
-                  We know the neighborhoods because we drive through
-                  them every day.
+                <p className="mt-3 text-base leading-relaxed text-stone-200">
+                  We are local to Spokane and North Idaho. We can meet you, walk
+                  the property, explain the offer, and close through title.
                 </p>
                 <ul className="mt-5 space-y-2.5">
                   {[
-                    "Spokane-CDA area team - not a national call center",
-                    "We meet every seller face-to-face",
-                    "We close through WFG Title - a name you know",
-                    "No bait-and-switch. The offer we make is the offer you get.",
+                    "Local team, not a call center",
+                    "We can meet at the property",
+                    "Closing runs through title",
+                    "No pressure to sign",
                   ].map((item) => (
                     <li key={item} className="flex items-start gap-2.5">
-                      <svg aria-hidden="true" className="mt-0.5 h-4 w-4 flex-shrink-0 text-forest-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                      <svg aria-hidden="true" className="mt-0.5 h-4 w-4 flex-shrink-0 text-amber-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                       </svg>
-                      <span className="text-sm text-ink-500">{item}</span>
+                      <span className="text-sm text-stone-100">{item}</span>
                     </li>
                   ))}
                 </ul>
               </div>
             </FadeIn>
             <FadeIn delay={200} direction="left">
-              {/* Team preview */}
-              <div className="grid max-w-[11rem] grid-cols-1 gap-4 mx-auto lg:mx-0">
-                {TEAM.map((member) => (
-                  <div key={member.name} className="rounded-2xl bg-white p-5 shadow-soft text-center">
-                    <div className="relative mx-auto mb-3 h-16 w-16 overflow-hidden rounded-full ring-4 ring-forest-50">
-                      <Image
-                        src={member.image}
-                        alt={`${member.name} headshot`}
-                        fill
-                        sizes="64px"
-                        className="object-cover"
-                        quality={72}
-                      />
-                    </div>
-                    <p className="text-sm font-semibold text-ink-600">
-                      {member.name.split(" ")[0]}
+              <div className="grid gap-4 sm:grid-cols-[0.75fr_1fr]">
+                <figure className="relative min-h-[18rem] overflow-hidden rounded-xl border border-white/15 bg-white/10 shadow-elevated">
+                  <Image
+                    src="/images/team/logan.jpg"
+                    alt="Logan from Dominion Homes"
+                    fill
+                    sizes="(min-width: 1024px) 22vw, 80vw"
+                    className="object-cover"
+                    quality={76}
+                  />
+                </figure>
+                <div className="grid gap-4">
+                  <figure className="relative min-h-[8.5rem] overflow-hidden rounded-xl border border-white/15 bg-white/10 shadow-soft">
+                    <Image
+                      src="/images/3314-e-cleveland/010.webp"
+                      alt="Interior condition reviewed before a direct as-is sale"
+                      fill
+                      sizes="(min-width: 1024px) 28vw, 80vw"
+                      className="object-cover"
+                    />
+                  </figure>
+                  <div className="rounded-xl border border-white/15 bg-white/10 p-5 backdrop-blur">
+                    <p className="text-xs font-bold uppercase tracking-widest text-amber-300">Local proof</p>
+                    <p className="mt-2 text-sm leading-relaxed text-stone-100">
+                      You talk with a real local buyer. We look at the house, explain the offer, and close through title.
                     </p>
-                    <p className="text-[11px] text-ink-300">{member.role}</p>
                   </div>
-                ))}
+                </div>
               </div>
             </FadeIn>
           </div>
@@ -463,6 +536,7 @@ export default function HomePage() {
                 Or text us: {SITE.phone}
               </a>
             </div>
+            <SmsDisclosure tone="dark" />
           </div>
         </FadeIn>
       </section>

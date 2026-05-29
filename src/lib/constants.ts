@@ -3,7 +3,7 @@
 export const SITE = {
   name: "Dominion Homes",
   legalName: "Dominion Homes, LLC",
-  tagline: "Local Spokane Team · Direct Home Buyers",
+  tagline: "Local Spokane Team - Direct Home Buyers",
   description:
     "Spokane-area team that buys houses directly. No commissions, no repairs, close on your timeline. We meet you in person.",
   url: "https://www.dominionhomedeals.com",
@@ -11,10 +11,10 @@ export const SITE = {
   email: "leads@dominionhomedeals.com",
   adminEmail: "admin@dominionhomedeals.com",
   address: {
-    street: "5307 East Dorado Avenue",
-    city: "Post Falls",
-    state: "ID",
-    zip: "83854",
+    street: "PO Box 337",
+    city: "Mead",
+    state: "WA",
+    zip: "99021",
   },
   serviceArea: "Spokane County, WA and Kootenai County, ID",
   profiles: {
@@ -30,7 +30,7 @@ export const TEAM = [
   {
     name: "Logan Anyan",
     role: "Founder & Owner",
-    bio: "Logan is the founder and owner of Dominion Homes. He works directly with sellers across Spokane County and the Spokane-CDA corridor to keep every deal straightforward, local, and easy to follow from first conversation to closing.",
+    bio: "Logan is the founder and owner of Dominion Homes. He works directly with sellers across Spokane County and North Idaho from the first call to closing.",
     image: "/images/team/logan.jpg",
     location: "Spokane, WA",
   },
@@ -41,21 +41,21 @@ export const PROCESS_STEPS = [
     number: "1",
     title: "Tell Us About Your Home",
     description:
-      "Fill out our quick form or give us a call. Takes about 60 seconds. No repair prep or listing work upfront - we review the details and talk through the next step.",
+      "Fill out the quick form or call us. It takes about 60 seconds. No repairs, cleanup, or listing prep needed.",
     duration: "60 seconds",
   },
   {
     number: "2",
     title: "Get a Fair Cash Offer",
     description:
-      "We'll review your property and come back with a straightforward cash offer - most within a day or two. No obligations, no games. If it works for you, great. If not, no hard feelings.",
+      "We review the house and give you a clear cash offer, usually within a day or two. No pressure either way.",
     duration: "1-2 days",
   },
   {
     number: "3",
     title: "Close on Your Schedule",
     description:
-      "You pick the closing date - as fast as two weeks or whenever you're ready. We handle the paperwork through WFG Title. No commissions, no fees, no surprises.",
+      "You pick the closing date. We handle the paperwork through title. No commissions, no fees, no surprises.",
     duration: "You choose",
   },
 ] as const;
@@ -70,6 +70,9 @@ export const TRUST_STATS = [
 
 export const SMS_PROGRAM_MAX_FREQUENCY = "up to 10 messages per month" as const;
 
+export const SMS_CTA_DISCLOSURE =
+  "Optional SMS updates are available only if you check the SMS consent box in this form. By opting in, you agree to receive recurring marketing and informational texts from Dominion Homes, LLC about your property inquiry, including cash-offer follow-ups, appointment scheduling, and transaction status updates. Message frequency varies, up to 10 msgs/month. Message and data rates may apply. Reply STOP to opt out or HELP for help. Consent is not required to receive an offer." as const;
+
 export const SMS_CONSENT_TEXT =
   "I agree to receive recurring marketing and informational text messages from Dominion Homes, LLC about my property inquiry, including cash offer follow-ups, appointment scheduling, and transaction status updates, at the phone number provided. Messages may be sent using automated technology. Consent is not required to receive an offer. Message frequency varies, up to 10 msgs/month. Message and data rates may apply. Reply STOP to opt out or HELP for help. We do not sell, rent, or share mobile information or SMS opt-in consent with third parties or affiliates for marketing or promotional purposes." as const;
 
@@ -81,12 +84,12 @@ export const TCPA_CONSENT_TEXT =
 
 /** Situations we help with - for the "We Buy Houses In Any Situation" section */
 export const SITUATIONS = [
-  { title: "Inherited Property", desc: "Dealing with probate or an inherited home you don't want to manage? We handle the complexity." },
-  { title: "Behind on Payments", desc: "Facing foreclosure or missed payments? We can close fast and help you move forward." },
-  { title: "Divorce", desc: "Need to sell the house as part of a divorce? We make it simple for both parties." },
-  { title: "Relocating", desc: "Got a job offer or need to move quickly? We close on your timeline, not the market's." },
-  { title: "Tired Landlord", desc: "Done dealing with tenants and repairs? We buy rental properties as-is, even with tenants." },
-  { title: "Needs Major Repairs", desc: "Can't afford the repairs to list it? We buy in any condition - roof, foundation, whatever." },
+  { title: "Inherited Property", desc: "Inherited a house you do not want to manage? We can buy it as-is." },
+  { title: "Behind on Payments", desc: "Missed payments or foreclosure pressure? We can talk through your options." },
+  { title: "Divorce", desc: "Need to sell as part of a divorce? We keep the process simple and clear." },
+  { title: "Relocating", desc: "Need to move quickly? You choose the closing date." },
+  { title: "Tired Landlord", desc: "Done with tenants and repairs? We buy rentals as-is." },
+  { title: "Needs Major Repairs", desc: "Roof, foundation, cleanup, or old systems? You do not need to fix it first." },
 ] as const;
 
 /** FAQs for the /sell landing page - seller-focused, honest, actionable */

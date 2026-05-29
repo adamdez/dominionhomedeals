@@ -2,10 +2,10 @@ import Link from "next/link";
 import { FadeIn } from "@/components/animations/FadeIn";
 
 const GUIDE_POINTS = [
-  "When a direct cash sale makes sense and when listing may be smarter",
-  "What to ask any cash buyer before you sign anything",
-  "How title, timing, repairs, and fees usually work",
-  "Where to start if the property is inherited, distressed, tenant-occupied, or time-sensitive",
+  "When a cash sale makes sense",
+  "What to ask before you sign",
+  "How title, timing, repairs, and fees work",
+  "What to do with inherited, rental, or repair-heavy houses",
 ] as const;
 
 export function SellerGuideCta() {
@@ -22,12 +22,12 @@ export function SellerGuideCta() {
                 Seller Guide
               </p>
               <h2 className="mt-2 font-display text-display text-ink-600 text-balance">
-                Not Ready to Fill Out the Form Yet?
+                Not ready to fill out the form?
               </h2>
               <p className="mt-4 max-w-xl text-base leading-relaxed text-ink-400">
-                That is completely fine. Start with the Spokane seller guide instead.
-                It is built for homeowners who want to understand the process, compare
-                their options, and know what questions to ask before they commit.
+                That is completely fine. Start with the seller guide instead.
+                It explains the process, your options, and the questions to ask
+                before you decide.
               </p>
 
               <div className="mt-7 flex flex-wrap items-center gap-3">
@@ -35,14 +35,14 @@ export function SellerGuideCta() {
                   Read the Seller Guide
                 </Link>
                 <Link href="/how-we-work" className="btn-secondary">
-                  See How Our Process Works
+                See how it works
                 </Link>
               </div>
             </div>
 
             <div className="rounded-2xl border border-stone-200 bg-stone-50 p-6">
               <p className="text-sm font-semibold uppercase tracking-[0.18em] text-ink-400">
-                What You Will Get
+                What you will get
               </p>
               <ul className="mt-4 space-y-3">
                 {GUIDE_POINTS.map((point) => (

@@ -4,36 +4,36 @@ import { FadeIn } from "@/components/animations/FadeIn";
 const TRUST_FACTORS = [
   {
     title: "Who is actually buying the house?",
-    body: "A serious buyer should be able to tell you plainly whether they are the direct buyer or just trying to tie the property up and shop the contract around.",
+    body: "Ask if they are buying it themselves or assigning the contract to someone else.",
   },
   {
     title: "Who is handling title and closing?",
-    body: "You should know the title company before you sign. Real sellers want to know where closing happens, who is coordinating paperwork, and what the timeline looks like.",
+    body: "You should know the title company before you sign.",
   },
   {
-    title: "Can they explain the offer without dancing around it?",
-    body: "Most homeowners do not expect retail. They do expect a straight answer on repairs, timeline, fees, and how the number was reached.",
+    title: "Can they explain the offer?",
+    body: "A real buyer should explain repairs, costs, timing, and fees in plain language.",
   },
   {
-    title: "Do they act local and reachable?",
-    body: "People notice when a company feels like a call center. They want real names, a real phone number, and someone who can actually meet them if needed.",
+    title: "Can you reach them?",
+    body: "Look for a real name, real phone number, and someone who can meet you if needed.",
   },
   {
-    title: "Are there any surprise fees or upfront costs?",
-    body: "There should not be. Sellers are already stressed enough. Hidden fees, vague paperwork, and pressure tactics are where trust usually falls apart.",
+    title: "Are there any fees?",
+    body: "You should not pay upfront fees to get an offer.",
   },
   {
     title: "What happens if timing changes?",
-    body: "Real life moves around. Serious buyers should be able to talk through fast closings, slower closings, estate delays, tenant issues, and other timing problems without making it weird.",
+    body: "Ask what happens if probate, tenants, moving, or title takes longer than expected.",
   },
 ] as const;
 
 const WHAT_SELLERS_USUALLY_WANT = [
-  "A fair number, even if it is not top-dollar retail",
-  "Clear communication and quick follow-up",
-  "No cleanup, no repairs, and no showings",
-  "A buyer who actually closes when they say they will",
-  "A process that does not make a hard situation even harder",
+  "A fair number",
+  "Clear communication",
+  "No repairs or showings",
+  "A buyer who closes",
+  "Less stress, not more",
 ] as const;
 
 export function BuyerChecklist() {
@@ -43,16 +43,14 @@ export function BuyerChecklist() {
         <FadeIn>
           <div className="text-center">
             <p className="text-xs font-bold uppercase tracking-widest text-forest-500">
-              How Sellers Vet Buyers
+              Compare Buyers
             </p>
             <h2 className="mt-2 font-display text-display text-ink-600 text-balance">
-              If You Are Comparing Cash Buyers, Start Here
+              A good cash buyer should be easy to check.
             </h2>
             <p className="mx-auto mt-3 max-w-2xl text-base text-ink-400">
-              People selling to a direct buyer usually care about the same few
-              things: can you explain the process, can you close, and are you going
-              to make this easier or harder? That is the standard we think sellers
-              should use.
+              Before you sign anything, make sure you know who is buying, where
+              closing happens, and whether there are any fees.
             </p>
           </div>
         </FadeIn>
@@ -61,7 +59,7 @@ export function BuyerChecklist() {
           <FadeIn>
             <div className="rounded-2xl border border-stone-200 bg-white p-7 shadow-sm">
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-forest-500">
-                What Usually Matters Most
+                What Sellers Usually Want
               </p>
               <ul className="mt-5 space-y-3">
                 {WHAT_SELLERS_USUALLY_WANT.map((item) => (
@@ -86,8 +84,7 @@ export function BuyerChecklist() {
                   <Link href="/sell/guide" className="font-semibold text-forest-600 hover:text-forest-700">
                     Spokane seller guide
                   </Link>
-                  . It walks through what to ask, what to expect, and where a direct
-                  sale makes sense.
+                  . It explains what to ask and when a direct sale makes sense.
                 </p>
               </div>
             </div>

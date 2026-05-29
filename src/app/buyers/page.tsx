@@ -38,7 +38,7 @@ const faqs = [
   },
   {
     q: "How fast will I hear from you?",
-    a: "If your profile looks relevant to current deal flow, someone from Dominion Homes may reach out directly. You can also call or text us anytime.",
+    a: "If your profile looks relevant to current deal flow, someone from Dominion Homes may reach out directly. You can also call us anytime.",
   },
 ];
 
@@ -110,7 +110,7 @@ export default function BuyersPage() {
                     Join the Buyer & Investor List
                   </a>
                   <a href={`tel:${phoneClean}`} className="btn-secondary">
-                    Call or Text {SITE.phone}
+                    Call {SITE.phone}
                   </a>
                 </div>
 
@@ -373,10 +373,10 @@ export default function BuyersPage() {
                 Join the List
               </a>
               <a
-                href={`sms:${phoneClean}`}
+                href={`tel:${phoneClean}`}
                 className="text-sm font-semibold text-stone-300 transition-colors hover:text-amber-400"
               >
-                Or text us: {SITE.phone}
+                Or call us: {SITE.phone}
               </a>
             </div>
             <p className="mx-auto mt-6 max-w-2xl text-xs leading-relaxed text-stone-400">

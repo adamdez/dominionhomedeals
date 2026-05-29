@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { FadeIn } from "@/components/animations/FadeIn";
+import { SmsDisclosure } from "@/components/consent/SmsDisclosure";
 import { LeadForm } from "@/components/forms/LeadForm";
 import { BreadcrumbJsonLd } from "@/components/seo/BreadcrumbJsonLd";
 import { CashOfferMathSection, SellerProofBand, VerifyCashBuyerSection } from "@/components/sell/TrustAndOfferSections";
@@ -118,6 +119,7 @@ export function SellerSeoLandingPage({ page }: { page: SellerSeoPage }) {
                     Call or Text {SITE.phone}
                   </a>
                 </div>
+                <SmsDisclosure className="mx-0 max-w-xl text-left" />
               </FadeIn>
 
               <FadeIn delay={260}>

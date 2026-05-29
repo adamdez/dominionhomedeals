@@ -4,33 +4,33 @@ import { FadeIn } from "@/components/animations/FadeIn";
 const SCENARIOS = [
   {
     eyebrow: "Inherited house",
-    title: "The house is fine, but nobody wants to be the one managing it.",
+    title: "The house is inherited and nobody wants to manage it.",
     body:
-      "This usually sounds like: \"We are still sorting through the family side of it, the house is dated, and we do not even know where to start.\" What matters most here is patience, a clear process, and not being pushed into a fast decision before everyone is ready.",
+      "You may still be sorting paperwork, family decisions, cleanup, or repairs. We can talk through the property before everything is perfect.",
     href: "/sell/inherited",
     cta: "See the inherited-property page",
   },
   {
     eyebrow: "Vacant after a move",
-    title: "They already moved and now they are carrying a house they are done with.",
+    title: "They moved out and the house is sitting empty.",
     body:
-      "People in this spot usually care about certainty. They want to know when it can close, whether they need to fix anything, and whether the buyer will keep things simple instead of dragging it out.",
+      "Vacant houses still have taxes, utilities, insurance, and maintenance. A direct sale can make sense when you are done carrying it.",
     href: "/sell/guide",
     cta: "Read the seller guide",
   },
   {
     eyebrow: "Former rental",
-    title: "The tenants are out, the repairs are stacking up, and the owner is over it.",
+    title: "The rental needs work and the owner is done.",
     body:
-      "Landlord sellers tend to talk less about emotion and more about hassle. They want a straight number, a clean process, and no long list of work before the house can change hands.",
+      "Tenants, turnover, repairs, and late rent can wear people out. We buy rentals as-is, even when the property is not ready to list.",
     href: "/sell/landlord",
     cta: "See the landlord page",
   },
   {
     eyebrow: "Major repairs",
-    title: "The house needs enough work that listing it starts to feel like another project.",
+    title: "The house needs more work than you want to take on.",
     body:
-      "This is where people usually ask some version of: \"Can we just sell it the way it sits?\" The answer they are looking for is not hype. It is whether the buyer can actually handle a roof issue, foundation issue, cleanup, or deferred maintenance without turning the deal into a mess later.",
+      "Roof, foundation, cleanup, old systems, or years of deferred maintenance are all common. You do not need to fix the house before asking for an offer.",
     href: "/sell/as-is",
     cta: "See the as-is page",
   },
@@ -42,16 +42,14 @@ export function CommonSellerScenarios() {
       <FadeIn>
         <div className="text-center">
           <p className="text-xs font-bold uppercase tracking-widest text-forest-500">
-            The Calls We Get Most Often
+            Common Seller Situations
           </p>
           <h2 className="mt-2 font-display text-display text-ink-600 text-balance">
-            How Real Seller Situations Usually Sound
+            Why sellers usually call us
           </h2>
           <p className="mx-auto mt-3 max-w-2xl text-base text-ink-400">
-            Most homeowners do not call saying, &ldquo;I would like a cash offer.&rdquo;
-            They call because something about the house, the timeline, or life around
-            it has gotten heavy. These are the kinds of conversations that usually
-            bring people to us.
+            Most people call because the house, the timing, or the cleanup has
+            become too much. These are the situations we see most often.
           </p>
         </div>
       </FadeIn>

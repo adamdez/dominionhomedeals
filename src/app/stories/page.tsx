@@ -8,12 +8,12 @@ import { SELLER_STORIES } from "@/lib/seller-stories";
 export const metadata: Metadata = {
   title: "Local Deal Snapshots | Common Spokane & North Idaho Situations",
   description:
-    "Read grounded, privacy-safe deal snapshots based on the inherited, as-is, rental, and relocation situations Dominion Homes handles in Spokane County and North Idaho.",
+    "Read simple local examples based on inherited, as-is, rental, and moving situations Dominion Homes handles in Spokane County and North Idaho.",
   alternates: { canonical: `${SITE.url}/stories` },
   openGraph: {
     title: "Local Deal Snapshots",
     description:
-      "Privacy-safe deal snapshots and common local situations for homeowners considering a direct sale.",
+      "Common local situations for homeowners considering a direct sale.",
     url: `${SITE.url}/stories`,
     type: "website",
   },
@@ -38,10 +38,9 @@ export default function SellerStoriesPage() {
             What a Local As-Is Closing Usually Looks Like
           </h1>
           <p className="mx-auto mt-5 max-w-3xl text-lg leading-relaxed text-ink-400">
-            These pages are written like deal snapshots, not glossy testimonials.
-            They show the kinds of inherited, rental, and relocation situations that
-            come up in Spokane County and North Idaho, while keeping identifying
-            details out of public view.
+            These pages show the kinds of inherited, rental, and moving situations
+            that come up in Spokane County and North Idaho. Identifying details are
+            left out.
           </p>
         </div>
       </section>
@@ -63,7 +62,7 @@ export default function SellerStoriesPage() {
                 </p>
                 <div className="mt-5 rounded-xl bg-stone-50 p-4">
                   <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-forest-500">
-                    Why a direct sale fit
+                    Why a direct sale helped
                   </p>
                   <p className="mt-2 text-sm leading-relaxed text-ink-500">
                     {story.whyDirectSaleFit[0]}

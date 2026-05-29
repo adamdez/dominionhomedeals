@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
 import Image from "next/image";
+import { SmsDisclosure } from "@/components/consent/SmsDisclosure";
 import { LeadForm } from "@/components/forms/LeadForm";
 import { FadeIn } from "@/components/animations/FadeIn";
 import { BreadcrumbJsonLd } from "@/components/seo/BreadcrumbJsonLd";
+import { PrioritySellerLinks } from "@/components/seo/PrioritySellerLinks";
 import { Situations } from "@/components/sections/Situations";
 import { SellerProofSection } from "@/components/sell/SellerProofSection";
 import { SellStickyBar } from "@/components/sell/SellStickyBar";
@@ -134,7 +136,7 @@ export default function SellPage() {
               <FadeIn delay={160}>
                 <p className="mt-5 max-w-lg text-base leading-relaxed text-ink-400 sm:text-lg">
                   We are a Spokane-based team that buys houses directly across
-                  Spokane County and the Spokane-CDA corridor. No agents, no
+                  Spokane County and North Idaho. No agents, no
                   commissions, no repairs. Tell us about the property and we will
                   give you a straight answer.
                 </p>
@@ -153,6 +155,7 @@ export default function SellPage() {
                     Call or Text {SITE.phone}
                   </a>
                 </div>
+                <SmsDisclosure className="mx-0 max-w-lg text-left" />
               </FadeIn>
 
               <FadeIn delay={320}>
@@ -184,6 +187,13 @@ export default function SellPage() {
       <SellerProofBand />
 
       <SellerProofSection angle="default" />
+
+      <PrioritySellerLinks
+        eyebrow="Compare Your Options"
+        title="Choose the page closest to your situation"
+        intro="Some sellers need speed. Some want to compare cash buyers. Some just want to know who buys houses locally."
+        className="border-b border-stone-200 bg-stone-100/50"
+      />
 
       <section className="border-y border-stone-200 bg-white py-10">
         <div className="mx-auto max-w-4xl px-5 sm:px-6 lg:px-8">
@@ -254,6 +264,7 @@ export default function SellPage() {
               Or text us: {SITE.phone}
             </a>
           </div>
+          <SmsDisclosure />
         </FadeIn>
       </section>
 
@@ -275,13 +286,13 @@ export default function SellPage() {
                   down. Sellers can tell the difference fast.
                 </p>
                 <p className="mt-3 text-base leading-relaxed text-ink-400">
-                  We work directly in the Spokane-CDA corridor, we know these neighborhoods, and we keep
+                  We work directly in Spokane and North Idaho, we know these neighborhoods, and we keep
                   the process direct. If a cash sale is not the right fit, we would
                   rather say that clearly than push a bad deal.
                 </p>
                 <ul className="mt-5 space-y-2.5">
                   {[
-                    "Spokane-CDA area team - not a national call center",
+                    "Local team - not a national call center",
                     "We meet sellers face-to-face",
                     "We close through WFG Title",
                     "No bait-and-switch. The offer is the offer.",
@@ -370,6 +381,7 @@ export default function SellPage() {
                 Or text us: {SITE.phone}
               </a>
             </div>
+            <SmsDisclosure tone="dark" />
           </div>
         </FadeIn>
       </section>

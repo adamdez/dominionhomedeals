@@ -64,29 +64,34 @@ export const SELLER_SEO_PAGES: SellerSeoPage[] = [
     ],
     sections: [
       {
-        title: "When speed matters more than listing",
+        title: "When a fast sale may make sense",
         body:
-          "A fast sale usually makes sense when the normal listing process would create more stress than value. That can mean a house full of belongings, a roof problem, a probate timeline, tenants, code issues, or a seller who simply needs certainty.",
+          "A fast sale can make sense when listing would add more stress. That can mean repairs, probate, tenants, back taxes, cleanup, or a move date that will not wait.",
       },
       {
-        title: "What makes a cash offer different",
+        title: "How a cash offer is different",
         body:
-          "A cash offer is not magic. It is a tradeoff. You may not get the same number you would after repairs, staging, inspections, showings, and months on market, but you skip many of the costs and delays that come with that route.",
+          "A cash offer may be lower than listing after repairs, but it can save time, repairs, showings, and waiting.",
       },
       {
         title: "How we keep it simple",
         body:
           "We look at the house, the condition, the title situation, and your timeline. If the numbers work for both sides, we sign a purchase agreement and let title do the closing work the normal way.",
       },
+      {
+        title: "Most fast-sale searches start with a real problem",
+        body:
+          "The issue is often bigger than price. We look at repairs, title, taxes, tenants, cleanup, and the move date first.",
+      },
     ],
-    stepsTitle: "A practical fast-sale path",
+    stepsTitle: "How a fast sale works",
     steps: [
       {
         title: "Tell us what is going on",
         body: "Use the form or call us. A few honest details about the house and timeline are enough to start.",
       },
       {
-        title: "Get a direct number",
+        title: "Get a clear offer",
         body: "We review the property and give you a straightforward cash offer with no obligation.",
       },
       {
@@ -151,9 +156,19 @@ export const SELLER_SEO_PAGES: SellerSeoPage[] = [
           "Cash buyers are most useful when the house is not an easy retail listing. That might mean repairs, tenants, an inherited property, back taxes, a fast move, or an owner who does not want months of uncertainty.",
       },
       {
-        title: "What you give up",
+        title: "What to compare",
         body:
-          "You may give up some upside compared with repairing and listing. In exchange, you can avoid commissions, prep costs, showings, repair negotiations, and a buyer's financing risk.",
+          "A cash offer may be lower than listing after repairs. Compare that with commissions, prep costs, showings, repairs, and waiting.",
+      },
+      {
+        title: "Get the terms in writing",
+        body:
+          "The buyer should put the price, closing date, earnest money, and title-company process in writing.",
+      },
+      {
+        title: "Not every cash buyer works the same way",
+        body:
+          "Some companies buy houses. Some assign contracts. Some collect leads. Ask who signs the agreement and where closing funds come from.",
       },
     ],
     stepsTitle: "How our cash-offer process works",
@@ -163,8 +178,8 @@ export const SELLER_SEO_PAGES: SellerSeoPage[] = [
         body: "We look at the house, area, condition, and likely repair scope.",
       },
       {
-        title: "Plain-English offer",
-        body: "You get a direct cash number and can ask how we got there.",
+        title: "Clear offer",
+        body: "You get a cash number and can ask how we got there.",
       },
       {
         title: "Local title closing",
@@ -220,20 +235,30 @@ export const SELLER_SEO_PAGES: SellerSeoPage[] = [
       {
         title: "The house does not have to be pretty",
         body:
-          "Retail buyers often want move-in ready. We are usually looking at the property as operators, not as someone trying to move in next weekend.",
+          "Most buyers want a house that is ready to move into. We can look at houses that need repairs, cleanup, or updates.",
       },
       {
         title: "You do not have to manage showings",
         body:
-          "If you do not want neighbors, buyers, inspectors, and agents walking through the house for weeks, a direct sale can be a cleaner path.",
+          "If you do not want buyers, inspectors, and agents walking through the house for weeks, a direct sale may be easier.",
       },
       {
         title: "We still close the normal way",
         body:
           "A direct sale should still be documented and closed properly. We use title so taxes, payoffs, liens, and documents are handled in the open.",
       },
+      {
+        title: "We can move fast when title is clear",
+        body:
+          "If title is clear and you are ready, a direct sale can move quickly. If probate, liens, or payoffs need work, we explain what has to happen first.",
+      },
+      {
+        title: "A direct sale is not for every house",
+        body:
+          "It usually fits best when repairs, cleanup, tenants, or timing make listing harder than you want it to be.",
+      },
     ],
-    stepsTitle: "What happens after you reach out",
+    stepsTitle: "What happens next",
     steps: [
       {
         title: "We listen first",
@@ -291,26 +316,31 @@ export const SELLER_SEO_PAGES: SellerSeoPage[] = [
       "Useful for CDA, Post Falls, Hayden, and Kootenai County homes",
       "No repairs, showings, or cleanout required before asking for an offer",
       "Closing handled through title or escrow with written terms",
-      "A direct option when listing would create more delay than certainty",
+      "A simple option when listing would take too long",
     ],
     sections: [
       {
-        title: "CDA sellers often need certainty",
+        title: "CDA sellers often need a clear plan",
         body:
-          "A fast sale may make sense when a house has deferred maintenance, family paperwork, a tenant issue, or a move date that does not leave time for repairs, showings, and multiple rounds of negotiation.",
+          "A fast sale may make sense when the house needs work, family paperwork is involved, tenants are in place, or the move date is close.",
       },
       {
         title: "North Idaho details matter",
         body:
-          "Kootenai County properties can involve different title, tax, and closing details than Spokane properties. We account for the local market, the condition, and the closing path instead of giving a generic online number.",
+          "Kootenai County properties can involve different title, tax, and closing details than Spokane properties. We look at the local market, the condition, and closing details before making an offer.",
       },
       {
         title: "Compare the direct sale to listing",
         body:
-          "If the property is clean, updated, and you have time, listing may be the better move. A cash offer is strongest when speed, as-is certainty, and avoiding prep work matter more.",
+          "If the property is clean, updated, and you have time, listing may be better. A cash offer is strongest when speed and avoiding repairs matter more.",
+      },
+      {
+        title: "North Idaho is not exactly the same as Spokane",
+        body:
+          "Post Falls, Hayden, Rathdrum, local title expectations, and Kootenai County details can all affect the sale.",
       },
     ],
-    stepsTitle: "A practical CDA sale path",
+    stepsTitle: "How a CDA sale works",
     steps: [
       {
         title: "Tell us about the property",
@@ -358,9 +388,9 @@ export const SELLER_SEO_PAGES: SellerSeoPage[] = [
     description:
       "Selling a Spokane house after an owner passes away? Learn how probate, title, heirs, and a direct cash sale usually fit together.",
     eyebrow: "Spokane probate house sale",
-    h1: "Selling a house in probate in Spokane is really about authority to sign.",
+    h1: "Selling a probate house in Spokane",
     intro:
-      "A daughter, son, or heir may be paying taxes and handling the property, but title still has to confirm who has legal authority to sell. That is where probate, letters, wills, heirs, and title requirements come in.",
+      "An heir or family member may be handling the house, but title still has to confirm who has legal authority to sell.",
     directAnswer:
       "If the deceased owner is still on title, a Spokane house usually cannot be sold with insurable title until a personal representative or other legally authorized person can sign the deed. Dominion Homes can make an offer, but title controls what must be cleared before closing.",
     ctaLabel: "Talk Through a Probate House",
@@ -374,12 +404,12 @@ export const SELLER_SEO_PAGES: SellerSeoPage[] = [
     ],
     sections: [
       {
-        title: "Taxpayer is not the same as owner",
+        title: "The taxpayer may not be the legal owner",
         body:
           "County tax records may list a family member as the taxpayer or mailing contact. That does not automatically give them authority to sell. The recorded deed and the probate/title documents matter more.",
       },
       {
-        title: "What title usually wants",
+        title: "What the title company may need",
         body:
           "Title may ask for a death certificate, will, letters testamentary or letters of administration, heir information, court orders, or other documents before it will insure the buyer's ownership.",
       },
@@ -392,8 +422,8 @@ export const SELLER_SEO_PAGES: SellerSeoPage[] = [
     stepsTitle: "A common probate sale path",
     steps: [
       {
-        title: "Confirm vesting",
-        body: "Pull the last recorded deed and see who actually owns the property of record.",
+        title: "Confirm who owns the house",
+        body: "Check the last recorded deed to see who legally owns the property.",
       },
       {
         title: "Ask title for requirements",
@@ -467,7 +497,7 @@ export const SELLER_SEO_PAGES: SellerSeoPage[] = [
           "Tax timelines, foreclosure notices, and title issues can make a simple sale harder if everyone waits too long. The earlier you know the numbers, the more options you have.",
       },
     ],
-    stepsTitle: "How a tax-delinquent sale usually works",
+    stepsTitle: "How a sale with back taxes works",
     steps: [
       {
         title: "Estimate the tax balance",

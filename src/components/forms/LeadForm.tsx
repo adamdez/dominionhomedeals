@@ -3,7 +3,7 @@
 import { FormEvent, useEffect, useState } from 'react'
 import Link from 'next/link'
 import { trackFormStep, trackLeadFormSubmission } from '@/lib/tracking'
-import { SITE, SMS_CONSENT_TEXT } from '@/lib/constants'
+import { SITE, SMS_CONSENT_TEXT, SMS_CTA_DISCLOSURE } from '@/lib/constants'
 
 type Stage = 'address' | 'name' | 'phone' | 'details'
 
@@ -310,9 +310,21 @@ export function LeadForm() {
       <div className="mt-6 rounded-2xl bg-stone-50 px-4 py-3 text-sm text-ink-400">
         {stage === 'address' && 'What is the property address?'}
         {stage === 'name' && `Property: ${formData.address}`}
-        {stage === 'phone' && `Got it. Who should we ask for? ${formData.fullName}`}
+        {stage === 'phone' && `Thanks, ${formData.fullName}. What is the best phone number?`}
         {stage === 'details' &&
           'Optional details help us review the property, but your phone number is enough to get started.'}
+      </div>
+
+      <div className="mt-4 rounded-2xl border border-stone-200 bg-white px-4 py-3 text-[11px] leading-relaxed text-ink-500">
+        {SMS_CTA_DISCLOSURE}{' '}
+        <Link href="/privacy#sms-terms" className="font-semibold underline hover:text-ink-700">
+          Privacy Policy
+        </Link>{' '}
+        and{' '}
+        <Link href="/terms" className="font-semibold underline hover:text-ink-700">
+          Terms
+        </Link>
+        .
       </div>
 
       <form onSubmit={handleSubmit} className="mt-5 space-y-4">
@@ -496,7 +508,7 @@ export function LeadForm() {
       </form>
 
       <div className="mt-5 flex flex-wrap items-center justify-center gap-3 text-xs text-ink-300">
-        <span className="rounded-full bg-stone-100 px-3 py-1.5">Private and secure</span>
+        <span className="rounded-full bg-stone-100 px-3 py-1.5">Your info stays private</span>
         <span className="rounded-full bg-stone-100 px-3 py-1.5">No obligation</span>
         <span className="rounded-full bg-stone-100 px-3 py-1.5">Local team follow-up</span>
       </div>

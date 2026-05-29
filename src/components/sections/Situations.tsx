@@ -2,8 +2,6 @@
 import { FadeIn } from "@/components/animations/FadeIn";
 import { SITUATIONS } from "@/lib/constants";
 
-const ICONS = ["🏠", "💰", "⚖️", "✈️", "🔑", "🔨"];
-
 export function Situations() {
   return (
     <section className="bg-forest-500">
@@ -11,17 +9,15 @@ export function Situations() {
         <FadeIn>
           <div className="text-center">
             <p className="text-xs font-bold uppercase tracking-widest text-forest-200">
-              Any Situation
+              Situations We Buy
             </p>
             <h2 className="mt-2 font-display text-display text-white text-balance">
-              Every Seller&apos;s Situation Is Different.
-              <br />
-              We Work With All of Them.
+              You do not need a perfect house to call us.
             </h2>
             <p className="mx-auto mt-3 max-w-xl text-base text-forest-200">
-              Most people don&apos;t call because they want a &ldquo;cash
-              offer.&rdquo; They call because something about the house or the
-              timing has gotten heavy. Here&apos;s what we see most.
+              Repairs, tenants, probate, back taxes, or a fast move are all
+              normal. Tell us what is going on and we will give you a straight
+              answer.
             </p>
           </div>
         </FadeIn>
@@ -30,7 +26,12 @@ export function Situations() {
           {SITUATIONS.map((s, i) => (
             <FadeIn key={s.title} delay={i * 80}>
               <div className="rounded-xl border border-forest-400/20 bg-forest-600/40 p-5 backdrop-blur-sm transition-colors hover:bg-forest-600/60">
-                <span className="text-2xl" aria-hidden="true">{ICONS[i]}</span>
+                <span
+                  className="flex h-8 w-8 items-center justify-center rounded-full bg-amber-300 text-sm font-bold text-ink-700"
+                  aria-hidden="true"
+                >
+                  {i + 1}
+                </span>
                 <h3 className="mt-3 font-display text-lg text-white">
                   {s.title}
                 </h3>

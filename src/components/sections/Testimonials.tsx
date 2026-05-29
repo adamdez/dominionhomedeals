@@ -5,15 +5,15 @@ import { SELLER_STORIES } from "@/lib/seller-stories";
 const TRUST_SIGNALS = [
   {
     title: "Real names, real phone number",
-    body: "People trust this kind of business faster when they can tell who they are dealing with and how to reach them.",
+    body: "It should be clear who you are talking to and how to reach them.",
   },
   {
     title: "Title and closing named up front",
-    body: "Calling out the title company and the closing path removes a lot of the uncertainty sellers usually feel.",
+    body: "You should know where closing happens and how the money is handled.",
   },
   {
-    title: "No pressure to make the house retail-ready",
-    body: "For a lot of as-is sellers, the win is getting out cleanly without a repair list, not pretending the house is market-perfect.",
+    title: "No pressure to fix the house",
+    body: "You should not have to clean, repair, or stage the house before asking for an offer.",
   },
 ] as const;
 
@@ -24,16 +24,14 @@ export function Testimonials() {
         <FadeIn>
           <div className="text-center">
             <p className="text-xs font-bold uppercase tracking-widest text-forest-500">
-              Local Deal Snapshots
+              Local Seller Stories
             </p>
             <h2 className="mt-2 font-display text-display text-ink-600 text-balance">
-              The Kind of Closings Sellers Usually Ask Us About
+              The kinds of situations sellers ask us about
             </h2>
             <p className="mx-auto mt-3 max-w-2xl text-base text-ink-400">
-              These are privacy-safe local deal snapshots built from the kinds of
-              inherited, rental, and relocation situations that come up most often.
-              They are written to show how a direct sale usually works, without
-              pretending a blended example is a public review.
+              These examples show common inherited, rental, repair, and moving
+              situations. They are here to explain how a direct sale can work.
             </p>
           </div>
         </FadeIn>
@@ -78,7 +76,7 @@ export function Testimonials() {
                     </div>
                     <div>
                       <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-forest-500">
-                        Why a direct sale fit
+                        Why a direct sale helped
                       </p>
                       <p className="mt-1 text-sm leading-relaxed text-ink-400">
                         {story.whyDirectSaleFit[0]}
@@ -104,12 +102,11 @@ export function Testimonials() {
                 What Usually Builds Trust
               </p>
               <h3 className="mt-3 font-display text-3xl leading-tight text-ink-600">
-                Sellers usually know pretty quickly whether this feels real.
+                Sellers can usually tell when the process feels real.
               </h3>
               <p className="mt-4 text-sm leading-relaxed text-ink-400">
-                In this space, people are watching for simple things: whether the
-                buyer sounds local, whether the process is clear, and whether the
-                answers stay practical instead of sounding rehearsed.
+                People look for simple things: a local buyer, a clear process,
+                and straight answers.
               </p>
 
               <div className="mt-6 space-y-4">

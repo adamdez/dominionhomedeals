@@ -18,7 +18,7 @@ export const SELLER_PROOF = {
   founder: {
     firstName: "Logan",
     name: "Logan Anyan",
-    title: "Owner, Dominion Home Deals",
+    title: "Owner, Dominion Homes",
     image: "/images/team/logan.jpg",
     phone: SITE.phone,
     introVideoEmbedUrl: process.env.NEXT_PUBLIC_OWNER_INTRO_VIDEO_EMBED_URL || null,
@@ -26,15 +26,15 @@ export const SELLER_PROOF = {
     introVideoPoster: "/images/video-posters/logan-intro.jpg",
     introByAngle: {
       default:
-        "Hi, I'm Logan. I buy houses in Spokane County. If you're dealing with a property you need to move on from, fill out the form and I'll personally call you back within an hour with a no-obligation cash offer. No fees, no repairs, no surprises.",
+        "Hi, I'm Logan. I buy houses in Spokane County. If you have a property you need to sell, fill out the form and I will call you back. No fees, no repairs, no pressure.",
       inherited:
-        "Hi, I'm Logan. I buy houses in Spokane County. If you're dealing with an inherited house, fill out the form and I'll personally call you back within an hour with a no-obligation cash offer. No fees, no repairs, no surprises.",
+        "Hi, I'm Logan. I buy houses in Spokane County. If you inherited a house and are not sure what to do next, fill out the form and I will call you back. No fees, no repairs, no pressure.",
       "as-is":
-        "Hi, I'm Logan. I buy houses in Spokane County. If you're dealing with a house that needs work, fill out the form and I'll personally call you back within an hour with a no-obligation cash offer. No fees, no repairs, no surprises.",
+        "Hi, I'm Logan. I buy houses in Spokane County. If the house needs work, fill out the form and I will call you back. No fees, no repairs, no pressure.",
       landlord:
-        "Hi, I'm Logan. I buy houses in Spokane County. If you're dealing with a rental or tenant situation, fill out the form and I'll personally call you back within an hour with a no-obligation cash offer. No fees, no repairs, no surprises.",
+        "Hi, I'm Logan. I buy houses in Spokane County. If you are done with a rental or tenant situation, fill out the form and I will call you back. No fees, no repairs, no pressure.",
       foreclosure:
-        "Hi, I'm Logan. I buy houses in Spokane County. If you're behind on payments or facing foreclosure, fill out the form and I'll personally call you back within an hour with a no-obligation cash offer. No fees, no repairs, no surprises.",
+        "Hi, I'm Logan. I buy houses in Spokane County. If you are behind on payments or worried about foreclosure, fill out the form and I will call you back. No fees, no repairs, no pressure.",
     } satisfies Record<SellAngle, string>,
   },
   trustStats: {
@@ -69,7 +69,7 @@ export function getSellTrustStripItems(): string[] {
   }
 
   items.push("No Fees, No Repairs, No Obligation");
-  items.push("Cash Offer in 24 Hours");
+  items.push("Fast Cash Offer");
 
   return items;
 }

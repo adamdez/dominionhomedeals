@@ -1,6 +1,8 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
+import { SmsDisclosure } from '@/components/consent/SmsDisclosure'
 import { BreadcrumbJsonLd } from '@/components/seo/BreadcrumbJsonLd'
+import { PrioritySellerLinks } from '@/components/seo/PrioritySellerLinks'
 import { getByCounty } from '@/lib/neighborhoods'
 
 export const metadata: Metadata = {
@@ -64,6 +66,12 @@ export default function NeighborhoodsPage() {
           </p>
         </div>
       </section>
+
+      <PrioritySellerLinks
+        eyebrow="Core Local Seller Pages"
+        title="Start with the market page that fits your house"
+        intro="If you want more than a city list, these guides explain the Spokane, CDA, cash-buyer, and offer-math questions sellers usually compare."
+      />
 
       {/* Spokane County */}
       <section className="bg-white py-20 md:py-28">
@@ -164,6 +172,7 @@ export default function NeighborhoodsPage() {
               Or text us: 509-666-9518
             </a>
           </div>
+          <SmsDisclosure />
         </div>
       </section>
 
@@ -191,6 +200,7 @@ export default function NeighborhoodsPage() {
               Or text us: 509-666-9518
             </a>
           </div>
+          <SmsDisclosure tone="dark" />
         </div>
       </section>
     </>

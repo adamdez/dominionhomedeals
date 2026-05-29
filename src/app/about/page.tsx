@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
+import { SmsDisclosure } from "@/components/consent/SmsDisclosure";
+import { PrioritySellerLinks } from "@/components/seo/PrioritySellerLinks";
 import { SITE } from "@/lib/constants";
 
 export const metadata: Metadata = {
@@ -22,14 +24,14 @@ const team = [
     name: "Logan",
     role: "Founder & Owner",
     image: "/images/team/logan.jpg",
-    bio: "Logan leads Dominion Homes across the Spokane-CDA corridor. He works directly with sellers, keeps the process clear, and makes sure people know what to expect from the first call through closing day.",
+    bio: "Logan leads Dominion Homes across Spokane and North Idaho. He works directly with sellers from the first call through closing.",
   },
 ] as const;
 
 const values = [
   {
     title: "Local First",
-    text: "We live here. We work here. Our team serves the Spokane-CDA corridor. When we say we will meet you at your kitchen table, we mean it.",
+    text: "We live here. We work here. Our team serves Spokane and North Idaho. When we say we can meet you at the house, we mean it.",
   },
   {
     title: "Fair and Transparent",
@@ -105,7 +107,7 @@ export default function AboutPage() {
                   another state, the follow-up feels scripted, and nobody seems accountable when questions come up.
                 </p>
                 <p>
-                  Dominion Homes was built to be the opposite of that. We work directly in the Spokane-CDA corridor, we know these
+                  Dominion Homes was built to be the opposite of that. We work directly in Spokane and North Idaho, we know these
                   neighborhoods, and when we say we will show up, it is us showing up.
                 </p>
                 <p>
@@ -167,6 +169,13 @@ export default function AboutPage() {
           </div>
         </div>
       </section>
+
+      <PrioritySellerLinks
+        eyebrow="Seller Resources"
+        title="Simple guides for different seller situations"
+        intro="After you know who you are talking with, these guides help you compare your options."
+        className="border-y border-stone-200 bg-stone-100/50"
+      />
 
       <section className="bg-cream-50 py-20 md:py-28">
         <div className="mx-auto max-w-5xl px-5">
@@ -273,6 +282,7 @@ export default function AboutPage() {
               Or text us: 509-666-9518
             </a>
           </div>
+          <SmsDisclosure tone="dark" />
         </div>
       </section>
     </>

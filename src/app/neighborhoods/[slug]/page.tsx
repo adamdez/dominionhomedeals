@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { SmsDisclosure } from "@/components/consent/SmsDisclosure";
+import { PrioritySellerLinks } from "@/components/seo/PrioritySellerLinks";
 import { NEIGHBORHOODS, getNeighborhood, getAllSlugs } from "@/lib/neighborhoods";
 
 export function generateStaticParams() {
@@ -135,8 +137,15 @@ export default async function NeighborhoodPage({
               Or text us: 509-666-9518
             </a>
           </div>
+          <SmsDisclosure />
         </div>
       </section>
+
+      <PrioritySellerLinks
+        eyebrow={`${data.name} Seller Resources`}
+        title={`Compare your ${data.name} sale to the main Spokane-CDA cash-offer paths`}
+        intro={`If you are deciding whether to sell a ${data.name} house directly, these guides explain the Spokane, CDA, cash-buyer, and offer-math questions behind the number.`}
+      />
 
       <section className="bg-white py-20 md:py-28">
         <div className="mx-auto max-w-5xl px-5">
@@ -291,6 +300,7 @@ export default async function NeighborhoodPage({
               Or text us: 509-666-9518
             </a>
           </div>
+          <SmsDisclosure />
         </div>
       </section>
     </>

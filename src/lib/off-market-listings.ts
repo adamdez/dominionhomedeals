@@ -248,7 +248,7 @@ const listings: Record<string, OffMarketListing> = {
       { text: 'Two parcels give the deal more angles than a single-lot dirt purchase' },
       { text: 'Existing manufactured home may create a simple remove-and-replace path if the county/septic side checks out' },
       { text: 'New manufactured home, modular, stick-built, hold, or resale paths are all worth checking' },
-      { text: 'Not a retail-ready property. The buyer is buying the setup and solving the next step.' },
+      { text: 'Not a finished property. The buyer is buying the setup and solving the next step.' },
       { text: 'Nine Mile Falls location with a rural/residential feel' },
       { text: 'Property photos available for quick visual review' },
       { text: 'Direct private sale path through Dominion' },
