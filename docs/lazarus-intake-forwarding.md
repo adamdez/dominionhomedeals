@@ -21,6 +21,16 @@ LAZARUS_INTAKE_CREATE_LEAD_KEY=
 
 If either value is missing, `/api/leads` logs that Lazarus is not configured and skips the forward.
 
+## Read-only proof
+
+Before production activation, run:
+
+```powershell
+node scripts/dominion-routing-proof.mjs --markdown
+```
+
+That proof inspects tracking constants, conversion labels, the env-gated Lazarus forwarder, and docs without submitting a seller form or calling Lazarus.
+
 ## Payload Shape
 
 The website sends:
