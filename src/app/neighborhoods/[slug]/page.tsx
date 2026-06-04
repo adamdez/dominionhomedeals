@@ -23,7 +23,7 @@ export async function generateMetadata({
 
   return {
     title: `Sell Your ${data.name} Home Fast - Direct Buyer in ${data.state}`,
-    description: `Local Spokane team that buys ${data.name} homes directly. No agents, no commissions, no repairs. Close on your schedule. Call 509-666-9518.`,
+    description: `Local Spokane team that buys ${data.name} homes directly. No agents, no commissions, no repairs. Close on your schedule. Call 509-822-5460.`,
     alternates: { canonical: `https://www.dominionhomedeals.com/neighborhoods/${slug}` },
     openGraph: {
       title: `Sell Your ${data.name} Home for Cash`,
@@ -131,10 +131,10 @@ export default async function NeighborhoodPage({
               Get Your Cash Offer
             </Link>
             <a
-              href="sms:5096669518"
+              href="sms:5098225460"
               className="inline-flex items-center gap-2 text-lg font-medium text-ink-500 transition hover:text-forest-700"
             >
-              Or text us: 509-666-9518
+              Or text us: 509-822-5460
             </a>
           </div>
           <SmsDisclosure />
@@ -294,10 +294,10 @@ export default async function NeighborhoodPage({
               Get My Cash Offer
             </Link>
             <a
-              href="sms:5096669518"
+              href="sms:5098225460"
               className="inline-flex items-center gap-2 text-lg font-medium text-ink-500 transition hover:text-forest-700"
             >
-              Or text us: 509-666-9518
+              Or text us: 509-822-5460
             </a>
           </div>
           <SmsDisclosure />

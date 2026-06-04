@@ -1,19 +1,19 @@
 # Local SEO Authority And Reporting Plan
 
-Last updated: May 28, 2026
+Last updated: June 3, 2026
 
 ## Confirmed Business Details
 
-- Business name: Dominion Homes, LLC
+- Legal business name: Dominion Group LLC d/b/a Dominion Homes
 - Public name: Dominion Homes
 - Website: https://www.dominionhomedeals.com
-- Phone: 509-666-9518
+- Public/Twilio SMS phone: 509-822-5460
 - Email: leads@dominionhomedeals.com
 - Mailing address: PO Box 337, Mead, WA 99021
 - Service area: Spokane County, WA and Kootenai County, ID
 - Google Business Profile: https://www.google.com/maps?cid=5032019384215942012
 
-Use this exact NAP unless the owner confirms a different public address or service-area setup. Do not create fake city addresses.
+Use this exact NAP unless the owner confirms a different public address, phone, or service-area setup. Do not create fake city addresses. Logan's cell is an internal fallback, not the public SMS sender.
 
 ## Citation Targets To Build Or Clean Up
 

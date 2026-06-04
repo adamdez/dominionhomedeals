@@ -52,8 +52,8 @@ export function DealInterestForm({
   submitLabel = 'Request more info',
   variant = 'default',
   contactName = 'our team',
-  contactPhone = '5096669518',
-  contactPhoneDisplay = '509-666-9518',
+  contactPhone = '5098225460',
+  contactPhoneDisplay = '509-822-5460',
 }: DealInterestFormProps) {
   const [form, setForm] = useState<FormState>(initialState)
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')

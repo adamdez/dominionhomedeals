@@ -166,10 +166,10 @@ export default function NeighborhoodsPage() {
               Get Your Cash Offer
             </Link>
             <a
-              href="sms:5096669518"
+              href="sms:5098225460"
               className="inline-flex items-center gap-2 text-lg font-medium text-ink-500 transition hover:text-forest-700"
             >
-              Or text us: 509-666-9518
+              Or text us: 509-822-5460
             </a>
           </div>
           <SmsDisclosure />
@@ -194,10 +194,10 @@ export default function NeighborhoodsPage() {
               Get My Cash Offer
             </Link>
             <a
-              href="sms:5096669518"
+              href="sms:5098225460"
               className="inline-flex items-center gap-2 text-lg font-medium text-white/90 transition hover:text-white"
             >
-              Or text us: 509-666-9518
+              Or text us: 509-822-5460
             </a>
           </div>
           <SmsDisclosure tone="dark" />

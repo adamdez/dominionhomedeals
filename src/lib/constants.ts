@@ -9,7 +9,7 @@ export const SITE = {
   description:
     "Spokane-area team that buys houses directly. No commissions, no repairs, close on your timeline. We meet you in person.",
   url: "https://www.dominionhomedeals.com",
-  phone: "509-666-9518",
+  phone: "509-822-5460",
   email: "leads@dominionhomedeals.com",
   adminEmail: "admin@dominionhomedeals.com",
   address: {
@@ -118,7 +118,7 @@ export const SELL_PAGE_FAQS = [
   },
   {
     q: "Who are you, exactly?",
-    a: "Logan leads Dominion Homes, a local Spokane team that buys houses directly across Spokane County and North Idaho. No call center, no scripts, no middlemen. Call or text us at 509-666-9518 and you'll hear from Logan or someone on his team. Every conversation is direct, and there's never any obligation.",
+    a: "Logan leads Dominion Homes, a local Spokane team that buys houses directly across Spokane County and North Idaho. No call center, no scripts, no middlemen. Call or text us at 509-822-5460 and you'll hear from Logan or someone on his team. Every conversation is direct, and there's never any obligation.",
   },
 ] as const;
 
