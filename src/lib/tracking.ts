@@ -5,8 +5,12 @@
  * explicit Google Ads conversions only where they are required.
  */
 
-const GOOGLE_ADS_PRIMARY_ID = 'AW-17989282213'
-const GADS_CALL_LABEL = process.env.NEXT_PUBLIC_GADS_CALL_LABEL || '10-DCJvTz4UcEKCdm4dD'
+export const GOOGLE_ADS_CONVERSION_ID =
+  process.env.NEXT_PUBLIC_GOOGLE_ADS_ID || 'AW-18000301728'
+export const GOOGLE_ADS_LEAD_FORM_LABEL =
+  process.env.NEXT_PUBLIC_GADS_LEAD_FORM_LABEL || 'LJHYCOnlx4QcEKCdm4dD'
+export const GOOGLE_ADS_CALL_LABEL =
+  process.env.NEXT_PUBLIC_GADS_CALL_LABEL || '10-DCJvTz4UcEKCdm4dD'
 
 declare global {
   interface Window {
@@ -69,9 +73,9 @@ export function trackCallIntent(linkText: string, ctaLocation: string): void {
     cta_location: ctaLocation,
   })
 
-  if (GADS_CALL_LABEL) {
+  if (GOOGLE_ADS_CALL_LABEL) {
     gtag('event', 'conversion', {
-      send_to: `${GOOGLE_ADS_PRIMARY_ID}/${GADS_CALL_LABEL}`,
+      send_to: `${GOOGLE_ADS_CONVERSION_ID}/${GOOGLE_ADS_CALL_LABEL}`,
       value: 1.0,
       currency: 'USD',
     })

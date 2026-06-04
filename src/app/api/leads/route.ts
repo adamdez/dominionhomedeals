@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { SITE } from '@/lib/constants'
 import { recordDominionLeadSubmission } from '@/lib/dominion-leads'
 import { syncSellerLeadToMailchimp } from '@/lib/mailchimp'
 
@@ -537,7 +538,7 @@ export async function POST(request: NextRequest) {
   } catch (err) {
     console.error('[LEAD API ERROR]', err)
     return NextResponse.json(
-      { error: 'Something went wrong. Please call or text us at 509-822-5460.' },
+      { error: `Something went wrong. Please call or text us at ${SITE.phone}.` },
       { status: 500 }
     )
   }
