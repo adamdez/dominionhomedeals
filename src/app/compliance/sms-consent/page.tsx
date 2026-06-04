@@ -3,9 +3,9 @@ import Link from "next/link";
 import { SMS_CONSENT_TEXT } from "@/lib/constants";
 
 export const metadata: Metadata = {
-  title: "SMS Consent Flow Evidence — Dominion Homes, LLC",
+  title: "SMS Consent Flow Evidence — Dominion Homes",
   description:
-    "Public evidence page documenting Dominion Homes, LLC's SMS consent opt-in flow for 10DLC / TCR campaign review.",
+    "Public evidence page documenting Dominion Homes, operated by Dominion Group LLC, and its SMS consent opt-in flow for 10DLC / TCR campaign review.",
   robots: { index: true, follow: true },
   alternates: { canonical: "https://www.dominionhomedeals.com/compliance/sms-consent" },
 };
@@ -21,7 +21,7 @@ export default function SmsConsentEvidencePage() {
             Compliance Evidence
           </p>
           <h1 className="mt-3 font-display text-3xl font-bold text-ink-600 sm:text-4xl">
-            SMS Consent Flow Evidence — Dominion Homes, LLC
+            SMS Consent Flow Evidence — Dominion Homes
           </h1>
 
           <p className="mt-6 text-sm leading-relaxed text-stone-600 sm:text-base">

@@ -101,7 +101,7 @@ export function Footer() {
               </Link>
             </p>
             <p>
-              Dominion Homes, LLC is a real estate investment company. We are principals - not licensed real estate
+              Dominion Homes, operated by Dominion Group LLC, is a real estate investment company. We are principals - not licensed real estate
               agents or brokers. We buy properties directly. We are not affiliated with any government agency. This is
               not a solicitation for listings.
             </p>

@@ -52,7 +52,7 @@ export const SELLER_SEO_PAGES: SellerSeoPage[] = [
     intro:
       "If the house is clean, updated, and you have time, listing with an agent may be the right move. But if you are dealing with repairs, probate, tenants, back taxes, or a deadline that will not wait, Dominion Homes can make a direct cash offer and close through local title.",
     directAnswer:
-      "Dominion Homes, LLC buys houses for cash in Spokane County and nearby North Idaho. We buy as-is, do not charge commissions, and can often close in about two weeks once title is clear.",
+      "Dominion Homes, operated by Dominion Group LLC, buys houses for cash in Spokane County and nearby North Idaho. We buy as-is, do not charge commissions, and can often close in about two weeks once title is clear.",
     ctaLabel: "Get My Spokane Cash Offer",
     proofAngle:
       "We are not a national call center routing your information around. You talk with a local Spokane buyer who can look at the real situation and tell you what is possible.",

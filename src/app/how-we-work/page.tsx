@@ -74,7 +74,7 @@ const faqs = [
   },
   {
     q: "Are you real estate agents?",
-    a: "No. Dominion Homes, LLC is a real estate investment company. We buy properties directly. We are not licensed real estate agents or brokers, and this is not a solicitation for listings.",
+    a: "No. Dominion Homes, operated by Dominion Group LLC, is a real estate investment company. We buy properties directly. We are not licensed real estate agents or brokers, and this is not a solicitation for listings.",
   },
   {
     q: "What areas do you buy in?",

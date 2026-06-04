@@ -2,7 +2,9 @@
 
 export const SITE = {
   name: "Dominion Homes",
-  legalName: "Dominion Homes, LLC",
+  legalName: "Dominion Group LLC d/b/a Dominion Homes",
+  taxLegalName: "DOMINION GROUP LLC",
+  tradeName: "Dominion Homes",
   tagline: "Local Spokane Team - Direct Home Buyers",
   description:
     "Spokane-area team that buys houses directly. No commissions, no repairs, close on your timeline. We meet you in person.",
@@ -71,16 +73,16 @@ export const TRUST_STATS = [
 export const SMS_PROGRAM_MAX_FREQUENCY = "up to 10 messages per month" as const;
 
 export const SMS_CTA_DISCLOSURE =
-  "Optional SMS updates are available only if you check the SMS consent box in this form. By opting in, you agree to receive recurring marketing and informational texts from Dominion Homes, LLC about your property inquiry, including cash-offer follow-ups, appointment scheduling, and transaction status updates. Message frequency varies, up to 10 msgs/month. Message and data rates may apply. Reply STOP to opt out or HELP for help. Consent is not required to receive an offer." as const;
+  "Optional SMS updates are available only if you check the SMS consent box in this form. By opting in, you agree to receive recurring marketing and informational texts from Dominion Homes, operated by Dominion Group LLC, about your property inquiry, including cash-offer follow-ups, appointment scheduling, and transaction status updates. Message frequency varies, up to 10 msgs/month. Message and data rates may apply. Reply STOP to opt out or HELP for help. Consent is not required to receive an offer." as const;
 
 export const SMS_CONSENT_TEXT =
-  "I agree to receive recurring marketing and informational text messages from Dominion Homes, LLC about my property inquiry, including cash offer follow-ups, appointment scheduling, and transaction status updates, at the phone number provided. Messages may be sent using automated technology. Consent is not required to receive an offer. Message frequency varies, up to 10 msgs/month. Message and data rates may apply. Reply STOP to opt out or HELP for help. We do not sell, rent, or share mobile information or SMS opt-in consent with third parties or affiliates for marketing or promotional purposes." as const;
+  "I agree to receive recurring marketing and informational text messages from Dominion Homes, operated by Dominion Group LLC, about my property inquiry, including cash offer follow-ups, appointment scheduling, and transaction status updates, at the phone number provided. Messages may be sent using automated technology. Consent is not required to receive an offer. Message frequency varies, up to 10 msgs/month. Message and data rates may apply. Reply STOP to opt out or HELP for help. We do not sell, rent, or share mobile information or SMS opt-in consent with third parties or affiliates for marketing or promotional purposes." as const;
 
 export const SMS_PRIVACY_NON_SHARING_TEXT =
   "No mobile information, including phone numbers, SMS opt-in data, and SMS consent records, will be shared with third parties or affiliates for marketing or promotional purposes. Text messaging originator opt-in data and consent are not sold, rented, transferred, or shared with any third parties." as const;
 
 export const TCPA_CONSENT_TEXT =
-  "By submitting this form, you consent to receive calls, text messages (SMS/MMS), and emails from Dominion Homes, LLC at the phone number and email provided, including messages sent using autodialer or automated technology, for the purpose of discussing the sale of your property. Consent is not a condition of purchase. Message frequency varies, up to 10 msgs/month. Message and data rates may apply. Reply STOP to opt out, HELP for help." as const;
+  "By submitting this form, you consent to receive calls, text messages (SMS/MMS), and emails from Dominion Homes, operated by Dominion Group LLC, at the phone number and email provided, including messages sent using autodialer or automated technology, for the purpose of discussing the sale of your property. Consent is not a condition of purchase. Message frequency varies, up to 10 msgs/month. Message and data rates may apply. Reply STOP to opt out, HELP for help." as const;
 
 /** Situations we help with - for the "We Buy Houses In Any Situation" section */
 export const SITUATIONS = [

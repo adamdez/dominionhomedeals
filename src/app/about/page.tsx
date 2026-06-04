@@ -249,7 +249,7 @@ export default function AboutPage() {
       <section className="border-t border-sage-100 bg-cream-50 py-12">
         <div className="mx-auto max-w-3xl px-5 text-center">
           <p className="text-xs leading-relaxed text-ink-300">
-            Dominion Homes, LLC is a real estate investment company. We are principals, not licensed real estate agents
+            Dominion Homes, operated by Dominion Group LLC, is a real estate investment company. We are principals, not licensed real estate agents
             or brokers. We buy properties directly. We are not affiliated with any government agency. This is not a
             solicitation for listings. Serving Spokane County, WA and Kootenai County, ID.
           </p>
