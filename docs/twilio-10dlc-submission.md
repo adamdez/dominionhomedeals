@@ -21,11 +21,13 @@ Avoid using "lead generation" in the campaign description. This campaign is firs
 
 ## Campaign Description
 
-Dominion Homes, operated by Dominion Group LLC, sends SMS only to homeowners who submit a property inquiry on dominionhomedeals.com and opt in by checking an unchecked SMS consent box. Messages are used to respond to the homeowner's inquiry, ask property follow-up questions, schedule calls or walkthroughs, provide updates about an as-is offer, and coordinate next steps. We do not use this campaign for purchased lists, cold prospecting, skip-traced owner lists, or texting people who did not opt in.
+Dominion Homes uses SMS/MMS to communicate only with homeowners who contact Dominion Homes about selling a property and explicitly opt in to text messages. Messages are used for property-inquiry follow-up, cash-offer questions, appointment and walkthrough scheduling, and transaction status updates. Dominion Homes does not cold text purchased lists under this campaign and does not share, sell, rent, or transfer mobile numbers or SMS opt-in consent for third-party marketing.
 
 ## Message Flow
 
-End users opt in on the Dominion Homes website at https://www.dominionhomedeals.com/#get-offer. The first form screen displays this SMS program disclosure before the user clicks the cash-offer CTA:
+End users opt in on the public website https://www.dominionhomedeals.com/. The seller starts the multi-step "Get My Cash Offer" form by entering a property address, then name, then phone number. SMS disclosures are shown in the form before the phone step and again next to the SMS consent checkbox. Public opt-in evidence page: https://www.dominionhomedeals.com/compliance/sms-consent.
+
+The first form screen displays this SMS program disclosure before the user clicks the cash-offer CTA:
 
 "Optional SMS updates are available only if you check the SMS consent box in this form. By opting in, you agree to receive recurring marketing and informational texts from Dominion Homes, operated by Dominion Group LLC, about your property inquiry, including cash-offer follow-ups, appointment scheduling, and transaction status updates. Message frequency varies, up to 10 msgs/month. Message and data rates may apply. Reply STOP to opt out or HELP for help. Consent is not required to receive an offer."
 
@@ -33,13 +35,13 @@ The lead form asks for the property address, name, and phone number. Directly be
 
 "I agree to receive recurring marketing and informational text messages from Dominion Homes, operated by Dominion Group LLC, about my property inquiry, including cash offer follow-ups, appointment scheduling, and transaction status updates, at the phone number provided. Messages may be sent using automated technology. Consent is not required to receive an offer. Message frequency varies, up to 10 msgs/month. Message and data rates may apply. Reply STOP to opt out or HELP for help. We do not sell, rent, or share mobile information or SMS opt-in consent with third parties or affiliates for marketing or promotional purposes."
 
-The same checkbox remains available on the final details step before submission. The form can be submitted without checking the SMS consent checkbox; in that case, the submitted phone number is not enrolled in the SMS program and no SMS consent timestamp is stored. Public evidence and screenshot: https://www.dominionhomedeals.com/compliance/sms-consent. Privacy Policy: https://www.dominionhomedeals.com/privacy. Terms and Conditions: https://www.dominionhomedeals.com/terms.
+The same checkbox remains available on the final details step before submission. The form can be submitted without checking the SMS consent checkbox; in that case, the submitted phone number is not enrolled in the SMS program and no SMS consent timestamp is stored. Privacy Policy: https://www.dominionhomedeals.com/privacy. Terms and Conditions: https://www.dominionhomedeals.com/terms.
 
 ## Sample Messages
 
-1. Dominion Homes: Thanks for reaching out about your property. I can look it over and text a few questions so we can see if an as-is offer makes sense. Reply STOP to opt out.
-2. Dominion Homes: This is Adam with Dominion Homes. Are you available today or tomorrow to talk about the property you submitted? Reply HELP for help or STOP to opt out.
-3. Dominion Homes: Quick update on your property inquiry: we reviewed the info and may need a walkthrough before giving a number. Reply STOP to opt out.
+1. Dominion Homes: Thanks for asking about a cash offer for your property. We can review the details and text a few follow-up questions before scheduling a call or walkthrough. Reply STOP to opt out.
+2. Dominion Homes: Are you available today or tomorrow to talk through the property inquiry you submitted, including the house condition and timing? Reply HELP for help or STOP to opt out.
+3. Dominion Homes: Quick update on your property inquiry. We reviewed the initial details and may need a walkthrough before giving a final as-is offer. Reply STOP to opt out.
 4. Dominion Homes: You're opted in for texts about your property inquiry. Up to 10 msgs/month. Msg&data rates may apply. Reply HELP for help, STOP to cancel.
 5. Dominion Homes: You are unsubscribed and will receive no more SMS from Dominion Homes unless you opt in again. Reply HELP for help.
 

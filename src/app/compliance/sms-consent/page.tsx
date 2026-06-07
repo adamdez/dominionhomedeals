@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { SMS_CONSENT_TEXT } from "@/lib/constants";
+import { SITE, SMS_CONSENT_TEXT } from "@/lib/constants";
 
 export const metadata: Metadata = {
-  title: "SMS Consent Flow Evidence — Dominion Homes",
+  title: "SMS Consent Flow Evidence - Dominion Homes",
   description:
     "Public evidence page documenting Dominion Homes, operated by Dominion Group LLC, and its SMS consent opt-in flow for 10DLC / TCR campaign review.",
   robots: { index: true, follow: true },
@@ -21,12 +21,45 @@ export default function SmsConsentEvidencePage() {
             Compliance Evidence
           </p>
           <h1 className="mt-3 font-display text-3xl font-bold text-ink-600 sm:text-4xl">
-            SMS Consent Flow Evidence — Dominion Homes
+            SMS Consent Flow Evidence - Dominion Homes
           </h1>
 
           <p className="mt-6 text-sm leading-relaxed text-stone-600 sm:text-base">
-            This page documents the SMS opt-in flow used on dominionhomedeals.com for 10DLC / TCR campaign review. End users opt in by ticking an unchecked SMS consent checkbox shown directly under the phone number field in the cash offer lead form at https://www.dominionhomedeals.com/#get-offer. The same checkbox remains available again on the final details step before submission. Consent is not a condition of purchase or receiving an offer. Form submission is not blocked if the checkbox is unticked; in that case, the user's phone number is not enrolled in the SMS program and no SMS consent timestamp is stored. The exact consent language displayed at submission time is reproduced below.
+            This page documents the SMS opt-in flow used on dominionhomedeals.com for 10DLC / TCR
+            campaign review. {SITE.name} is operated by {SITE.taxLegalName} and uses the public
+            phone number {SITE.phone}. End users opt in by ticking an unchecked SMS consent checkbox
+            shown directly under the phone number field in the cash offer lead form at
+            https://www.dominionhomedeals.com/#get-offer. The same checkbox remains available again
+            on the final details step before submission. Consent is not a condition of purchase or
+            receiving an offer. Form submission is not blocked if the checkbox is unticked; in that
+            case, the user's phone number is not enrolled in the SMS program and no SMS consent
+            timestamp is stored. The exact consent language displayed at submission time is reproduced
+            below.
           </p>
+
+          <section className="mt-8 grid gap-4 sm:grid-cols-2">
+            <div className="rounded-xl border border-stone-200 bg-stone-50 p-5">
+              <h2 className="font-display text-xl font-semibold text-ink-600">Reviewer Facts</h2>
+              <ul className="mt-3 space-y-2 text-sm leading-relaxed text-stone-700">
+                <li>Business: {SITE.legalName}</li>
+                <li>Brand: {SITE.name}</li>
+                <li>Website: {SITE.url}</li>
+                <li>Public phone: {SITE.phone}</li>
+                <li>SMS consent checkbox is unchecked by default.</li>
+                <li>SMS consent is optional and separate from Privacy Policy and Terms acceptance.</li>
+              </ul>
+            </div>
+            <div className="rounded-xl border border-stone-200 bg-stone-50 p-5">
+              <h2 className="font-display text-xl font-semibold text-ink-600">Opt-In Mechanics</h2>
+              <ul className="mt-3 space-y-2 text-sm leading-relaxed text-stone-700">
+                <li>User enters property address, name, then phone number.</li>
+                <li>SMS disclosure is shown before the phone step and beside the checkbox.</li>
+                <li>User can continue and submit without checking SMS consent.</li>
+                <li>Unchecked submissions are not enrolled in the SMS program.</li>
+                <li>Checked submissions store SMS consent state and timestamp.</li>
+              </ul>
+            </div>
+          </section>
 
           <div className="mt-8 overflow-hidden rounded-xl border border-stone-200 bg-stone-100">
             <img
