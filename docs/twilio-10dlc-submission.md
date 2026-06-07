@@ -37,24 +37,28 @@ The lead form asks for the property address, name, and phone number. Directly be
 
 The same checkbox remains available on the final details step before submission. The form can be submitted without checking the SMS consent checkbox; in that case, the submitted phone number is not enrolled in the SMS program and no SMS consent timestamp is stored. Privacy Policy: https://www.dominionhomedeals.com/privacy. Terms and Conditions: https://www.dominionhomedeals.com/terms.
 
+Submitted Persona consent-flow field, kept under Persona's 1024-character limit:
+
+End users opt in on Dominion Homes' public website at https://www.dominionhomedeals.com/ in the multi-step Get My Cash Offer form. They enter property address, name, and phone. SMS disclosure appears before the phone step; an SMS consent checkbox appears below the phone field and again before final submission. The checkbox is unchecked by default, optional, separate from Terms/Privacy, and can be left unchecked while still submitting the offer request. It says the user agrees to recurring marketing and informational texts from Dominion Homes about the property inquiry, including cash-offer follow-up, appointment scheduling, and transaction status; consent is not required; frequency varies up to 10 msgs/month; msg/data rates may apply; reply STOP to opt out or HELP for help; and SMS consent/mobile info is not sold, rented, or shared for third-party marketing. Evidence: https://www.dominionhomedeals.com/compliance/sms-consent. Privacy: /privacy. Terms: /terms.
+
 ## Sample Messages
 
 1. Dominion Homes: Thanks for asking about a cash offer for your property. We can review the details and text a few follow-up questions before scheduling a call or walkthrough. Reply STOP to opt out.
 2. Dominion Homes: Are you available today or tomorrow to talk through the property inquiry you submitted, including the house condition and timing? Reply HELP for help or STOP to opt out.
 3. Dominion Homes: Quick update on your property inquiry. We reviewed the initial details and may need a walkthrough before giving a final as-is offer. Reply STOP to opt out.
 4. Dominion Homes: You're opted in for texts about your property inquiry. Up to 10 msgs/month. Msg&data rates may apply. Reply HELP for help, STOP to cancel.
-5. Dominion Homes: You are unsubscribed and will receive no more SMS from Dominion Homes unless you opt in again. Reply HELP for help.
+5. Dominion Homes: You are unsubscribed and will receive no more SMS from Dominion Homes unless you opt in again. Reply START to resubscribe.
 
 ## Campaign Attributes
 
 - Embedded links: false, unless the campaign will actually send links. If links are needed later, resubmit/update with `true` and include exact sample links on the Dominion domain or the actual document provider domain.
-- Embedded phone numbers: false, unless the submitted samples include `509-822-5460`.
+- Embedded phone numbers: true, because the submitted HELP message includes `509-822-5460`.
 - Opt-in keywords: leave blank unless START/JOIN keyword opt-in is enabled.
 - Opt-out keywords: STOP, STOPALL, UNSUBSCRIBE, CANCEL, END, QUIT
 - Help keywords: HELP, INFO
 - Opt-in message: Dominion Homes: You are opted in to receive property-inquiry updates from Dominion Homes. Msg frequency varies, up to 10 msgs/month. Msg&data rates may apply. Reply STOP to opt out or HELP for help.
 - Opt-out message: Dominion Homes: You are unsubscribed and will receive no further SMS messages. Reply START to resubscribe.
-- Help message: Dominion Homes: For help, call 509-822-5460 or email admin@dominionhomedeals.com. Reply STOP to opt out. Msg&data rates may apply.
+- Help message: Dominion Homes: For help, call or text 509-822-5460 or email admin@dominionhomedeals.com. Reply STOP to opt out. Msg&data rates may apply.
 
 ## Common Rejection Traps To Avoid
 
