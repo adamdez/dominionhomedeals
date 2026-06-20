@@ -40,7 +40,7 @@ We buy houses directly for cash or investor-backed offers when a seller wants a 
 - https://www.dominionhomedeals.com/neighborhoods
 
 ## Business facts
-- phone: 509-666-9518
+- phone: 509-822-5460
 - public local market: Spokane, WA and nearby North Idaho
 - service area: Spokane County, WA and Kootenai County, ID
 - closing path: direct purchase through title

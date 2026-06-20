@@ -52,8 +52,8 @@ export function DealInterestForm({
   submitLabel = 'Request more info',
   variant = 'default',
   contactName = 'our team',
-  contactPhone = '5096669518',
-  contactPhoneDisplay = '509-666-9518',
+  contactPhone = '5098225460',
+  contactPhoneDisplay = '509-822-5460',
 }: DealInterestFormProps) {
   const [form, setForm] = useState<FormState>(initialState)
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
@@ -260,7 +260,7 @@ export function DealInterestForm({
             className="mt-0.5 h-4 w-4 shrink-0 rounded border-stone-300 text-forest-500 focus:ring-forest-400"
           />
           <span className="text-xs leading-relaxed text-ink-400">
-            By submitting, you consent to receive calls and emails from Dominion Homes, LLC
+            By submitting, you consent to receive calls and emails from Dominion Homes, operated by Dominion Group LLC
             about this property. SMS/text messaging is not part of this property inquiry form.{' '}
             <span className="text-red-500">*</span>
           </span>

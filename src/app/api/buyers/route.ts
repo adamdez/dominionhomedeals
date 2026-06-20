@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { SITE } from "@/lib/constants";
 import {
   recordBuyerInvestorLeadSubmission,
   type BuyerInvestorInterestType,
@@ -100,6 +101,17 @@ function labelInterestType(value: BuyerInvestorInterestType): string {
   }
 }
 
+function getTeamSmsRecipients(): string[] {
+  const configured = process.env.LEAD_SMS_RECIPIENTS
+    ?.split(",")
+    .map((recipient) => recipient.trim())
+    .filter(Boolean);
+
+  if (configured?.length) return configured;
+
+  return ["5095907091@mms.att.net", "5096669518@vtext.com"];
+}
+
 async function sendEmailNotification(lead: Record<string, unknown>) {
   const RESEND_API_KEY = process.env.RESEND_API_KEY;
   if (!RESEND_API_KEY) {
@@ -190,7 +202,7 @@ async function sendSmsNotification(lead: Record<string, unknown>) {
 
   const interestType = labelInterestType(lead.interestType as BuyerInvestorInterestType);
   const message = `NEW BUYER/INVESTOR: ${lead.fullName}\n${interestType} | ${lead.capitalRange}\n${lead.phone}\n${lead.preferredMarkets}\n${lead.timeline}`;
-  const smsRecipients = ["5095907091@mms.att.net", "5096669518@vtext.com"];
+  const smsRecipients = getTeamSmsRecipients();
 
   try {
     await Promise.allSettled(
@@ -329,7 +341,7 @@ export async function POST(request: NextRequest) {
   } catch (err) {
     console.error("[BUYERS API ERROR]", err);
     return NextResponse.json(
-      { error: "Something went wrong. Please call or text us at 509-822-5460." },
+      { error: `Something went wrong. Please call or text us at ${SITE.phone}.` },
       { status: 500 },
     );
   }

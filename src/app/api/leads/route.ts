@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { SITE } from '@/lib/constants'
 import { recordDominionLeadSubmission } from '@/lib/dominion-leads'
 import { syncSellerLeadToMailchimp } from '@/lib/mailchimp'
 
@@ -106,6 +107,10 @@ function attributionSummary(adAttribution: Record<string, string>): string {
   return Object.entries(adAttribution)
     .map(([key, value]) => `${key}: ${value}`)
     .join('\n')
+}
+
+function optionalText(value: unknown): string | null {
+  return typeof value === 'string' && value.trim() ? value.trim() : null
 }
 
 function getTeamSmsRecipients(): string[] {
@@ -386,6 +391,83 @@ async function forwardToSentinel(lead: Record<string, unknown>): Promise<void> {
 }
 
 /* ------------------------------------------------------------------ */
+/*  Forward lead to Lazarus create-only intake                         */
+/* ------------------------------------------------------------------ */
+
+async function forwardToLazarus(lead: Record<string, unknown>): Promise<void> {
+  const intakeUrl = process.env.LAZARUS_INTAKE_URL?.trim()
+  const intakeKey = process.env.LAZARUS_INTAKE_CREATE_LEAD_KEY?.trim()
+
+  if (!intakeUrl || !intakeKey) {
+    console.log('[LAZARUS] Not configured - skipping create-only forwarding')
+    return
+  }
+
+  const adAttribution =
+    lead.adAttribution && typeof lead.adAttribution === 'object' && !Array.isArray(lead.adAttribution)
+      ? (lead.adAttribution as Record<string, string>)
+      : {}
+  const adNotes = attributionSummary(adAttribution)
+
+  const sourceDetails = Object.fromEntries(
+    Object.entries({
+      sourceLabel: 'Dominion website seller form',
+      sourceType: 'Website',
+      propertyZip: optionalText(lead.zip),
+      landingPage: optionalText(lead.landingPage),
+      utmSource: optionalText(lead.utmSource),
+      utmMedium: optionalText(lead.utmMedium),
+      utmCampaign: optionalText(lead.utmCampaign),
+      utmTerm: optionalText(lead.utmTerm),
+      utmContent: optionalText(lead.utmContent),
+      gclid: optionalText(lead.gclid),
+    }).filter(([, value]) => typeof value === 'string' && value.trim())
+  )
+
+  const notes = [
+    'Website seller lead from dominionhomedeals.com.',
+    lead.submittedAt ? `Submitted: ${lead.submittedAt}` : null,
+    lead.condition ? `Condition: ${lead.condition}` : null,
+    lead.timeline ? `Timeline: ${lead.timeline}` : null,
+    lead.smsConsent ? `SMS consent captured: ${lead.smsConsentTimestamp || 'yes'}` : 'SMS consent: no',
+    lead.landingPage ? `Landing page: ${lead.landingPage}` : null,
+    adNotes ? `Ad attribution:\n${adNotes}` : null,
+  ].filter(Boolean).join('\n')
+
+  try {
+    const res = await fetch(intakeUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-lazarus-intake-key': intakeKey,
+      },
+      body: JSON.stringify({
+        name: `${lead.firstName || ''} ${lead.lastName || ''}`.trim(),
+        phone: lead.phone,
+        email: lead.email,
+        address: lead.address,
+        city: lead.city,
+        state: lead.state,
+        zip: lead.zip,
+        status: 'new',
+        notes,
+        sourceDetails,
+      }),
+    })
+
+    if (!res.ok) {
+      const errorText = await res.text()
+      console.error('[LAZARUS] Forward failed:', res.status, errorText)
+    } else {
+      const data = await res.json()
+      console.log('[LAZARUS] Lead created:', data.leadId ?? 'ok')
+    }
+  } catch (err) {
+    console.error('[LAZARUS] Forward error:', err)
+  }
+}
+
+/* ------------------------------------------------------------------ */
 /*  POST handler                                                       */
 /* ------------------------------------------------------------------ */
 
@@ -486,6 +568,7 @@ export async function POST(request: NextRequest) {
       withTimeout(sendEmailNotification(lead), 1500, 'email notification'),
       withTimeout(sendSmsNotification(lead), 3500, 'sms notification'),
       withTimeout(forwardToSentinel(lead), 1500, 'sentinel forward'),
+      withTimeout(forwardToLazarus(lead), 1500, 'lazarus forward'),
       withTimeout(syncSellerLeadToMailchimp(lead), 1500, 'mailchimp seller sync'),
       withTimeout(recordDominionLeadSubmission({
         firstName: lead.firstName,
@@ -537,7 +620,7 @@ export async function POST(request: NextRequest) {
   } catch (err) {
     console.error('[LEAD API ERROR]', err)
     return NextResponse.json(
-      { error: 'Something went wrong. Please call or text us at 509-822-5460.' },
+      { error: `Something went wrong. Please call or text us at ${SITE.phone}.` },
       { status: 500 }
     )
   }

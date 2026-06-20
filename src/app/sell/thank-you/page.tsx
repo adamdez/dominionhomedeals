@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Script from "next/script";
 import { SITE } from "@/lib/constants";
 import { getSellTrustStripItems } from "@/lib/sell-proof";
+import { GOOGLE_ADS_CONVERSION_ID, GOOGLE_ADS_LEAD_FORM_LABEL } from "@/lib/tracking";
 
 export const metadata: Metadata = {
   title: "Thanks - We Got Your Info",
@@ -20,7 +21,7 @@ export default function SellThankYouPage() {
       <Script id="google-ads-lead-form-conversion" strategy="afterInteractive">
         {`
           window.gtag && window.gtag('event', 'conversion', {
-            send_to: 'AW-18000301728/LJHYCOnlx4QcEKCdm4dD',
+            send_to: '${GOOGLE_ADS_CONVERSION_ID}/${GOOGLE_ADS_LEAD_FORM_LABEL}',
             value: 1.0,
             currency: 'USD'
           });

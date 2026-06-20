@@ -22,7 +22,7 @@ const steps = [
     time: "60 seconds",
     title: "Tell Us About Your Property",
     description:
-      "Fill out our short form or call/text us at 509-666-9518. We just need a property address and a little context. No repair prep, no listing work, no cleaning before you ask for an offer.",
+      "Fill out our short form or call/text us at 509-822-5460. We just need a property address and a little context. No repair prep, no listing work, no cleaning before you ask for an offer.",
     details: [
       "Takes about 60 seconds with no obligation",
       "We never share your information with third parties",
@@ -74,7 +74,7 @@ const faqs = [
   },
   {
     q: "Are you real estate agents?",
-    a: "No. Dominion Homes, LLC is a real estate investment company. We buy properties directly. We are not licensed real estate agents or brokers, and this is not a solicitation for listings.",
+    a: "No. Dominion Homes, operated by Dominion Group LLC, is a real estate investment company. We buy properties directly. We are not licensed real estate agents or brokers, and this is not a solicitation for listings.",
   },
   {
     q: "What areas do you buy in?",
@@ -291,10 +291,10 @@ export default function HowWeWorkPage() {
               Get My Cash Offer
             </Link>
             <a
-              href="sms:5096669518"
+              href="sms:5098225460"
               className="inline-flex items-center gap-2 text-lg font-medium text-white/90 transition hover:text-white"
             >
-              Or text us: 509-666-9518
+              Or text us: 509-822-5460
             </a>
           </div>
           <SmsDisclosure tone="dark" />

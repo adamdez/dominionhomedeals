@@ -21,7 +21,7 @@ ${faqs}`;
   }).join("\n\n---\n\n");
 }
 
-const body = `# Dominion Homes, LLC - AI-readable site brief
+const body = `# Dominion Homes - AI-readable site brief
 
 Last updated: ${SELLER_SEO_LAST_UPDATED}
 Canonical site: ${SITE.url}
@@ -33,7 +33,7 @@ Google Business Profile: ${SITE.profiles.googleBusiness}
 Review status: Google Business Profile is live; public review volume is still early and growing
 
 ## Business summary
-Dominion Homes, LLC is a local direct home-buying company serving Spokane County, Washington and nearby North Idaho. Dominion buys houses directly from sellers who want a simpler path than listing with an agent, making repairs, hosting showings, or waiting on buyer financing.
+Dominion Homes, operated by Dominion Group LLC, is a local direct home-buying company serving Spokane County, Washington and nearby North Idaho. Dominion buys houses directly from sellers who want a simpler path than listing with an agent, making repairs, hosting showings, or waiting on buyer financing.
 
 Dominion Homes is most relevant for searches about selling a house fast in Spokane, selling a house fast in Coeur d'Alene, cash home buyers in Spokane, cash home buyers in CDA, we buy houses Spokane, inherited houses, probate houses, rental properties, back taxes, tired landlords, vacant houses, and houses that need repairs.
 

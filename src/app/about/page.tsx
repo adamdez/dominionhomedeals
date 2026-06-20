@@ -160,7 +160,7 @@ export default function AboutPage() {
                     </svg>
                   </div>
                   <div>
-                    <p className="font-medium text-ink-600">Call or text 509-666-9518</p>
+                    <p className="font-medium text-ink-600">Call or text 509-822-5460</p>
                     <p className="mt-1 text-sm text-ink-400">A real person answers.</p>
                   </div>
                 </div>
@@ -249,7 +249,7 @@ export default function AboutPage() {
       <section className="border-t border-sage-100 bg-cream-50 py-12">
         <div className="mx-auto max-w-3xl px-5 text-center">
           <p className="text-xs leading-relaxed text-ink-300">
-            Dominion Homes, LLC is a real estate investment company. We are principals, not licensed real estate agents
+            Dominion Homes, operated by Dominion Group LLC, is a real estate investment company. We are principals, not licensed real estate agents
             or brokers. We buy properties directly. We are not affiliated with any government agency. This is not a
             solicitation for listings. Serving Spokane County, WA and Kootenai County, ID.
           </p>
@@ -276,10 +276,10 @@ export default function AboutPage() {
               Read seller stories
             </Link>
             <a
-              href="sms:5096669518"
+              href="sms:5098225460"
               className="inline-flex items-center gap-2 text-lg font-medium text-white/90 transition hover:text-white"
             >
-              Or text us: 509-666-9518
+              Or text us: 509-822-5460
             </a>
           </div>
           <SmsDisclosure tone="dark" />
