@@ -150,7 +150,7 @@ const listings: Record<string, OffMarketListing> = {
     actionSteps: [],
     submitLabel: 'Request property details',
     sourceNote:
-      'As of July 23, 2026, the asking price is $143,000. Spokane County records show parcel 35031.0213, approximately 15,244 sq ft / 0.35 acre, and LI zoning. Exterior photos were taken July 23, 2026. The street-view photo is included for area context; the finished commercial building on the right is the neighboring property and is not included. Interior photos are coming soon. Buyer should verify the county information and intended use.',
+      'As of July 23, 2026, the asking price is $143,000. Spokane County records show parcel 35031.0213, approximately 15,244 sq ft / 0.35 acre, and LI zoning. Exterior photos were taken July 23, 2026. The street-view photos are included for area context; the finished commercial building and trailer on the right are neighboring property and are not included. Interior photos are coming soon. Buyer should verify the county information and intended use.',
     dueDiligenceNote:
       'Sold as-is. Buyer needs to verify title, property lines, access, condition of the buildings, manufactured-home title and status, utilities, cleanup or removal costs, zoning, permitted use, drainage, parking, environmental issues, permits, and whether the property will work for the buyer.',
   },
