@@ -262,19 +262,21 @@ export default async function OffMarketListingPage({ params }: { params: Promise
                   </a>
                 ) : null}
               </div>
-              <div className="rounded-2xl border border-amber-200/80 bg-amber-50/80 p-6">
-                <h2 className="font-display text-xl font-semibold text-ink-700 mb-4">{actionTitle}</h2>
-                <div className="grid gap-4 sm:grid-cols-2">
-                  {actionSteps.map(([step, text]) => (
-                    <div key={step} className="flex gap-3 rounded-xl bg-white/75 p-4 text-sm text-ink-600">
-                      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-forest-700 text-xs font-semibold text-white">
-                        {step}
-                      </span>
-                      <p className="leading-relaxed">{text}</p>
-                    </div>
-                  ))}
+              {actionSteps.length ? (
+                <div className="rounded-2xl border border-amber-200/80 bg-amber-50/80 p-6">
+                  <h2 className="font-display text-xl font-semibold text-ink-700 mb-4">{actionTitle}</h2>
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    {actionSteps.map(([step, text]) => (
+                      <div key={step} className="flex gap-3 rounded-xl bg-white/75 p-4 text-sm text-ink-600">
+                        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-forest-700 text-xs font-semibold text-white">
+                          {step}
+                        </span>
+                        <p className="leading-relaxed">{text}</p>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              </div>
+              ) : null}
             </div>
 
             <div className="lg:col-span-1">
