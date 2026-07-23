@@ -163,7 +163,7 @@ const listings: Record<string, OffMarketListing> = {
     lng: -117.34977618,
     cardImageSrc: princeton4129Photos[0]?.src ?? '/images/4129-e-princeton-ave/IMG_0206.webp',
     countySearchUrl: 'https://cp.spokanecounty.org/scout/propertyinformation/?PID=35031.0213',
-    countySearchLabel: 'Spokane County SCOUT record',
+    countySearchLabel: 'View Spokane County SCOUT parcel record',
     contactName: 'Adam',
     contactPhone: '5095907091',
     contactPhoneDisplay: '509-590-7091',

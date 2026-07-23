@@ -251,6 +251,16 @@ export default async function OffMarketListingPage({ params }: { params: Promise
                     {l.sourceNote}
                   </p>
                 ) : null}
+                {countyUrl ? (
+                  <a
+                    href={countyUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-4 inline-flex text-sm font-semibold text-forest-700 underline decoration-forest-300 underline-offset-4 transition hover:text-forest-500"
+                  >
+                    {countyLabel}
+                  </a>
+                ) : null}
               </div>
               <div className="rounded-2xl border border-amber-200/80 bg-amber-50/80 p-6">
                 <h2 className="font-display text-xl font-semibold text-ink-700 mb-4">{actionTitle}</h2>
