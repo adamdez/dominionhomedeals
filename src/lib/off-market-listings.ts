@@ -4,6 +4,7 @@ import riversideTrailer29Photos from '@/data/riverside-trailer-29-photos.json'
 import cleveland3314Photos from '@/data/3314-e-cleveland-photos.json'
 import virgilWay6714Photos from '@/data/6714-virgil-way-photos.json'
 import wiscomb2443Photos from '@/data/2443-n-wiscomb-st-photos.json'
+import princeton4129Photos from '@/data/4129-e-princeton-ave-photos.json'
 
 export type OffMarketPhoto = { src: string; alt: string }
 
@@ -61,6 +62,130 @@ export type OffMarketListing = {
 }
 
 const listings: Record<string, OffMarketListing> = {
+  '4129-e-princeton-ave': {
+    slug: '4129-e-princeton-ave',
+    status: 'active',
+    title: '4129 E Princeton Ave',
+    locationLine: 'Spokane, WA 99217',
+    priceDisplay: '$143,000',
+    priceNumeric: 143000,
+    eyebrow: 'Private offering - Hillyard LI owner-user opportunity',
+    tags: [
+      '$143K asking',
+      'LI zoning',
+      '15,244 sq ft lot',
+      'About $9.38 / land sq ft',
+      'Detached shop',
+      'Contractor-yard lane',
+    ],
+    beds: 'N/A',
+    baths: 'N/A',
+    sqft: '15,244 lot',
+    lot: '0.35 acre',
+    year: 'Buyer verify',
+    county: 'Spokane County',
+    streetAddress: '4129 E Princeton Ave',
+    city: 'Spokane',
+    state: 'WA',
+    zip: '99217',
+    conditionSummary:
+      '$143,000 for a 0.35-acre LI-zoned site in Hillyard with an existing manufactured home, detached shop, outbuildings, open yard area, and visible utility equipment. The land and industrial location are the play.',
+    summary:
+      'Private off-market LI-zoned property at 4129 E Princeton Ave in Spokane, WA. Asking $143,000 for approximately 15,244 square feet of land with an existing manufactured home, detached two-bay shop, outbuildings, yard area, and visible utility equipment. Potential contractor yard, compact shop and yard, service business, storage, staging, or nearby owner-user expansion opportunity, subject to buyer verification.',
+    paragraphs: [
+      'This is not a conventional residential flip. The opportunity is the LI-zoned land, street access, yard area, existing detached shop, and a price that gives a small owner-user or contractor a practical entry point into an industrial pocket.',
+      'At $143,000, the asking price is approximately $9.38 per square foot on the reported 15,244-square-foot parcel. The strongest concepts to investigate are a contractor or equipment yard, a compact shop and office with yard space, service or fabrication support, secure storage and staging, or expansion for an owner already operating nearby.',
+      'The existing manufactured home and other improvements are in rough, as-is condition. A buyer should underwrite removal, cleanup, repair, or repurposing based on its own plan and verify access, active utilities and capacity, slope, parking, stormwater, screening, title, environmental condition, and City approvals before relying on any use.',
+    ],
+    highlights: [
+      { text: '$143,000 asking price' },
+      { text: 'Approximately 15,244 sq ft / 0.35 acre in Spokane city' },
+      { text: 'LI zoning confirmed in the Spokane County property layer' },
+      { text: 'Approximately $9.38 per land square foot at the asking price' },
+      { text: 'Existing detached two-bay shop, storage shed, manufactured home, and open yard area' },
+      { text: 'Visible street access and utility equipment; service status and capacity must be verified' },
+      { text: 'Best-fit lane: contractor yard, compact shop and yard, service business, storage, or staging' },
+      { text: 'Potential expansion or assemblage angle for a nearby industrial owner-user' },
+      { text: 'As-is sale; buyer to verify all structures, use approvals, site work, and development assumptions' },
+    ],
+    buyerOptions: [
+      {
+        title: 'Contractor or equipment yard',
+        body: 'The lot size and LI setting may fit a smaller contractor needing equipment, trailer, material, or service-vehicle staging without paying for a much larger industrial parcel.',
+      },
+      {
+        title: 'Compact shop plus yard',
+        body: 'The detached shop and open site area give an owner-user a starting point to investigate a small shop and office operation with outdoor support space.',
+      },
+      {
+        title: 'Service or fabrication support',
+        body: 'LI zoning can support a range of industrial service, repair, production, warehouse, wholesale, and commercial-parking uses, subject to the buyer confirming its exact operation with the City.',
+      },
+      {
+        title: 'Nearby owner-user expansion',
+        body: 'For an operator already established in the pocket, the site may be more valuable as added parking, storage, yard capacity, or a future assemblage than as a stand-alone development.',
+      },
+    ],
+    facts: [
+      ['Address', '4129 E Princeton Ave'],
+      ['City', 'Spokane'],
+      ['State', 'Washington'],
+      ['ZIP Code', '99217'],
+      ['County', 'Spokane County'],
+      ['Parcel', '35031.0213'],
+      ['Status', 'Available for buyer review'],
+      ['Asking price', '$143,000'],
+      ['Approx. land price', '$9.38 per sq ft based on the reported parcel area'],
+      ['Sale type', 'Private as-is opportunity'],
+      ['Zoning', 'LI - Light Industrial; buyer to verify its exact use and approvals'],
+      ['Lot size', 'Approximately 15,244 sq ft / 0.35 acre'],
+      ['Assessor use', 'Other Residential'],
+      ['Existing improvements', 'Manufactured home, detached two-bay shop, storage shed, and other exterior improvements - all as-is'],
+      ['Best-fit buyer', 'Small industrial owner-user, contractor, service operator, or nearby business needing yard or expansion area'],
+      ['Key diligence', 'Access, title, structure status, removal scope, utilities, slope, parking, stormwater, screening, environmental condition, and buildability'],
+    ],
+    photos: princeton4129Photos as OffMarketPhoto[],
+    neighborhoodTitle: 'Hillyard light-industrial pocket',
+    neighborhoodBody:
+      'The property sits in an established Hillyard industrial area with a mix of service, shop, yard, storage, and owner-user activity. Its strongest buyer is likely someone who values a smaller LI foothold and practical yard or shop utility more than a large warehouse footprint.',
+    distanceChips: [
+      { label: 'Asking', value: '$143K' },
+      { label: 'Zoning', value: 'LI' },
+      { label: 'Lot', value: '0.35 acre' },
+      { label: 'Land rate', value: '~$9.38/sf' },
+      { label: 'Primary lane', value: 'Shop + yard' },
+      { label: 'Condition', value: 'As-is' },
+    ],
+    mapQuery: '4129 E Princeton Ave Spokane WA 99217',
+    leadSource: 'off-market-4129-e-princeton-ave',
+    lat: 47.69965971,
+    lng: -117.34977618,
+    cardImageSrc: princeton4129Photos[0]?.src ?? '/images/4129-e-princeton-ave/IMG_0206.webp',
+    countySearchUrl: 'https://cp.spokanecounty.org/scout/propertyinformation/?PID=35031.0213',
+    countySearchLabel: 'Spokane County SCOUT record',
+    contactName: 'Adam',
+    contactPhone: '5095907091',
+    contactPhoneDisplay: '509-590-7091',
+    contactEmail: 'adam@dominionhomedeals.com',
+    primaryCtaLabel: 'Request property details',
+    secondaryCtaLabel: 'Text Adam',
+    smsBody:
+      'I want to review 4129 E Princeton Ave at the $143,000 asking price. Can I get the property details?',
+    actionTitle: 'How to review this opportunity',
+    actionIntro:
+      'Send your contact info, intended use, funding path, and timing. Adam will get you the next step.',
+    actionSteps: [
+      ['1', 'Review the exterior photos, $143K asking price, parcel facts, and LI use lane.'],
+      ['2', 'Underwrite the site first as a contractor yard, compact shop and yard, or nearby owner-user expansion.'],
+      ['3', 'Verify your exact use, access, utilities, structure status, cleanup, and site-development requirements.'],
+      ['4', 'Submit your contact details, proof-of-funds path, intended use, and timing.'],
+    ],
+    submitLabel: 'Request property details',
+    sourceNote:
+      'Source note as of 2026-07-23: Adam set the asking price at $143,000. Parcel 35031.0213, the approximately 15,244-square-foot / 0.35-acre area, Spokane city location, LI zoning, Hillyard neighborhood, and Other Residential assessor use were checked against the Spokane County property layer. Exterior photos were captured July 23, 2026. Buyer should independently verify all public-record facts and intended-use requirements.',
+    dueDiligenceNote:
+      'This is a private as-is opportunity. Photos, maps, zoning notes, use concepts, and public-record facts are for initial buyer review only and are not a representation of entitlement or utility capacity. Buyer must independently verify title, access, boundaries, acreage, structures, manufactured-home status, removal and cleanup scope, utilities, slope, parking, stormwater, screening, environmental condition, code compliance, permits, and buildability before closing.',
+  },
   '2443-n-wiscomb-st': {
     slug: '2443-n-wiscomb-st',
     status: 'active',
