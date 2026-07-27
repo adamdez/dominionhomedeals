@@ -75,8 +75,8 @@ const listings: Record<string, OffMarketListing> = {
       'Light industrial zoning',
       '0.35-acre lot',
       'Two-bay shop',
-      'Exterior photos only',
-      'Interior photos coming soon',
+      'House + shop photos',
+      'Sold as-is',
     ],
     beds: 'N/A',
     baths: 'N/A',
@@ -89,13 +89,13 @@ const listings: Record<string, OffMarketListing> = {
     state: 'WA',
     zip: '99217',
     conditionSummary:
-      'Off-market light industrial property on 0.35 acre in Hillyard. Includes a manufactured home, two-bay shop, storage shed, and open yard. Exterior photos are posted now. Interior photos are coming soon.',
+      'Off-market light industrial property on 0.35 acre in Hillyard. Includes a manufactured home, two-bay shop, storage shed, and open yard. Interior and exterior photos are posted.',
     summary:
-      'Off-market property at 4129 E Princeton Ave in Spokane. Asking $143,000. The 0.35-acre light industrial lot has a manufactured home, two-bay shop, storage shed, open yard, and utility equipment. It may work for a contractor, small shop, service business, equipment parking, or storage. Exterior photos are posted now, and interior photos are coming soon.',
+      'Off-market property at 4129 E Princeton Ave in Spokane. Asking $143,000. The 0.35-acre light industrial lot has a manufactured home, two-bay shop, storage shed, open yard, and utility equipment. It may work for a contractor, small shop, service business, equipment parking, or storage. Interior and exterior photos are posted.',
     paragraphs: [
       'The main value here is the light industrial land, the two-bay shop, the open yard, and the location. This is better suited for a contractor or small business than a regular house flip.',
       'The asking price is $143,000, which works out to about $9.38 per square foot based on the reported 15,244-square-foot lot. Possible uses include a contractor yard, small shop and office, repair or service business, equipment parking, material storage, or extra space for a nearby business.',
-      'The property is being sold as-is and will need cleanup. Exterior photos are posted now. Interior photos of the manufactured home and shop are coming soon. Buyers need to check the buildings, utilities, access, zoning, permits, and whether the property will work for their intended use.',
+      'The property is being sold as-is and will need cleanup. Current photos show the manufactured home, shop, yard, and utility panels. Buyers need to check the buildings, utilities, access, zoning, permits, and whether the property will work for their intended use.',
     ],
     highlights: [
       { text: '$143,000 asking price' },
@@ -103,7 +103,7 @@ const listings: Record<string, OffMarketListing> = {
       { text: 'Light industrial zoning' },
       { text: 'About $9.38 per square foot of land at the asking price' },
       { text: 'Two-bay shop, storage shed, manufactured home, and open yard' },
-      { text: 'Exterior photos are posted now; interior photos are coming soon' },
+      { text: 'Interior and exterior photos of the house, shop, and yard are posted' },
       { text: 'Possible contractor yard, small shop, service business, parking, or storage use' },
       { text: 'Sold as-is; buyer needs to verify condition, utilities, zoning, permits, and intended use' },
     ],
@@ -115,7 +115,7 @@ const listings: Record<string, OffMarketListing> = {
       ['Zoning', 'LI - Light Industrial; buyer needs to confirm its intended use'],
       ['Assessor use', 'Other Residential'],
       ['Existing improvements', 'Manufactured home, two-bay shop, storage shed, and other exterior improvements - all as-is'],
-      ['Photos', 'Exterior photos are posted now; interior photos are coming soon'],
+      ['Photos', 'Exterior, manufactured-home interior, and shop photos posted July 2026'],
       ['Sale type', 'Off-market, sold as-is'],
       ['Best fit', 'Contractor, small shop, service business, or nearby business needing more yard or storage space'],
       ['Buyer needs to check', 'Buildings, title, access, utilities, cleanup, zoning, permits, drainage, parking, and intended use'],
@@ -150,7 +150,7 @@ const listings: Record<string, OffMarketListing> = {
     actionSteps: [],
     submitLabel: 'Request property details',
     sourceNote:
-      'As of July 23, 2026, the asking price is $143,000. Spokane County records show parcel 35031.0213, approximately 15,244 sq ft / 0.35 acre, and LI zoning. Exterior photos were taken July 23, 2026. The street-view photos are included for area context; the finished commercial building and trailer on the right are neighboring property and are not included. Interior photos are coming soon. Buyer should verify the county information and intended use.',
+      'As of July 23, 2026, the asking price is $143,000. Spokane County records show parcel 35031.0213, approximately 15,244 sq ft / 0.35 acre, and LI zoning. Exterior photos were taken July 23, 2026. Interior photos of the manufactured home and shop were taken July 26, 2026. The street-view photos are included for area context; the finished commercial building and trailer on the right are neighboring property and are not included. Buyer should verify the county information and intended use.',
     dueDiligenceNote:
       'Sold as-is. Buyer needs to verify title, property lines, access, condition of the buildings, manufactured-home title and status, utilities, cleanup or removal costs, zoning, permitted use, drainage, parking, environmental issues, permits, and whether the property will work for the buyer.',
   },
