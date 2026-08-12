@@ -1,5 +1,9 @@
 import Script from "next/script";
-import { GOOGLE_ADS_CALL_LABEL, GOOGLE_ADS_CONVERSION_ID } from "@/lib/tracking";
+import {
+  ADS_TRACKING_EXCLUDED_PATHS,
+  GOOGLE_ADS_CALL_LABEL,
+  GOOGLE_ADS_CONVERSION_ID,
+} from "@/lib/tracking";
 
 const GA_MEASUREMENT_ID = "G-5GJ6T8KXLE";
 
@@ -19,9 +23,20 @@ export function GoogleAnalytics() {
             script.src = 'https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}';
             document.head.appendChild(script);
           };
+          window.__dominionAdsExcludedPaths = ${JSON.stringify(ADS_TRACKING_EXCLUDED_PATHS)};
+          window.__dominionAdsTrackingBlocked = function() {
+            try {
+              var path = (window.location.pathname || '/').replace(/\\/+$/, '') || '/';
+              return window.__dominionAdsExcludedPaths.indexOf(path) !== -1;
+            } catch (error) {
+              return false;
+            }
+          };
           window.gtag('js', new Date());
           window.gtag('config', '${GA_MEASUREMENT_ID}');
-          window.gtag('config', '${GOOGLE_ADS_CONVERSION_ID}');
+          if (!window.__dominionAdsTrackingBlocked()) {
+            window.gtag('config', '${GOOGLE_ADS_CONVERSION_ID}');
+          }
         `}
       </Script>
       <Script id="google-analytics-loader" strategy="lazyOnload">
@@ -98,6 +113,10 @@ export function GoogleAnalytics() {
                 page_path: pagePath,
                 cta_location: ctaLocation,
               });
+
+              if (typeof window.__dominionAdsTrackingBlocked === 'function' && window.__dominionAdsTrackingBlocked()) {
+                return;
+              }
 
               window.gtag('event', 'conversion', {
                 send_to: '${GOOGLE_ADS_CONVERSION_ID}/${GOOGLE_ADS_CALL_LABEL}',
