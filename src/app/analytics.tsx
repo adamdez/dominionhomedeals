@@ -1,4 +1,7 @@
+"use client";
+
 import Script from "next/script";
+import { usePathname } from "next/navigation";
 import {
   ADS_TRACKING_EXCLUDED_PATHS,
   GOOGLE_ADS_CALL_LABEL,
@@ -8,6 +11,12 @@ import {
 const GA_MEASUREMENT_ID = "G-5GJ6T8KXLE";
 
 export function GoogleAnalytics() {
+  const pathname = usePathname();
+
+  if (pathname?.startsWith("/land-finder")) {
+    return null;
+  }
+
   return (
     <>
       <Script id="google-analytics-queue" strategy="beforeInteractive">
