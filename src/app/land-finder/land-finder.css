@@ -47,15 +47,21 @@
 .lf-title {
   display: flex;
   min-width: 124px;
+  height: 42px;
   align-items: center;
   gap: 7px;
+  border: 0;
+  border-radius: 6px;
   padding: 0 7px;
+  background: transparent;
+  color: var(--lf-ink);
   font-size: 16px;
   font-weight: 750;
   white-space: nowrap;
 }
 
 .lf-title svg { color: var(--lf-green); }
+.lf-title:hover { background: #eef2ef; }
 
 .lf-search {
   position: relative;
@@ -127,14 +133,32 @@
   color: #a46100;
 }
 
+.lf-toolbar-actions button:first-child { position: relative; }
+.lf-filter-count {
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  display: grid;
+  width: 16px;
+  height: 16px;
+  place-items: center;
+  border: 2px solid var(--lf-paper);
+  border-radius: 50%;
+  background: var(--lf-coral);
+  color: #fff;
+  font-size: 9px;
+  font-weight: 800;
+  line-height: 1;
+}
+
 .lf-filters {
   position: fixed;
   z-index: 19;
   top: calc(max(8px, env(safe-area-inset-top)) + 60px);
   right: 8px;
   display: grid;
-  width: min(660px, calc(100vw - 16px));
-  grid-template-columns: 104px 104px minmax(170px, 1fr) auto auto minmax(110px, auto) 42px;
+  width: min(790px, calc(100vw - 16px));
+  grid-template-columns: 90px 90px minmax(160px, 1fr) auto auto auto minmax(110px, auto) 42px;
   align-items: end;
   gap: 8px;
   padding: 10px;
@@ -191,7 +215,25 @@
   color: var(--lf-green);
 }
 
-.lf-filter-spacer { display: none; }
+.lf-mobile-grid { display: none; }
+
+.lf-reset-filters {
+  display: inline-flex;
+  min-height: 38px;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  border: 1px solid var(--lf-border);
+  border-radius: 5px;
+  padding: 0 10px;
+  background: #fff;
+  color: #42504a;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.lf-reset-filters:disabled { cursor: default; opacity: 0.42; }
+.lf-reset-filters:not(:disabled):hover { background: #eef3f0; }
 
 .lf-search-results {
   position: fixed;
@@ -312,9 +354,12 @@
   background: rgba(251, 252, 251, 0.985);
 }
 
-.lf-drawer-header > div { min-width: 0; }
+.lf-drawer-header > div:first-child { min-width: 0; }
 .lf-parcel-id { margin: 0 0 3px; color: var(--lf-green); font: 700 12px/1.2 var(--font-body), system-ui; }
 .lf-drawer-header h1 { margin: 0; overflow-wrap: anywhere; color: var(--lf-ink); font: 750 18px/1.2 var(--font-body), system-ui; letter-spacing: 0; }
+.lf-location { margin: 4px 0 0; color: var(--lf-muted); font-size: 12px; line-height: 1.25; }
+.lf-drawer-header-actions { display: flex; flex: 0 0 auto; gap: 2px; }
+.lf-drawer-toggle { display: none !important; }
 
 .lf-quick-actions {
   display: grid;
@@ -395,7 +440,7 @@
 }
 .lf-history span { display: inline-flex; align-items: center; gap: 4px; }
 
-.lf-source-actions { display: grid; grid-template-columns: 1fr 1fr 1.15fr; gap: 7px; padding-top: 14px; }
+.lf-source-actions { display: grid; grid-template-columns: 1fr 1fr 1.15fr; gap: 7px; padding-top: 12px; }
 .lf-source-actions a,
 .lf-source-actions button {
   display: inline-flex;
@@ -470,7 +515,7 @@
     align-items: end;
   }
   .lf-filter-wide { grid-column: 1 / -1; }
-  .lf-filter-spacer { display: block; }
+  .lf-mobile-grid { display: flex; }
   .lf-profile { grid-column: 1 / 2; }
   .lf-logout { justify-self: end; }
 
@@ -502,10 +547,28 @@
   .lf-drawer-handle { display: block; position: sticky; z-index: 3; top: 0; width: 38px; height: 4px; margin: 7px auto 0; border-radius: 4px; background: #aeb7b2; }
   .lf-drawer-header { padding-top: 8px; }
   .lf-drawer-header h1 { font-size: 17px; }
+  .lf-drawer-toggle { display: inline-flex !important; }
   .lf-quick-actions button { min-height: 60px; }
   .lf-app:has(.lf-drawer) .maplibregl-ctrl-bottom-right { right: 8px; bottom: min(73dvh, 690px); }
   .lf-app:has(.lf-drawer) .lf-legend,
   .lf-app:has(.lf-drawer) .lf-sync { display: none; }
+
+  .lf-drawer.is-collapsed {
+    max-height: 118px;
+    overflow: hidden;
+    padding-bottom: calc(8px + env(safe-area-inset-bottom));
+  }
+  .lf-drawer.is-collapsed .lf-drawer-body { display: none; }
+  .lf-drawer.is-collapsed .lf-drawer-header { border-bottom: 0; }
+  .lf-app:has(.lf-drawer.is-collapsed) .maplibregl-ctrl-bottom-right { bottom: calc(126px + env(safe-area-inset-bottom)); }
+  .lf-app:has(.lf-drawer.is-collapsed) .lf-legend {
+    display: flex;
+    bottom: calc(126px + env(safe-area-inset-bottom));
+  }
+  .lf-app:has(.lf-drawer.is-collapsed) .lf-sync {
+    display: flex;
+    bottom: calc(168px + env(safe-area-inset-bottom));
+  }
 }
 
 @media (max-width: 390px) {

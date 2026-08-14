@@ -2,6 +2,8 @@
 
 import {
   Check,
+  ChevronDown,
+  ChevronUp,
   Cloud,
   CloudOff,
   Copy,
@@ -14,6 +16,7 @@ import {
   Mail,
   Map as MapIcon,
   Phone,
+  RotateCcw,
   Search,
   SlidersHorizontal,
   X,
@@ -165,6 +168,7 @@ export function LandFinderApp() {
   const [searching, setSearching] = useState(false);
   const [searchResults, setSearchResults] = useState<ParcelFeature[]>([]);
   const [copied, setCopied] = useState(false);
+  const [drawerCollapsed, setDrawerCollapsed] = useState(false);
 
   useEffect(() => {
     const storedProfile = localStorage.getItem(PROFILE_KEY);
@@ -354,7 +358,10 @@ export function LandFinderApp() {
         map.on("click", "land-parcels-fill", (event) => {
           const parcelId = String(event.features?.[0]?.properties?.parcelId || "");
           const parcel = parcelIndexRef.current.get(parcelId);
-          if (parcel) setSelected(parcel);
+          if (parcel) {
+            setSelected(parcel);
+            setDrawerCollapsed(false);
+          }
         });
         map.on("mouseenter", "land-parcels-fill", () => { map.getCanvas().style.cursor = "pointer"; });
         map.on("mouseleave", "land-parcels-fill", () => { map.getCanvas().style.cursor = ""; });
@@ -363,6 +370,7 @@ export function LandFinderApp() {
           const parcel = savedIndexRef.current.get(parcelId);
           if (!parcel) return;
           setSelected(parcel);
+          setDrawerCollapsed(false);
           map.fitBounds(geometryBounds(parcel), { padding: 48, maxZoom: 16, duration: 650 });
         });
         map.on("mouseenter", "saved-parcels-fill", () => { map.getCanvas().style.cursor = "pointer"; });
@@ -499,6 +507,7 @@ export function LandFinderApp() {
 
   function chooseParcel(feature: ParcelFeature) {
     setSelected(feature);
+    setDrawerCollapsed(false);
     setSearchResults([]);
     const map = mapRef.current;
     if (map) map.fitBounds(geometryBounds(feature), { padding: 48, maxZoom: 16, duration: 650 });
@@ -513,9 +522,14 @@ export function LandFinderApp() {
     if (response?.ok) {
       const body = (await response.json()) as { parcels: ParcelFeatureCollection };
       setSearchResults(body.parcels.features);
-      if (body.parcels.features.length === 1) chooseParcel(body.parcels.features[0]);
+      if (body.parcels.features.length === 1) {
+        chooseParcel(body.parcels.features[0]);
+      } else if (body.parcels.features.length === 0) {
+        setViewMessage(`No parcel matches "${searchQuery.trim()}"`);
+      }
     } else {
       setSearchResults([]);
+      setViewMessage("Parcel search unavailable");
     }
     setSearching(false);
   }
@@ -532,26 +546,59 @@ export function LandFinderApp() {
     window.location.reload();
   }
 
+  function resetCountyView() {
+    setSelected(null);
+    setDrawerCollapsed(false);
+    setSearchQuery("");
+    setSearchResults([]);
+    setFiltersOpen(false);
+    mapRef.current?.fitBounds(
+      [[SPOKANE_COUNTY_BOUNDS.west, SPOKANE_COUNTY_BOUNDS.south], [SPOKANE_COUNTY_BOUNDS.east, SPOKANE_COUNTY_BOUNDS.north]],
+      { padding: 24, maxZoom: 9.2, duration: 650 },
+    );
+  }
+
+  function resetFilters() {
+    setMinAcres("0.5");
+    setMaxAcres("");
+    setMode("vacant");
+    setDistressOnly(false);
+    setSavedOnly(false);
+  }
+
   const selectedId = selected?.properties.parcelId || "";
   const selectedReview = selectedId ? reviews.get(selectedId) : undefined;
   const scoutUrl = selected ? `https://cp.spokanecounty.org/scout/propertyinformation/?PID=${encodeURIComponent(selectedId)}` : "#";
   const zillowQuery = selected ? (selected.properties.address.toLowerCase().includes("unassigned") ? `${selectedId} Spokane County WA` : `${selected.properties.address} ${selected.properties.city} WA`) : "";
   const zillowUrl = `https://www.zillow.com/homes/${encodeURIComponent(zillowQuery)}_rb/`;
+  const selectedLocation = selected
+    ? [selected.properties.city, [selected.properties.state, selected.properties.zip].filter(Boolean).join(" ")].filter(Boolean).join(", ")
+    : "";
+  const activeFilterCount = [
+    minAcres !== "0.5",
+    maxAcres !== "",
+    mode !== "vacant",
+    distressOnly,
+    savedOnly,
+  ].filter(Boolean).length;
 
   return (
     <div className="lf-app">
       <div ref={mapContainerRef} className="lf-map" aria-label="Spokane County parcel map" />
 
       <header className="lf-toolbar">
-        <div className="lf-title" title="Dominion Homes Land Finder">
+        <button className="lf-title" onClick={resetCountyView} title="Show all Spokane County" aria-label="Show all Spokane County">
           <MapIcon size={19} aria-hidden="true" />
           <span>Land Finder</span>
-        </div>
+        </button>
         <form className="lf-search" onSubmit={search}>
           <Search size={18} aria-hidden="true" />
           <input
             value={searchQuery}
-            onChange={(event) => setSearchQuery(event.target.value)}
+            onChange={(event) => {
+              setSearchQuery(event.target.value);
+              if (searchResults.length) setSearchResults([]);
+            }}
             placeholder="Address or APN"
             aria-label="Search by address or parcel number"
           />
@@ -562,6 +609,7 @@ export function LandFinderApp() {
         <div className="lf-toolbar-actions">
           <button className={filtersOpen ? "is-active" : ""} onClick={() => setFiltersOpen((value) => !value)} title="Filters" aria-label="Filters">
             <SlidersHorizontal size={19} />
+            {activeFilterCount ? <span className="lf-filter-count">{activeFilterCount}</span> : null}
           </button>
           <button className={aerial ? "is-active" : ""} onClick={() => setAerial((value) => !value)} title={aerial ? "Street map" : "Aerial map"} aria-label={aerial ? "Use street map" : "Use aerial map"}>
             <Layers3 size={19} />
@@ -594,7 +642,8 @@ export function LandFinderApp() {
           </div>
           <label className="lf-check"><input type="checkbox" checked={distressOnly} onChange={(event) => setDistressOnly(event.target.checked)} /> Distress tagged</label>
           <label className="lf-check"><input type="checkbox" checked={savedOnly} onChange={(event) => setSavedOnly(event.target.checked)} /> Favorites</label>
-          <div className="lf-filter-spacer" />
+          <label className="lf-check lf-mobile-grid"><input type="checkbox" checked={gridVisible} onChange={(event) => setGridVisible(event.target.checked)} /> County grid</label>
+          <button className="lf-reset-filters" onClick={resetFilters} disabled={!activeFilterCount} title="Reset filters"><RotateCcw size={16} /> Reset</button>
           <label className="lf-profile">
             <span>Working as</span>
             <select value={profile} onChange={(event) => setProfile(event.target.value)}>
@@ -634,17 +683,24 @@ export function LandFinderApp() {
       </div>
 
       {selected && draft ? (
-        <aside className="lf-drawer" aria-label={`Parcel ${selectedId}`}>
+        <aside className={`lf-drawer ${drawerCollapsed ? "is-collapsed" : ""}`} aria-label={`Parcel ${selectedId}`}>
           <div className="lf-drawer-handle" aria-hidden="true" />
           <div className="lf-drawer-header">
             <div>
               <p className="lf-parcel-id">APN {selectedId}</p>
               <h1>{parcelAddress(selected)}</h1>
+              {selectedLocation ? <p className="lf-location">{selectedLocation}</p> : null}
             </div>
-            <button onClick={() => setSelected(null)} aria-label="Close parcel" title="Close"><X size={20} /></button>
+            <div className="lf-drawer-header-actions">
+              <button className="lf-drawer-toggle" onClick={() => setDrawerCollapsed((value) => !value)} aria-label={drawerCollapsed ? "Expand parcel details" : "Collapse parcel details"} title={drawerCollapsed ? "Expand" : "Collapse"}>
+                {drawerCollapsed ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+              </button>
+              <button onClick={() => setSelected(null)} aria-label="Close parcel" title="Close"><X size={20} /></button>
+            </div>
           </div>
 
-          <div className="lf-quick-actions">
+          <div className="lf-drawer-body">
+            <div className="lf-quick-actions">
             <button className={draft.favorite ? "is-favorite" : ""} onClick={() => updateReview({ favorite: !draft.favorite })}>
               <Heart size={20} fill={draft.favorite ? "currentColor" : "none"} />
               {draft.favorite ? "Saved" : "Save"}
@@ -657,16 +713,31 @@ export function LandFinderApp() {
               <Mail size={20} />
               {draft.letterSentAt ? "Letter sent" : "Mark letter"}
             </button>
-          </div>
+            </div>
 
-          <div className="lf-facts">
+            <div className="lf-facts">
             <div><span>Acres</span><strong>{selected.properties.acres.toLocaleString()}</strong></div>
             <div><span>Land value</span><strong>{formatMoney(selected.properties.landValue)}</strong></div>
             <div><span>Assessor use</span><strong>{selected.properties.useDescription}</strong></div>
             <div><span>Qualification</span><strong>{selected.properties.qualification === "confirmed_vacant" ? "Vacant" : "Verify improvements"}</strong></div>
-          </div>
+            </div>
 
-          <section className="lf-review-section">
+            <div className="lf-source-actions">
+              <a href={scoutUrl} target="_blank" rel="noreferrer" title="Open official SCOUT parcel record">SCOUT <ExternalLink size={15} /></a>
+              <a href={zillowUrl} target="_blank" rel="noreferrer" title="Search Zillow">Zillow <ExternalLink size={15} /></a>
+              <button
+                onClick={async () => {
+                  await navigator.clipboard.writeText(selectedId);
+                  setCopied(true);
+                  window.setTimeout(() => setCopied(false), 1200);
+                }}
+                title="Copy parcel number"
+              >
+                {copied ? <Check size={16} /> : <Copy size={16} />} {copied ? "Copied" : "Copy APN"}
+              </button>
+            </div>
+
+            <section className="lf-review-section">
             <div className="lf-review-state" role="group" aria-label="Review status">
               <button className={draft.reviewState === "unreviewed" ? "is-active" : ""} onClick={() => updateReview({ reviewState: "unreviewed" })}>New</button>
               <button className={draft.reviewState === "maybe" ? "is-active" : ""} onClick={() => updateReview({ reviewState: "maybe" })}>Maybe</button>
@@ -716,23 +787,9 @@ export function LandFinderApp() {
               <span><Mail size={14} /> {formatActionDate(draft.letterSentAt)}</span>
               {selectedReview?.updatedBy ? <span><Check size={14} /> {selectedReview.updatedBy}</span> : null}
             </div>
-          </section>
-
-          <div className="lf-source-actions">
-            <a href={scoutUrl} target="_blank" rel="noreferrer" title="Open official SCOUT parcel record">SCOUT <ExternalLink size={15} /></a>
-            <a href={zillowUrl} target="_blank" rel="noreferrer" title="Search Zillow">Zillow <ExternalLink size={15} /></a>
-            <button
-              onClick={async () => {
-                await navigator.clipboard.writeText(selectedId);
-                setCopied(true);
-                window.setTimeout(() => setCopied(false), 1200);
-              }}
-              title="Copy parcel number"
-            >
-              {copied ? <Check size={16} /> : <Copy size={16} />} {copied ? "Copied" : "Copy APN"}
-            </button>
+            </section>
+            <p className="lf-source-note">Spokane County Assessor data · owners intentionally not stored</p>
           </div>
-          <p className="lf-source-note">Spokane County Assessor data · owners intentionally not stored</p>
         </aside>
       ) : null}
     </div>
