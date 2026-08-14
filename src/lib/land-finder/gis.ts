@@ -59,6 +59,7 @@ type ArcGisCountResponse = {
 
 function landUseWhere(mode: LandMode): string {
   if (mode === "vacant") return "prop_use_desc = 'Vacant Land'";
+  if (mode === "all") return "";
   return `prop_use_desc IN (${EXPANDED_LAND_USES.map((value) => `'${value}'`).join(",")})`;
 }
 
@@ -116,7 +117,7 @@ function makeParcelWhere(mode: LandMode, minAcres: number, maxAcres: number): st
     `acreage >= ${minAcres}`,
     `acreage <= ${maxAcres}`,
     landUseWhere(mode),
-  ].join(" AND ");
+  ].filter(Boolean).join(" AND ");
 }
 
 async function fetchArcGis<T>(params: URLSearchParams): Promise<T> {
@@ -184,7 +185,7 @@ export async function searchParcels(query: string, mode: LandMode): Promise<Parc
   const searchWhere = parcelNumber
     ? `PID_NUM = '${escapeSqlLiteral(normalized)}'`
     : `site_address LIKE '%${escapeSqlLiteral(normalized)}%'`;
-  const where = `seg_status LIKE 'Active%' AND ${landUseWhere(mode)} AND ${searchWhere}`;
+  const where = ["seg_status LIKE 'Active%'", landUseWhere(mode), searchWhere].filter(Boolean).join(" AND ");
   const params = new URLSearchParams({
     f: "geojson",
     where,

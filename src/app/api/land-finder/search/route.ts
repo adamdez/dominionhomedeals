@@ -11,7 +11,8 @@ export async function GET(request: NextRequest) {
   }
 
   const query = request.nextUrl.searchParams.get("q")?.trim() || "";
-  const mode: LandMode = request.nextUrl.searchParams.get("mode") === "expanded" ? "expanded" : "vacant";
+  const requestedMode = request.nextUrl.searchParams.get("mode");
+  const mode: LandMode = requestedMode === "expanded" || requestedMode === "all" ? requestedMode : "vacant";
   if (query.length < 3 || query.length > 80) {
     return NextResponse.json({ error: "Enter an APN or at least 3 address characters" }, { status: 400 });
   }

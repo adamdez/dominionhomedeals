@@ -34,7 +34,8 @@ export async function GET(request: NextRequest) {
   const bbox = parseBbox(request.nextUrl.searchParams.get("bbox"));
   const minAcres = Math.max(0, parseNumber(request.nextUrl.searchParams.get("minAcres"), 0.5));
   const maxAcres = Math.min(100_000, parseNumber(request.nextUrl.searchParams.get("maxAcres"), 100_000));
-  const mode: LandMode = request.nextUrl.searchParams.get("mode") === "expanded" ? "expanded" : "vacant";
+  const requestedMode = request.nextUrl.searchParams.get("mode");
+  const mode: LandMode = requestedMode === "expanded" || requestedMode === "all" ? requestedMode : "vacant";
   if (!bbox || minAcres > maxAcres) {
     return NextResponse.json({ error: "Invalid parcel view" }, { status: 400 });
   }

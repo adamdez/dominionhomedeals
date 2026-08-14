@@ -4,6 +4,7 @@ import {
   Check,
   ChevronDown,
   ChevronUp,
+  CircleAlert,
   Cloud,
   CloudOff,
   Copy,
@@ -25,14 +26,22 @@ import {
 import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { GeoJSONSource, Map as MapLibreMap } from "maplibre-gl";
 import type {
+  DistressCategory,
   LandFinderReview,
   LandFinderReviewInput,
   LandMode,
   ParcelFeature,
   ParcelFeatureCollection,
+  ParcelSignalSummary,
 } from "@/lib/land-finder/types";
-import { EMPTY_REVIEW_INPUT } from "@/lib/land-finder/types";
+import { DISTRESS_CATEGORIES, EMPTY_REVIEW_INPUT } from "@/lib/land-finder/types";
 import { SPOKANE_COUNTY_BOUNDS } from "@/lib/land-finder/gis";
+import {
+  DISTRESS_CATEGORY_LABELS,
+  summaryMatchesSignalFilters,
+  summaryQualifiesAsDistress,
+} from "@/lib/land-finder/signals";
+import { ParcelSignalPanel } from "@/components/land-finder/ParcelSignalPanel";
 
 const EMPTY_PARCELS: ParcelFeatureCollection = { type: "FeatureCollection", features: [] };
 const PENDING_KEY = "dominion-land-finder-pending-v1";
@@ -40,6 +49,7 @@ const PROFILE_KEY = "dominion-land-finder-profile-v1";
 const VIEW_ZOOM_THRESHOLD = 10.7;
 
 type SyncState = "loading" | "ready" | "saving" | "pending" | "auth";
+type SignalState = "loading" | "ready" | "unavailable";
 type ViewportState = { bbox: [number, number, number, number]; zoom: number };
 
 function buildGrid(): GeoJSON.FeatureCollection {
@@ -146,12 +156,15 @@ export function LandFinderApp() {
   const parcelIndexRef = useRef(new Map<string, ParcelFeature>());
   const savedIndexRef = useRef(new Map<string, ParcelFeature>());
   const pendingRef = useRef<Record<string, LandFinderReviewInput>>({});
+  const signalsLoadedAtRef = useRef(0);
   const [mapReady, setMapReady] = useState(false);
   const [viewport, setViewport] = useState<ViewportState | null>(null);
   const [parcels, setParcels] = useState<ParcelFeatureCollection>(EMPTY_PARCELS);
   const [savedParcels, setSavedParcels] = useState<ParcelFeatureCollection>(EMPTY_PARCELS);
   const [selected, setSelected] = useState<ParcelFeature | null>(null);
   const [reviews, setReviews] = useState<Map<string, LandFinderReview>>(new Map());
+  const [signalSummaries, setSignalSummaries] = useState<Map<string, ParcelSignalSummary>>(new Map());
+  const [signalState, setSignalState] = useState<SignalState>("loading");
   const [draft, setDraft] = useState<LandFinderReviewInput | null>(null);
   const [syncState, setSyncState] = useState<SyncState>("loading");
   const [profile, setProfile] = useState("Team");
@@ -160,6 +173,9 @@ export function LandFinderApp() {
   const [maxAcres, setMaxAcres] = useState("");
   const [savedOnly, setSavedOnly] = useState(false);
   const [distressOnly, setDistressOnly] = useState(false);
+  const [signalCategories, setSignalCategories] = useState<DistressCategory[]>([]);
+  const [verifiedOnly, setVerifiedOnly] = useState(false);
+  const [multiSignalOnly, setMultiSignalOnly] = useState(false);
   const [gridVisible, setGridVisible] = useState(true);
   const [aerial, setAerial] = useState(false);
   const [filtersOpen, setFiltersOpen] = useState(false);
@@ -180,6 +196,36 @@ export function LandFinderApp() {
   useEffect(() => {
     localStorage.setItem(PROFILE_KEY, profile);
   }, [profile]);
+
+  const loadSignals = useCallback(async (force = false) => {
+    if (!force && Date.now() - signalsLoadedAtRef.current < 120_000) return;
+    const response = await fetch("/api/land-finder/signals", { cache: "no-store" }).catch(() => null);
+    if (response?.status === 401) {
+      setSyncState("auth");
+      setSignalState("unavailable");
+      return;
+    }
+    if (!response?.ok) {
+      setSignalState("unavailable");
+      return;
+    }
+    const body = (await response.json()) as { summaries?: ParcelSignalSummary[] };
+    setSignalSummaries(new Map((body.summaries || []).map((summary) => [summary.parcelId, summary])));
+    signalsLoadedAtRef.current = Date.now();
+    setSignalState("ready");
+  }, []);
+
+  useEffect(() => {
+    void loadSignals();
+    const refresh = () => void loadSignals();
+    const refreshOnline = () => void loadSignals(true);
+    window.addEventListener("online", refreshOnline);
+    window.addEventListener("focus", refresh);
+    return () => {
+      window.removeEventListener("online", refreshOnline);
+      window.removeEventListener("focus", refresh);
+    };
+  }, [loadSignals]);
 
   const loadReviews = useCallback(async () => {
     const pending = readPendingReviews();
@@ -375,6 +421,24 @@ export function LandFinderApp() {
           filter: ["==", ["get", "parcelId"], ""],
           paint: { "line-color": "#111a17", "line-width": 2.5 },
         });
+        map.addLayer({
+          id: "land-parcels-signal-count",
+          type: "symbol",
+          source: "land-parcels",
+          minzoom: 12.5,
+          layout: {
+            "text-field": ["case", [">", ["get", "signalCount"], 0], ["to-string", ["get", "signalCount"]], ""],
+            "text-size": 11,
+            "text-font": ["Noto Sans Bold"],
+            "text-allow-overlap": false,
+          },
+          paint: {
+            "text-color": "#ffffff",
+            "text-halo-color": "#9d352a",
+            "text-halo-width": 4,
+            "text-halo-blur": 0.5,
+          },
+        });
         map.on("click", "land-parcels-fill", (event) => {
           const parcelId = String(event.features?.[0]?.properties?.parcelId || "");
           const parcel = parcelIndexRef.current.get(parcelId);
@@ -417,17 +481,27 @@ export function LandFinderApp() {
     };
   }, []);
 
+  const signalFilterEnabled = distressOnly || signalCategories.length > 0 || verifiedOnly || multiSignalOnly;
+
   const visibleParcels = useMemo(() => {
     return {
       type: "FeatureCollection" as const,
       features: parcels.features.filter((parcel) => {
         const review = reviews.get(parcel.properties.parcelId);
         if (savedOnly && !review?.favorite) return false;
-        if (distressOnly && review?.distressStatus !== "evidence") return false;
+        if (signalFilterEnabled && !summaryMatchesSignalFilters(
+          signalSummaries.get(parcel.properties.parcelId),
+          {
+            categories: signalCategories,
+            verifiedOnly,
+            multiSignalOnly,
+            manualEvidence: review?.distressStatus === "evidence",
+          },
+        )) return false;
         return true;
       }),
     };
-  }, [distressOnly, parcels, reviews, savedOnly]);
+  }, [multiSignalOnly, parcels, reviews, savedOnly, signalCategories, signalFilterEnabled, signalSummaries, verifiedOnly]);
 
   useEffect(() => {
     const index = new Map<string, ParcelFeature>();
@@ -437,31 +511,44 @@ export function LandFinderApp() {
       ...visibleParcels,
       features: visibleParcels.features.map((feature) => {
         const review = reviews.get(feature.properties.parcelId);
+        const summary = signalSummaries.get(feature.properties.parcelId);
+        const manualEvidence = review?.distressStatus === "evidence";
         return {
           ...feature,
           properties: {
             ...feature.properties,
             favorite: review?.favorite || false,
-            distressStatus: review?.distressStatus || "unknown",
+            distressStatus: manualEvidence || summaryQualifiesAsDistress(summary) ? "evidence" : review?.distressStatus || "unknown",
             listingStatus: review?.listingStatus || "unknown",
+            signalCount: (summary?.activeSignalCount || 0) + (manualEvidence ? 1 : 0),
+            signalQualification: summary?.qualification || (manualEvidence ? "verified" : "none"),
           },
         };
       }),
     };
     const source = mapRef.current?.getSource("land-parcels") as GeoJSONSource | undefined;
     source?.setData(decorated as GeoJSON.FeatureCollection);
-  }, [mapReady, reviews, visibleParcels]);
+  }, [mapReady, reviews, signalSummaries, visibleParcels]);
 
   const favoriteParcels = useMemo(() => {
     const known = new Map<string, ParcelFeature>();
     [...savedParcels.features, ...parcels.features, ...(selected ? [selected] : [])].forEach((feature) => {
       const review = reviews.get(feature.properties.parcelId);
-      if (review?.favorite && (!distressOnly || review.distressStatus === "evidence")) {
+      const matchesSignals = !signalFilterEnabled || summaryMatchesSignalFilters(
+        signalSummaries.get(feature.properties.parcelId),
+        {
+          categories: signalCategories,
+          verifiedOnly,
+          multiSignalOnly,
+          manualEvidence: review?.distressStatus === "evidence",
+        },
+      );
+      if (review?.favorite && matchesSignals) {
         known.set(feature.properties.parcelId, feature);
       }
     });
     return { type: "FeatureCollection" as const, features: [...known.values()] };
-  }, [distressOnly, parcels, reviews, savedParcels, selected]);
+  }, [multiSignalOnly, parcels, reviews, savedParcels, selected, signalCategories, signalFilterEnabled, signalSummaries, verifiedOnly]);
 
   useEffect(() => {
     savedIndexRef.current = new Map(
@@ -590,7 +677,22 @@ export function LandFinderApp() {
     setMaxAcres("");
     setMode("vacant");
     setDistressOnly(false);
+    setSignalCategories([]);
+    setVerifiedOnly(false);
+    setMultiSignalOnly(false);
     setSavedOnly(false);
+  }
+
+  function toggleAnyDistress(checked: boolean) {
+    setDistressOnly(checked);
+    if (checked) setSignalCategories([]);
+  }
+
+  function toggleSignalCategory(category: DistressCategory) {
+    setDistressOnly(false);
+    setSignalCategories((current) => current.includes(category)
+      ? current.filter((value) => value !== category)
+      : [...current, category]);
   }
 
   function toggleFilters() {
@@ -604,6 +706,7 @@ export function LandFinderApp() {
 
   const selectedId = selected?.properties.parcelId || "";
   const selectedReview = selectedId ? reviews.get(selectedId) : undefined;
+  const selectedSignalSummary = selectedId ? signalSummaries.get(selectedId) : undefined;
   const scoutUrl = selected ? `https://cp.spokanecounty.org/scout/propertyinformation/?PID=${encodeURIComponent(selectedId)}` : "#";
   const zillowQuery = selected ? (selected.properties.address.toLowerCase().includes("unassigned") ? `${selectedId} Spokane County WA` : `${selected.properties.address} ${selected.properties.city} WA`) : "";
   const zillowUrl = `https://www.zillow.com/homes/${encodeURIComponent(zillowQuery)}_rb/`;
@@ -615,14 +718,48 @@ export function LandFinderApp() {
     maxAcres !== "",
     mode !== "vacant",
     distressOnly,
+    ...signalCategories.map(() => true),
+    verifiedOnly,
+    multiSignalOnly,
     savedOnly,
   ].filter(Boolean).length;
-  const parcelFilterLabel = [distressOnly ? "Distress" : "", savedOnly ? "Favorites" : ""].filter(Boolean).join(" + ");
+  const signalFilterLabels = signalCategories.length
+    ? signalCategories.map((category) => DISTRESS_CATEGORY_LABELS[category])
+    : distressOnly || verifiedOnly || multiSignalOnly
+      ? ["Distress"]
+      : [];
+  const parcelFilterLabel = [
+    ...signalFilterLabels,
+    verifiedOnly ? "Verified" : "",
+    multiSignalOnly ? "2+ signals" : "",
+    savedOnly ? "Favorites" : "",
+  ].filter(Boolean).join(" + ");
   const filteredParcelCount = visibleParcels.features.length;
   const mapStatusMessage = parcelFilterLabel && parcelsLoaded && !loadingParcels
     ? `${filteredParcelCount.toLocaleString()} of ${parcels.features.length.toLocaleString()} parcels · ${parcelFilterLabel}`
     : viewMessage;
   const zeroFilterMatches = Boolean(parcelFilterLabel && parcelsLoaded && filteredParcelCount === 0);
+  const qualifyingSignalCount = parcels.features.filter((parcel) => {
+    const review = reviews.get(parcel.properties.parcelId);
+    return summaryMatchesSignalFilters(signalSummaries.get(parcel.properties.parcelId), {
+      categories: [],
+      verifiedOnly: false,
+      multiSignalOnly: false,
+      manualEvidence: review?.distressStatus === "evidence",
+    });
+  }).length;
+  const signalCategoryCounts = Object.fromEntries(DISTRESS_CATEGORIES.map((category) => [
+    category,
+    parcels.features.filter((parcel) => summaryMatchesSignalFilters(
+      signalSummaries.get(parcel.properties.parcelId),
+      {
+        categories: [category],
+        verifiedOnly: false,
+        multiSignalOnly: false,
+        manualEvidence: false,
+      },
+    )).length,
+  ])) as Record<DistressCategory, number>;
 
   return (
     <div className="lf-app">
@@ -667,32 +804,65 @@ export function LandFinderApp() {
 
       {filtersOpen ? (
         <section className="lf-filters" aria-label="Parcel filters">
-          <div className="lf-filter-field">
-            <label htmlFor="lf-min-acres">Min acres</label>
-            <input id="lf-min-acres" inputMode="decimal" value={minAcres} onChange={(event) => setMinAcres(event.target.value)} />
+          <div className="lf-land-filter-row">
+            <div className="lf-filter-field">
+              <label htmlFor="lf-min-acres">Min acres</label>
+              <input id="lf-min-acres" inputMode="decimal" value={minAcres} onChange={(event) => setMinAcres(event.target.value)} />
+            </div>
+            <div className="lf-filter-field">
+              <label htmlFor="lf-max-acres">Max acres</label>
+              <input id="lf-max-acres" inputMode="decimal" placeholder="Any" value={maxAcres} onChange={(event) => setMaxAcres(event.target.value)} />
+            </div>
+            <div className="lf-filter-field lf-filter-wide">
+              <label htmlFor="lf-land-mode">Property</label>
+              <select id="lf-land-mode" value={mode} onChange={(event) => setMode(event.target.value as LandMode)}>
+                <option value="vacant">Assessor vacant</option>
+                <option value="expanded">Vacant + farm / forest</option>
+                <option value="all">Any property type</option>
+              </select>
+            </div>
           </div>
-          <div className="lf-filter-field">
-            <label htmlFor="lf-max-acres">Max acres</label>
-            <input id="lf-max-acres" inputMode="decimal" placeholder="Any" value={maxAcres} onChange={(event) => setMaxAcres(event.target.value)} />
+
+          <fieldset className="lf-distress-filter-group">
+            <legend>
+              <span>Distress intelligence</span>
+              <small className={`is-${signalState}`}>
+                {signalState === "loading" ? "Loading" : signalState === "ready" ? `${qualifyingSignalCount} here` : "Unavailable"}
+              </small>
+            </legend>
+            <div className="lf-signal-filter-grid">
+              <label className={distressOnly ? "is-active" : ""}>
+                <input type="checkbox" checked={distressOnly} onChange={(event) => toggleAnyDistress(event.target.checked)} />
+                <span>Any distress</span><b>{qualifyingSignalCount}</b>
+              </label>
+              {DISTRESS_CATEGORIES.map((category) => (
+                <label key={category} className={signalCategories.includes(category) ? "is-active" : ""}>
+                  <input type="checkbox" checked={signalCategories.includes(category)} onChange={() => toggleSignalCategory(category)} />
+                  <span>{DISTRESS_CATEGORY_LABELS[category]}</span><b>{signalCategoryCounts[category]}</b>
+                </label>
+              ))}
+            </div>
+            <div className="lf-signal-filter-options">
+              <label className="lf-check"><input type="checkbox" checked={verifiedOnly} onChange={(event) => setVerifiedOnly(event.target.checked)} /> Verified only</label>
+              <label className="lf-check"><input type="checkbox" checked={multiSignalOnly} onChange={(event) => setMultiSignalOnly(event.target.checked)} /> 2+ signals</label>
+            </div>
+          </fieldset>
+
+          <div className="lf-filter-footer">
+            <label className="lf-check"><input type="checkbox" checked={savedOnly} onChange={(event) => setSavedOnly(event.target.checked)} /> Favorites</label>
+            <label className="lf-check lf-mobile-grid"><input type="checkbox" checked={gridVisible} onChange={(event) => setGridVisible(event.target.checked)} /> County grid</label>
+            <button className="lf-reset-filters" onClick={resetFilters} disabled={!activeFilterCount} title="Reset filters"><RotateCcw size={16} /> Reset</button>
+            <label className="lf-profile">
+              <span>Working as</span>
+              <select value={profile} onChange={(event) => setProfile(event.target.value)}>
+                <option>Team</option><option>Dez</option><option>Mark</option><option>Kim</option>
+              </select>
+            </label>
+            <button className="lf-logout" onClick={logout} title="Sign out" aria-label="Sign out"><LogOut size={18} /></button>
           </div>
-          <div className="lf-filter-field lf-filter-wide">
-            <label htmlFor="lf-land-mode">Land</label>
-            <select id="lf-land-mode" value={mode} onChange={(event) => setMode(event.target.value as LandMode)}>
-              <option value="vacant">Assessor vacant</option>
-              <option value="expanded">Include farm / forest</option>
-            </select>
-          </div>
-          <label className="lf-check"><input type="checkbox" checked={distressOnly} onChange={(event) => setDistressOnly(event.target.checked)} /> Distress only</label>
-          <label className="lf-check"><input type="checkbox" checked={savedOnly} onChange={(event) => setSavedOnly(event.target.checked)} /> Favorites</label>
-          <label className="lf-check lf-mobile-grid"><input type="checkbox" checked={gridVisible} onChange={(event) => setGridVisible(event.target.checked)} /> County grid</label>
-          <button className="lf-reset-filters" onClick={resetFilters} disabled={!activeFilterCount} title="Reset filters"><RotateCcw size={16} /> Reset</button>
-          <label className="lf-profile">
-            <span>Working as</span>
-            <select value={profile} onChange={(event) => setProfile(event.target.value)}>
-              <option>Team</option><option>Dez</option><option>Mark</option><option>Kim</option>
-            </select>
-          </label>
-          <button className="lf-logout" onClick={logout} title="Sign out" aria-label="Sign out"><LogOut size={18} /></button>
+          {signalState === "unavailable" ? (
+            <p className="lf-signal-error"><CircleAlert size={15} /> Distress sources could not be loaded. Parcel and review tools still work.</p>
+          ) : null}
         </section>
       ) : null}
 
@@ -763,6 +933,14 @@ export function LandFinderApp() {
             </button>
             </div>
 
+            <ParcelSignalPanel
+              summary={selectedSignalSummary}
+              manualEvidence={draft.distressStatus === "evidence" ? {
+                sourceUrl: draft.distressSourceUrl,
+                verifiedAt: draft.distressVerifiedAt,
+              } : undefined}
+            />
+
             <div className="lf-facts">
             <div><span>Acres</span><strong>{selected.properties.acres.toLocaleString()}</strong></div>
             <div><span>Land value</span><strong>{formatMoney(selected.properties.landValue)}</strong></div>
@@ -797,7 +975,7 @@ export function LandFinderApp() {
                   <option value="unknown">Unknown</option><option value="listed">Listed</option><option value="not_listed">Off market</option>
                 </select>
               </label>
-              <label>Distress
+              <label>Manual distress
                 <select value={draft.distressStatus} onChange={(event) => updateReview({ distressStatus: event.target.value as LandFinderReviewInput["distressStatus"], distressVerifiedAt: new Date().toISOString() })}>
                   <option value="unknown">Unknown</option><option value="evidence">Evidence</option><option value="none">None found</option>
                 </select>
@@ -836,7 +1014,7 @@ export function LandFinderApp() {
               {selectedReview?.updatedBy ? <span><Check size={14} /> {selectedReview.updatedBy}</span> : null}
             </div>
             </section>
-            <p className="lf-source-note">Spokane County Assessor data · owners intentionally not stored</p>
+            <p className="lf-source-note">Assessor parcels + Lazarus evidence · owner details stay in Lazarus</p>
           </div>
         </aside>
       ) : null}
