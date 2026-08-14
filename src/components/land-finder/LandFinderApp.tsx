@@ -12,6 +12,7 @@ import {
   Heart,
   Layers3,
   LoaderCircle,
+  LogIn,
   LogOut,
   Mail,
   Map as MapIcon,
@@ -38,7 +39,7 @@ const PENDING_KEY = "dominion-land-finder-pending-v1";
 const PROFILE_KEY = "dominion-land-finder-profile-v1";
 const VIEW_ZOOM_THRESHOLD = 10.7;
 
-type SyncState = "loading" | "ready" | "saving" | "pending";
+type SyncState = "loading" | "ready" | "saving" | "pending" | "auth";
 type ViewportState = { bbox: [number, number, number, number]; zoom: number };
 
 function buildGrid(): GeoJSON.FeatureCollection {
@@ -164,6 +165,7 @@ export function LandFinderApp() {
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [viewMessage, setViewMessage] = useState("Zoom in to see parcels");
   const [loadingParcels, setLoadingParcels] = useState(false);
+  const [parcelsLoaded, setParcelsLoaded] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [searching, setSearching] = useState(false);
   const [searchResults, setSearchResults] = useState<ParcelFeature[]>([]);
@@ -183,6 +185,10 @@ export function LandFinderApp() {
     const pending = readPendingReviews();
     pendingRef.current = pending;
     const response = await fetch("/api/land-finder/reviews", { cache: "no-store" }).catch(() => null);
+    if (response?.status === 401) {
+      setSyncState("auth");
+      return;
+    }
     const next = new Map<string, LandFinderReview>();
     if (response?.ok) {
       const body = (await response.json()) as {
@@ -198,6 +204,7 @@ export function LandFinderApp() {
     if (response?.ok && Object.keys(pending).length > 0) {
       setSyncState("saving");
       const remaining: Record<string, LandFinderReviewInput> = {};
+      let authExpired = false;
       for (const [parcelId, input] of Object.entries(pending)) {
         const syncResponse = await fetch(`/api/land-finder/reviews/${encodeURIComponent(parcelId)}`, {
           method: "PUT",
@@ -208,11 +215,17 @@ export function LandFinderApp() {
           const body = (await syncResponse.json()) as { review: LandFinderReview };
           next.set(parcelId, body.review);
         } else {
+          if (syncResponse?.status === 401) authExpired = true;
           remaining[parcelId] = input;
         }
       }
       pendingRef.current = remaining;
       writePendingReviews(remaining);
+      if (authExpired) {
+        setReviews(next);
+        setSyncState("auth");
+        return;
+      }
     }
     setReviews(next);
     setSyncState(Object.keys(pendingRef.current).length > 0 || !response?.ok ? "pending" : "ready");
@@ -221,8 +234,17 @@ export function LandFinderApp() {
   useEffect(() => {
     void loadReviews();
     const retry = () => void loadReviews();
+    const retryFromAnotherTab = (event: StorageEvent) => {
+      if (event.key === PENDING_KEY) retry();
+    };
     window.addEventListener("online", retry);
-    return () => window.removeEventListener("online", retry);
+    window.addEventListener("focus", retry);
+    window.addEventListener("storage", retryFromAnotherTab);
+    return () => {
+      window.removeEventListener("online", retry);
+      window.removeEventListener("focus", retry);
+      window.removeEventListener("storage", retryFromAnotherTab);
+    };
   }, [loadReviews]);
 
   const persistReview = useCallback(async (parcelId: string, input: LandFinderReviewInput) => {
@@ -241,7 +263,7 @@ export function LandFinderApp() {
       body: JSON.stringify(input),
     }).catch(() => null);
     if (!response?.ok) {
-      setSyncState("pending");
+      setSyncState(response?.status === 401 ? "auth" : "pending");
       return;
     }
 
@@ -325,8 +347,6 @@ export function LandFinderApp() {
           type: "geojson",
           data: EMPTY_PARCELS as unknown as GeoJSON.FeatureCollection,
         });
-        map.addLayer({ id: "saved-parcels-fill", type: "fill", source: "saved-parcels", paint: { "fill-color": "#e6a82f", "fill-opacity": 0.5 } });
-        map.addLayer({ id: "saved-parcels-line", type: "line", source: "saved-parcels", paint: { "line-color": "#7e5308", "line-width": 2.2 } });
         map.addSource("land-parcels", {
           type: "geojson",
           data: EMPTY_PARCELS as unknown as GeoJSON.FeatureCollection,
@@ -338,9 +358,7 @@ export function LandFinderApp() {
           paint: {
             "fill-color": [
               "case",
-              ["==", ["get", "favorite"], true], "#e6a82f",
               ["==", ["get", "distressStatus"], "evidence"], "#d75b49",
-              ["==", ["get", "listingStatus"], "listed"], "#397bb5",
               ["==", ["get", "qualification"], "verify_improvements"], "#958044",
               "#278071",
             ],
@@ -348,12 +366,14 @@ export function LandFinderApp() {
           },
         });
         map.addLayer({ id: "land-parcels-line", type: "line", source: "land-parcels", paint: { "line-color": "#153b33", "line-opacity": 0.9, "line-width": 1 } });
+        map.addLayer({ id: "saved-parcels-fill", type: "fill", source: "saved-parcels", paint: { "fill-color": "#e6a82f", "fill-opacity": 0.01 } });
+        map.addLayer({ id: "saved-parcels-line", type: "line", source: "saved-parcels", paint: { "line-color": "#d99420", "line-opacity": 1, "line-width": 5 } });
         map.addLayer({
           id: "land-parcels-selected",
           type: "line",
           source: "land-parcels",
           filter: ["==", ["get", "parcelId"], ""],
-          paint: { "line-color": "#111a17", "line-width": 4 },
+          paint: { "line-color": "#111a17", "line-width": 2.5 },
         });
         map.on("click", "land-parcels-fill", (event) => {
           const parcelId = String(event.features?.[0]?.properties?.parcelId || "");
@@ -435,10 +455,13 @@ export function LandFinderApp() {
   const favoriteParcels = useMemo(() => {
     const known = new Map<string, ParcelFeature>();
     [...savedParcels.features, ...parcels.features, ...(selected ? [selected] : [])].forEach((feature) => {
-      if (reviews.get(feature.properties.parcelId)?.favorite) known.set(feature.properties.parcelId, feature);
+      const review = reviews.get(feature.properties.parcelId);
+      if (review?.favorite && (!distressOnly || review.distressStatus === "evidence")) {
+        known.set(feature.properties.parcelId, feature);
+      }
     });
     return { type: "FeatureCollection" as const, features: [...known.values()] };
-  }, [parcels, reviews, savedParcels, selected]);
+  }, [distressOnly, parcels, reviews, savedParcels, selected]);
 
   useEffect(() => {
     savedIndexRef.current = new Map(
@@ -471,6 +494,7 @@ export function LandFinderApp() {
   useEffect(() => {
     if (!viewport || viewport.zoom < VIEW_ZOOM_THRESHOLD) {
       setParcels(EMPTY_PARCELS);
+      setParcelsLoaded(false);
       setViewMessage("Tap a grid area or zoom in");
       return;
     }
@@ -488,13 +512,16 @@ export function LandFinderApp() {
       if (response?.status === 422) {
         const body = (await response.json()) as { total?: number };
         setParcels(EMPTY_PARCELS);
+        setParcelsLoaded(false);
         setViewMessage(`${(body.total || 0).toLocaleString()} parcels here - zoom in`);
       } else if (response?.ok) {
         const body = (await response.json()) as { parcels: ParcelFeatureCollection; total: number };
         setParcels(body.parcels);
+        setParcelsLoaded(true);
         setViewMessage(`${body.total.toLocaleString()} parcels`);
       } else {
         setParcels(EMPTY_PARCELS);
+        setParcelsLoaded(false);
         setViewMessage("Parcel service unavailable");
       }
       setLoadingParcels(false);
@@ -566,6 +593,15 @@ export function LandFinderApp() {
     setSavedOnly(false);
   }
 
+  function toggleFilters() {
+    const nextOpen = !filtersOpen;
+    setFiltersOpen(nextOpen);
+    if (nextOpen && window.matchMedia("(max-width: 1220px)").matches) {
+      setSelected(null);
+      setDrawerCollapsed(false);
+    }
+  }
+
   const selectedId = selected?.properties.parcelId || "";
   const selectedReview = selectedId ? reviews.get(selectedId) : undefined;
   const scoutUrl = selected ? `https://cp.spokanecounty.org/scout/propertyinformation/?PID=${encodeURIComponent(selectedId)}` : "#";
@@ -581,6 +617,12 @@ export function LandFinderApp() {
     distressOnly,
     savedOnly,
   ].filter(Boolean).length;
+  const parcelFilterLabel = [distressOnly ? "Distress" : "", savedOnly ? "Favorites" : ""].filter(Boolean).join(" + ");
+  const filteredParcelCount = visibleParcels.features.length;
+  const mapStatusMessage = parcelFilterLabel && parcelsLoaded && !loadingParcels
+    ? `${filteredParcelCount.toLocaleString()} of ${parcels.features.length.toLocaleString()} parcels · ${parcelFilterLabel}`
+    : viewMessage;
+  const zeroFilterMatches = Boolean(parcelFilterLabel && parcelsLoaded && filteredParcelCount === 0);
 
   return (
     <div className="lf-app">
@@ -607,7 +649,7 @@ export function LandFinderApp() {
           </button>
         </form>
         <div className="lf-toolbar-actions">
-          <button className={filtersOpen ? "is-active" : ""} onClick={() => setFiltersOpen((value) => !value)} title="Filters" aria-label="Filters">
+          <button className={filtersOpen ? "is-active" : ""} onClick={toggleFilters} title="Filters" aria-label="Filters">
             <SlidersHorizontal size={19} />
             {activeFilterCount ? <span className="lf-filter-count">{activeFilterCount}</span> : null}
           </button>
@@ -640,7 +682,7 @@ export function LandFinderApp() {
               <option value="expanded">Include farm / forest</option>
             </select>
           </div>
-          <label className="lf-check"><input type="checkbox" checked={distressOnly} onChange={(event) => setDistressOnly(event.target.checked)} /> Distress tagged</label>
+          <label className="lf-check"><input type="checkbox" checked={distressOnly} onChange={(event) => setDistressOnly(event.target.checked)} /> Distress only</label>
           <label className="lf-check"><input type="checkbox" checked={savedOnly} onChange={(event) => setSavedOnly(event.target.checked)} /> Favorites</label>
           <label className="lf-check lf-mobile-grid"><input type="checkbox" checked={gridVisible} onChange={(event) => setGridVisible(event.target.checked)} /> County grid</label>
           <button className="lf-reset-filters" onClick={resetFilters} disabled={!activeFilterCount} title="Reset filters"><RotateCcw size={16} /> Reset</button>
@@ -665,15 +707,21 @@ export function LandFinderApp() {
         </div>
       ) : null}
 
-      <div className="lf-map-status" aria-live="polite">
+      <div className={`lf-map-status ${zeroFilterMatches ? "is-empty" : ""}`} aria-live="polite">
         {loadingParcels ? <LoaderCircle size={15} className="lf-spin" /> : null}
-        {viewMessage}
+        {mapStatusMessage}
       </div>
 
-      <div className={`lf-sync lf-sync-${syncState}`} title={syncState === "pending" ? "Saved on this phone; shared sync pending" : "Shared review sync"}>
-        {syncState === "ready" ? <Cloud size={16} /> : syncState === "saving" || syncState === "loading" ? <LoaderCircle size={16} className="lf-spin" /> : <CloudOff size={16} />}
-        <span>{syncState === "ready" ? "Synced" : syncState === "saving" ? "Saving" : syncState === "loading" ? "Loading" : "Sync pending"}</span>
-      </div>
+      <button
+        type="button"
+        className={`lf-sync lf-sync-${syncState}`}
+        onClick={() => { if (syncState === "auth") window.location.reload(); }}
+        title={syncState === "auth" ? "Session expired. Sign in to sync saved changes." : syncState === "pending" ? "Saved on this phone; shared sync pending" : "Shared review sync"}
+        aria-label={syncState === "auth" ? "Session expired. Sign in to sync." : "Shared review sync"}
+      >
+        {syncState === "ready" ? <Cloud size={16} /> : syncState === "saving" || syncState === "loading" ? <LoaderCircle size={16} className="lf-spin" /> : syncState === "auth" ? <LogIn size={16} /> : <CloudOff size={16} />}
+        <span>{syncState === "ready" ? "Synced" : syncState === "saving" ? "Saving" : syncState === "loading" ? "Loading" : syncState === "auth" ? "Sign in to sync" : "Sync pending"}</span>
+      </button>
 
       <div className="lf-legend" aria-label="Map legend">
         <span><i className="lf-dot lf-dot-vacant" /> Vacant</span>
