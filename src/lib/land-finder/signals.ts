@@ -28,6 +28,7 @@ export interface LazarusSignalLead {
 }
 
 const SPOKANE_PARCEL = /^\d{5}\.\d{4}$/;
+export const TAX_DELINQUENCY_CUTOFF_YEAR = 2025;
 const CONFIDENCE_RANK: Record<DistressConfidence, number> = { low: 1, medium: 2, high: 3 };
 const STATUS_RANK: Record<DistressSignalStatus, number> = { resolved: 1, review: 2, active: 3 };
 const CATEGORY_ORDER: DistressCategory[] = [
@@ -164,23 +165,66 @@ function formatAmount(value: unknown): string {
   }).format(number);
 }
 
-function formatTaxYears(value: unknown): string {
+function taxYear(value: unknown): number | null {
+  const year = Number(clean(value));
+  return Number.isInteger(year) && year >= 1900 && year <= 2100 ? year : null;
+}
+
+function positiveAmount(value: unknown): boolean {
+  const amount = Number(clean(value).replace(/[$,]/g, ""));
+  return Number.isFinite(amount) && amount > 0;
+}
+
+function parseTaxYears(value: unknown): { years: number[]; recognized: boolean } {
   if (Array.isArray(value)) {
-    return [...new Set(value.map((entry) => {
+    const years = value.flatMap((entry) => {
       if (entry && typeof entry === "object" && "year" in entry) {
-        return clean((entry as { year?: unknown }).year);
+        const record = entry as Record<string, unknown>;
+        const year = taxYear(record.year);
+        const balanceKeys = ["owing", "remaining", "balance", "amountDue"];
+        const balances = balanceKeys.filter((key) => key in record).map((key) => record[key]);
+        return year !== null && (!balances.length || balances.some(positiveAmount)) ? [year] : [];
       }
-      return clean(entry);
-    }).filter(Boolean))].sort().join(", ");
+      const year = taxYear(entry);
+      return year === null ? [] : [year];
+    });
+    return { years: [...new Set(years)].sort((left, right) => left - right), recognized: true };
   }
 
   const text = clean(value);
-  if (!text) return "";
+  if (!text) return { years: [], recognized: false };
   try {
-    return formatTaxYears(JSON.parse(text));
+    return parseTaxYears(JSON.parse(text));
   } catch {
-    return text;
+    const yearBalances = [...text.matchAll(/\b(19\d{2}|20\d{2}|2100)\b\s*:\s*\$?([\d,]+(?:\.\d+)?)/g)];
+    if (yearBalances.length) {
+      return {
+        years: [...new Set(yearBalances
+          .filter((match) => positiveAmount(match[2]))
+          .map((match) => Number(match[1])))].sort((left, right) => left - right),
+        recognized: true,
+      };
+    }
+    const years = [...text.matchAll(/\b(19\d{2}|20\d{2}|2100)\b/g)].map((match) => Number(match[1]));
+    return { years: [...new Set(years)].sort((left, right) => left - right), recognized: years.length > 0 };
   }
+}
+
+function currentUnpaidTaxYears(details: Record<string, unknown>): number[] {
+  for (const key of ["urgentTaxCurrentYearsOwing", "taxYearsOwing", "taxDeadlineTaxYears"]) {
+    const parsed = parseTaxYears(details[key]);
+    if (parsed.recognized) return parsed.years;
+  }
+
+  const directBalances = [2023, 2024, 2025, 2026]
+    .filter((year) => positiveAmount(details[`urgentTaxBalance${year}`]));
+  if (directBalances.length) return directBalances;
+
+  const oldest = taxYear(firstText(details, ["urgentTaxOldestPositiveYear", "oldestOwedYear"]));
+  if (oldest !== null) return [oldest];
+
+  const deadlineYear = clean(details.taxDeadlineRule).match(/\b(19\d{2}|20\d{2}|2100)\b/);
+  return deadlineYear ? [Number(deadlineYear[1])] : [];
 }
 
 function makeSignal(options: Omit<ParcelDistressSignal, "id">): ParcelDistressSignal {
@@ -209,9 +253,10 @@ function taxSignal(lead: LazarusSignalLead, details: Record<string, unknown>, pa
     "urgentTaxTotalOwed",
     "amountDue",
   ]));
-  const years = formatTaxYears(
-    details.urgentTaxCurrentYearsOwing || details.taxYearsOwing || details.taxDeadlineTaxYears,
-  );
+  const unpaidYears = currentUnpaidTaxYears(details);
+  const oldestUnpaidYear = unpaidYears[0] || null;
+  const years = unpaidYears.join(", ");
+  const meetsCutoff = oldestUnpaidYear !== null && oldestUnpaidYear <= TAX_DELINQUENCY_CUTOFF_YEAR;
   const foreclosureCase = firstText(details, ["urgentTaxForeclosureCase"]);
   const verified = Boolean(firstText(details, [
     "urgentTaxVerifiedAt",
@@ -220,9 +265,15 @@ function taxSignal(lead: LazarusSignalLead, details: Record<string, unknown>, pa
     "taxVerificationSource",
     "urgentTaxVerificationSource",
   ])) || ["tax", "urgent_tax"].includes(clean(details.taxDistressStatus).toLowerCase());
-  const status = freshnessStatus(checkedAt, 550, now, cleared);
+  const status = cleared
+    ? "resolved"
+    : meetsCutoff
+      ? freshnessStatus(checkedAt, 550, now)
+      : "review";
   const summary = [
-    urgent ? "Older unpaid property taxes are verified." : "Property-tax delinquency is recorded.",
+    meetsCutoff
+      ? `Property taxes from ${oldestUnpaidYear} remain reported owing.`
+      : "A property-tax issue is recorded, but 2025-or-older delinquency is not proven.",
     amount ? `${amount} reported owing.` : "",
     foreclosureCase ? "A tax-foreclosure case is referenced." : "",
   ].filter(Boolean).join(" ");
@@ -230,11 +281,13 @@ function taxSignal(lead: LazarusSignalLead, details: Record<string, unknown>, pa
   return makeSignal({
     parcelId,
     category: "tax",
-    title: urgent ? "Urgent property tax" : "Property tax delinquency",
+    title: meetsCutoff
+      ? urgent ? "Urgent 2025-or-older property tax" : "2025-or-older property tax delinquency"
+      : "Property tax evidence needs review",
     summary,
     confidence: verified ? "high" : "medium",
     status,
-    eventAt: latestDate([details.urgentTaxOldestPositiveYear, details.oldestOwedYear]),
+    eventAt: oldestUnpaidYear ? normalizedDate(`${oldestUnpaidYear}-01-01`) : null,
     checkedAt,
     sources: dedupeSources([
       ...sourcesFrom(details, [
@@ -253,8 +306,9 @@ function taxSignal(lead: LazarusSignalLead, details: Record<string, unknown>, pa
     ]),
     facts: facts([
       ["Amount owing", amount],
-      ["Years owing", years],
-      ["Oldest year", firstText(details, ["urgentTaxOldestPositiveYear", "oldestOwedYear", "taxLastPaidYear"])],
+      ["Years reported owing", years],
+      ["Oldest unpaid year", oldestUnpaidYear],
+      ["Qualification", meetsCutoff ? `${TAX_DELINQUENCY_CUTOFF_YEAR} or older` : "Not yet proven"],
       ["Foreclosure case", foreclosureCase],
     ]),
     lazarusLeadIds: [lead.id],

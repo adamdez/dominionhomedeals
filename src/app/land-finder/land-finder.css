@@ -290,6 +290,13 @@
   padding-top: 4px;
 }
 
+.lf-signal-filter-scope {
+  margin: 8px 0 0;
+  color: #5c6762;
+  font-size: 10px;
+  line-height: 1.35;
+}
+
 .lf-filter-footer {
   display: grid;
   grid-template-columns: auto auto 1fr minmax(120px, 150px) 42px;
@@ -383,6 +390,8 @@
   color: #46524c;
   font-size: 12px;
   font-weight: 650;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
 }
 
 .lf-map-status.is-empty {

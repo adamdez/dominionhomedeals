@@ -63,7 +63,7 @@ function SignalRow({ signal }: { signal: ParcelDistressSignal }) {
         <p>{signal.summary}</p>
         {signal.facts.length ? (
           <dl className="lf-signal-facts">
-            {signal.facts.slice(0, 4).map((fact) => (
+            {signal.facts.slice(0, 6).map((fact) => (
               <div key={`${fact.label}-${fact.value}`}><dt>{fact.label}</dt><dd>{factValue(fact.value)}</dd></div>
             ))}
           </dl>

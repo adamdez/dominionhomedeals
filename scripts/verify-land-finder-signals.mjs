@@ -31,7 +31,7 @@ const tax = lead("tax-1", ["urgent_tax"], {
   sourceType: "Tax Delinquent",
   taxDistressStatus: "urgent_tax",
   urgentTaxCurrentBalanceTotal: "8430",
-  urgentTaxCurrentYearsOwing: JSON.stringify([{ year: 2022 }, { year: 2023 }, { year: 2024 }]),
+  urgentTaxCurrentYearsOwing: "2025:$1851.16:PastDue; 2024:$823.50:PastDue; 2023:$0.00:Due; 2022:$0.00:Due",
   urgentTaxOldestPositiveYear: "2022",
   urgentTaxVerifiedAt: "2026-08-10T12:00:00Z",
   urgentTaxVerificationUrl: "https://cp.spokanecounty.org/scout/tax/25001.0001",
@@ -108,6 +108,34 @@ const vendorBankruptcyOnly = lead("vendor-1", ["tax"], {
   skipgenieBankruptcies: "1",
 });
 
+const taxAtCutoff = lead("tax-2025", ["tax"], {
+  parcelId: "25007.0007",
+  sourceType: "Tax Delinquent",
+  taxDistressStatus: "tax",
+  taxDeadlineTaxYears: JSON.stringify([
+    { year: "2026", owing: "900.00" },
+    { year: "2025", owing: "125.50" },
+    { year: "2024", owing: "" },
+  ]),
+  taxDeadlineVerifiedAt: "2026-08-12",
+});
+
+const taxCurrentYearOnly = lead("tax-2026", ["tax"], {
+  parcelId: "25008.0008",
+  sourceType: "Tax Delinquent",
+  taxDistressStatus: "tax",
+  taxDeadlineTaxYears: JSON.stringify([{ year: "2026", owing: "900.00" }]),
+  taxDeadlineVerifiedAt: "2026-08-12",
+});
+
+const taxYearUnknown = lead("tax-unknown", ["tax"], {
+  parcelId: "25009.0009",
+  sourceType: "Tax Delinquent",
+  taxDistressStatus: "tax",
+  amountDue: "1742",
+  taxDeadlineVerifiedAt: "2026-08-12",
+});
+
 const summaries = buildParcelSignalSummaries([
   tax,
   taxDuplicate,
@@ -117,6 +145,9 @@ const summaries = buildParcelSignalSummaries([
   enforcement,
   driveBy,
   vendorBankruptcyOnly,
+  taxAtCutoff,
+  taxCurrentYearOnly,
+  taxYearUnknown,
 ], NOW);
 
 const taxProbateSummary = summaries.find((summary) => summary.parcelId === "25001.0001");
@@ -125,9 +156,19 @@ assert.equal(taxProbateSummary.qualification, "verified");
 assert.deepEqual(taxProbateSummary.categories, ["tax", "probate"]);
 assert.equal(taxProbateSummary.signals.filter((signal) => signal.category === "tax").length, 1, "Duplicate tax rows were not collapsed.");
 assert.equal(
-  taxProbateSummary.signals.find((signal) => signal.category === "tax")?.facts.find((fact) => fact.label === "Years owing")?.value,
-  "2022, 2023, 2024",
-  "Tax years were not normalized for compact display.",
+  taxProbateSummary.signals.find((signal) => signal.category === "tax")?.facts.find((fact) => fact.label === "Years reported owing")?.value,
+  "2024, 2025",
+  "Positive current tax years were not normalized or zero-balance years were retained.",
+);
+assert.equal(
+  taxProbateSummary.signals.find((signal) => signal.category === "tax")?.facts.find((fact) => fact.label === "Oldest unpaid year")?.value,
+  "2024",
+  "A stale oldest-year field overrode the current positive tax-year ledger.",
+);
+assert.equal(
+  taxProbateSummary.signals.find((signal) => signal.category === "tax")?.facts.find((fact) => fact.label === "Qualification")?.value,
+  "2025 or older",
+  "Tax qualification cutoff was not exposed in parcel evidence.",
 );
 assert.equal(taxProbateSummary.activeSignalCount, 2);
 assert(summaryQualifiesAsDistress(taxProbateSummary));
@@ -139,6 +180,23 @@ assert(closedSummary, "Resolved foreclosure summary was not retained.");
 assert.equal(closedSummary.signals[0].status, "resolved");
 assert.equal(closedSummary.qualification, "none");
 assert(!summaryQualifiesAsDistress(closedSummary));
+
+const cutoffSummary = summaries.find((summary) => summary.parcelId === "25007.0007");
+assert(cutoffSummary, "2025 tax cutoff fixture was not retained.");
+assert.equal(cutoffSummary.qualification, "verified", "A positive 2025 balance did not qualify.");
+assert.deepEqual(cutoffSummary.categories, ["tax"]);
+
+for (const parcelId of ["25008.0008", "25009.0009"]) {
+  const reviewSummary = summaries.find((summary) => summary.parcelId === parcelId);
+  assert(reviewSummary, `${parcelId} review fixture was not retained.`);
+  assert.equal(reviewSummary.qualification, "candidate", `${parcelId} incorrectly qualified as tax distress.`);
+  assert.equal(reviewSummary.signals[0].status, "review");
+  assert(!summaryMatchesSignalFilters(reviewSummary, {
+    categories: ["tax"],
+    verifiedOnly: false,
+    multiSignalOnly: false,
+  }), `${parcelId} appeared in the qualifying Tax filter.`);
+}
 
 const bankruptcySummary = summaries.find((summary) => summary.parcelId === "25003.0003");
 assert(bankruptcySummary, "Bankruptcy/foreclosure summary was not created.");
@@ -170,10 +228,12 @@ assert(!serialized.includes("Private Representative Must Not Leak"), "Representa
 
 console.log(JSON.stringify({
   result: "PASS",
-  fixtureLeads: 8,
+  fixtureLeads: 11,
   parcelSummaries: summaries.length,
   verifiedTaxProbateSignals: taxProbateSummary.activeSignalCount,
   bankruptcyForeclosureSignals: bankruptcySummary.activeSignalCount,
   resolvedForeclosureExcluded: !summaryQualifiesAsDistress(closedSummary),
+  taxCutoffIncluded: summaryQualifiesAsDistress(cutoffSummary),
+  currentYearAndUnknownYearExcluded: true,
   piiExcluded: true,
 }, null, 2));

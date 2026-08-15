@@ -38,6 +38,7 @@ import { DISTRESS_CATEGORIES, EMPTY_REVIEW_INPUT } from "@/lib/land-finder/types
 import { SPOKANE_COUNTY_BOUNDS } from "@/lib/land-finder/gis";
 import {
   DISTRESS_CATEGORY_LABELS,
+  TAX_DELINQUENCY_CUTOFF_YEAR,
   summaryMatchesSignalFilters,
   summaryQualifiesAsDistress,
 } from "@/lib/land-finder/signals";
@@ -622,6 +623,7 @@ export function LandFinderApp() {
   function chooseParcel(feature: ParcelFeature) {
     setSelected(feature);
     setDrawerCollapsed(false);
+    setFiltersOpen(false);
     setSearchResults([]);
     const map = mapRef.current;
     if (map) map.fitBounds(geometryBounds(feature), { padding: 48, maxZoom: 16, duration: 650 });
@@ -724,7 +726,9 @@ export function LandFinderApp() {
     savedOnly,
   ].filter(Boolean).length;
   const signalFilterLabels = signalCategories.length
-    ? signalCategories.map((category) => DISTRESS_CATEGORY_LABELS[category])
+    ? signalCategories.map((category) => category === "tax"
+      ? `Tax (${TAX_DELINQUENCY_CUTOFF_YEAR} or older)`
+      : DISTRESS_CATEGORY_LABELS[category])
     : distressOnly || verifiedOnly || multiSignalOnly
       ? ["Distress"]
       : [];
@@ -735,8 +739,19 @@ export function LandFinderApp() {
     savedOnly ? "Favorites" : "",
   ].filter(Boolean).join(" + ");
   const filteredParcelCount = visibleParcels.features.length;
+  const countywideSignalSummaries = [...signalSummaries.values()];
+  const countywideQualifyingSignalCount = countywideSignalSummaries.filter((summary) => summaryMatchesSignalFilters(summary, {
+    categories: [],
+    verifiedOnly: false,
+    multiSignalOnly: false,
+  })).length;
+  const countywideFilteredSignalCount = countywideSignalSummaries.filter((summary) => summaryMatchesSignalFilters(summary, {
+    categories: signalCategories,
+    verifiedOnly,
+    multiSignalOnly,
+  })).length;
   const mapStatusMessage = parcelFilterLabel && parcelsLoaded && !loadingParcels
-    ? `${filteredParcelCount.toLocaleString()} of ${parcels.features.length.toLocaleString()} parcels · ${parcelFilterLabel}`
+    ? `${filteredParcelCount.toLocaleString()} of ${parcels.features.length.toLocaleString()} parcels · ${parcelFilterLabel}${signalFilterEnabled ? ` · ${countywideFilteredSignalCount.toLocaleString()} countywide` : ""}`
     : viewMessage;
   const zeroFilterMatches = Boolean(parcelFilterLabel && parcelsLoaded && filteredParcelCount === 0);
   const qualifyingSignalCount = parcels.features.filter((parcel) => {
@@ -827,7 +842,7 @@ export function LandFinderApp() {
             <legend>
               <span>Distress intelligence</span>
               <small className={`is-${signalState}`}>
-                {signalState === "loading" ? "Loading" : signalState === "ready" ? `${qualifyingSignalCount} here` : "Unavailable"}
+                {signalState === "loading" ? "Loading" : signalState === "ready" ? `${qualifyingSignalCount} here · ${countywideQualifyingSignalCount} county` : "Unavailable"}
               </small>
             </legend>
             <div className="lf-signal-filter-grid">
@@ -846,6 +861,11 @@ export function LandFinderApp() {
               <label className="lf-check"><input type="checkbox" checked={verifiedOnly} onChange={(event) => setVerifiedOnly(event.target.checked)} /> Verified only</label>
               <label className="lf-check"><input type="checkbox" checked={multiSignalOnly} onChange={(event) => setMultiSignalOnly(event.target.checked)} /> 2+ signals</label>
             </div>
+            {signalCategories.includes("tax") ? (
+              <p className="lf-signal-filter-scope">
+                Tax means unpaid {TAX_DELINQUENCY_CUTOFF_YEAR} or older. Tile counts are this map view; {countywideFilteredSignalCount.toLocaleString()} qualify countywide.
+              </p>
+            ) : null}
           </fieldset>
 
           <div className="lf-filter-footer">
