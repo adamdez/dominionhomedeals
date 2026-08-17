@@ -42,7 +42,7 @@ export default function TermsPage() {
 
             <h2>1. About Our Company</h2>
             <p>
-              {SITE.legalName} is a real estate investment company with a registered mailing address at {SITE.address.street}, {SITE.address.city}, {SITE.address.state} {SITE.address.zip}. We buy residential properties directly from homeowners for cash. <strong>We are principals — not licensed real estate agents or brokers.</strong> We are not affiliated with any government agency. All transactions are conducted as principal-to-principal purchases.
+              {SITE.legalName} is a real estate investment company with a office at {SITE.address.street}, {SITE.address.city}, {SITE.address.state} {SITE.address.zip} and a registered mailing address at {SITE.mailingAddress.street}, {SITE.mailingAddress.city}, {SITE.mailingAddress.state} {SITE.mailingAddress.zip}. We buy residential properties directly from homeowners for cash. <strong>We are principals — not licensed real estate agents or brokers.</strong> We are not affiliated with any government agency. All transactions are conducted as principal-to-principal purchases.
             </p>
 
             <h2>2. Use of Our Site</h2>
@@ -156,6 +156,7 @@ export default function TermsPage() {
               <strong>{SITE.legalName}</strong><br />
               {SITE.address.street}<br />
               {SITE.address.city}, {SITE.address.state} {SITE.address.zip}<br />
+              Mailing: {SITE.mailingAddress.street}, {SITE.mailingAddress.city}, {SITE.mailingAddress.state} {SITE.mailingAddress.zip}<br />
               Phone: <a href={`tel:${SITE.phone.replace(/-/g, "")}`}>{SITE.phone}</a><br />
               Email: <a href={`mailto:${SITE.adminEmail}`}>{SITE.adminEmail}</a>
             </p>

@@ -45,7 +45,7 @@ export default function PrivacyPolicyPage() {
 
             <h2>1. Who We Are</h2>
             <p>
-              {SITE.legalName} is a real estate investment company with a registered mailing address at {SITE.address.street}, {SITE.address.city}, {SITE.address.state} {SITE.address.zip}. We are principals — we buy properties directly. We are not licensed real estate agents or brokers, and we are not affiliated with any government agency. Our phone number is{" "}
+              {SITE.legalName} is a real estate investment company with a office at {SITE.address.street}, {SITE.address.city}, {SITE.address.state} {SITE.address.zip} and a registered mailing address at {SITE.mailingAddress.street}, {SITE.mailingAddress.city}, {SITE.mailingAddress.state} {SITE.mailingAddress.zip}. We are principals — we buy properties directly. We are not licensed real estate agents or brokers, and we are not affiliated with any government agency. Our phone number is{" "}
               <a href={`tel:${SITE.phone.replace(/-/g, "")}`}>{SITE.phone}</a> and our email is{" "}
               <a href={`mailto:${SITE.adminEmail}`}>{SITE.adminEmail}</a>.
             </p>
@@ -206,6 +206,7 @@ export default function PrivacyPolicyPage() {
               <strong>{SITE.legalName}</strong><br />
               {SITE.address.street}<br />
               {SITE.address.city}, {SITE.address.state} {SITE.address.zip}<br />
+              Mailing: {SITE.mailingAddress.street}, {SITE.mailingAddress.city}, {SITE.mailingAddress.state} {SITE.mailingAddress.zip}<br />
               Phone: <a href={`tel:${SITE.phone.replace(/-/g, "")}`}>{SITE.phone}</a><br />
               Email: <a href={`mailto:${SITE.adminEmail}`}>{SITE.adminEmail}</a>
             </p>

@@ -3,6 +3,7 @@ import { FadeIn } from "@/components/animations/FadeIn";
 import { SmsDisclosure } from "@/components/consent/SmsDisclosure";
 import { LeadForm } from "@/components/forms/LeadForm";
 import { BreadcrumbJsonLd } from "@/components/seo/BreadcrumbJsonLd";
+import { FaqJsonLd } from "@/components/seo/FaqJsonLd";
 import { CashOfferMathSection, SellerProofBand, VerifyCashBuyerSection } from "@/components/sell/TrustAndOfferSections";
 import type { SellerSeoPage } from "@/lib/seller-seo-pages";
 import { SELLER_SEO_LAST_UPDATED } from "@/lib/seller-seo-pages";
@@ -69,6 +70,7 @@ export function SellerSeoLandingPage({ page }: { page: SellerSeoPage }) {
   return (
     <>
       <StructuredData page={page} />
+      <FaqJsonLd faqs={page.faqs} />
       <BreadcrumbJsonLd
         items={[
           { name: "Home", url: SITE.url },

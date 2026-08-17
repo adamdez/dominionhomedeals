@@ -124,7 +124,7 @@ export function Footer() {
               >
                 North Idaho Title
               </a>
-              . Legal mailing address: {SITE.address.street}, {SITE.address.city}, {SITE.address.state} {SITE.address.zip}.
+              . Office: {SITE.address.street}, {SITE.address.city}, {SITE.address.state} {SITE.address.zip}. Mailing: {SITE.mailingAddress.street}, {SITE.mailingAddress.city}, {SITE.mailingAddress.state} {SITE.mailingAddress.zip}.
             </p>
           </div>
         </div>

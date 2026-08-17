@@ -1,6 +1,6 @@
 const body = `# Dominion Homes
 
-Dominion Homes is a local direct house-buying business serving Spokane County, Washington and Kootenai County, Idaho.
+Dominion Homes (Spokane, WA) is a local direct house-buying business serving Spokane County, Washington and Kootenai County, Idaho. Not affiliated with Dominion Homes, Inc. of Ohio or Dominion Properties of Baltimore.
 We buy houses directly for cash or investor-backed offers when a seller wants a simpler path than listing, repairs, showings, and buyer financing delays.
 
 ## Primary topics
@@ -40,6 +40,8 @@ We buy houses directly for cash or investor-backed offers when a seller wants a 
 - https://www.dominionhomedeals.com/neighborhoods
 
 ## Business facts
+- legal entity: Dominion Group LLC d/b/a Dominion Homes (Washington LLC)
+- office: 303 E Pacific Ave, Suite A, Spokane, WA 99202
 - phone: 509-822-5460
 - public local market: Spokane, WA and nearby North Idaho
 - service area: Spokane County, WA and Kootenai County, ID

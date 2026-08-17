@@ -12,7 +12,15 @@ export const SITE = {
   phone: "509-822-5460",
   email: "leads@dominionhomedeals.com",
   adminEmail: "admin@dominionhomedeals.com",
+  /** Physical office. Public NAP - must match the Google Business Profile exactly. */
   address: {
+    street: "303 E Pacific Ave, Suite A",
+    city: "Spokane",
+    state: "WA",
+    zip: "99202",
+  },
+  /** Legal mailing address used in Privacy Policy and Terms. */
+  mailingAddress: {
     street: "PO Box 337",
     city: "Mead",
     state: "WA",

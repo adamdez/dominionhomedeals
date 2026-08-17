@@ -133,6 +133,9 @@ const listings: Record<string, OffMarketListing> = {
     countySearchUrl: 'https://cp.spokanecounty.org/scout/propertyinformation/?PID=35031.0213',
     countySearchLabel: 'View Spokane County SCOUT parcel record',
     contactName: 'Adam',
+    // Disposition contact. Off-market/buyer pages are intentionally NOT on
+    // the public acquisition line (SITE.phone); they route to the person
+    // handling the deal. Adam confirmed 2026-08-17.
     contactPhone: '5095907091',
     contactPhoneDisplay: '509-590-7091',
     contactEmail: 'adam@dominionhomedeals.com',

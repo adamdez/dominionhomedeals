@@ -3,6 +3,7 @@ import Link from "next/link";
 import { FadeIn } from "@/components/animations/FadeIn";
 import { LeadForm } from "@/components/forms/LeadForm";
 import { BreadcrumbJsonLd } from "@/components/seo/BreadcrumbJsonLd";
+import { FaqJsonLd } from "@/components/seo/FaqJsonLd";
 import { SellerProofSection } from "@/components/sell/SellerProofSection";
 import { SellStickyBar } from "@/components/sell/SellStickyBar";
 import { SellTrustStrip } from "@/components/sell/SellTrustStrip";
@@ -145,6 +146,7 @@ export default function SellAsIsPage() {
   return (
     <>
       <StructuredData />
+      <FaqJsonLd faqs={FAQS} />
       <BreadcrumbJsonLd
         items={[
           { name: "Home", url: SITE.url },

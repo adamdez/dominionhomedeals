@@ -4,6 +4,7 @@ import { SmsDisclosure } from "@/components/consent/SmsDisclosure";
 import { LeadForm } from "@/components/forms/LeadForm";
 import { FadeIn } from "@/components/animations/FadeIn";
 import { BreadcrumbJsonLd } from "@/components/seo/BreadcrumbJsonLd";
+import { FaqJsonLd } from "@/components/seo/FaqJsonLd";
 import { PrioritySellerLinks } from "@/components/seo/PrioritySellerLinks";
 import { Situations } from "@/components/sections/Situations";
 import { SellerProofSection } from "@/components/sell/SellerProofSection";
@@ -96,6 +97,7 @@ export default function SellPage() {
   return (
     <>
       <SellStructuredData />
+      <FaqJsonLd faqs={SELL_PAGE_FAQS} />
       <BreadcrumbJsonLd
         items={[
           { name: "Home", url: SITE.url },

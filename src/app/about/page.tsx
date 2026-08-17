@@ -282,6 +282,9 @@ export default function AboutPage() {
               Or text us: 509-822-5460
             </a>
           </div>
+          <p className="mt-6 text-sm text-forest-200">
+            Office: {SITE.address.street}, {SITE.address.city}, {SITE.address.state} {SITE.address.zip}
+          </p>
           <SmsDisclosure tone="dark" />
         </div>
       </section>

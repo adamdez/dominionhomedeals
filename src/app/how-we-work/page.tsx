@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { SmsDisclosure } from "@/components/consent/SmsDisclosure";
 import { PrioritySellerLinks } from "@/components/seo/PrioritySellerLinks";
+import { FaqJsonLd } from "@/components/seo/FaqJsonLd";
 
 export const metadata: Metadata = {
   title: "How We Buy Houses for Cash in Spokane & CDA",
@@ -99,6 +100,7 @@ const comparisons = [
 export default function HowWeWorkPage() {
   return (
     <>
+      <FaqJsonLd faqs={faqs} />
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{

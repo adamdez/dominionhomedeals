@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { FadeIn } from "@/components/animations/FadeIn";
 import { LeadForm } from "@/components/forms/LeadForm";
 import { SellerProofSection } from "@/components/sell/SellerProofSection";
+import { FaqJsonLd } from "@/components/seo/FaqJsonLd";
 import { SellStickyBar } from "@/components/sell/SellStickyBar";
 import { SellTrustStrip } from "@/components/sell/SellTrustStrip";
 import { SITE } from "@/lib/constants";
@@ -81,6 +82,7 @@ export default function InheritedPropertyPage() {
 
   return (
     <>
+      <FaqJsonLd faqs={FAQS} />
       <section className="relative overflow-hidden pt-28 pb-14 sm:pt-36 sm:pb-20 lg:pt-40 lg:pb-24">
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-stone-50 via-forest-50/20 to-stone-50" />
         <div className="pointer-events-none absolute -top-20 -right-20 h-[400px] w-[400px] rounded-full bg-forest-100/30 blur-3xl" />
