@@ -7,6 +7,7 @@ import {
   Gavel,
   Landmark,
   ShieldCheck,
+  Siren,
 } from "lucide-react";
 import type { ComponentType } from "react";
 import type {
@@ -17,6 +18,7 @@ import type {
 import { DISTRESS_CATEGORY_LABELS } from "@/lib/land-finder/signals";
 
 const CATEGORY_ICONS: Record<DistressCategory, ComponentType<{ size?: number; "aria-hidden"?: boolean }>> = {
+  county_foreclosure: Siren,
   tax: BadgeDollarSign,
   foreclosure: Gavel,
   probate: FileWarning,

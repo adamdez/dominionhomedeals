@@ -24,7 +24,7 @@ import {
   X,
 } from "lucide-react";
 import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { GeoJSONSource, Map as MapLibreMap } from "maplibre-gl";
+import type { GeoJSONSource, Map as MapLibreMap, MapLayerMouseEvent } from "maplibre-gl";
 import type {
   DistressCategory,
   LandFinderReview,
@@ -52,6 +52,12 @@ const VIEW_ZOOM_THRESHOLD = 10.7;
 type SyncState = "loading" | "ready" | "saving" | "pending" | "auth";
 type SignalState = "loading" | "ready" | "unavailable";
 type ViewportState = { bbox: [number, number, number, number]; zoom: number };
+type CountyForeclosureState = {
+  available: boolean;
+  asOf: string | null;
+  parcelCount: number;
+  geometryCount: number;
+};
 
 function buildGrid(): GeoJSON.FeatureCollection {
   const { west, south, east, north } = SPOKANE_COUNTY_BOUNDS;
@@ -136,6 +142,16 @@ function geometryBounds(feature: ParcelFeature): [[number, number], [number, num
   return [[Math.min(...longitudes), Math.min(...latitudes)], [Math.max(...longitudes), Math.max(...latitudes)]];
 }
 
+function parcelCenterFeature(feature: ParcelFeature): GeoJSON.Feature<GeoJSON.Point> {
+  const [[west, south], [east, north]] = geometryBounds(feature);
+  return {
+    type: "Feature",
+    id: feature.id,
+    geometry: { type: "Point", coordinates: [(west + east) / 2, (south + north) / 2] },
+    properties: { parcelId: feature.properties.parcelId },
+  };
+}
+
 function parcelAddress(feature: ParcelFeature): string {
   const address = feature.properties.address;
   if (!address || address.toLowerCase().includes("unassigned")) return "No assigned site address";
@@ -155,6 +171,7 @@ export function LandFinderApp() {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
   const parcelIndexRef = useRef(new Map<string, ParcelFeature>());
+  const foreclosureIndexRef = useRef(new Map<string, ParcelFeature>());
   const savedIndexRef = useRef(new Map<string, ParcelFeature>());
   const pendingRef = useRef<Record<string, LandFinderReviewInput>>({});
   const signalsLoadedAtRef = useRef(0);
@@ -162,6 +179,13 @@ export function LandFinderApp() {
   const [viewport, setViewport] = useState<ViewportState | null>(null);
   const [parcels, setParcels] = useState<ParcelFeatureCollection>(EMPTY_PARCELS);
   const [savedParcels, setSavedParcels] = useState<ParcelFeatureCollection>(EMPTY_PARCELS);
+  const [foreclosureParcels, setForeclosureParcels] = useState<ParcelFeatureCollection>(EMPTY_PARCELS);
+  const [countyForeclosure, setCountyForeclosure] = useState<CountyForeclosureState>({
+    available: false,
+    asOf: null,
+    parcelCount: 0,
+    geometryCount: 0,
+  });
   const [selected, setSelected] = useState<ParcelFeature | null>(null);
   const [reviews, setReviews] = useState<Map<string, LandFinderReview>>(new Map());
   const [signalSummaries, setSignalSummaries] = useState<Map<string, ParcelSignalSummary>>(new Map());
@@ -210,8 +234,14 @@ export function LandFinderApp() {
       setSignalState("unavailable");
       return;
     }
-    const body = (await response.json()) as { summaries?: ParcelSignalSummary[] };
+    const body = (await response.json()) as {
+      summaries?: ParcelSignalSummary[];
+      highlightParcels?: ParcelFeatureCollection;
+      countyForeclosure?: CountyForeclosureState;
+    };
     setSignalSummaries(new Map((body.summaries || []).map((summary) => [summary.parcelId, summary])));
+    setForeclosureParcels(body.highlightParcels || EMPTY_PARCELS);
+    setCountyForeclosure(body.countyForeclosure || { available: false, asOf: null, parcelCount: 0, geometryCount: 0 });
     signalsLoadedAtRef.current = Date.now();
     setSignalState("ready");
   }, []);
@@ -398,6 +428,14 @@ export function LandFinderApp() {
           type: "geojson",
           data: EMPTY_PARCELS as unknown as GeoJSON.FeatureCollection,
         });
+        map.addSource("county-foreclosures", {
+          type: "geojson",
+          data: EMPTY_PARCELS as unknown as GeoJSON.FeatureCollection,
+        });
+        map.addSource("county-foreclosure-markers", {
+          type: "geojson",
+          data: { type: "FeatureCollection", features: [] },
+        });
         map.addLayer({
           id: "land-parcels-fill",
           type: "fill",
@@ -413,6 +451,31 @@ export function LandFinderApp() {
           },
         });
         map.addLayer({ id: "land-parcels-line", type: "line", source: "land-parcels", paint: { "line-color": "#153b33", "line-opacity": 0.9, "line-width": 1 } });
+        map.addLayer({
+          id: "county-foreclosures-fill",
+          type: "fill",
+          source: "county-foreclosures",
+          paint: { "fill-color": "#b42318", "fill-opacity": 0.58 },
+        });
+        map.addLayer({
+          id: "county-foreclosures-line",
+          type: "line",
+          source: "county-foreclosures",
+          paint: { "line-color": "#741b15", "line-opacity": 1, "line-width": 2.2 },
+        });
+        map.addLayer({
+          id: "county-foreclosures-marker",
+          type: "circle",
+          source: "county-foreclosure-markers",
+          maxzoom: 12.5,
+          paint: {
+            "circle-radius": ["interpolate", ["linear"], ["zoom"], 8.5, 4, 12.5, 7],
+            "circle-color": "#b42318",
+            "circle-stroke-color": "#ffffff",
+            "circle-stroke-width": 1.5,
+            "circle-opacity": 0.9,
+          },
+        });
         map.addLayer({ id: "saved-parcels-fill", type: "fill", source: "saved-parcels", paint: { "fill-color": "#e6a82f", "fill-opacity": 0.01 } });
         map.addLayer({ id: "saved-parcels-line", type: "line", source: "saved-parcels", paint: { "line-color": "#d99420", "line-opacity": 1, "line-width": 5 } });
         map.addLayer({
@@ -421,6 +484,13 @@ export function LandFinderApp() {
           source: "land-parcels",
           filter: ["==", ["get", "parcelId"], ""],
           paint: { "line-color": "#111a17", "line-width": 2.5 },
+        });
+        map.addLayer({
+          id: "county-foreclosures-selected",
+          type: "line",
+          source: "county-foreclosures",
+          filter: ["==", ["get", "parcelId"], ""],
+          paint: { "line-color": "#111a17", "line-width": 3.5 },
         });
         map.addLayer({
           id: "land-parcels-signal-count",
@@ -450,6 +520,17 @@ export function LandFinderApp() {
         });
         map.on("mouseenter", "land-parcels-fill", () => { map.getCanvas().style.cursor = "pointer"; });
         map.on("mouseleave", "land-parcels-fill", () => { map.getCanvas().style.cursor = ""; });
+        const selectForeclosureParcel = (event: MapLayerMouseEvent) => {
+          const parcelId = String(event.features?.[0]?.properties?.parcelId || "");
+          const parcel = foreclosureIndexRef.current.get(parcelId);
+          if (parcel) chooseParcel(parcel);
+        };
+        map.on("click", "county-foreclosures-fill", selectForeclosureParcel);
+        map.on("click", "county-foreclosures-marker", selectForeclosureParcel);
+        map.on("mouseenter", "county-foreclosures-fill", () => { map.getCanvas().style.cursor = "pointer"; });
+        map.on("mouseleave", "county-foreclosures-fill", () => { map.getCanvas().style.cursor = ""; });
+        map.on("mouseenter", "county-foreclosures-marker", () => { map.getCanvas().style.cursor = "pointer"; });
+        map.on("mouseleave", "county-foreclosures-marker", () => { map.getCanvas().style.cursor = ""; });
         map.on("click", "saved-parcels-fill", (event) => {
           const parcelId = String(event.features?.[0]?.properties?.parcelId || "");
           const parcel = savedIndexRef.current.get(parcelId);
@@ -483,6 +564,21 @@ export function LandFinderApp() {
   }, []);
 
   const signalFilterEnabled = distressOnly || signalCategories.length > 0 || verifiedOnly || multiSignalOnly;
+
+  const visibleForeclosureParcels = useMemo(() => ({
+    type: "FeatureCollection" as const,
+    features: foreclosureParcels.features.filter((parcel) => {
+      const review = reviews.get(parcel.properties.parcelId);
+      if (savedOnly && !review?.favorite) return false;
+      if (!signalFilterEnabled) return true;
+      return summaryMatchesSignalFilters(signalSummaries.get(parcel.properties.parcelId), {
+        categories: signalCategories,
+        verifiedOnly,
+        multiSignalOnly,
+        manualEvidence: review?.distressStatus === "evidence",
+      });
+    }),
+  }), [foreclosureParcels, multiSignalOnly, reviews, savedOnly, signalCategories, signalFilterEnabled, signalSummaries, verifiedOnly]);
 
   const visibleParcels = useMemo(() => {
     return {
@@ -531,9 +627,33 @@ export function LandFinderApp() {
     source?.setData(decorated as GeoJSON.FeatureCollection);
   }, [mapReady, reviews, signalSummaries, visibleParcels]);
 
+  useEffect(() => {
+    foreclosureIndexRef.current = new Map(
+      visibleForeclosureParcels.features.map((feature) => [feature.properties.parcelId, feature]),
+    );
+    const decorated = {
+      ...visibleForeclosureParcels,
+      features: visibleForeclosureParcels.features.map((feature) => ({
+        ...feature,
+        properties: {
+          ...feature.properties,
+          countyForeclosure: true,
+          signalCount: signalSummaries.get(feature.properties.parcelId)?.activeSignalCount || 1,
+        },
+      })),
+    };
+    const source = mapRef.current?.getSource("county-foreclosures") as GeoJSONSource | undefined;
+    source?.setData(decorated as GeoJSON.FeatureCollection);
+    const markerSource = mapRef.current?.getSource("county-foreclosure-markers") as GeoJSONSource | undefined;
+    markerSource?.setData({
+      type: "FeatureCollection",
+      features: visibleForeclosureParcels.features.map(parcelCenterFeature),
+    });
+  }, [mapReady, signalSummaries, visibleForeclosureParcels]);
+
   const favoriteParcels = useMemo(() => {
     const known = new Map<string, ParcelFeature>();
-    [...savedParcels.features, ...parcels.features, ...(selected ? [selected] : [])].forEach((feature) => {
+    [...savedParcels.features, ...parcels.features, ...foreclosureParcels.features, ...(selected ? [selected] : [])].forEach((feature) => {
       const review = reviews.get(feature.properties.parcelId);
       const matchesSignals = !signalFilterEnabled || summaryMatchesSignalFilters(
         signalSummaries.get(feature.properties.parcelId),
@@ -549,7 +669,7 @@ export function LandFinderApp() {
       }
     });
     return { type: "FeatureCollection" as const, features: [...known.values()] };
-  }, [multiSignalOnly, parcels, reviews, savedParcels, selected, signalCategories, signalFilterEnabled, signalSummaries, verifiedOnly]);
+  }, [foreclosureParcels, multiSignalOnly, parcels, reviews, savedParcels, selected, signalCategories, signalFilterEnabled, signalSummaries, verifiedOnly]);
 
   useEffect(() => {
     savedIndexRef.current = new Map(
@@ -577,6 +697,7 @@ export function LandFinderApp() {
     const map = mapRef.current;
     if (!mapReady || !map) return;
     map.setFilter("land-parcels-selected", ["==", ["get", "parcelId"], selected?.properties.parcelId || ""]);
+    map.setFilter("county-foreclosures-selected", ["==", ["get", "parcelId"], selected?.properties.parcelId || ""]);
   }, [mapReady, selected]);
 
   useEffect(() => {
@@ -750,10 +871,20 @@ export function LandFinderApp() {
     verifiedOnly,
     multiSignalOnly,
   })).length;
-  const mapStatusMessage = parcelFilterLabel && parcelsLoaded && !loadingParcels
+  const countyForeclosureFilterActive = signalCategories.includes("county_foreclosure");
+  const countyForeclosureDate = countyForeclosure.asOf
+    ? new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric" }).format(new Date(countyForeclosure.asOf))
+    : null;
+  const mapStatusMessage = countyForeclosureFilterActive && signalState === "ready"
+    ? countyForeclosure.available
+      ? `${visibleForeclosureParcels.features.length.toLocaleString()} county foreclosure parcels on map${countyForeclosureDate ? ` · list current ${countyForeclosureDate}` : ""}`
+      : "County foreclosure source unavailable"
+    : parcelFilterLabel && parcelsLoaded && !loadingParcels
     ? `${filteredParcelCount.toLocaleString()} of ${parcels.features.length.toLocaleString()} parcels · ${parcelFilterLabel}${signalFilterEnabled ? ` · ${countywideFilteredSignalCount.toLocaleString()} countywide` : ""}`
     : viewMessage;
-  const zeroFilterMatches = Boolean(parcelFilterLabel && parcelsLoaded && filteredParcelCount === 0);
+  const zeroFilterMatches = countyForeclosureFilterActive
+    ? signalState === "ready" && visibleForeclosureParcels.features.length === 0
+    : Boolean(parcelFilterLabel && parcelsLoaded && filteredParcelCount === 0);
   const qualifyingSignalCount = parcels.features.filter((parcel) => {
     const review = reviews.get(parcel.properties.parcelId);
     return summaryMatchesSignalFilters(signalSummaries.get(parcel.properties.parcelId), {
@@ -765,7 +896,13 @@ export function LandFinderApp() {
   }).length;
   const signalCategoryCounts = Object.fromEntries(DISTRESS_CATEGORIES.map((category) => [
     category,
-    parcels.features.filter((parcel) => summaryMatchesSignalFilters(
+    category === "county_foreclosure"
+      ? countywideSignalSummaries.filter((summary) => summaryMatchesSignalFilters(summary, {
+        categories: [category],
+        verifiedOnly: false,
+        multiSignalOnly: false,
+      })).length
+      : parcels.features.filter((parcel) => summaryMatchesSignalFilters(
       signalSummaries.get(parcel.properties.parcelId),
       {
         categories: [category],
@@ -866,6 +1003,13 @@ export function LandFinderApp() {
                 Tax means unpaid {TAX_DELINQUENCY_CUTOFF_YEAR} or older. Tile counts are this map view; {countywideFilteredSignalCount.toLocaleString()} qualify countywide.
               </p>
             ) : null}
+            {countyForeclosureFilterActive ? (
+              <p className="lf-signal-filter-scope">
+                {countyForeclosure.available
+                  ? `Official Treasurer list: ${countyForeclosure.parcelCount.toLocaleString()} parcels; ${countyForeclosure.geometryCount.toLocaleString()} mapped countywide. A parcel can leave the list if its foreclosure is resolved.`
+                  : "The Treasurer foreclosure source could not be loaded. This is not a zero-parcel result."}
+              </p>
+            ) : null}
           </fieldset>
 
           <div className="lf-filter-footer">
@@ -917,6 +1061,7 @@ export function LandFinderApp() {
         <span><i className="lf-dot lf-dot-vacant" /> Vacant</span>
         <span><i className="lf-dot lf-dot-verify" /> Verify</span>
         <span><i className="lf-dot lf-dot-distress" /> Distress</span>
+        <span><i className="lf-dot lf-dot-foreclosure" /> County foreclosure</span>
         <span><i className="lf-dot lf-dot-favorite" /> Saved</span>
       </div>
 

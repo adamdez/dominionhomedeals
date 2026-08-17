@@ -10,6 +10,7 @@ import type {
 } from "@/lib/land-finder/types";
 
 export const DISTRESS_CATEGORY_LABELS: Record<DistressCategory, string> = {
+  county_foreclosure: "County foreclosure",
   tax: "Tax",
   foreclosure: "Foreclosure",
   probate: "Probate / death",
@@ -32,6 +33,7 @@ export const TAX_DELINQUENCY_CUTOFF_YEAR = 2025;
 const CONFIDENCE_RANK: Record<DistressConfidence, number> = { low: 1, medium: 2, high: 3 };
 const STATUS_RANK: Record<DistressSignalStatus, number> = { resolved: 1, review: 2, active: 3 };
 const CATEGORY_ORDER: DistressCategory[] = [
+  "county_foreclosure",
   "foreclosure",
   "tax",
   "bankruptcy",
@@ -577,9 +579,10 @@ function qualificationFor(signals: ParcelDistressSignal[]): DistressQualificatio
 export function buildParcelSignalSummaries(
   leads: LazarusSignalLead[],
   now = new Date(),
+  additionalSignals: ParcelDistressSignal[] = [],
 ): ParcelSignalSummary[] {
   const byParcel = new Map<string, ParcelDistressSignal[]>();
-  leads.flatMap((lead) => signalsFromLazarusLead(lead, now)).forEach((signal) => {
+  [...leads.flatMap((lead) => signalsFromLazarusLead(lead, now)), ...additionalSignals].forEach((signal) => {
     const signals = byParcel.get(signal.parcelId) || [];
     signals.push(signal);
     byParcel.set(signal.parcelId, signals);

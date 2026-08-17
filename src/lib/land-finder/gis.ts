@@ -185,7 +185,7 @@ export async function searchParcels(query: string, mode: LandMode): Promise<Parc
   const searchWhere = parcelNumber
     ? `PID_NUM = '${escapeSqlLiteral(normalized)}'`
     : `site_address LIKE '%${escapeSqlLiteral(normalized)}%'`;
-  const where = ["seg_status LIKE 'Active%'", landUseWhere(mode), searchWhere].filter(Boolean).join(" AND ");
+  const where = ["seg_status LIKE 'Active%'", parcelNumber ? "" : landUseWhere(mode), searchWhere].filter(Boolean).join(" AND ");
   const params = new URLSearchParams({
     f: "geojson",
     where,
@@ -204,8 +204,9 @@ export async function searchParcels(query: string, mode: LandMode): Promise<Parc
 export async function fetchParcelsByIds(parcelIds: string[]): Promise<ParcelFeatureCollection> {
   const uniqueIds = [...new Set(parcelIds)].filter((value) => /^\d{5}\.\d{4}$/.test(value)).slice(0, 500);
   const features: ParcelFeature[] = [];
-  for (let index = 0; index < uniqueIds.length; index += 100) {
-    const chunk = uniqueIds.slice(index, index + 100);
+  const batchSize = 25;
+  for (let index = 0; index < uniqueIds.length; index += batchSize) {
+    const chunk = uniqueIds.slice(index, index + batchSize);
     const where = `seg_status LIKE 'Active%' AND PID_NUM IN (${chunk.map((value) => `'${value}'`).join(",")})`;
     const params = new URLSearchParams({
       f: "geojson",

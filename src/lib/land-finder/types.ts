@@ -5,6 +5,7 @@ export type DistressStatus = "unknown" | "evidence" | "none";
 export type QualificationStatus = "confirmed_vacant" | "verify_improvements";
 
 export const DISTRESS_CATEGORIES = [
+  "county_foreclosure",
   "tax",
   "foreclosure",
   "probate",

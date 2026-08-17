@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { hasLandFinderSession } from "@/lib/land-finder/auth";
-import { fetchParcelSignalSummaries } from "@/lib/land-finder/signal-store";
+import { fetchParcelSignalData } from "@/lib/land-finder/signal-store";
 import { getLandFinderServiceClient } from "@/lib/supabase";
 
 export const dynamic = "force-dynamic";
@@ -11,24 +11,20 @@ export async function GET() {
   }
 
   const supabase = getLandFinderServiceClient();
-  if (!supabase) {
-    return NextResponse.json(
-      { error: "Distress intelligence is not configured", code: "signals_unavailable" },
-      { status: 503, headers: { "Cache-Control": "private, no-store" } },
-    );
-  }
-
   try {
-    const summaries = await fetchParcelSignalSummaries(supabase);
+    const data = await fetchParcelSignalData(supabase);
+    const { summaries } = data;
     return NextResponse.json(
       {
         summaries,
+        highlightParcels: data.highlightParcels,
+        countyForeclosure: data.countyForeclosure,
         parcelCount: summaries.length,
         activeParcelCount: summaries.filter((summary) =>
           summary.qualification === "verified" || summary.qualification === "corroborated"
         ).length,
         retrievedAt: new Date().toISOString(),
-        source: "Lazarus parcel-linked Dominion distress pipelines",
+        source: data.sources.join("; "),
       },
       { headers: { "Cache-Control": "private, no-store" } },
     );

@@ -437,6 +437,7 @@
 .lf-dot-vacant { background: #278071; }
 .lf-dot-verify { background: #958044; }
 .lf-dot-distress { background: #d75b49; }
+.lf-dot-foreclosure { background: #b42318; box-shadow: 0 0 0 1px #741b15; }
 .lf-dot-favorite { border: 2px solid #d99420; background: transparent; }
 
 .lf-drawer {

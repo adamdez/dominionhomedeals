@@ -1,5 +1,10 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { ParcelSignalSummary } from "@/lib/land-finder/types";
+import type { ParcelFeatureCollection, ParcelSignalSummary } from "@/lib/land-finder/types";
+import {
+  fetchCountyForeclosureSnapshot,
+  signalsFromCountyForeclosures,
+} from "@/lib/land-finder/county-foreclosures";
+import { fetchParcelsByIds } from "@/lib/land-finder/gis";
 import {
   buildParcelSignalSummaries,
   type LazarusSignalLead,
@@ -27,8 +32,20 @@ const RELEVANT_FILTER = [
   "source_details->>sourceType.ilike.*Enforcement*",
 ].join(",");
 
-let cached: { expiresAt: number; summaries: ParcelSignalSummary[] } | null = null;
-let inflight: Promise<ParcelSignalSummary[]> | null = null;
+export interface ParcelSignalData {
+  summaries: ParcelSignalSummary[];
+  highlightParcels: ParcelFeatureCollection;
+  countyForeclosure: {
+    available: boolean;
+    asOf: string | null;
+    parcelCount: number;
+    geometryCount: number;
+  };
+  sources: string[];
+}
+
+let cached: { expiresAt: number; data: ParcelSignalData } | null = null;
+let inflight: Promise<ParcelSignalData> | null = null;
 
 async function readSourceRows(client: SupabaseClient): Promise<LazarusSignalLead[]> {
   const rows: LazarusSignalLead[] = [];
@@ -46,18 +63,55 @@ async function readSourceRows(client: SupabaseClient): Promise<LazarusSignalLead
   return rows;
 }
 
-export async function fetchParcelSignalSummaries(
-  client: SupabaseClient,
+export async function fetchParcelSignalData(
+  client: SupabaseClient | null,
   options: { bypassCache?: boolean; now?: Date } = {},
-): Promise<ParcelSignalSummary[]> {
+): Promise<ParcelSignalData> {
   const now = options.now || new Date();
-  if (!options.bypassCache && cached && cached.expiresAt > now.getTime()) return cached.summaries;
+  if (!options.bypassCache && cached && cached.expiresAt > now.getTime()) return cached.data;
   if (!options.bypassCache && inflight) return inflight;
 
   const load = async () => {
-    const summaries = buildParcelSignalSummaries(await readSourceRows(client), now);
-    cached = { expiresAt: now.getTime() + CACHE_MS, summaries };
-    return summaries;
+    const [lazarusResult, countyResult] = await Promise.allSettled([
+      client ? readSourceRows(client) : Promise.resolve([]),
+      fetchCountyForeclosureSnapshot(),
+    ]);
+    if (lazarusResult.status === "rejected" && countyResult.status === "rejected") {
+      throw new Error(`All distress sources failed: ${lazarusResult.reason}; ${countyResult.reason}`);
+    }
+
+    const leads = lazarusResult.status === "fulfilled" ? lazarusResult.value : [];
+    const countySnapshot = countyResult.status === "fulfilled" ? countyResult.value : null;
+    if (countyResult.status === "rejected") {
+      console.error("Land Finder county foreclosure source failed", countyResult.reason);
+    }
+    const countySignals = countySnapshot ? signalsFromCountyForeclosures(countySnapshot) : [];
+    const summaries = buildParcelSignalSummaries(leads, now, countySignals);
+    let highlightParcels: ParcelFeatureCollection = { type: "FeatureCollection", features: [] };
+    if (countySnapshot) {
+      try {
+        highlightParcels = await fetchParcelsByIds(countySnapshot.parcels.map((parcel) => parcel.parcelId));
+      } catch (error) {
+        console.error("Land Finder county foreclosure geometry query failed", error);
+      }
+    }
+
+    const data: ParcelSignalData = {
+      summaries,
+      highlightParcels,
+      countyForeclosure: {
+        available: Boolean(countySnapshot),
+        asOf: countySnapshot?.asOf || null,
+        parcelCount: countySnapshot?.parcels.length || 0,
+        geometryCount: highlightParcels.features.length,
+      },
+      sources: [
+        ...(lazarusResult.status === "fulfilled" && client ? ["Lazarus parcel-linked Dominion distress pipelines"] : []),
+        ...(countySnapshot ? ["Spokane County Treasurer foreclosure list"] : []),
+      ],
+    };
+    cached = { expiresAt: now.getTime() + CACHE_MS, data };
+    return data;
   };
 
   inflight = load();
@@ -66,6 +120,13 @@ export async function fetchParcelSignalSummaries(
   } finally {
     inflight = null;
   }
+}
+
+export async function fetchParcelSignalSummaries(
+  client: SupabaseClient,
+  options: { bypassCache?: boolean; now?: Date } = {},
+): Promise<ParcelSignalSummary[]> {
+  return (await fetchParcelSignalData(client, options)).summaries;
 }
 
 export function clearParcelSignalCache() {
