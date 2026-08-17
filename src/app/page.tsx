@@ -23,19 +23,19 @@ const HOME_DESCRIPTION =
 
 const VISUAL_PROOF_IMAGES = [
   {
-    src: "/images/3314-e-cleveland/001.webp",
+    src: "/images/4129-e-princeton-ave/IMG_0206.webp",
     alt: "Spokane house exterior reviewed for an as-is cash offer",
     label: "As-is homes",
   },
   {
-    src: "/images/2443-n-wiscomb-st/007.webp",
+    src: "/images/4129-e-princeton-ave/IMG_0221.webp",
     alt: "Kitchen condition reviewed during a Spokane cash offer walkthrough",
     label: "Real repairs",
   },
   {
-    src: "/images/torrens-trail/472-web/007.webp",
-    alt: "North Idaho property exterior reviewed by Dominion Homes",
-    label: "North Idaho",
+    src: "/images/4129-e-princeton-ave/IMG_0198.webp",
+    alt: "Detached shop reviewed during a Spokane property walkthrough",
+    label: "Local properties",
   },
 ] as const;
 
@@ -115,7 +115,7 @@ export default function HomePage() {
       {/* ======== HERO ======== */}
       <section className="relative min-h-[calc(100vh-2rem)] overflow-hidden bg-ink-700 pt-28 pb-14 sm:pt-36 sm:pb-20 lg:pt-40 lg:pb-24">
         <Image
-          src="/images/3314-e-cleveland/002.webp"
+          src="/images/4129-e-princeton-ave/IMG_0206.webp"
           alt=""
           fill
           priority
@@ -370,7 +370,7 @@ export default function HomePage() {
       {/* ======== WHY LOCAL MATTERS ======== */}
       <section className="relative overflow-hidden border-y border-stone-200 bg-forest-700 text-white">
         <Image
-          src="/images/torrens-trail/472-web/011.webp"
+          src="/images/4129-e-princeton-ave/IMG_0189.webp"
           alt=""
           fill
           sizes="100vw"
@@ -429,7 +429,7 @@ export default function HomePage() {
                 <div className="grid gap-4">
                   <figure className="relative min-h-[8.5rem] overflow-hidden rounded-xl border border-white/15 bg-white/10 shadow-soft">
                     <Image
-                      src="/images/3314-e-cleveland/010.webp"
+                      src="/images/4129-e-princeton-ave/IMG_0208.webp"
                       alt="Interior condition reviewed before a direct as-is sale"
                       fill
                       sizes="(min-width: 1024px) 28vw, 80vw"
@@ -543,4 +543,3 @@ export default function HomePage() {
     </>
   );
 }
-

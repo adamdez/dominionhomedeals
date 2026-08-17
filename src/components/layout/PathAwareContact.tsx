@@ -3,9 +3,6 @@
 import { usePathname } from "next/navigation";
 import { SITE } from "@/lib/constants";
 
-const RIVERSIDE_DISPO_PATH = "/off-market/34124-n-newport-highway-trailer-29";
-const RIVERSIDE_DISPO_PHONE = "509-590-7091";
-
 const LOCAL_OFFER_FORM_PATHS = new Set([
   "/",
   "/sell",
@@ -28,7 +25,7 @@ function cleanPhone(phone: string) {
 
 function usePathAwareContact() {
   const pathname = usePathname() ?? "";
-  const phone = pathname === RIVERSIDE_DISPO_PATH ? RIVERSIDE_DISPO_PHONE : SITE.phone;
+  const phone = SITE.phone;
   const offerHref = LOCAL_OFFER_FORM_PATHS.has(pathname) ? "#get-offer" : "/#get-offer";
 
   return { phone, phoneHref: cleanPhone(phone), offerHref };

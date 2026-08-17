@@ -3,41 +3,10 @@ const path = require("path");
 const sharp = require("sharp");
 
 const root = path.join(__dirname, "..");
-const torrensDir = path.join(root, "public", "images", "torrens-trail", "472-web");
 const teamDir = path.join(root, "public", "images", "team");
 
 function formatKB(bytes) {
   return `${Math.round(bytes / 1024).toLocaleString()} KB`;
-}
-
-async function optimizeWebpGallery() {
-  if (!fs.existsSync(torrensDir)) {
-    return { count: 0, before: 0, after: 0 };
-  }
-
-  const files = fs
-    .readdirSync(torrensDir)
-    .filter((name) => name.toLowerCase().endsWith(".webp"))
-    .sort();
-
-  let before = 0;
-  let after = 0;
-
-  for (const name of files) {
-    const filePath = path.join(torrensDir, name);
-    const originalBuffer = fs.readFileSync(filePath);
-    before += originalBuffer.length;
-
-    const optimizedBuffer = await sharp(originalBuffer)
-      .rotate()
-      .webp({ quality: 72, effort: 6 })
-      .toBuffer();
-
-    fs.writeFileSync(filePath, optimizedBuffer);
-    after += optimizedBuffer.length;
-  }
-
-  return { count: files.length, before, after };
 }
 
 async function optimizeTeamPhoto(fileName, options) {
@@ -81,12 +50,7 @@ async function optimizeTeamPhotos() {
 }
 
 async function main() {
-  const gallery = await optimizeWebpGallery();
   const team = await optimizeTeamPhotos();
-
-  console.log(
-    `[gallery] ${gallery.count} files: ${formatKB(gallery.before)} -> ${formatKB(gallery.after)}`
-  );
 
   for (const photo of team) {
     console.log(`[team] ${photo.fileName}: ${formatKB(photo.before)} -> ${formatKB(photo.after)}`);

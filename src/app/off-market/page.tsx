@@ -39,7 +39,7 @@ export default function OffMarketHubPage() {
       <section className="bg-stone-100 py-14 lg:py-20">
         <div className="mx-auto max-w-6xl px-5 sm:px-6 lg:px-8">
           <h2 className="font-display text-heading text-ink-600 mb-10 text-center">Current offerings</h2>
-          <div className="grid gap-8 sm:grid-cols-2 lg:gap-10">
+          <div className="mx-auto grid max-w-3xl gap-8 lg:gap-10">
             {listings.map((l, index) => (
               <Link
                 key={l.slug}
@@ -51,7 +51,7 @@ export default function OffMarketHubPage() {
                     src={l.cardImageSrc}
                     alt=""
                     fill
-                    sizes="(max-width: 640px) 100vw, 50vw"
+                    sizes="(max-width: 768px) 100vw, 768px"
                     className="object-cover transition duration-500 group-hover:scale-[1.03]"
                     quality={72}
                     priority={index === 0}

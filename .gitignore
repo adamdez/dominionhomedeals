@@ -27,7 +27,3 @@ al-bridge/.env
 al-bridge/.bridge*.log
 al-bridge/watchdog.log
 al-bridge/output/
-
-# iPhone HEIC bulk imports (use JPG/WebP in repo for web)
-public/images/torrens-trail/472 torrens trl spirit lake-*
-
