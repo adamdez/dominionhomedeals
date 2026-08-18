@@ -1,7 +1,6 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
 let _client: SupabaseClient | null = null;
-let _landFinderClient: SupabaseClient | null = null;
 
 export function getServiceClient(): SupabaseClient | null {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -15,18 +14,4 @@ export function getServiceClient(): SupabaseClient | null {
   }
 
   return _client;
-}
-
-export function getLandFinderServiceClient(): SupabaseClient | null {
-  const url = process.env.LAND_FINDER_SUPABASE_URL;
-  const key = process.env.LAND_FINDER_SUPABASE_SERVICE_ROLE_KEY;
-  if (!url || !key) return null;
-
-  if (!_landFinderClient) {
-    _landFinderClient = createClient(url, key, {
-      auth: { autoRefreshToken: false, persistSession: false },
-    });
-  }
-
-  return _landFinderClient;
 }

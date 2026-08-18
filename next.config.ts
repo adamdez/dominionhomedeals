@@ -20,6 +20,11 @@ const nextConfig: NextConfig = {
   async redirects() {
     return [
       {
+        source: "/land-finder",
+        destination: "https://lazarus.dominionhomedeals.com/land-finder",
+        permanent: true,
+      },
+      {
         source: "/:path*",
         has: [{ type: "host", value: "dominionhomedeals.com" }],
         destination: "https://www.dominionhomedeals.com/:path*",
