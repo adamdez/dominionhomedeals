@@ -29,6 +29,8 @@ export const SITE = {
   serviceArea: "Spokane County, WA and Kootenai County, ID",
   profiles: {
     googleBusiness: "https://www.google.com/maps?cid=5032019384215942012",
+    /** Official "Ask for reviews" link from the Dominion Homes Google Business Profile. */
+    googleReview: "https://g.page/r/CXwzEhv4UtVFEBM/review",
   },
   // Add profile URLs here once live (GBP, Facebook, etc.)
   // Schema sameAs in layout.tsx reads from this array.
@@ -129,4 +131,3 @@ export const SELL_PAGE_FAQS = [
     a: "Logan leads Dominion Homes, a local Spokane team that buys houses directly across Spokane County and North Idaho. No call center, no scripts, no middlemen. Call or text us at 509-822-5460 and you'll hear from Logan or someone on his team. Every conversation is direct, and there's never any obligation.",
   },
 ] as const;
-
