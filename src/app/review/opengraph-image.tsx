@@ -1,5 +1,21 @@
 import { ImageResponse } from "next/og";
 
+const playfairDisplay = fetch(
+  "https://fonts.gstatic.com/s/playfairdisplay/v40/nuFvD-vYSZviVYUb_rj3ij__anPXJzDwcbmjWBN2PKdFvUDQ.ttf",
+).then((response) => response.arrayBuffer());
+
+const sourceSansRegular = fetch(
+  "https://fonts.gstatic.com/s/sourcesans3/v19/nwpBtKy2OAdR1K-IwhWudF-R9QMylBJAV3Bo8Ky461EN.ttf",
+).then((response) => response.arrayBuffer());
+
+const sourceSansSemibold = fetch(
+  "https://fonts.gstatic.com/s/sourcesans3/v19/nwpBtKy2OAdR1K-IwhWudF-R9QMylBJAV3Bo8Kxm7FEN.ttf",
+).then((response) => response.arrayBuffer());
+
+const sourceSansBold = fetch(
+  "https://fonts.gstatic.com/s/sourcesans3/v19/nwpBtKy2OAdR1K-IwhWudF-R9QMylBJAV3Bo8Kxf7FEN.ttf",
+).then((response) => response.arrayBuffer());
+
 export const alt = "Share your experience with Dominion Homes on Google";
 export const size = {
   width: 1200,
@@ -7,7 +23,14 @@ export const size = {
 };
 export const contentType = "image/png";
 
-export default function Image() {
+export default async function Image() {
+  const [displayFont, bodyFont, bodySemibold, bodyBold] = await Promise.all([
+    playfairDisplay,
+    sourceSansRegular,
+    sourceSansSemibold,
+    sourceSansBold,
+  ]);
+
   return new ImageResponse(
     (
       <div
@@ -19,7 +42,7 @@ export default function Image() {
           overflow: "hidden",
           background: "#f8f5ee",
           color: "#17231d",
-          fontFamily: "Arial, Helvetica, sans-serif",
+          fontFamily: "Source Sans 3",
         }}
       >
         <div
@@ -79,7 +102,7 @@ export default function Image() {
               />
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-              <div style={{ fontSize: "34px", fontWeight: 800, letterSpacing: "-0.6px" }}>
+              <div style={{ fontSize: "34px", fontWeight: 700, letterSpacing: "-0.6px" }}>
                 DOMINION HOMES
               </div>
               <div style={{ fontSize: "18px", color: "#52665a", letterSpacing: "1.6px" }}>
@@ -88,57 +111,36 @@ export default function Image() {
             </div>
           </div>
 
-          <div style={{ display: "flex", alignItems: "center", gap: "62px" }}>
-            <div style={{ display: "flex", flexDirection: "column", gap: "24px", maxWidth: "790px" }}>
-              <div
-                style={{
-                  fontFamily: "Georgia, serif",
-                  fontSize: "71px",
-                  lineHeight: 1.04,
-                  letterSpacing: "-2.2px",
-                  fontWeight: 700,
-                }}
-              >
-                Would you share your experience?
-              </div>
-              <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    padding: "14px 24px",
-                    borderRadius: "999px",
-                    background: "#e1a634",
-                    color: "#17231d",
-                    fontSize: "24px",
-                    fontWeight: 800,
-                  }}
-                >
-                  Leave a Google review
-                </div>
-                <div style={{ fontSize: "21px", color: "#52665a" }}>Honest feedback is always welcome.</div>
-              </div>
-            </div>
-
+          <div style={{ display: "flex", flexDirection: "column", gap: "22px", maxWidth: "1000px" }}>
             <div
               style={{
-                width: "208px",
-                height: "208px",
-                flexShrink: 0,
+                fontFamily: "Playfair Display",
+                fontSize: "76px",
+                lineHeight: 1.03,
+                letterSpacing: "-2.2px",
+                fontWeight: 400,
+              }}
+            >
+              Would you share your experience?
+            </div>
+            <div style={{ fontSize: "25px", lineHeight: 1.35, color: "#52665a", maxWidth: "900px" }}>
+              Your honest feedback helps local homeowners know what it is like to work with Dominion Homes.
+            </div>
+            <div
+              style={{
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                borderRadius: "50px",
-                background: "#22543d",
-                color: "#fffaf0",
-                fontSize: "112px",
-                fontFamily: "Georgia, serif",
-                fontWeight: 700,
-                lineHeight: 1,
-                paddingTop: "28px",
+                width: "295px",
+                padding: "14px 24px",
+                borderRadius: "14px",
+                background: "linear-gradient(180deg, #ffd978 0%, #f5ad1b 62%, #e7950a 100%)",
+                color: "#212529",
+                fontSize: "24px",
+                fontWeight: 600,
               }}
             >
-              “
+              Leave a Google review
             </div>
           </div>
 
@@ -151,6 +153,14 @@ export default function Image() {
         </div>
       </div>
     ),
-    size,
+    {
+      ...size,
+      fonts: [
+        { name: "Playfair Display", data: displayFont, weight: 400 },
+        { name: "Source Sans 3", data: bodyFont, weight: 400 },
+        { name: "Source Sans 3", data: bodySemibold, weight: 600 },
+        { name: "Source Sans 3", data: bodyBold, weight: 700 },
+      ],
+    },
   );
 }
