@@ -59,6 +59,7 @@ function JsonLd() {
         description: SITE.description,
         url: SITE.url,
         hasMap: SITE.profiles.googleBusiness,
+        award: "BBB Accredited Business since August 19, 2026",
         telephone: SITE.phone,
         address: {
           "@type": "PostalAddress",

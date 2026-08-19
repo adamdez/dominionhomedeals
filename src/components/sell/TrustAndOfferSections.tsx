@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { SITE } from "@/lib/constants";
 import { SELLER_PROOF } from "@/lib/sell-proof";
 
@@ -34,22 +35,39 @@ export function SellerProofBand() {
   return (
     <section className="border-y border-stone-200 bg-white">
       <div className="mx-auto max-w-6xl px-5 py-8 sm:px-6 lg:px-8">
-        <div className="mb-5 flex flex-col gap-4 rounded-xl border border-[#005f86]/20 bg-[#005f86]/[0.06] p-5 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <p className="text-xs font-bold uppercase tracking-widest text-[#005f86]">BBB Accredited Business</p>
-            <h2 className="mt-1 font-display text-2xl text-ink-600">A verified commitment to trust.</h2>
-            <p className="mt-2 max-w-3xl text-sm leading-relaxed text-ink-400">
-              Dominion Homes is officially BBB Accredited and has committed to BBB&apos;s standards for honest advertising,
-              transparency, and marketplace trust.
-            </p>
+        <div className="mb-5 flex flex-col gap-5 rounded-xl border border-[#005f86]/20 bg-[#005f86]/[0.06] p-5 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+            <a
+              href={SITE.profiles.bbbBusiness}
+              target="_blank"
+              rel="noreferrer"
+              aria-label="View Dominion Group LLC's BBB Business Profile"
+              className="inline-flex w-fit shrink-0 rounded-lg bg-white p-3 shadow-sm ring-1 ring-[#005f86]/15 transition-transform hover:scale-[1.02]"
+            >
+              <Image
+                src="/images/bbb-accredited-business.svg"
+                alt="BBB Accredited Business"
+                width={220}
+                height={84}
+                className="h-auto w-[190px] sm:w-[220px]"
+              />
+            </a>
+            <div>
+              <p className="text-xs font-bold uppercase tracking-widest text-[#005f86]">BBB Accredited Business</p>
+              <h2 className="mt-1 font-display text-2xl text-ink-600">A verified commitment to trust.</h2>
+              <p className="mt-2 max-w-2xl text-sm leading-relaxed text-ink-400">
+                Dominion Homes, operated by Dominion Group LLC, has been BBB Accredited since August 19, 2026 and has
+                committed to BBB&apos;s standards for honest advertising, transparency, and marketplace trust.
+              </p>
+            </div>
           </div>
           <a
-            href={SITE.profiles.bbbStandards}
+            href={SITE.profiles.bbbBusiness}
             target="_blank"
             rel="noreferrer"
             className="inline-flex shrink-0 items-center justify-center rounded-lg border border-[#005f86]/25 bg-white px-4 py-2.5 text-sm font-semibold text-[#005f86] transition-colors hover:bg-[#005f86] hover:text-white"
           >
-            What accreditation means
+            View BBB profile
           </a>
         </div>
 

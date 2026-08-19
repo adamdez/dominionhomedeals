@@ -109,12 +109,12 @@ export function Footer() {
               <p>
                 Dominion Homes is a BBB Accredited Business. Accreditation approved August 19, 2026. {" "}
                 <a
-                  href={SITE.profiles.bbbStandards}
+                  href={SITE.profiles.bbbBusiness}
                   target="_blank"
                   rel="noreferrer"
                   className="underline transition-colors hover:text-stone-300"
                 >
-                  View BBB Accreditation Standards
+                  View our BBB Business Profile
                 </a>
                 .
               </p>

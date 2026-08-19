@@ -31,6 +31,8 @@ export const SITE = {
     googleBusiness: "https://www.google.com/maps?cid=5032019384215942012",
     /** Official "Ask for reviews" link from the Dominion Homes Google Business Profile. */
     googleReview: "https://g.page/r/CXwzEhv4UtVFEBM/review",
+    bbbBusiness:
+      "https://www.bbb.org/us/wa/spokane/profile/real-estate/dominion-group-llc-1296-1000200797",
     bbbStandards: "https://www.bbb.org/all/bbb-accreditation-standards",
   },
   trust: {
@@ -38,9 +40,12 @@ export const SITE = {
     bbbAccredited: true,
     bbbAccreditedSince: "2026-08-19",
   },
-  // Add profile URLs here once live (BBB, Facebook, etc.)
+  // Add profile URLs here once live (Facebook, etc.)
   // Schema sameAs in layout.tsx reads from this array.
-  sameAs: ["https://www.google.com/maps?cid=5032019384215942012"] as readonly string[],
+  sameAs: [
+    "https://www.google.com/maps?cid=5032019384215942012",
+    "https://www.bbb.org/us/wa/spokane/profile/real-estate/dominion-group-llc-1296-1000200797",
+  ] as readonly string[],
 } as const;
 
 /** Team - real people, real bios, honest */
