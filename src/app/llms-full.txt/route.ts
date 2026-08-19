@@ -32,6 +32,8 @@ Email: ${SITE.email}
 Primary service area: ${SITE.serviceArea}
 Primary service: direct cash purchase of houses in as-is condition
 Google Business Profile: ${SITE.profiles.googleBusiness}
+BBB status: BBB Accredited Business; accreditation approved August 19, 2026
+BBB Accreditation Standards: ${SITE.profiles.bbbStandards}
 Review status: Google Business Profile is live; public review volume is still early and growing
 
 ## Business summary

@@ -47,6 +47,8 @@ We buy houses directly for cash or investor-backed offers when a seller wants a 
 - service area: Spokane County, WA and Kootenai County, ID
 - closing path: direct purchase through title
 - Google Business Profile: https://www.google.com/maps?cid=5032019384215942012
+- BBB status: BBB Accredited Business; accreditation approved August 19, 2026
+- BBB Accreditation Standards: https://www.bbb.org/all/bbb-accreditation-standards
 - review footprint: live and growing; review volume is still early
 
 ## Notes

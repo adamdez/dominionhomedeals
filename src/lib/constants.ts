@@ -31,8 +31,14 @@ export const SITE = {
     googleBusiness: "https://www.google.com/maps?cid=5032019384215942012",
     /** Official "Ask for reviews" link from the Dominion Homes Google Business Profile. */
     googleReview: "https://g.page/r/CXwzEhv4UtVFEBM/review",
+    bbbStandards: "https://www.bbb.org/all/bbb-accreditation-standards",
   },
-  // Add profile URLs here once live (GBP, Facebook, etc.)
+  trust: {
+    /** Confirmed by BBB approval email received August 19, 2026. */
+    bbbAccredited: true,
+    bbbAccreditedSince: "2026-08-19",
+  },
+  // Add profile URLs here once live (BBB, Facebook, etc.)
   // Schema sameAs in layout.tsx reads from this array.
   sameAs: ["https://www.google.com/maps?cid=5032019384215942012"] as readonly string[],
 } as const;

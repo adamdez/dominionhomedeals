@@ -105,6 +105,20 @@ export function Footer() {
               agents or brokers. We buy properties directly. We are not affiliated with any government agency. This is
               not a solicitation for listings.
             </p>
+            {SITE.trust.bbbAccredited ? (
+              <p>
+                Dominion Homes is a BBB Accredited Business. Accreditation approved August 19, 2026. {" "}
+                <a
+                  href={SITE.profiles.bbbStandards}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="underline transition-colors hover:text-stone-300"
+                >
+                  View BBB Accreditation Standards
+                </a>
+                .
+              </p>
+            ) : null}
             <p>
               Serving Spokane County, WA and Kootenai County, ID. Title services provided by{" "}
               <a

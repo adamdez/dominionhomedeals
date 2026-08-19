@@ -33,53 +33,74 @@ export function SellerProofBand() {
 
   return (
     <section className="border-y border-stone-200 bg-white">
-      <div className="mx-auto grid max-w-6xl gap-5 px-5 py-8 sm:px-6 lg:grid-cols-4 lg:px-8">
-        <div className="rounded-xl border border-stone-200 bg-stone-50 p-5">
-          <p className="text-xs font-bold uppercase tracking-widest text-forest-500">Verified Local Profile</p>
-          <h2 className="mt-2 font-display text-xl text-ink-600">Google Business Profile</h2>
-          <p className="mt-2 text-sm leading-relaxed text-ink-400">
-            The phone and business information should match what you see here.
-          </p>
+      <div className="mx-auto max-w-6xl px-5 py-8 sm:px-6 lg:px-8">
+        <div className="mb-5 flex flex-col gap-4 rounded-xl border border-[#005f86]/20 bg-[#005f86]/[0.06] p-5 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-widest text-[#005f86]">BBB Accredited Business</p>
+            <h2 className="mt-1 font-display text-2xl text-ink-600">A verified commitment to trust.</h2>
+            <p className="mt-2 max-w-3xl text-sm leading-relaxed text-ink-400">
+              Dominion Homes is officially BBB Accredited and has committed to BBB&apos;s standards for honest advertising,
+              transparency, and marketplace trust.
+            </p>
+          </div>
           <a
-            href={SITE.profiles.googleBusiness}
+            href={SITE.profiles.bbbStandards}
             target="_blank"
             rel="noreferrer"
-            className="mt-4 inline-flex text-sm font-semibold text-forest-600 underline-offset-4 hover:underline"
+            className="inline-flex shrink-0 items-center justify-center rounded-lg border border-[#005f86]/25 bg-white px-4 py-2.5 text-sm font-semibold text-[#005f86] transition-colors hover:bg-[#005f86] hover:text-white"
           >
-            View Google profile
+            What accreditation means
           </a>
         </div>
 
-        <div className="rounded-xl border border-stone-200 bg-stone-50 p-5">
-          <p className="text-xs font-bold uppercase tracking-widest text-forest-500">Owner-Led</p>
-          <h2 className="mt-2 font-display text-xl text-ink-600">{SELLER_PROOF.founder.name}</h2>
-          <p className="mt-2 text-sm leading-relaxed text-ink-400">
-            You work with a local buyer serving Spokane County and Kootenai County.
-          </p>
-          <Link href="/about" className="mt-4 inline-flex text-sm font-semibold text-forest-600 underline-offset-4 hover:underline">
-            Meet the team
-          </Link>
-        </div>
+        <div className="grid gap-5 lg:grid-cols-4">
+          <div className="rounded-xl border border-stone-200 bg-stone-50 p-5">
+            <p className="text-xs font-bold uppercase tracking-widest text-forest-500">Verified Local Profile</p>
+            <h2 className="mt-2 font-display text-xl text-ink-600">Google Business Profile</h2>
+            <p className="mt-2 text-sm leading-relaxed text-ink-400">
+              The phone and business information should match what you see here.
+            </p>
+            <a
+              href={SITE.profiles.googleBusiness}
+              target="_blank"
+              rel="noreferrer"
+              className="mt-4 inline-flex text-sm font-semibold text-forest-600 underline-offset-4 hover:underline"
+            >
+              View Google profile
+            </a>
+          </div>
 
-        <div className="rounded-xl border border-stone-200 bg-stone-50 p-5">
-          <p className="text-xs font-bold uppercase tracking-widest text-forest-500">Title Closing</p>
-          <h2 className="mt-2 font-display text-xl text-ink-600">Clear paperwork</h2>
-          <p className="mt-2 text-sm leading-relaxed text-ink-400">
-            Closings run through title so documents, payoffs, and funds are handled clearly.
-          </p>
-          <Link href="/how-we-work" className="mt-4 inline-flex text-sm font-semibold text-forest-600 underline-offset-4 hover:underline">
-            See the process
-          </Link>
-        </div>
+          <div className="rounded-xl border border-stone-200 bg-stone-50 p-5">
+            <p className="text-xs font-bold uppercase tracking-widest text-forest-500">Owner-Led</p>
+            <h2 className="mt-2 font-display text-xl text-ink-600">{SELLER_PROOF.founder.name}</h2>
+            <p className="mt-2 text-sm leading-relaxed text-ink-400">
+              You work with a local buyer serving Spokane County and Kootenai County.
+            </p>
+            <Link href="/about" className="mt-4 inline-flex text-sm font-semibold text-forest-600 underline-offset-4 hover:underline">
+              Meet the team
+            </Link>
+          </div>
 
-        <div className="rounded-xl border border-stone-200 bg-amber-50 p-5">
-          <p className="text-xs font-bold uppercase tracking-widest text-amber-600">Seller Feedback</p>
-          <blockquote className="mt-2 text-sm leading-relaxed text-ink-500">
-            "{testimonial.quote}"
-          </blockquote>
-          <p className="mt-3 text-xs font-semibold uppercase tracking-widest text-ink-300">
-            {testimonial.name} - {testimonial.neighborhood}
-          </p>
+          <div className="rounded-xl border border-stone-200 bg-stone-50 p-5">
+            <p className="text-xs font-bold uppercase tracking-widest text-forest-500">Title Closing</p>
+            <h2 className="mt-2 font-display text-xl text-ink-600">Clear paperwork</h2>
+            <p className="mt-2 text-sm leading-relaxed text-ink-400">
+              Closings run through title so documents, payoffs, and funds are handled clearly.
+            </p>
+            <Link href="/how-we-work" className="mt-4 inline-flex text-sm font-semibold text-forest-600 underline-offset-4 hover:underline">
+              See the process
+            </Link>
+          </div>
+
+          <div className="rounded-xl border border-stone-200 bg-amber-50 p-5">
+            <p className="text-xs font-bold uppercase tracking-widest text-amber-600">Seller Feedback</p>
+            <blockquote className="mt-2 text-sm leading-relaxed text-ink-500">
+              "{testimonial.quote}"
+            </blockquote>
+            <p className="mt-3 text-xs font-semibold uppercase tracking-widest text-ink-300">
+              {testimonial.name} - {testimonial.neighborhood}
+            </p>
+          </div>
         </div>
       </div>
     </section>
