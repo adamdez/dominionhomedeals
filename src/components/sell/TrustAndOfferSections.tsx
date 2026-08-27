@@ -29,6 +29,9 @@ const verifyItems = [
   "Do not pay upfront fees or sign under pressure.",
 ] as const;
 
+const BBB_DYNAMIC_SEAL_URL =
+  "https://seal-alaskaoregonwesternwashington.bbb.org/logo/ruhzbal/dominion-group-llc-1000200797.png";
+
 export function SellerProofBand() {
   const testimonial = SELLER_PROOF.verifiedTestimonials[0];
 
@@ -42,15 +45,18 @@ export function SellerProofBand() {
               target="_blank"
               rel="noreferrer"
               aria-label="View Dominion Group LLC's BBB Business Profile"
-              className="inline-flex w-fit shrink-0 rounded-lg bg-white p-3 shadow-sm ring-1 ring-[#005f86]/15 transition-transform hover:scale-[1.02]"
+              className="group inline-flex w-fit shrink-0 rounded-lg bg-white p-3 shadow-sm ring-1 ring-[#005f86]/15 transition-transform hover:scale-[1.02]"
             >
-              <Image
-                src="/images/bbb-accredited-business.svg"
-                alt="BBB Accredited Business"
-                width={220}
-                height={84}
-                className="h-auto w-[190px] sm:w-[220px]"
-              />
+              <span className="relative block h-[90px] w-[200px] overflow-hidden">
+                <Image
+                  src={BBB_DYNAMIC_SEAL_URL}
+                  alt="Dominion Group LLC is a BBB Accredited Business"
+                  width={400}
+                  height={90}
+                  unoptimized
+                  className="h-[90px] w-[400px] max-w-none transition-transform duration-300 group-hover:-translate-x-1/2 group-focus-visible:-translate-x-1/2"
+                />
+              </span>
             </a>
             <div>
               <p className="text-xs font-bold uppercase tracking-widest text-[#005f86]">BBB Accredited Business</p>

@@ -12,6 +12,13 @@ const nextConfig: NextConfig = {
     deviceSizes: [640, 750, 828, 1080, 1200, 1536],
     imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
     minimumCacheTTL: 60 * 60 * 24 * 30,
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "seal-alaskaoregonwesternwashington.bbb.org",
+        pathname: "/logo/**",
+      },
+    ],
     // Placeholder assets are SVG; allow SVG for next/image.
     dangerouslyAllowSVG: true,
     contentDispositionType: "attachment",
