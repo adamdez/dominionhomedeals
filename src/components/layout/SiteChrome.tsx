@@ -11,11 +11,13 @@ export function SiteChrome({ children }: { children: React.ReactNode }) {
     return <main id="main-content">{children}</main>;
   }
 
+  const variant = pathname === "/sell/options" ? "options" : "default";
+
   return (
     <>
-      <Header />
+      <Header variant={variant} />
       <main id="main-content">{children}</main>
-      <Footer />
+      <Footer variant={variant} />
     </>
   );
 }

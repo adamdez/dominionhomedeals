@@ -1,6 +1,27 @@
 import { getServiceClient } from "@/lib/supabase";
+import { createHash } from "node:crypto";
 
 const DOMINION_LEAD_CATEGORY = "dominion_lead_control";
+export const DOMINION_OPTIONS_FLOW = "seller_options_v1";
+
+export type DominionSellerAuthority = "owner" | "authorized_representative";
+export type DominionDeliveryOutcome = {
+  status: "pending" | "provider_accepted" | "skipped" | "failed" | "outcome_unknown";
+  referenceId?: string;
+};
+export type DominionDeliveryMap = Record<
+  "email" | "teamSms" | "sentinel" | "lazarus" | "mailchimp",
+  DominionDeliveryOutcome
+>;
+export interface DominionOptionsReceipt {
+  flow: typeof DOMINION_OPTIONS_FLOW;
+  submissionId: string;
+  payloadFingerprint: string;
+  receivedAt: string;
+  delivery: DominionDeliveryMap;
+  deliveryUpdatedAt?: string;
+  [key: string]: unknown;
+}
 
 type JsonRecord = Record<string, unknown>;
 type StringMap = Record<string, string>;
@@ -25,6 +46,7 @@ export interface DominionLeadRecord {
   zip: string;
   condition: string;
   timeline: string;
+  primaryConstraint?: string;
   submittedAt: string;
   source: string;
   landingPage: string;
@@ -47,6 +69,8 @@ export interface DominionLeadRecord {
   plannerTaskId: number | null;
   createdAt: string | null;
   updatedAt: string | null;
+  sellerAuthority?: DominionSellerAuthority | null;
+  optionsReceipt?: DominionOptionsReceipt | null;
 }
 
 export interface DominionLeadSubmissionInput {
@@ -60,6 +84,7 @@ export interface DominionLeadSubmissionInput {
   zip: string;
   condition: string;
   timeline: string;
+  primaryConstraint?: string | null;
   source?: string | null;
   landingPage?: string | null;
   utmSource?: string | null;
@@ -73,6 +98,8 @@ export interface DominionLeadSubmissionInput {
   smsConsentTimestamp?: string | null;
   smsConsentIP?: string | null;
   submittedAt: string;
+  sellerAuthority?: DominionSellerAuthority | null;
+  tcpaConsented?: boolean;
 }
 
 function parseContent(raw: string | null): JsonRecord {
@@ -87,16 +114,30 @@ function parseContent(raw: string | null): JsonRecord {
   }
 }
 
+function optionsReceiptFromContent(value: unknown): DominionOptionsReceipt | null {
+  // Preserve the entire server-owned envelope during lead status/owner edits.
+  // Validate its identity separately before acknowledging a duplicate.
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? (value as DominionOptionsReceipt)
+    : null;
+}
+
+function sellerAuthority(value: unknown): DominionSellerAuthority | null {
+  return value === "owner" || value === "authorized_representative" ? value : null;
+}
+
 function shortText(value: unknown, max = 400): string {
   return typeof value === "string" && value.trim() ? value.trim().slice(0, max) : "";
 }
 
-function normalizeStringRecord(value: unknown): StringMap {
+function normalizeStringRecord(value: unknown, preserveRawValues = false): StringMap {
   if (!value || typeof value !== "object" || Array.isArray(value)) return {};
 
   return Object.fromEntries(
     Object.entries(value as Record<string, unknown>)
-      .map(([key, entry]) => [shortText(key, 80), shortText(entry, 300)] as const)
+      .sort(([a], [b]) => preserveRawValues ? Number(b === "oppref") - Number(a === "oppref") : 0)
+      .map(([key, entry]) => [shortText(key, 80),
+        preserveRawValues && typeof entry === "string" ? entry : shortText(entry, 300)] as const)
       .filter(([key, entry]) => key && entry)
       .slice(0, 80),
   );
@@ -144,6 +185,8 @@ function rowToDominionLead(row: {
   updated_at: string | null;
 }): DominionLeadRecord {
   const content = parseContent(row.content);
+  const optionsReceipt = optionsReceiptFromContent(content.optionsReceipt);
+  const isOptionsFlow = optionsReceipt?.flow === DOMINION_OPTIONS_FLOW;
   const firstName = shortText(content.firstName, 120);
   const lastName = shortText(content.lastName, 120);
   const fullName =
@@ -171,7 +214,7 @@ function rowToDominionLead(row: {
     utmTerm: shortText(content.utmTerm, 240),
     utmContent: shortText(content.utmContent, 240),
     gclid: shortText(content.gclid, 160),
-    adAttribution: normalizeStringRecord(content.adAttribution),
+    adAttribution: normalizeStringRecord(content.adAttribution, isOptionsFlow),
     smsConsent: content.smsConsent === true,
     smsConsentTimestamp: normalizeTimestamp(content.smsConsentTimestamp),
     smsConsentIP: shortText(content.smsConsentIP, 80),
@@ -187,6 +230,10 @@ function rowToDominionLead(row: {
         : null,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
+    ...(isOptionsFlow ? {
+      primaryConstraint: shortText(content.primaryConstraint, 240),
+      sellerAuthority: sellerAuthority(content.sellerAuthority), optionsReceipt,
+    } : {}),
   };
 }
 
@@ -215,7 +262,7 @@ function dominionLeadToContent(
     utmTerm: record.utmTerm.trim(),
     utmContent: record.utmContent.trim(),
     gclid: record.gclid.trim(),
-    adAttribution: normalizeStringRecord(record.adAttribution),
+    adAttribution: normalizeStringRecord(record.adAttribution, record.optionsReceipt?.flow === DOMINION_OPTIONS_FLOW),
     smsConsent: record.smsConsent === true,
     smsConsentTimestamp: normalizeTimestamp(record.smsConsentTimestamp),
     smsConsentIP: record.smsConsentIP.trim(),
@@ -226,15 +273,18 @@ function dominionLeadToContent(
     nextActionDueDate: normalizeDate(record.nextActionDueDate),
     notes: shortText(record.notes, 2000),
     plannerTaskId: record.plannerTaskId || null,
+    ...(record.optionsReceipt?.flow === DOMINION_OPTIONS_FLOW ? {
+      primaryConstraint: shortText(record.primaryConstraint, 240),
+      ...(sellerAuthority(record.sellerAuthority) ? { sellerAuthority: record.sellerAuthority } : {}),
+      optionsReceipt: record.optionsReceipt,
+    } : {}),
   });
 }
 
-export async function recordDominionLeadSubmission(
+function submissionRecord(
   input: DominionLeadSubmissionInput,
-): Promise<DominionLeadRecord | null> {
-  const supabase = getServiceClient();
-  if (!supabase) return null;
-
+  isOptionsFlow = false,
+): Omit<DominionLeadRecord, "id" | "createdAt" | "updatedAt"> {
   const fullName = `${shortText(input.firstName, 120)} ${shortText(input.lastName, 120)}`.trim() || "Unknown lead";
   const baseRecord: Omit<DominionLeadRecord, "id" | "createdAt" | "updatedAt"> = {
     fullName,
@@ -255,7 +305,7 @@ export async function recordDominionLeadSubmission(
     utmTerm: shortText(input.utmTerm, 240),
     utmContent: shortText(input.utmContent, 240),
     gclid: shortText(input.gclid, 160),
-    adAttribution: normalizeStringRecord(input.adAttribution),
+    adAttribution: normalizeStringRecord(input.adAttribution, isOptionsFlow),
     smsConsent: input.smsConsent === true,
     smsConsentTimestamp: normalizeTimestamp(input.smsConsentTimestamp),
     smsConsentIP: shortText(input.smsConsentIP, 80),
@@ -266,7 +316,21 @@ export async function recordDominionLeadSubmission(
     nextActionDueDate: null,
     notes: "",
     plannerTaskId: null,
+    ...(isOptionsFlow ? {
+      primaryConstraint: shortText(input.primaryConstraint, 240),
+      ...(sellerAuthority(input.sellerAuthority) ? { sellerAuthority: input.sellerAuthority } : {}),
+    } : {}),
   };
+
+  return baseRecord;
+}
+
+export async function recordDominionLeadSubmission(
+  input: DominionLeadSubmissionInput,
+): Promise<DominionLeadRecord | null> {
+  const supabase = getServiceClient();
+  if (!supabase) return null;
+  const baseRecord = submissionRecord(input);
 
   const { data, error } = await supabase
     .from("al_memories")
@@ -289,4 +353,116 @@ export async function recordDominionLeadSubmission(
       updated_at: string | null;
     },
   );
+}
+
+export function isDominionOptionsSubmissionId(value: unknown): value is string {
+  return typeof value === "string" &&
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
+}
+
+export class DominionOptionsSubmissionConflictError extends Error {
+  constructor() {
+    super("This submission reference was already used for different details.");
+    this.name = "DominionOptionsSubmissionConflictError";
+  }
+}
+
+interface OptionsSubmissionReceipt {
+  record: DominionLeadRecord;
+  duplicate: boolean;
+  contentHash: string;
+  storedContent: string;
+}
+
+function pendingDelivery(): DominionDeliveryMap {
+  return {
+    email: { status: "pending" }, lazarus: { status: "pending" },
+    teamSms: { status: "skipped" }, sentinel: { status: "skipped" }, mailchimp: { status: "skipped" },
+  };
+}
+
+export function dominionOptionsDeliveryStatus(delivery: DominionDeliveryMap | undefined) {
+  const outcomes = Object.values(delivery || {});
+  if (outcomes.some((outcome) => outcome.status === "pending")) return "pending";
+  if (!outcomes.length || outcomes.some((outcome) =>
+    outcome.status === "failed" || outcome.status === "outcome_unknown")) return "needs_review";
+  // A newsletter sync alone is not an operational seller-lead destination.
+  return [delivery?.email, delivery?.teamSms, delivery?.sentinel, delivery?.lazarus]
+    .some((outcome) => outcome?.status === "provider_accepted")
+    ? "provider_accepted" : "needs_review";
+}
+
+export async function recordDominionOptionsLeadSubmission(
+  input: DominionLeadSubmissionInput,
+  submissionId: string,
+): Promise<OptionsSubmissionReceipt> {
+  if (!isDominionOptionsSubmissionId(submissionId) || !sellerAuthority(input.sellerAuthority)) {
+    throw new Error("Invalid seller-options submission identity.");
+  }
+  const supabase = getServiceClient();
+  if (!supabase) throw new Error("Durable lead storage is unavailable.");
+
+  const normalizedId = submissionId.toLowerCase();
+  const base = submissionRecord(input, true);
+  const contentHash = createHash("sha256")
+    .update(`dominion:${DOMINION_OPTIONS_FLOW}:${normalizedId}`).digest("hex");
+  // Generated timestamps/IP are not seller input and must not break a retry.
+  const { submittedAt: _submittedAt, smsConsentTimestamp: _consentAt,
+    smsConsentIP: _consentIp, ...immutable } = base;
+  const payloadFingerprint = createHash("sha256").update(JSON.stringify({
+    ...immutable,
+    adAttribution: Object.fromEntries(Object.entries(base.adAttribution).sort(([a], [b]) => a < b ? -1 : a > b ? 1 : 0)),
+    tcpaConsented: input.tcpaConsented === true,
+  })).digest("hex");
+  const optionsReceipt: DominionOptionsReceipt = {
+    flow: DOMINION_OPTIONS_FLOW, submissionId: normalizedId, payloadFingerprint,
+    receivedAt: base.submittedAt, delivery: pendingDelivery(),
+  };
+  const content = dominionLeadToContent({ ...base, optionsReceipt });
+
+  // Verified 2026-08-27: existing UNIQUE(category, content_hash). The normal
+  // bigint identity stays untouched. Only the winning INSERT may run fanout.
+  const inserted = await supabase.from("al_memories").insert({
+    category: DOMINION_LEAD_CATEGORY, content_hash: contentHash, content,
+  }).select("id, content, created_at, updated_at").single();
+  let row = inserted.data;
+  let duplicate = false;
+  if (inserted.error?.code === "23505") {
+    const existing = await supabase.from("al_memories")
+      .select("id, content, created_at, updated_at")
+      .eq("category", DOMINION_LEAD_CATEGORY).eq("content_hash", contentHash).maybeSingle();
+    if (existing.error || !existing.data) throw new Error("Could not verify the existing submission.");
+    row = existing.data;
+    const saved = optionsReceiptFromContent(parseContent(row.content).optionsReceipt);
+    if (saved?.flow !== DOMINION_OPTIONS_FLOW || saved.submissionId !== normalizedId ||
+      saved.payloadFingerprint !== payloadFingerprint) throw new DominionOptionsSubmissionConflictError();
+    duplicate = true;
+  } else if (inserted.error || !row) {
+    throw new Error("Could not record the seller-options inquiry.");
+  }
+  if (!row || !Number.isSafeInteger(row.id) || row.id <= 0) {
+    throw new Error("The saved submission did not return a valid receipt.");
+  }
+  return { record: rowToDominionLead(row), duplicate, contentHash, storedContent: row.content };
+}
+
+export async function recordDominionOptionsDelivery(
+  receipt: OptionsSubmissionReceipt,
+  delivery: DominionDeliveryMap,
+): Promise<void> {
+  const supabase = getServiceClient();
+  if (!supabase || !receipt.record.optionsReceipt || receipt.duplicate) {
+    throw new Error("Only the receipt creator can record delivery outcomes.");
+  }
+  const updatedAt = new Date().toISOString();
+  const content = dominionLeadToContent({
+    ...receipt.record,
+    optionsReceipt: { ...receipt.record.optionsReceipt, delivery, deliveryUpdatedAt: updatedAt },
+  });
+  const { data, error } = await supabase.from("al_memories")
+    .update({ content, updated_at: updatedAt })
+    .eq("id", receipt.record.id).eq("category", DOMINION_LEAD_CATEGORY)
+    .eq("content_hash", receipt.contentHash).eq("content", receipt.storedContent)
+    .select("id").single();
+  if (error || !data) throw new Error("Delivery outcomes need operator reconciliation.");
 }

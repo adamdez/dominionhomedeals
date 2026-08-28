@@ -1,6 +1,6 @@
 'use client'
 
-import { FormEvent, useEffect, useState } from 'react'
+import { FormEvent, useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { trackFormStep, trackLeadFormSubmission } from '@/lib/tracking'
 import { SITE, SMS_CONSENT_TEXT, SMS_CTA_DISCLOSURE } from '@/lib/constants'
@@ -12,6 +12,8 @@ interface FormData {
   fullName: string
   phone: string
   email: string
+  primaryConstraint: string
+  sellerAuthority: string
   condition: string
   timeline: string
   smsConsent: boolean
@@ -22,6 +24,7 @@ interface FormData {
   utmTerm: string
   utmContent: string
   gclid: string
+  oppref: string
   landingPage: string
   city: string
   state: string
@@ -33,6 +36,8 @@ const initialFormData: FormData = {
   fullName: '',
   phone: '',
   email: '',
+  primaryConstraint: '',
+  sellerAuthority: '',
   condition: '',
   timeline: '',
   smsConsent: false,
@@ -43,6 +48,7 @@ const initialFormData: FormData = {
   utmTerm: '',
   utmContent: '',
   gclid: '',
+  oppref: '',
   landingPage: '',
   city: '',
   state: 'WA',
@@ -63,6 +69,15 @@ const timelineOptions = [
   '2-4 weeks',
   '1-3 months',
   'Just exploring',
+] as const
+
+const primaryConstraintOptions = [
+  'Maximize my realistic net',
+  'Avoid repairs or cleanout',
+  'Find a buyer who will follow through',
+  'Gain time for moving or occupants',
+  'Compare listing with selling as-is',
+  'Something else',
 ] as const
 
 function SmsConsentCheckbox({
@@ -138,21 +153,90 @@ function inferCityStateZip(address: string) {
   }
 }
 
-export function LeadForm() {
+function inferOptionsCityStateZip(address: string) {
+  const normalizedAddress = address.trim()
+  // Read the state at the end of the address, never from a street direction.
+  const locationMatch = normalizedAddress.match(
+    /(?:,\s*|\s+)(WA|ID|Washington|Idaho)(?:[\s,]+(\d{5})(?:-\d{4})?)?(?:[\s,]+(?:USA?|United States))?\s*$/i
+  )
+  const stateName = locationMatch?.[1]?.toUpperCase() || ''
+  const beforeState = locationMatch
+    ? normalizedAddress.slice(0, locationMatch.index).replace(/,\s*$/, '')
+    : ''
+  const cityMatch = beforeState.match(/,\s*([^,]+)$/)
+
+  return {
+    city: cityMatch?.[1]?.trim() || '',
+    state: stateName === 'WA' || stateName === 'WASHINGTON'
+      ? 'WA'
+      : stateName === 'ID' || stateName === 'IDAHO' ? 'ID' : '',
+    zip: locationMatch?.[2] || '',
+  }
+}
+
+interface LeadFormProps {
+  intro?: string
+  addressLabel?: string
+  submitLabel?: string
+  requirePropertyState?: boolean
+  submissionFlow?: 'seller_options_v1'
+}
+
+interface OptionsReceipt {
+  receiptId: string
+  duplicate: boolean
+}
+
+function acceptedOptionsReceipt(responseOk: boolean, value: unknown): OptionsReceipt | null {
+  if (!responseOk || !value || typeof value !== 'object' || Array.isArray(value)) return null
+  const data = value as Record<string, unknown>
+  if (
+    data.success !== true || data.accepted !== true || data.controlRecorded !== true ||
+    typeof data.receiptId !== 'string' || !data.receiptId.trim() ||
+    typeof data.duplicate !== 'boolean'
+  ) return null
+  return { receiptId: data.receiptId.trim(), duplicate: data.duplicate }
+}
+
+function hasSellerAuthority(value: string) {
+  return value === 'owner' || value === 'authorized_representative'
+}
+
+export function LeadForm({
+  intro = 'Start with the address. We will ask one thing at a time.',
+  addressLabel = "What's the property address?",
+  submitLabel = 'Get My Cash Offer',
+  requirePropertyState = false,
+  submissionFlow,
+}: LeadFormProps = {}) {
+  const isSellerOptions = submissionFlow === 'seller_options_v1'
   const [stage, setStage] = useState<Stage>('address')
-  const [formData, setFormData] = useState<FormData>(initialFormData)
+  const [formData, setFormData] = useState<FormData>(() => (
+    isSellerOptions ? { ...initialFormData, state: '' } : initialFormData
+  ))
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [errorMessage, setErrorMessage] = useState('')
+  const [optionsReceipt, setOptionsReceipt] = useState<OptionsReceipt | null>(null)
+  const submissionLock = useRef(false)
+  const optionsAttempt = useRef<{ fingerprint: string; body: string } | null>(null)
+  const receiptElement = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (optionsReceipt) receiptElement.current?.focus()
+  }, [optionsReceipt])
 
   useEffect(() => {
     if (typeof window === 'undefined') return
 
     const params = new URLSearchParams(window.location.search)
     const gclidFromQuery = params.get('gclid') || ''
+    const opprefFromQuery = params.get('oppref') || ''
     let storedGclid = ''
 
     try {
-      storedGclid = localStorage.getItem('gclid') || ''
+      if (!isSellerOptions) {
+        storedGclid = localStorage.getItem('gclid') || ''
+      }
     } catch (error) {}
 
     setFormData((prev) => ({
@@ -162,27 +246,33 @@ export function LeadForm() {
       utmCampaign: params.get('utm_campaign') || '',
       utmTerm: params.get('utm_term') || '',
       utmContent: params.get('utm_content') || '',
-      gclid: gclidFromQuery || storedGclid || '',
+      gclid: isSellerOptions ? gclidFromQuery : gclidFromQuery || storedGclid || '',
+      oppref: isSellerOptions ? opprefFromQuery : '',
       landingPage: window.location.pathname + window.location.search,
     }))
-  }, [])
+  }, [isSellerOptions])
 
   const updateField = (field: keyof FormData, value: string | boolean) => {
+    if (isSellerOptions && submissionLock.current) return
     setFormData((prev) => ({ ...prev, [field]: value }))
   }
 
   const canContinueCurrentStage = () => {
     switch (stage) {
       case 'address':
-        return formData.address.trim().length >= 6
+        return formData.address.trim().length >= 6 && (
+          !requirePropertyState || Boolean(inferOptionsCityStateZip(formData.address).state)
+        )
       case 'name':
         return formData.fullName.trim().length >= 2
       case 'phone':
         return formData.phone.replace(/\D/g, '').length >= 10
       case 'details':
         return (
-          !formData.email.trim() ||
-          /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i.test(formData.email)
+          (!isSellerOptions || hasSellerAuthority(formData.sellerAuthority)) && (
+            !formData.email.trim() ||
+            /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i.test(formData.email)
+          )
         )
       default:
         return false
@@ -199,6 +289,7 @@ export function LeadForm() {
   }
 
   const goBack = () => {
+    if (isSellerOptions && submissionLock.current) return
     const currentIndex = stages.indexOf(stage)
     const previousStage = stages[currentIndex - 1]
     if (!previousStage) return
@@ -206,72 +297,140 @@ export function LeadForm() {
   }
 
   const submitLead = async () => {
-    if (isSubmitting) return
+    if (isSubmitting || (isSellerOptions && submissionLock.current)) return
 
+    const inferredAddressParts = isSellerOptions
+      ? inferOptionsCityStateZip(formData.address)
+      : inferCityStateZip(formData.address)
+    if (requirePropertyState && !inferredAddressParts.state) {
+      setErrorMessage('Please include WA or ID in the property address.')
+      setStage('address')
+      return
+    }
+    if (isSellerOptions && !hasSellerAuthority(formData.sellerAuthority)) {
+      setErrorMessage('Please select your role with the property.')
+      setStage('details')
+      return
+    }
+
+    submissionLock.current = isSellerOptions
     setIsSubmitting(true)
     setErrorMessage('')
 
     const { firstName, lastName } = splitFullName(formData.fullName)
-    const inferredAddressParts = inferCityStateZip(formData.address)
+    const propertyState = isSellerOptions
+      ? inferredAddressParts.state || formData.state
+      : formData.state || inferredAddressParts.state
     const submittedAt = new Date().toISOString()
     const smsConsentTimestamp = formData.smsConsent ? submittedAt : null
+    const receiptError = "We couldn't confirm receipt. Your entries are still here. Please try again or call " + SITE.phone + "."
+    let accepted = false
 
     try {
-      const response = await fetch('/api/leads', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          address: formData.address,
-          city: formData.city || inferredAddressParts.city,
-          state: formData.state || inferredAddressParts.state,
-          zip: formData.zip || inferredAddressParts.zip,
-          condition: formData.condition,
-          timeline: formData.timeline,
-          firstName,
-          lastName,
-          phone: formData.phone,
-          email: formData.email,
-          tcpaConsent: false,
-          tcpaTimestamp: null,
-          sms_consent: formData.smsConsent,
-          sms_consent_timestamp: smsConsentTimestamp,
-          smsOptIn: formData.smsConsent,
-          smsOptInTimestamp: smsConsentTimestamp,
-          honeypot: formData.honeypot,
-          source: 'website',
-          landingPage: formData.landingPage,
-          utmSource: formData.utmSource,
-          utmMedium: formData.utmMedium,
-          utmCampaign: formData.utmCampaign,
-          utmTerm: formData.utmTerm,
-          utmContent: formData.utmContent,
-          gclid: formData.gclid,
-        }),
-      })
-
-      const data = await response.json()
-
-      if (!response.ok || !data.success) {
-        setErrorMessage(data.error || `Something went wrong. Please call us at ${SITE.phone}.`)
-        return
-      }
-
-      trackLeadFormSubmission({
+      const leadPayload = {
+        address: formData.address,
+        city: formData.city || inferredAddressParts.city,
+        state: propertyState,
+        zip: formData.zip || inferredAddressParts.zip,
+        condition: formData.condition,
+        timeline: formData.timeline,
+        firstName,
+        lastName,
+        phone: formData.phone,
+        email: formData.email,
+        tcpaConsent: false,
+        tcpaTimestamp: null,
+        sms_consent: formData.smsConsent,
+        sms_consent_timestamp: smsConsentTimestamp,
+        smsOptIn: formData.smsConsent,
+        smsOptInTimestamp: smsConsentTimestamp,
+        honeypot: formData.honeypot,
+        source: 'website',
         landingPage: formData.landingPage,
         utmSource: formData.utmSource,
         utmMedium: formData.utmMedium,
         utmCampaign: formData.utmCampaign,
-        propertyCity: formData.city || inferredAddressParts.city,
-        propertyState: formData.state || inferredAddressParts.state,
-        sellerTimeline: formData.timeline || 'Not provided',
-        propertyCondition: formData.condition || 'Not provided',
-      })
+        utmTerm: formData.utmTerm,
+        utmContent: formData.utmContent,
+        gclid: formData.gclid,
+      }
+      let body = JSON.stringify(leadPayload)
+      let trackingLandingPage = formData.landingPage
 
-      window.location.assign('/sell/thank-you')
+      if (isSellerOptions) {
+        const currentParams = new URLSearchParams(window.location.search)
+        const optionsPayload = {
+          ...leadPayload,
+          primaryConstraint: formData.primaryConstraint,
+          submissionFlow: 'seller_options_v1',
+          sellerAuthority: formData.sellerAuthority,
+          oppref: currentParams.get('oppref') || '',
+          gclid: currentParams.get('gclid') || '',
+          landingPage: window.location.pathname + window.location.search,
+        }
+        trackingLandingPage = optionsPayload.landingPage
+        // Keep the exact request, including consent times, for an identical retry.
+        // Generated times are not a change to what the homeowner submitted.
+        const fingerprint = JSON.stringify({
+          ...optionsPayload,
+          sms_consent_timestamp: null,
+          smsOptInTimestamp: null,
+        })
+        if (!optionsAttempt.current || optionsAttempt.current.fingerprint !== fingerprint) {
+          optionsAttempt.current = {
+            fingerprint,
+            body: JSON.stringify({ ...optionsPayload, submissionId: crypto.randomUUID() }),
+          }
+        }
+        body = optionsAttempt.current.body
+      }
+
+      const response = await fetch('/api/leads', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body,
+      })
+      const data = await response.json()
+      const receipt = isSellerOptions && !formData.honeypot
+        ? acceptedOptionsReceipt(response.ok, data)
+        : null
+
+      if (isSellerOptions ? !receipt : !response.ok || !data.success) {
+        setErrorMessage(isSellerOptions
+          ? (typeof data?.error === 'string' && data.error ? data.error : receiptError)
+          : data.error || `Something went wrong. Please call us at ${SITE.phone}.`)
+        return
+      }
+
+      if (receipt) {
+        accepted = true
+        setOptionsReceipt(receipt)
+      }
+
+      if (!isSellerOptions || receipt?.duplicate === false) {
+        try {
+          trackLeadFormSubmission({
+            landingPage: trackingLandingPage,
+            utmSource: formData.utmSource,
+            utmMedium: formData.utmMedium,
+            utmCampaign: formData.utmCampaign,
+            propertyCity: formData.city || inferredAddressParts.city,
+            propertyState,
+            sellerTimeline: formData.timeline || 'Not provided',
+            propertyCondition: formData.condition || 'Not provided',
+          })
+        } catch (trackingError) {
+          // A tracking error cannot turn a recorded options inquiry into a retry.
+          if (!isSellerOptions) throw trackingError
+        }
+      }
+
+      if (!isSellerOptions) window.location.assign('/sell/thank-you')
     } catch (error) {
-      setErrorMessage(`Network error. Please call us at ${SITE.phone}.`)
+      setErrorMessage(isSellerOptions ? receiptError : `Network error. Please call us at ${SITE.phone}.`)
     } finally {
       setIsSubmitting(false)
+      if (!accepted) submissionLock.current = false
     }
   }
 
@@ -290,10 +449,44 @@ export function LeadForm() {
 
   const progressIndex = stages.indexOf(stage)
 
+  if (isSellerOptions && optionsReceipt) {
+    return (
+      <div
+        ref={receiptElement}
+        tabIndex={-1}
+        role="status"
+        aria-live="polite"
+        aria-atomic="true"
+        aria-labelledby="seller-options-receipt-heading"
+        className="rounded-[28px] border border-forest-200 bg-white p-6 shadow-soft sm:p-8"
+      >
+        <p className="text-sm font-semibold text-forest-600">Inquiry received</p>
+        <h2 id="seller-options-receipt-heading" className="mt-3 font-display text-3xl text-ink-600">
+          Thanks for telling us about your house.
+        </h2>
+        <p className="mt-4 leading-relaxed text-ink-400">
+          {optionsReceipt.duplicate
+            ? 'We already have this inquiry. You do not need to submit it again.'
+            : 'Your inquiry has been recorded.'}
+          {' '}The next step is a conversation about the house, what matters to you,
+          and which selling paths may fit.
+        </p>
+        <p className="mt-4 text-sm leading-relaxed text-ink-400">
+          This receipt confirms your inquiry, not an offer or a confirmed sale.
+          There is no obligation to accept an offer.
+        </p>
+        <p className="mt-5 break-all text-xs text-ink-400">Reference: {optionsReceipt.receiptId}</p>
+        <a href={`tel:${SITE.phone.replace(/\D/g, '')}`} className="btn-secondary mt-6">
+          Call {SITE.phone}
+        </a>
+      </div>
+    )
+  }
+
   return (
     <div className="rounded-[28px] border border-stone-200 bg-white p-6 shadow-soft sm:p-8">
       <p className="text-center text-sm font-medium text-forest-600">
-        Start with the address. We will ask one thing at a time.
+        {intro}
       </p>
 
       <div className="mt-6 flex items-center justify-center gap-2.5">
@@ -311,8 +504,9 @@ export function LeadForm() {
         {stage === 'address' && 'What is the property address?'}
         {stage === 'name' && `Property: ${formData.address}`}
         {stage === 'phone' && `Thanks, ${formData.fullName}. What is the best phone number?`}
-        {stage === 'details' &&
-          'Optional details help us review the property, but your phone number is enough to get started.'}
+        {stage === 'details' && (isSellerOptions
+          ? 'Tell us your role with the property. The remaining details are optional.'
+          : 'Optional details help us review the property, but your phone number is enough to get started.')}
       </div>
 
       <div className="mt-4 rounded-2xl border border-stone-200 bg-white px-4 py-3 text-[11px] leading-relaxed text-ink-500">
@@ -327,11 +521,11 @@ export function LeadForm() {
         .
       </div>
 
-      <form onSubmit={handleSubmit} className="mt-5 space-y-4">
+      <form onSubmit={handleSubmit} aria-busy={isSellerOptions && isSubmitting ? true : undefined} className="mt-5 space-y-4">
         {stage === 'address' && (
           <div>
             <label htmlFor="address" className="mb-2 block text-sm font-semibold text-ink-500">
-              What&apos;s the property address?
+              {addressLabel}
             </label>
             <input
               id="address"
@@ -340,10 +534,16 @@ export function LeadForm() {
               required
               autoComplete="street-address"
               placeholder="123 Main St, Spokane, WA 99205"
+              aria-describedby={requirePropertyState ? 'property-address-hint' : undefined}
               value={formData.address}
               onChange={(event) => updateField('address', event.target.value)}
               className="w-full rounded-2xl border border-stone-200 bg-stone-50 px-4 py-4 text-base text-ink-600 placeholder:text-stone-300 transition-colors focus:border-forest-400 focus:ring-forest-400"
             />
+            {requirePropertyState ? (
+              <p id="property-address-hint" className="mt-2 text-xs leading-relaxed text-ink-400">
+                Include the city and state, such as Spokane, WA or Coeur d&apos;Alene, ID.
+              </p>
+            ) : null}
           </div>
         )}
 
@@ -393,6 +593,31 @@ export function LeadForm() {
 
         {stage === 'details' && (
           <div className="space-y-5">
+            {isSellerOptions ? (
+              <div>
+                <label htmlFor="sellerAuthority" className="mb-2 block text-sm font-semibold text-ink-500">
+                  What is your role with the property? (required)
+                </label>
+                <select
+                  id="sellerAuthority"
+                  name="sellerAuthority"
+                  required
+                  disabled={isSubmitting}
+                  aria-describedby="seller-authority-hint"
+                  value={formData.sellerAuthority}
+                  onChange={(event) => updateField('sellerAuthority', event.target.value)}
+                  className="w-full rounded-2xl border border-stone-200 bg-stone-50 px-4 py-4 text-base text-ink-600 focus:border-forest-400 focus:ring-forest-400"
+                >
+                  <option value="">Select your role</option>
+                  <option value="owner">I own the property</option>
+                  <option value="authorized_representative">I am authorized to represent the owner</option>
+                </select>
+                <p id="seller-authority-hint" className="mt-2 text-xs leading-relaxed text-ink-400">
+                  This is your self-reported role. Ownership or authority may need to be verified before a sale.
+                </p>
+              </div>
+            ) : null}
+
             <div>
               <label htmlFor="email" className="mb-2 block text-sm font-semibold text-ink-500">
                 Optional: what&apos;s the best email for follow-up?
@@ -413,6 +638,33 @@ export function LeadForm() {
               checked={formData.smsConsent}
               onChange={(checked) => updateField('smsConsent', checked)}
             />
+
+            {isSellerOptions ? <div>
+              <p className="text-sm font-semibold text-ink-500">
+                Optional: what are you mainly trying to solve?
+              </p>
+              <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                {primaryConstraintOptions.map((option) => (
+                  <button
+                    key={option}
+                    type="button"
+                    onClick={() =>
+                      updateField(
+                        'primaryConstraint',
+                        formData.primaryConstraint === option ? '' : option
+                      )
+                    }
+                    className={`rounded-2xl border px-4 py-3 text-left text-sm transition-colors ${
+                      formData.primaryConstraint === option
+                        ? 'border-forest-500 bg-forest-50 text-forest-700'
+                        : 'border-stone-200 bg-stone-50 text-ink-500 hover:border-stone-300'
+                    }`}
+                  >
+                    {option}
+                  </button>
+                ))}
+              </div>
+            </div> : null}
 
             <div>
               <p className="text-sm font-semibold text-ink-500">
@@ -476,6 +728,7 @@ export function LeadForm() {
         />
 
         <input type="hidden" name="gclid" value={formData.gclid} readOnly />
+        {isSellerOptions ? <input type="hidden" name="oppref" value={formData.oppref} readOnly /> : null}
         <input type="hidden" name="utm_source" value={formData.utmSource} readOnly />
         <input type="hidden" name="utm_medium" value={formData.utmMedium} readOnly />
         <input type="hidden" name="utm_campaign" value={formData.utmCampaign} readOnly />
@@ -492,7 +745,7 @@ export function LeadForm() {
           disabled={!canContinueCurrentStage() || isSubmitting}
           className="btn-primary w-full rounded-2xl px-5 py-4 text-base disabled:cursor-not-allowed"
         >
-          {isSubmitting ? 'Submitting...' : stage === 'address' ? 'Get My Cash Offer' : stage === 'details' ? 'Get My Cash Offer' : 'Continue'}
+          {isSubmitting ? 'Submitting...' : stage === 'address' || stage === 'details' ? submitLabel : 'Continue'}
         </button>
 
         {stage !== 'address' ? (

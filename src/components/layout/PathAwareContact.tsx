@@ -31,7 +31,12 @@ function usePathAwareContact() {
   return { phone, phoneHref: cleanPhone(phone), offerHref };
 }
 
-export function HeaderContactActions() {
+type HeaderContactProps = {
+  actionHref?: string;
+  actionLabel?: string;
+};
+
+export function HeaderContactActions({ actionHref, actionLabel = "Get My Cash Offer" }: HeaderContactProps = {}) {
   const { phone, phoneHref, offerHref } = usePathAwareContact();
 
   return (
@@ -39,14 +44,14 @@ export function HeaderContactActions() {
       <a href={`tel:${phoneHref}`} className="whitespace-nowrap text-sm font-semibold text-ink-500">
         {phone}
       </a>
-      <a href={offerHref} className="btn-primary text-sm !px-5 !py-2.5">
-        Get My Cash Offer
+      <a href={actionHref ?? offerHref} className="btn-primary text-sm !px-5 !py-2.5">
+        {actionLabel}
       </a>
     </>
   );
 }
 
-export function HeaderMobileContactActions() {
+export function HeaderMobileContactActions({ actionHref, actionLabel = "Get My Cash Offer" }: HeaderContactProps = {}) {
   const { phone, phoneHref, offerHref } = usePathAwareContact();
 
   return (
@@ -54,8 +59,8 @@ export function HeaderMobileContactActions() {
       <a href={`tel:${phoneHref}`} className="rounded-lg px-4 py-2.5 text-[15px] font-semibold text-ink-500">
         {phone}
       </a>
-      <a href={offerHref} className="btn-primary mt-2 text-center">
-        Get My Cash Offer
+      <a href={actionHref ?? offerHref} className="btn-primary mt-2 text-center">
+        {actionLabel}
       </a>
     </>
   );

@@ -11,7 +11,17 @@ const NAV = [
   { label: "About Us", href: "/about" },
 ] as const;
 
-export function Header() {
+const OPTIONS_NAV = [
+  { label: "Sell Soon", href: "#sell-soon" },
+  { label: "Compare Options", href: "#compare" },
+  { label: "What to Expect", href: "#conversation-heading" },
+  { label: "About Us", href: "/about" },
+] as const;
+
+export function Header({ variant = "default" }: { variant?: "default" | "options" }) {
+  const isSellerOptions = variant === "options";
+  const navigation = isSellerOptions ? OPTIONS_NAV : NAV;
+
   return (
     <header className="fixed left-0 right-0 top-0 z-50 border-b border-stone-200/70 bg-stone-50/95 py-3 backdrop-blur-md shadow-soft">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-5 sm:px-6 lg:px-8">
@@ -28,13 +38,13 @@ export function Header() {
           <div className="flex flex-col leading-tight">
             <span className="font-display text-base text-ink-600">Dominion Homes</span>
             <span className="text-[9px] font-semibold uppercase tracking-[0.15em] text-forest-400">
-              Spokane Direct Buyers
+              {isSellerOptions ? "Spokane & CDA Seller Options" : "Spokane Direct Buyers"}
             </span>
           </div>
         </Link>
 
-        <nav className="hidden items-center gap-5 md:flex">
-          {NAV.map((link) => (
+        <nav className={`hidden items-center gap-5 ${isSellerOptions ? "lg:flex" : "md:flex"}`}>
+          {navigation.map((link) => (
             <Link
               key={link.href}
               href={link.href}
@@ -43,10 +53,13 @@ export function Header() {
               {link.label}
             </Link>
           ))}
-          <HeaderContactActions />
+          <HeaderContactActions
+            actionHref={isSellerOptions ? "#get-options" : undefined}
+            actionLabel={isSellerOptions ? "Review My Options" : undefined}
+          />
         </nav>
 
-        <details className="group relative md:hidden">
+        <details className={`group relative ${isSellerOptions ? "lg:hidden" : "md:hidden"}`}>
           <summary className="flex h-9 w-9 cursor-pointer list-none items-center justify-center rounded-lg">
             <span className="sr-only">Open menu</span>
             <div className="flex flex-col gap-[5px]">
@@ -56,7 +69,7 @@ export function Header() {
             </div>
           </summary>
           <nav className="absolute right-0 top-[calc(100%+0.75rem)] flex w-[min(20rem,calc(100vw-2.5rem))] flex-col gap-1 rounded-2xl border border-stone-200 bg-stone-50 p-3 shadow-elevated">
-            {NAV.map((link) => (
+            {navigation.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
@@ -65,7 +78,10 @@ export function Header() {
                 {link.label}
               </Link>
             ))}
-            <HeaderMobileContactActions />
+            <HeaderMobileContactActions
+              actionHref={isSellerOptions ? "#get-options" : undefined}
+              actionLabel={isSellerOptions ? "Review My Options" : undefined}
+            />
           </nav>
         </details>
       </div>

@@ -1,6 +1,14 @@
 import { SITE } from "@/lib/constants";
 
-export function SellStickyBar() {
+interface SellStickyBarProps {
+  actionHref?: string;
+  actionLabel?: string;
+}
+
+export function SellStickyBar({
+  actionHref = "#get-offer",
+  actionLabel = "Get Cash Offer",
+}: SellStickyBarProps = {}) {
   const phoneClean = SITE.phone.replace(/\D/g, "");
 
   return (
@@ -14,8 +22,8 @@ export function SellStickyBar() {
           >
             Call {SITE.phone}
           </a>
-          <a href="#get-offer" className="btn-primary flex-1 !px-4 !py-3 text-sm">
-            Get Cash Offer
+          <a href={actionHref} className="btn-primary flex-1 !px-4 !py-3 text-sm">
+            {actionLabel}
           </a>
         </div>
       </div>

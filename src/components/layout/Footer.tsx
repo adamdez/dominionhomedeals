@@ -4,7 +4,8 @@ import { FooterPhone } from "@/components/layout/PathAwareContact";
 import { SITE } from "@/lib/constants";
 import { getByCounty } from "@/lib/neighborhoods";
 
-export function Footer() {
+export function Footer({ variant = "default" }: { variant?: "default" | "options" }) {
+  const isSellerOptions = variant === "options";
   const year = 2026;
   const topNeighborhoods = getByCounty("Spokane County").slice(0, 8);
   const promises = [
@@ -17,6 +18,16 @@ export function Footer() {
     { label: "House With Back Taxes", href: "/sell-house-with-back-taxes-spokane" },
     { label: "Sell a Rental Property", href: "/sell-rental-property-spokane" },
   ] as const;
+  const sellerGuides = isSellerOptions
+    ? [
+        { label: "Compare Selling Paths", href: "#compare" },
+        { label: "Questions to Ask Before Selling", href: "/sell/guide" },
+        { label: "Selling a House As-Is", href: "/sell/as-is" },
+        { label: "Selling an Inherited House", href: "/sell/inherited" },
+        { label: "Selling a Rental", href: "/sell/landlord" },
+        { label: "Understanding an Investor Offer", href: "/how-we-calculate-cash-offers-spokane-cda" },
+      ]
+    : promises;
 
   return (
     <footer className="border-t border-stone-200 bg-ink-600 text-stone-300">
@@ -28,7 +39,9 @@ export function Footer() {
               <span className="font-display text-lg text-stone-100">Dominion Homes</span>
             </div>
             <p className="text-sm leading-relaxed text-stone-400">
-              Your local cash home buyers serving Spokane County, WA and Kootenai County, ID.
+              {isSellerOptions
+                ? "Local real estate investors helping homeowners in Spokane and the Coeur d'Alene area compare realistic selling options."
+                : "Your local cash home buyers serving Spokane County, WA and Kootenai County, ID."}
             </p>
             <FooterPhone />
           </div>
@@ -37,7 +50,9 @@ export function Footer() {
             <h3 className="mb-3 text-xs font-bold uppercase tracking-widest text-stone-400">Company</h3>
             <ul className="space-y-2">
               {[
-                { label: "Get a Cash Offer", href: "/#get-offer" },
+                isSellerOptions
+                  ? { label: "Review My Options", href: "#get-options" }
+                  : { label: "Get a Cash Offer", href: "/#get-offer" },
                 { label: "How It Works", href: "/how-we-work" },
                 { label: "Seller Guide", href: "/sell/guide" },
                 { label: "Seller Stories", href: "/stories" },
@@ -74,7 +89,7 @@ export function Footer() {
           <div>
             <h3 className="mb-3 text-xs font-bold uppercase tracking-widest text-stone-400">Seller Guides</h3>
             <ul className="space-y-2 text-sm text-stone-400">
-              {promises.map((item) => (
+              {sellerGuides.map((item) => (
                 <li key={item.href}>
                   <Link href={item.href} className="text-stone-400 transition-colors hover:text-amber-400">
                     {item.label}
