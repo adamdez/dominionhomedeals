@@ -87,7 +87,7 @@ const PATHS = [
   },
   {
     label: "Path 3",
-    title: "Direct investor offer",
+    title: "Direct as-is offer",
     bestFor: "Worth considering if you'd rather skip listing prep or talk through a closing schedule that works for you.",
     tradeoffs: [
       "Discuss selling without taking on repairs first",
@@ -159,7 +159,7 @@ export default function SellerOptionsPage() {
                     <h2 className="font-display text-xl text-ink-600">Need to sell soon?</h2>
                     <p className="mt-2 text-sm leading-relaxed text-ink-400">
                       Tell us when you need to sell and what the house is like.
-                      We&apos;ll talk through whether an investor offer could fit your timing.
+                      We&apos;ll talk through whether a direct as-is offer could fit your timing.
                     </p>
                     <a href="#get-options" className="mt-4 inline-flex text-sm font-semibold text-forest-600 underline underline-offset-4">
                       Talk about my timeline →
@@ -168,8 +168,8 @@ export default function SellerOptionsPage() {
                   <div className="rounded-2xl border border-stone-200 bg-white p-5">
                     <h2 className="font-display text-xl text-ink-600">Still comparing options?</h2>
                     <p className="mt-2 text-sm leading-relaxed text-ink-400">
-                      Not sure whether to fix the house, list it as-is, or sell to
-                      an investor? Let&apos;s look at what each could mean for you.
+                      Not sure whether to fix the house, list it as-is, or consider
+                      a direct offer? Let&apos;s look at what each could mean for you.
                     </p>
                     <a href="#compare" className="mt-4 inline-flex text-sm font-semibold text-forest-600 underline underline-offset-4">
                       Compare the paths →
@@ -182,9 +182,9 @@ export default function SellerOptionsPage() {
                   </a>
                 </div>
                 <p className="mt-4 max-w-xl text-sm leading-relaxed text-ink-300">
-                  No obligation to accept an offer. We&apos;re investors, not a real
-                  estate brokerage or independent adviser. Listing with an agent
-                  may be the better choice.
+                  No obligation to accept an offer. We&apos;re a home-buying and
+                  wholesale business, not a real estate brokerage or independent
+                  adviser. Listing with an agent may be the better choice.
                 </p>
               </FadeIn>
             </div>
@@ -302,7 +302,7 @@ export default function SellerOptionsPage() {
                     <th scope="col" className="px-5 py-4">Compare</th>
                     <th scope="col" className="px-5 py-4">List as-is</th>
                     <th scope="col" className="px-5 py-4">Repair and list</th>
-                    <th scope="col" className="px-5 py-4">Investor offer</th>
+                    <th scope="col" className="px-5 py-4">Direct offer</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -344,11 +344,11 @@ export default function SellerOptionsPage() {
               <p className="text-xs font-bold uppercase tracking-widest text-forest-500">Being clear about our role</p>
               <h2 className="mt-3 font-display text-3xl text-ink-600">How Dominion fits into the sale</h2>
               <p className="mt-4 leading-relaxed text-ink-400">
-                Dominion Homes is a real estate investment and wholesale business,
+                Dominion Homes is a home-buying and wholesale business,
                 not a licensed real estate brokerage or independent adviser.
               </p>
               <p className="mt-4 leading-relaxed text-ink-400">
-                We may purchase directly or assign a purchase agreement to another investor;
+                We may purchase directly or assign a purchase agreement to another buyer;
                 we are not always the final buyer. We seek a profit from purchases
                 or assignments. Your written agreement should make the buyer,
                 assignment rights, price, timing, and responsibilities clear.
@@ -370,7 +370,7 @@ export default function SellerOptionsPage() {
             <h2 className="font-display text-display text-white text-balance">Let&apos;s work out your next step.</h2>
             <p className="mx-auto mt-4 max-w-2xl text-base leading-relaxed text-forest-100">
               Bring your questions and tell us what matters most. We&apos;ll explain
-              where an investor offer could help—and where another path may make
+              where a direct offer could help—and where another path may make
               more sense.
             </p>
             <div className="mt-7 flex flex-wrap items-center justify-center gap-3">

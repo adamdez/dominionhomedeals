@@ -25,7 +25,7 @@ export function Footer({ variant = "default" }: { variant?: "default" | "options
         { label: "Selling a House As-Is", href: "/sell/as-is" },
         { label: "Selling an Inherited House", href: "/sell/inherited" },
         { label: "Selling a Rental", href: "/sell/landlord" },
-        { label: "Understanding an Investor Offer", href: "/how-we-calculate-cash-offers-spokane-cda" },
+        { label: "Understanding a Direct Offer", href: "/how-we-calculate-cash-offers-spokane-cda" },
       ]
     : promises;
 
@@ -40,7 +40,7 @@ export function Footer({ variant = "default" }: { variant?: "default" | "options
             </div>
             <p className="text-sm leading-relaxed text-stone-400">
               {isSellerOptions
-                ? "Local real estate investors helping homeowners in Spokane and the Coeur d'Alene area compare realistic selling options."
+                ? "Local home buyers helping homeowners in Spokane and the Coeur d'Alene area compare realistic selling options."
                 : "Your local cash home buyers serving Spokane County, WA and Kootenai County, ID."}
             </p>
             <FooterPhone />
