@@ -5,6 +5,7 @@ import { LeadForm } from "@/components/forms/LeadForm";
 import { BreadcrumbJsonLd } from "@/components/seo/BreadcrumbJsonLd";
 import { SellStickyBar } from "@/components/sell/SellStickyBar";
 import { SITE } from "@/lib/constants";
+import { getSellerOptionsLanding, type SellerOptionsSearchParams } from "@/lib/seller-options-landing";
 
 export const metadata: Metadata = {
   title: "Help Deciding How to Sell Your Spokane or Coeur d'Alene House",
@@ -117,7 +118,16 @@ const NET_ROWS = [
   ["What you could keep", "As-is sale price minus your costs and payoffs", "Repaired sale price minus your costs and payoffs", "Offer price minus your costs and payoffs"],
 ] as const;
 
-export default function SellerOptionsPage() {
+export default async function SellerOptionsPage({
+  searchParams,
+}: {
+  searchParams: Promise<SellerOptionsSearchParams>;
+}) {
+  // Render the matching message on the server for people and ad crawlers alike.
+  // The existing ad URLs already carry the four approved utm_content values.
+  const landing = getSellerOptionsLanding(await searchParams);
+  const priorities = landing.priorities.length ? landing.priorities : PRIORITIES;
+  const paths = landing.pathOrder.map((index) => PATHS[index]);
   const phoneClean = SITE.phone.replace(/\D/g, "");
 
   return (
@@ -130,7 +140,7 @@ export default function SellerOptionsPage() {
         ]}
       />
 
-      <section className="relative overflow-hidden pt-28 pb-16 sm:pt-36 sm:pb-20 lg:pt-40 lg:pb-24">
+      <section data-seller-landing={landing.key} data-intent-lane={landing.lane} className="relative overflow-hidden pt-28 pb-16 sm:pt-36 sm:pb-20 lg:pt-40 lg:pb-24">
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-stone-50 via-forest-50/30 to-amber-50/30" />
         <div className="pointer-events-none absolute -right-20 -top-24 h-[420px] w-[420px] rounded-full bg-forest-100/40 blur-3xl" />
 
@@ -142,19 +152,16 @@ export default function SellerOptionsPage() {
               </FadeIn>
               <FadeIn delay={80}>
                 <h1 className="font-display text-[2.5rem] leading-[1.08] text-ink-700 text-balance sm:text-[3rem] lg:text-[3.5rem]">
-                  Need help deciding how to sell?
+                  {landing.headline}
                 </h1>
               </FadeIn>
               <FadeIn delay={160}>
                 <p className="mt-5 max-w-2xl text-lg leading-relaxed text-ink-400">
-                  Maybe you need to sell soon. Maybe you&apos;re trying to work out
-                  what would leave you better off. Tell us about the house and
-                  what&apos;s making the decision hard. We help homeowners in Spokane
-                  and the Coeur d&apos;Alene area understand the choices.
+                  {landing.introduction}
                 </p>
               </FadeIn>
               <FadeIn delay={240}>
-                <div className="mt-6 grid gap-3 sm:grid-cols-2">
+                {landing.lane === "general" ? <div className="mt-6 grid gap-3 sm:grid-cols-2">
                   <div id="sell-soon" className="scroll-mt-28 rounded-2xl border border-forest-200 bg-white p-5">
                     <h2 className="font-display text-xl text-ink-600">Need to sell soon?</h2>
                     <p className="mt-2 text-sm leading-relaxed text-ink-400">
@@ -175,13 +182,24 @@ export default function SellerOptionsPage() {
                       Compare the paths →
                     </a>
                   </div>
-                </div>
+                </div> : <div id="sell-soon" className="mt-6 scroll-mt-28 rounded-2xl border border-forest-200 bg-white p-5">
+                  <h2 className="font-display text-xl text-ink-600">{landing.focusTitle}</h2>
+                  <p className="mt-2 text-sm leading-relaxed text-ink-400">{landing.focusCopy}</p>
+                  <div className="mt-4 flex flex-wrap items-center gap-4">
+                    <a href="#get-options" className="text-sm font-semibold text-forest-600 underline underline-offset-4">
+                      {landing.actionLabel} →
+                    </a>
+                    <a href="#compare" className="text-sm font-semibold text-forest-600 underline underline-offset-4">
+                      See the selling paths →
+                    </a>
+                  </div>
+                </div>}
                 <div className="mt-5 flex flex-wrap items-center gap-3">
                   <a href={`tel:${phoneClean}`} className="btn-secondary">
-                    Call or text {SITE.phone}
+                    Call {SITE.phone}
                   </a>
                 </div>
-                <p className="mt-4 max-w-xl text-sm leading-relaxed text-ink-300">
+                <p className="mt-4 max-w-xl text-sm leading-relaxed text-ink-400">
                   No obligation to accept an offer. We&apos;re a home-buying and
                   wholesale business, not a real estate brokerage or independent
                   adviser. Listing with an agent may be the better choice.
@@ -192,9 +210,9 @@ export default function SellerOptionsPage() {
             <FadeIn delay={200} direction="left">
               <div id="get-options" className="scroll-mt-24">
                 <LeadForm
-                  intro="Start with the address. We'll talk about what matters to you."
+                  intro={landing.formIntro}
                   addressLabel="What's the address of the house?"
-                  submitLabel="Review My Options"
+                  submitLabel={landing.actionLabel}
                   submissionFlow="seller_options_v1"
                   requirePropertyState
                 />
@@ -229,11 +247,11 @@ export default function SellerOptionsPage() {
           <FadeIn>
             <p className="text-xs font-bold uppercase tracking-widest text-forest-500">Start with what matters to you</p>
             <h2 className="mt-2 max-w-3xl font-display text-display text-ink-600 text-balance">
-              What would make this a good move for you?
+              {landing.prioritiesHeading}
             </h2>
           </FadeIn>
           <div className="mt-10 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
-            {PRIORITIES.map((item, index) => (
+            {priorities.map((item, index) => (
               <FadeIn key={item.title} delay={index * 60}>
                 <div className="h-full rounded-2xl border border-stone-200 bg-stone-50 p-6">
                   <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-forest-500 text-sm font-bold text-white">
@@ -258,10 +276,10 @@ export default function SellerOptionsPage() {
           </div>
         </FadeIn>
         <div className="mt-12 grid gap-6 lg:grid-cols-2">
-          {PATHS.map((path, index) => (
+          {paths.map((path, index) => (
             <FadeIn key={path.title} delay={index * 100}>
               <article className="h-full rounded-2xl border border-stone-200 bg-white p-7 shadow-sm">
-                <p className="text-xs font-bold uppercase tracking-widest text-forest-500">{path.label}</p>
+                <p className="text-xs font-bold uppercase tracking-widest text-forest-500">Path {index + 1}</p>
                 <h3 className="mt-3 font-display text-2xl text-ink-600">{path.title}</h3>
                 <p className="mt-3 text-sm leading-relaxed text-ink-400">{path.bestFor}</p>
                 <ul className="mt-6 space-y-3">
@@ -374,16 +392,16 @@ export default function SellerOptionsPage() {
               more sense.
             </p>
             <div className="mt-7 flex flex-wrap items-center justify-center gap-3">
-              <a href="#get-options" className="btn-primary">Review my options</a>
+              <a href="#get-options" className="btn-primary">{landing.actionLabel}</a>
               <a href={`tel:${phoneClean}`} className="rounded-full border border-white/30 px-5 py-3 text-sm font-semibold text-white hover:bg-white/10">
-                Call or text {SITE.phone}
+                Call {SITE.phone}
               </a>
             </div>
           </div>
         </FadeIn>
       </section>
 
-      <SellStickyBar actionHref="#get-options" actionLabel="Review Options" />
+      <SellStickyBar actionHref="#get-options" actionLabel={landing.stickyLabel} />
     </>
   );
 }

@@ -319,6 +319,17 @@ async function sendEmailNotification(lead: Record<string, unknown>): Promise<Dom
       console.error('[EMAIL ERROR]', errorText)
       return { status: 'failed' }
     } else {
+      if (optionsSubmissionId) {
+        const data = await res.json()
+        if (!data || typeof data.id !== 'string' || !data.id.trim()) {
+          // A 2xx without a provider message ID cannot be reconciled as confirmed
+          // acceptance. Keep the durable inquiry; do not blindly send it again.
+          console.error('[EMAIL] Options message acknowledgment was not confirmed')
+          return { status: 'outcome_unknown' }
+        }
+        console.log('[EMAIL] Options notification accepted:', data.id)
+        return { status: 'provider_accepted', referenceId: data.id }
+      }
       console.log('[EMAIL] Sent to adam@ and logan@dominionhomedeals.com')
       return { status: 'provider_accepted' }
     }
@@ -491,6 +502,13 @@ async function forwardToLazarus(lead: Record<string, unknown>): Promise<Dominion
       utmContent: optionalText(lead.utmContent),
       gclid: optionalText(lead.gclid),
       ...(isOptionsFlow ? {
+        condition: typeof lead.condition === 'string' ? lead.condition : null,
+        timeline: typeof lead.timeline === 'string' ? lead.timeline : null,
+        smsConsent: lead.smsConsent === true ? 'yes' : 'no',
+        smsConsentCapturedAt: lead.smsConsent === true && typeof lead.smsConsentTimestamp === 'string'
+          ? lead.smsConsentTimestamp : null,
+        smsConsentIp: lead.smsConsent === true && typeof lead.smsConsentIP === 'string'
+          ? lead.smsConsentIP : null,
         oppref: typeof adAttribution.oppref === 'string' && adAttribution.oppref.length > 0
           ? adAttribution.oppref : null,
         primaryConstraint: optionalText(lead.primaryConstraint),
@@ -542,12 +560,17 @@ async function forwardToLazarus(lead: Record<string, unknown>): Promise<Dominion
       return { status: 'failed' }
     } else {
       const data = await res.json()
-      if (isOptionsFlow && (!data || typeof data.leadId !== 'string' || !data.leadId.trim() ||
-        !data.lead || data.lead.id !== data.leadId)) {
-        // A successful HTTP response without the receiver's actual record identity
-        // is ambiguous; keep the saved inquiry and require reconciliation, not replay.
-        console.error('[LAZARUS] Options record acknowledgment was not confirmed')
-        return { status: 'outcome_unknown' }
+      if (isOptionsFlow) {
+        if (!data || typeof data.ppcLeadId !== 'string' || !data.ppcLeadId.trim() ||
+          !data.lead || data.lead.id !== data.ppcLeadId ||
+          (data.leadId !== undefined && data.leadId !== data.ppcLeadId)) {
+          // A generic Leads/Files record is not a PPC card. Require the explicit
+          // PPC identity, and reconcile ambiguous responses without replaying.
+          console.error('[LAZARUS] Options PPC record acknowledgment was not confirmed')
+          return { status: 'outcome_unknown' }
+        }
+        console.log('[LAZARUS] Options PPC record confirmed:', data.ppcLeadId)
+        return { status: 'provider_accepted', referenceId: data.ppcLeadId }
       }
       console.log('[LAZARUS] Lead created:', data.leadId ?? 'ok')
       return { status: 'provider_accepted', ...(typeof data.leadId === 'string'
