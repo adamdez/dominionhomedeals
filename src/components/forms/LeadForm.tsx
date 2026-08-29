@@ -2,7 +2,14 @@
 
 import { FormEvent, useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
-import { trackFormStep, trackLeadFormSubmission } from '@/lib/tracking'
+import { trackFormStep, trackLeadFormSubmission, trackOpenAILeadCreated } from '@/lib/tracking'
+import {
+  getSellerFunnelVisitId,
+  isInternalQaSession,
+  readOpenAIBrowserReference,
+  readSellerAttribution,
+  trackSellerFunnelEvent,
+} from '@/lib/seller-funnel-tracking'
 import { SITE, SMS_CONSENT_TEXT, SMS_CTA_DISCLOSURE } from '@/lib/constants'
 
 type Stage = 'address' | 'name' | 'phone' | 'details'
@@ -25,6 +32,7 @@ interface FormData {
   utmContent: string
   gclid: string
   oppref: string
+  funnelVisitId: string
   landingPage: string
   city: string
   state: string
@@ -49,6 +57,7 @@ const initialFormData: FormData = {
   utmContent: '',
   gclid: '',
   oppref: '',
+  funnelVisitId: '',
   landingPage: '',
   city: '',
   state: 'WA',
@@ -218,8 +227,10 @@ export function LeadForm({
   const [errorMessage, setErrorMessage] = useState('')
   const [optionsReceipt, setOptionsReceipt] = useState<OptionsReceipt | null>(null)
   const submissionLock = useRef(false)
-  const optionsAttempt = useRef<{ fingerprint: string; body: string } | null>(null)
+  const optionsAttempt = useRef<{ fingerprint: string; body: string; submissionId: string } | null>(null)
   const receiptElement = useRef<HTMLDivElement>(null)
+  const formFocused = useRef(false)
+  const inputStartedStages = useRef(new Set<Stage>())
 
   useEffect(() => {
     if (optionsReceipt) receiptElement.current?.focus()
@@ -231,6 +242,7 @@ export function LeadForm({
     const params = new URLSearchParams(window.location.search)
     const gclidFromQuery = params.get('gclid') || ''
     const opprefFromQuery = params.get('oppref') || ''
+    const sellerAttribution = isSellerOptions ? readSellerAttribution() : {}
     let storedGclid = ''
 
     try {
@@ -246,15 +258,26 @@ export function LeadForm({
       utmCampaign: params.get('utm_campaign') || '',
       utmTerm: params.get('utm_term') || '',
       utmContent: params.get('utm_content') || '',
-      gclid: isSellerOptions ? gclidFromQuery : gclidFromQuery || storedGclid || '',
-      oppref: isSellerOptions ? opprefFromQuery : '',
+      gclid: isSellerOptions ? sellerAttribution.gclid || gclidFromQuery : gclidFromQuery || storedGclid || '',
+      oppref: isSellerOptions ? sellerAttribution.oppref || opprefFromQuery : '',
+      funnelVisitId: isSellerOptions ? getSellerFunnelVisitId() : '',
       landingPage: window.location.pathname + window.location.search,
     }))
   }, [isSellerOptions])
 
   const updateField = (field: keyof FormData, value: string | boolean) => {
     if (isSellerOptions && submissionLock.current) return
+    if (isSellerOptions && field !== 'honeypot' && field !== 'smsConsent' &&
+      !inputStartedStages.current.has(stage) && typeof value === 'string' && value.length > 0) {
+      inputStartedStages.current.add(stage)
+      trackSellerFunnelEvent('input_started', { stage, onceKey: `input_started:${stage}` })
+    }
     setFormData((prev) => ({ ...prev, [field]: value }))
+  }
+
+  const trackValidationFailure = (detail: string) => {
+    if (!isSellerOptions) return
+    trackSellerFunnelEvent('validation_failed', { stage, detail })
   }
 
   const canContinueCurrentStage = () => {
@@ -284,6 +307,9 @@ export function LeadForm({
     const nextStage = stages[currentIndex + 1]
     if (!nextStage) return
 
+    if (isSellerOptions) {
+      trackSellerFunnelEvent('step_completed', { stage, onceKey: `step_completed:${stage}` })
+    }
     trackFormStep(currentIndex + 2, nextStage)
     setStage(nextStage)
   }
@@ -298,16 +324,22 @@ export function LeadForm({
 
   const submitLead = async () => {
     if (isSubmitting || (isSellerOptions && submissionLock.current)) return
+    if (isSellerOptions && isInternalQaSession()) {
+      setErrorMessage('Internal QA mode: this test submission was intentionally not sent.')
+      return
+    }
 
     const inferredAddressParts = isSellerOptions
       ? inferOptionsCityStateZip(formData.address)
       : inferCityStateZip(formData.address)
     if (requirePropertyState && !inferredAddressParts.state) {
+      trackValidationFailure('state_missing')
       setErrorMessage('Please include WA or ID in the property address.')
       setStage('address')
       return
     }
     if (isSellerOptions && !hasSellerAuthority(formData.sellerAuthority)) {
+      trackValidationFailure('authority_missing')
       setErrorMessage('Please select your role with the property.')
       setStage('details')
       return
@@ -325,6 +357,7 @@ export function LeadForm({
     const smsConsentTimestamp = formData.smsConsent ? submittedAt : null
     const receiptError = "We couldn't confirm receipt. Your entries are still here. Please try again or call " + SITE.phone + "."
     let accepted = false
+    let optionsSubmissionId = ''
 
     try {
       const leadPayload = {
@@ -358,14 +391,17 @@ export function LeadForm({
       let trackingLandingPage = formData.landingPage
 
       if (isSellerOptions) {
-        const currentParams = new URLSearchParams(window.location.search)
+        const sellerAttribution = readSellerAttribution()
         const optionsPayload = {
           ...leadPayload,
           primaryConstraint: formData.primaryConstraint,
           submissionFlow: 'seller_options_v1',
           sellerAuthority: formData.sellerAuthority,
-          oppref: currentParams.get('oppref') || '',
-          gclid: currentParams.get('gclid') || '',
+          oppref: sellerAttribution.oppref || formData.oppref,
+          gclid: sellerAttribution.gclid || formData.gclid,
+          openaiObref: readOpenAIBrowserReference(),
+          funnelVisitId: formData.funnelVisitId || getSellerFunnelVisitId(),
+          adAttribution: sellerAttribution,
           landingPage: window.location.pathname + window.location.search,
         }
         trackingLandingPage = optionsPayload.landingPage
@@ -377,11 +413,14 @@ export function LeadForm({
           smsOptInTimestamp: null,
         })
         if (!optionsAttempt.current || optionsAttempt.current.fingerprint !== fingerprint) {
+          const submissionId = crypto.randomUUID()
           optionsAttempt.current = {
             fingerprint,
-            body: JSON.stringify({ ...optionsPayload, submissionId: crypto.randomUUID() }),
+            submissionId,
+            body: JSON.stringify({ ...optionsPayload, submissionId }),
           }
         }
+        optionsSubmissionId = optionsAttempt.current.submissionId
         body = optionsAttempt.current.body
       }
 
@@ -396,6 +435,12 @@ export function LeadForm({
         : null
 
       if (isSellerOptions ? !receipt : !response.ok || !data.success) {
+        if (isSellerOptions) {
+          trackSellerFunnelEvent('submit_failed', {
+            stage: 'details',
+            detail: response.status >= 500 ? 'server_error' : 'receipt_unconfirmed',
+          })
+        }
         setErrorMessage(isSellerOptions
           ? (typeof data?.error === 'string' && data.error ? data.error : receiptError)
           : data.error || `Something went wrong. Please call us at ${SITE.phone}.`)
@@ -419,6 +464,9 @@ export function LeadForm({
             sellerTimeline: formData.timeline || 'Not provided',
             propertyCondition: formData.condition || 'Not provided',
           })
+          if (isSellerOptions && optionsSubmissionId) {
+            trackOpenAILeadCreated(optionsSubmissionId)
+          }
         } catch (trackingError) {
           // A tracking error cannot turn a recorded options inquiry into a retry.
           if (!isSellerOptions) throw trackingError
@@ -427,6 +475,9 @@ export function LeadForm({
 
       if (!isSellerOptions) window.location.assign('/sell/thank-you')
     } catch (error) {
+      if (isSellerOptions) {
+        trackSellerFunnelEvent('submit_failed', { stage: 'details', detail: 'network_error' })
+      }
       setErrorMessage(isSellerOptions ? receiptError : `Network error. Please call us at ${SITE.phone}.`)
     } finally {
       setIsSubmitting(false)
@@ -440,6 +491,7 @@ export function LeadForm({
     if (!canContinueCurrentStage()) return
 
     if (stage === 'details') {
+      if (isSellerOptions) trackSellerFunnelEvent('submit_attempted', { stage: 'details' })
       await submitLead()
       return
     }
@@ -521,7 +573,16 @@ export function LeadForm({
         .
       </div>
 
-      <form onSubmit={handleSubmit} aria-busy={isSellerOptions && isSubmitting ? true : undefined} className="mt-5 space-y-4">
+      <form
+        onSubmit={handleSubmit}
+        onFocusCapture={() => {
+          if (!isSellerOptions || formFocused.current) return
+          formFocused.current = true
+          trackSellerFunnelEvent('form_focused', { stage, onceKey: 'form_focused' })
+        }}
+        aria-busy={isSellerOptions && isSubmitting ? true : undefined}
+        className="mt-5 space-y-4"
+      >
         {stage === 'address' && (
           <div>
             <label htmlFor="address" className="mb-2 block text-sm font-semibold text-ink-500">
@@ -537,6 +598,12 @@ export function LeadForm({
               aria-describedby={requirePropertyState ? 'property-address-hint' : undefined}
               value={formData.address}
               onChange={(event) => updateField('address', event.target.value)}
+              onBlur={() => {
+                if (formData.address.trim().length < 6) trackValidationFailure('address_too_short')
+                else if (requirePropertyState && !inferOptionsCityStateZip(formData.address).state) {
+                  trackValidationFailure('state_missing')
+                }
+              }}
               className="w-full rounded-2xl border border-stone-200 bg-stone-50 px-4 py-4 text-base text-ink-600 placeholder:text-stone-300 transition-colors focus:border-forest-400 focus:ring-forest-400"
             />
             {requirePropertyState ? (
@@ -561,6 +628,9 @@ export function LeadForm({
               placeholder="Your name"
               value={formData.fullName}
               onChange={(event) => updateField('fullName', event.target.value)}
+              onBlur={() => {
+                if (formData.fullName.trim().length < 2) trackValidationFailure('name_too_short')
+              }}
               className="w-full rounded-2xl border border-stone-200 bg-stone-50 px-4 py-4 text-base text-ink-600 placeholder:text-stone-300 transition-colors focus:border-forest-400 focus:ring-forest-400"
             />
           </div>
@@ -581,6 +651,9 @@ export function LeadForm({
                 placeholder="(509) 555-1234"
                 value={formData.phone}
                 onChange={(event) => updateField('phone', formatPhone(event.target.value))}
+                onBlur={() => {
+                  if (formData.phone.replace(/\D/g, '').length < 10) trackValidationFailure('phone_invalid')
+                }}
                 className="w-full rounded-2xl border border-stone-200 bg-stone-50 px-4 py-4 text-base text-ink-600 placeholder:text-stone-300 transition-colors focus:border-forest-400 focus:ring-forest-400"
               />
             </div>
@@ -606,6 +679,9 @@ export function LeadForm({
                   aria-describedby="seller-authority-hint"
                   value={formData.sellerAuthority}
                   onChange={(event) => updateField('sellerAuthority', event.target.value)}
+                  onBlur={() => {
+                    if (!hasSellerAuthority(formData.sellerAuthority)) trackValidationFailure('authority_missing')
+                  }}
                   className="w-full rounded-2xl border border-stone-200 bg-stone-50 px-4 py-4 text-base text-ink-600 focus:border-forest-400 focus:ring-forest-400"
                 >
                   <option value="">Select your role</option>
@@ -630,6 +706,11 @@ export function LeadForm({
                 placeholder="you@email.com"
                 value={formData.email}
                 onChange={(event) => updateField('email', event.target.value)}
+                onBlur={() => {
+                  if (formData.email.trim() && !/^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i.test(formData.email)) {
+                    trackValidationFailure('email_invalid')
+                  }
+                }}
                 className="w-full rounded-2xl border border-stone-200 bg-stone-50 px-4 py-4 text-base text-ink-600 placeholder:text-stone-300 transition-colors focus:border-forest-400 focus:ring-forest-400"
               />
             </div>

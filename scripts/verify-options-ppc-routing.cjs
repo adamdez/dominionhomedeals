@@ -55,7 +55,7 @@ function memoryStore(config = {}) {
   const stats = { inserts: 0, updates: 0, selects: 0 };
   let nextId = 91000;
   function from(table) {
-    assert.equal(table, 'al_memories', 'Only the intended table is used');
+    check(['al_memories', 'dominion_website_lead_receipts'].includes(table), 'Only baseline or dedicated Dominion table is used');
     const op = { mode: 'select', filters: [] };
     const query = {
       insert(value) { op.mode = 'insert'; op.value = value; return query; },
@@ -69,8 +69,10 @@ function memoryStore(config = {}) {
       if (op.mode === 'insert') {
         stats.inserts++;
         if (config.insertFail) return { data: null, error: { code: 'XX000', message: 'synthetic failure' } };
-        if (op.value.content_hash != null && rows.some(row =>
-          row.category === op.value.category && row.content_hash === op.value.content_hash)) {
+        if ((op.value.submission_id != null && rows.some(row =>
+          row.submission_id === op.value.submission_id)) ||
+          (op.value.content_hash != null && rows.some(row =>
+            row.category === op.value.category && row.content_hash === op.value.content_hash))) {
           return { data: null, error: { code: '23505', message: 'synthetic unique violation' } };
         }
         const row = { id: ++nextId, created_at: '2026-08-27T01:00:00Z', updated_at: '2026-08-27T01:00:00Z', ...op.value };
@@ -122,6 +124,7 @@ function setup(config = {}, sharedStore) {
   }
   const helperContext = moduleContext(name => {
     if (name === '@/lib/supabase') return { getServiceClient: () => config.storageMissing ? null : store };
+    if (name === '@/lib/dominion-supabase') return { getDominionServiceClient: () => config.storageMissing ? null : store };
     if (name === 'node:crypto') return crypto;
     throw new Error('Blocked unmocked helper import: ' + name);
   });
@@ -131,6 +134,14 @@ function setup(config = {}, sharedStore) {
     if (name === 'next/server') return { NextResponse: { json: (body, options = {}) => ({ status: options.status || 200, body }) } };
     if (name === '@/lib/constants') return { SITE: { phone: '2025550100' } };
     if (name === '@/lib/dominion-leads') return helper;
+    if (name === 'node:crypto') return crypto;
+    if (name === '@/server/openai-ads-conversions') return {
+      reportOpenAILeadCreated: async () => ({ status: 'skipped' }),
+    };
+    if (name === '@/lib/seller-funnel-events') return {
+      normalizeSellerFunnelEvent: value => value,
+      recordSellerFunnelEvent: async () => ({ duplicate: false }),
+    };
     if (name === '@/lib/mailchimp') return { syncSellerLeadToMailchimp: async lead => {
       mailchimpCalls++;
       mailchimpPayloads.push(JSON.parse(JSON.stringify(lead)));
@@ -226,7 +237,9 @@ const content = state => JSON.parse(state.store.rows[0].content);
     same(await current.post({...legacyPayload,...mutation}), await old.post({...legacyPayload,...mutation}), 'legacy validation/spam/fallback response matches HEAD');
     same(current.calls,old.calls,'legacy validation/spam/fallback fanout matches HEAD');
     same(current.mailchimpPayloads,old.mailchimpPayloads,'legacy optional details do not alter Mailchimp payload');
-    same(current.store.rows,old.store.rows,'legacy validation/spam/fallback control rows match HEAD');
+    equal(current.store.rows.length,old.store.rows.length,'legacy validation/spam/fallback durable row count matches HEAD');
+    same(current.store.rows.map(row => JSON.parse(row.content)),old.store.rows.map(row => JSON.parse(row.content)),
+      'legacy validation/spam/fallback saved lead content matches HEAD across the dedicated storage schema');
   }
   checks.push('production-HEAD legacy validation/spam/error/optional-field contracts also preserved');
 
@@ -271,7 +284,8 @@ const content = state => JSON.parse(state.store.rows[0].content);
   equal(content(good).sellerAuthority, 'owner', 'self-reported authority stored');
   equal(content(good).adAttribution.oppref, base.oppref, 'opaque oppref bytes retained');
   equal(content(good).utmContent, base.utmContent, 'raw UTM retained');
-  check(/^[0-9a-f]{64}$/.test(good.store.rows[0].content_hash), 'namespaced key hash');
+  equal(good.store.rows[0].submission_id, base.submissionId, 'dedupe key is the validated submission UUID');
+  check(/^[0-9a-f]{64}$/.test(good.store.rows[0].payload_fingerprint), 'immutable payload fingerprint');
   check(Number.isSafeInteger(good.store.rows[0].id) && good.store.rows[0].id > 0, 'normal numeric PK');
   const email = good.calls.find(call => call.payload.html);
   check(email.payload.html.includes('Synthetic &lt;Test&gt;'), 'HTML property escaping');
@@ -582,7 +596,7 @@ const content = state => JSON.parse(state.store.rows[0].content);
     realNetworkCalls: 0, productionWrites: 0, credentialsRead: 0,
     scope: 'Actual API/helper execution against isolated memory store and strict mock transports; timeout scheduling shortened only in test.',
     legacyBaseline: baselineRef,
-    schemaEvidence: 'Prior catalog baseline only: bigint identity and UNIQUE(category, content_hash). This local rerun makes no live database query or schema change.',
+    schemaEvidence: 'Migration defines a private bigint receipt table with UNIQUE(submission_id). This local rerun makes no live database query or schema change.',
     limitations: ['No live submission/delivery/readback tested.', 'No OpenAI Pixel/CAPI event sent.',
       'Email provider acceptance and message ID are not proof of inbox delivery; verify the provider delivery event separately.',
       'Pending/failed/unknown delivery requires explicit operator reconciliation; no automatic retry worker.',

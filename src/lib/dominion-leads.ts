@@ -1,7 +1,7 @@
-import { getServiceClient } from "@/lib/supabase";
+import { getDominionServiceClient } from "@/lib/dominion-supabase";
 import { createHash } from "node:crypto";
 
-const DOMINION_LEAD_CATEGORY = "dominion_lead_control";
+const DOMINION_LEAD_TABLE = "dominion_website_lead_receipts";
 export const DOMINION_OPTIONS_FLOW = "seller_options_v1";
 
 export type DominionSellerAuthority = "owner" | "authorized_representative";
@@ -56,6 +56,7 @@ export interface DominionLeadRecord {
   utmTerm: string;
   utmContent: string;
   gclid: string;
+  funnelVisitId?: string;
   adAttribution: StringMap;
   smsConsent: boolean;
   smsConsentTimestamp: string | null;
@@ -93,6 +94,7 @@ export interface DominionLeadSubmissionInput {
   utmTerm?: string | null;
   utmContent?: string | null;
   gclid?: string | null;
+  funnelVisitId?: string | null;
   adAttribution?: Record<string, unknown> | null;
   smsConsent?: boolean | null;
   smsConsentTimestamp?: string | null;
@@ -102,8 +104,10 @@ export interface DominionLeadSubmissionInput {
   tcpaConsented?: boolean;
 }
 
-function parseContent(raw: string | null): JsonRecord {
+function parseContent(raw: unknown): JsonRecord {
   if (!raw) return {};
+  if (typeof raw === "object" && !Array.isArray(raw)) return raw as JsonRecord;
+  if (typeof raw !== "string") return {};
   try {
     const parsed = JSON.parse(raw);
     return parsed && typeof parsed === "object" && !Array.isArray(parsed)
@@ -180,7 +184,7 @@ function normalizeTimestamp(value: unknown): string | null {
 
 function rowToDominionLead(row: {
   id: number;
-  content: string | null;
+  content: unknown;
   created_at: string | null;
   updated_at: string | null;
 }): DominionLeadRecord {
@@ -214,6 +218,7 @@ function rowToDominionLead(row: {
     utmTerm: shortText(content.utmTerm, 240),
     utmContent: shortText(content.utmContent, 240),
     gclid: shortText(content.gclid, 160),
+    ...(isOptionsFlow ? { funnelVisitId: shortText(content.funnelVisitId, 40) } : {}),
     adAttribution: normalizeStringRecord(content.adAttribution, isOptionsFlow),
     smsConsent: content.smsConsent === true,
     smsConsentTimestamp: normalizeTimestamp(content.smsConsentTimestamp),
@@ -262,6 +267,9 @@ function dominionLeadToContent(
     utmTerm: record.utmTerm.trim(),
     utmContent: record.utmContent.trim(),
     gclid: record.gclid.trim(),
+    ...(record.optionsReceipt?.flow === DOMINION_OPTIONS_FLOW
+      ? { funnelVisitId: shortText(record.funnelVisitId, 40) }
+      : {}),
     adAttribution: normalizeStringRecord(record.adAttribution, record.optionsReceipt?.flow === DOMINION_OPTIONS_FLOW),
     smsConsent: record.smsConsent === true,
     smsConsentTimestamp: normalizeTimestamp(record.smsConsentTimestamp),
@@ -305,6 +313,7 @@ function submissionRecord(
     utmTerm: shortText(input.utmTerm, 240),
     utmContent: shortText(input.utmContent, 240),
     gclid: shortText(input.gclid, 160),
+    ...(isOptionsFlow ? { funnelVisitId: shortText(input.funnelVisitId, 40) } : {}),
     adAttribution: normalizeStringRecord(input.adAttribution, isOptionsFlow),
     smsConsent: input.smsConsent === true,
     smsConsentTimestamp: normalizeTimestamp(input.smsConsentTimestamp),
@@ -328,14 +337,14 @@ function submissionRecord(
 export async function recordDominionLeadSubmission(
   input: DominionLeadSubmissionInput,
 ): Promise<DominionLeadRecord | null> {
-  const supabase = getServiceClient();
+  const supabase = getDominionServiceClient();
   if (!supabase) return null;
   const baseRecord = submissionRecord(input);
 
   const { data, error } = await supabase
-    .from("al_memories")
+    .from(DOMINION_LEAD_TABLE)
     .insert({
-      category: DOMINION_LEAD_CATEGORY,
+      flow: "website_general",
       content: dominionLeadToContent(baseRecord),
     })
     .select("id, content, created_at, updated_at")
@@ -348,7 +357,7 @@ export async function recordDominionLeadSubmission(
   return rowToDominionLead(
     data as {
       id: number;
-      content: string | null;
+      content: unknown;
       created_at: string | null;
       updated_at: string | null;
     },
@@ -370,7 +379,8 @@ export class DominionOptionsSubmissionConflictError extends Error {
 interface OptionsSubmissionReceipt {
   record: DominionLeadRecord;
   duplicate: boolean;
-  contentHash: string;
+  submissionId: string;
+  payloadFingerprint: string;
   storedContent: string;
 }
 
@@ -399,13 +409,11 @@ export async function recordDominionOptionsLeadSubmission(
   if (!isDominionOptionsSubmissionId(submissionId) || !sellerAuthority(input.sellerAuthority)) {
     throw new Error("Invalid seller-options submission identity.");
   }
-  const supabase = getServiceClient();
+  const supabase = getDominionServiceClient();
   if (!supabase) throw new Error("Durable lead storage is unavailable.");
 
   const normalizedId = submissionId.toLowerCase();
   const base = submissionRecord(input, true);
-  const contentHash = createHash("sha256")
-    .update(`dominion:${DOMINION_OPTIONS_FLOW}:${normalizedId}`).digest("hex");
   // Generated timestamps/IP are not seller input and must not break a retry.
   const { submittedAt: _submittedAt, smsConsentTimestamp: _consentAt,
     smsConsentIP: _consentIp, ...immutable } = base;
@@ -420,17 +428,20 @@ export async function recordDominionOptionsLeadSubmission(
   };
   const content = dominionLeadToContent({ ...base, optionsReceipt });
 
-  // Verified 2026-08-27: existing UNIQUE(category, content_hash). The normal
-  // bigint identity stays untouched. Only the winning INSERT may run fanout.
-  const inserted = await supabase.from("al_memories").insert({
-    category: DOMINION_LEAD_CATEGORY, content_hash: contentHash, content,
+  // The dedicated Dominion table has UNIQUE(submission_id). Only the winning
+  // insert may run notification and CRM fanout.
+  const inserted = await supabase.from(DOMINION_LEAD_TABLE).insert({
+    flow: DOMINION_OPTIONS_FLOW,
+    submission_id: normalizedId,
+    payload_fingerprint: payloadFingerprint,
+    content,
   }).select("id, content, created_at, updated_at").single();
   let row = inserted.data;
   let duplicate = false;
   if (inserted.error?.code === "23505") {
-    const existing = await supabase.from("al_memories")
+    const existing = await supabase.from(DOMINION_LEAD_TABLE)
       .select("id, content, created_at, updated_at")
-      .eq("category", DOMINION_LEAD_CATEGORY).eq("content_hash", contentHash).maybeSingle();
+      .eq("submission_id", normalizedId).maybeSingle();
     if (existing.error || !existing.data) throw new Error("Could not verify the existing submission.");
     row = existing.data;
     const saved = optionsReceiptFromContent(parseContent(row.content).optionsReceipt);
@@ -443,14 +454,20 @@ export async function recordDominionOptionsLeadSubmission(
   if (!row || !Number.isSafeInteger(row.id) || row.id <= 0) {
     throw new Error("The saved submission did not return a valid receipt.");
   }
-  return { record: rowToDominionLead(row), duplicate, contentHash, storedContent: row.content };
+  return {
+    record: rowToDominionLead(row),
+    duplicate,
+    submissionId: normalizedId,
+    payloadFingerprint,
+    storedContent: typeof row.content === "string" ? row.content : JSON.stringify(row.content),
+  };
 }
 
 export async function recordDominionOptionsDelivery(
   receipt: OptionsSubmissionReceipt,
   delivery: DominionDeliveryMap,
 ): Promise<void> {
-  const supabase = getServiceClient();
+  const supabase = getDominionServiceClient();
   if (!supabase || !receipt.record.optionsReceipt || receipt.duplicate) {
     throw new Error("Only the receipt creator can record delivery outcomes.");
   }
@@ -459,10 +476,12 @@ export async function recordDominionOptionsDelivery(
     ...receipt.record,
     optionsReceipt: { ...receipt.record.optionsReceipt, delivery, deliveryUpdatedAt: updatedAt },
   });
-  const { data, error } = await supabase.from("al_memories")
+  const { data, error } = await supabase.from(DOMINION_LEAD_TABLE)
     .update({ content, updated_at: updatedAt })
-    .eq("id", receipt.record.id).eq("category", DOMINION_LEAD_CATEGORY)
-    .eq("content_hash", receipt.contentHash).eq("content", receipt.storedContent)
+    .eq("id", receipt.record.id)
+    .eq("submission_id", receipt.submissionId)
+    .eq("payload_fingerprint", receipt.payloadFingerprint)
+    .eq("content", receipt.storedContent)
     .select("id").single();
   if (error || !data) throw new Error("Delivery outcomes need operator reconciliation.");
 }

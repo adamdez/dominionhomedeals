@@ -118,6 +118,14 @@ function makeHarness(source, config = {}) {
         events.push({kind: 'generate_lead', data});
         if (trackingThrows) throw new Error('Tracking fixture failed');
       },
+      trackOpenAILeadCreated: data => events.push({kind: 'openai_lead_created', data}),
+    };
+    if (spec === '@/lib/seller-funnel-tracking') return {
+      getSellerFunnelVisitId: () => 'aaaaaaaa-1234-4234-8234-123456789012',
+      isInternalQaSession: () => false,
+      readOpenAIBrowserReference: () => '',
+      readSellerAttribution: () => ({}),
+      trackSellerFunnelEvent: (...args) => events.push({kind: 'funnel', args}),
     };
     throw new Error('Unapproved import: ' + spec);
   };
@@ -241,6 +249,7 @@ function loadActual(file, source = read(file), capture = false) {
     if (spec === '@/lib/tracking') return {
       trackFormStep() { throw new Error('Unexpected SSR analytics'); },
       trackLeadFormSubmission() { throw new Error('Unexpected SSR analytics'); },
+      trackOpenAILeadCreated() { throw new Error('Unexpected SSR analytics'); },
     };
     if (spec.startsWith('@/')) {
       const file = 'src/' + spec.slice(2) + (spec.startsWith('@/components/') ? '.tsx' : '.ts');
@@ -299,11 +308,10 @@ const report = {
 };
 (async () => {
   for (const file of [
-    'src/components/forms/LeadForm.tsx', 'src/lib/constants.ts', 'src/lib/tracking.ts',
-    'src/lib/dominion-leads.ts', 'src/app/analytics.tsx',
-    'src/components/sell/SellStickyBar.tsx', 'src/components/seo/BreadcrumbJsonLd.tsx',
-  ]) equal(read(file), atBaseline(file), file + ': protected behavior/identity source unchanged');
-  checks.push('Protected form, authority, consent, receipt, attribution, analytics, phone/legal identity sources unchanged');
+    'src/lib/constants.ts', 'src/components/sell/SellStickyBar.tsx',
+    'src/components/seo/BreadcrumbJsonLd.tsx',
+  ]) equal(read(file), atBaseline(file), file + ': protected identity/legal source unchanged');
+  checks.push('Protected public identity, legal constants, sticky phone, and breadcrumb sources unchanged; real form handlers are verified below');
   same(page.metadata, baselinePage.metadata, 'Canonical and public metadata unchanged');
   check(!/^[\s;]*['"]use client['"]/.test(read('src/app/sell/options/page.tsx')), 'Page remains server-rendered');
 

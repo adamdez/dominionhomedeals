@@ -5,6 +5,8 @@
  * explicit Google Ads conversions only where they are required.
  */
 
+import { openAILeadEventId } from '@/lib/openai-ads-shared'
+
 export const GOOGLE_ADS_CONVERSION_ID =
   process.env.NEXT_PUBLIC_GOOGLE_ADS_ID || 'AW-18000301728'
 export const GOOGLE_ADS_LEAD_FORM_LABEL =
@@ -33,16 +35,20 @@ declare global {
     dataLayer?: unknown[]
     __loadDominionAnalytics?: () => void
     __dominionAdsTrackingBlocked?: () => boolean
+    __dominionAnalyticsBlocked?: () => boolean
+    oaiq?: (command: string, ...args: unknown[]) => void
   }
 }
 
 function adsTrackingBlocked(): boolean {
   if (typeof window === 'undefined') return false
-  return isAdsTrackingExcludedPath(window.location.pathname)
+  return window.__dominionAnalyticsBlocked?.() === true ||
+    isAdsTrackingExcludedPath(window.location.pathname)
 }
 
 function gtag(command: string, ...args: unknown[]) {
-  if (typeof window !== 'undefined' && typeof window.gtag === 'function') {
+  if (typeof window !== 'undefined' && typeof window.gtag === 'function' &&
+    window.__dominionAnalyticsBlocked?.() !== true) {
     window.__loadDominionAnalytics?.()
     window.gtag(command, ...args)
   }
@@ -75,6 +81,21 @@ export function trackLeadFormSubmission(data: LeadTrackingData): void {
     currency: 'USD',
     value: 1,
   })
+}
+
+export function trackOpenAILeadCreated(submissionId: string): void {
+  if (adsTrackingBlocked() || typeof window === 'undefined' || typeof window.oaiq !== 'function') return
+
+  try {
+    window.oaiq(
+      'measure',
+      'lead_created',
+      { type: 'customer_action' },
+      { event_id: openAILeadEventId(submissionId), opt_out: true },
+    )
+  } catch {
+    // Browser measurement can never turn an accepted lead into a failed form.
+  }
 }
 
 export function trackFormStep(stepNumber: number, stepName: string): void {

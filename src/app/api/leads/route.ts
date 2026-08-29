@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { randomUUID } from 'node:crypto'
 import { SITE } from '@/lib/constants'
 import {
   DOMINION_OPTIONS_FLOW, DominionOptionsSubmissionConflictError,
@@ -9,6 +10,8 @@ import {
   type DominionSellerAuthority,
 } from '@/lib/dominion-leads'
 import { syncSellerLeadToMailchimp } from '@/lib/mailchimp'
+import { reportOpenAILeadCreated } from '@/server/openai-ads-conversions'
+import { normalizeSellerFunnelEvent, recordSellerFunnelEvent } from '@/lib/seller-funnel-events'
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -50,9 +53,11 @@ interface LeadPayload {
   matchtype?: string
   adgroup?: string
   searchterm?: string
+  openaiObref?: string
   adAttribution?: Record<string, unknown>
   submissionFlow?: string
   submissionId?: string
+  funnelVisitId?: string
   sellerAuthority?: DominionSellerAuthority
 }
 
@@ -113,7 +118,9 @@ function sanitizeAttribution(raw: unknown, preserveRawValues = false): Record<st
       const normalizedKey = key.toLowerCase()
       return (
         typeof value === 'string' &&
-        (preserveRawValues && normalizedKey === 'oppref' ? value.length > 0 : value.trim().length > 0) &&
+        (preserveRawValues
+          ? value.length > 0 && value.length <= 8192
+          : value.trim().length > 0) &&
         (AD_ATTRIBUTION_KEYS.has(normalizedKey) || normalizedKey.startsWith('hsa_') ||
           (preserveRawValues && normalizedKey === 'oppref'))
       )
@@ -121,8 +128,11 @@ function sanitizeAttribution(raw: unknown, preserveRawValues = false): Record<st
     // The official opaque referral must survive every storage/forwarding hop
     // byte-for-byte, including whitespace. Do not silently truncate it.
     .sort(([a], [b]) => preserveRawValues ? Number(b === 'oppref') - Number(a === 'oppref') : 0)
-    .map(([key, value]) => [sanitize(key).slice(0, 80), preserveRawValues
-      ? String(value) : sanitize(String(value)).slice(0, 300)] as const)
+    .map(([key, value]) => {
+      const normalizedKey = key.toLowerCase()
+      return [sanitize(normalizedKey).slice(0, 80), preserveRawValues
+        ? String(value) : sanitize(String(value)).slice(0, 300)] as const
+    })
     .filter(([key, value]) => key && value)
     .slice(0, 80)
 
@@ -179,6 +189,70 @@ function settledDelivery(result: PromiseSettledResult<DominionDeliveryOutcome>):
   // A timed-out/non-acknowledged operation may have completed remotely.
   // Never claim it failed safely, or blindly replay it on a duplicate request.
   return result.status === 'fulfilled' ? result.value : { status: 'outcome_unknown' }
+}
+
+async function recordOptionsFunnelMilestone(input: {
+  eventId: string
+  visitId: string
+  eventType: 'lead_accepted' | 'conversion_reported' | 'conversion_failed'
+  occurredAt: string
+  leadReceiptId: string
+  detail?: string
+  adAttribution: Record<string, string>
+}) {
+  const event = normalizeSellerFunnelEvent({
+    eventId: input.eventId,
+    visitId: input.visitId,
+    eventType: input.eventType,
+    occurredAt: input.occurredAt,
+    pagePath: '/sell/options',
+    leadReceiptId: input.leadReceiptId,
+    detail: input.detail,
+    platform: 'unknown',
+    deviceClass: 'unknown',
+    viewportBucket: 'unknown',
+    referrerClass: 'unknown',
+    attribution: input.adAttribution,
+  })
+  if (!event) throw new Error('Invalid server seller-funnel milestone.')
+  return recordSellerFunnelEvent(event)
+}
+
+async function reportAndRecordOpenAIConversion(input: {
+  submissionId: string
+  funnelVisitId?: string
+  occurredAt: string
+  leadReceiptId: string
+  oppref?: string
+  obref?: string
+  adAttribution: Record<string, string>
+}): Promise<DominionDeliveryOutcome> {
+  const outcome = await reportOpenAILeadCreated({
+    submissionId: input.submissionId,
+    occurredAt: input.occurredAt,
+    oppref: input.oppref,
+    obref: input.obref,
+  })
+  if (outcome.status === 'skipped') return outcome
+
+  try {
+    if (!input.funnelVisitId) return outcome
+    await recordOptionsFunnelMilestone({
+      eventId: randomUUID(),
+      visitId: input.funnelVisitId,
+      eventType: outcome.status === 'provider_accepted' ? 'conversion_reported' : 'conversion_failed',
+      occurredAt: new Date().toISOString(),
+      leadReceiptId: input.leadReceiptId,
+      detail: outcome.referenceId || outcome.status,
+      adAttribution: input.adAttribution,
+    })
+  } catch (error) {
+    console.error('[OPENAI CONVERSION AUDIT EVENT ERROR]', {
+      receiptId: input.leadReceiptId,
+      message: error instanceof Error ? error.message : 'Unknown conversion audit error.',
+    })
+  }
+  return outcome
 }
 
 // Rate limiting
@@ -601,6 +675,10 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    const contentLength = Number(request.headers.get('content-length') || '0')
+    if (contentLength > 100_000) {
+      return NextResponse.json({ error: 'Request is too large.' }, { status: 413 })
+    }
     const body: LeadPayload = await request.json()
     isOptionsFlow = body?.submissionFlow === DOMINION_OPTIONS_FLOW
 
@@ -618,12 +696,20 @@ export async function POST(request: NextRequest) {
       const textFields = ['address', 'city', 'state', 'zip', 'condition', 'timeline', 'primaryConstraint',
         'firstName', 'lastName', 'phone', 'email', 'source', 'landingPage', 'utmSource', 'utmMedium',
         'utmCampaign', 'utmTerm', 'utmContent', 'gclid', 'oppref', 'gbraid', 'wbraid', 'gadSource',
-        'gadCampaignId', 'keyword', 'matchtype', 'adgroup', 'searchterm', 'tcpaTimestamp',
+        'gadCampaignId', 'keyword', 'matchtype', 'adgroup', 'searchterm', 'openaiObref', 'funnelVisitId', 'tcpaTimestamp',
         'sms_consent_timestamp', 'smsOptInTimestamp'] as const
       if (textFields.some((field) => body[field] != null && typeof body[field] !== 'string')) {
         return optionsFailure('Please check the form details and try again.', 400)
       }
       if (!isDominionOptionsSubmissionId(body.submissionId)) errors.push('Valid submission reference required')
+      if (body.funnelVisitId && !isDominionOptionsSubmissionId(body.funnelVisitId)) {
+        errors.push('Valid funnel visit reference required')
+      }
+      if (body.oppref && body.oppref.length > 8192) errors.push('Invalid ad attribution reference')
+      if (body.openaiObref && (body.openaiObref.length > 2048 ||
+        body.openaiObref.trim() !== body.openaiObref || /[\u0000-\u001f\u007f]/.test(body.openaiObref))) {
+        errors.push('Invalid browser attribution reference')
+      }
       if (body.sellerAuthority !== 'owner' && body.sellerAuthority !== 'authorized_representative') {
         errors.push('Please confirm your relationship to the property')
       }
@@ -668,7 +754,7 @@ export async function POST(request: NextRequest) {
       ...(body.adAttribution || {}),
       // Missing top-level fields must not erase a supplied structured value.
       ...(isOptionsFlow ? Object.fromEntries(Object.entries(submittedAdFields)
-        .filter(([, value]) => typeof value === 'string')) : submittedAdFields),
+        .filter(([, value]) => typeof value === 'string' && value.length > 0)) : submittedAdFields),
     }, isOptionsFlow)
 
     // Build lead object
@@ -706,6 +792,8 @@ export async function POST(request: NextRequest) {
         primaryConstraint: cleanText(body.primaryConstraint || 'Not provided'),
         submissionFlow: DOMINION_OPTIONS_FLOW,
         submissionId: body.submissionId!.toLowerCase(),
+        funnelVisitId: body.funnelVisitId?.toLowerCase() || '',
+        openaiObref: body.openaiObref || '',
         sellerAuthority: body.sellerAuthority,
       } : {}),
     }
@@ -720,7 +808,8 @@ export async function POST(request: NextRequest) {
       smsConsent: lead.smsConsent, smsConsentTimestamp: lead.smsConsentTimestamp,
       smsConsentIP: lead.smsConsentIP, submittedAt: lead.submittedAt,
       ...(isOptionsFlow ? { primaryConstraint: lead.primaryConstraint,
-        sellerAuthority: lead.sellerAuthority, tcpaConsented: lead.tcpaConsented } : {}),
+        funnelVisitId: lead.funnelVisitId, sellerAuthority: lead.sellerAuthority,
+        tcpaConsented: lead.tcpaConsented } : {}),
     }
 
     if (isOptionsFlow) {
@@ -740,13 +829,52 @@ export async function POST(request: NextRequest) {
       if (!receipt.duplicate) {
         // Options inquiries go only to the existing operator email recipients and
         // the dedicated create-only intake. No automated texts or other enrollment.
-        const deliveries = await Promise.allSettled([
+        const receiptId = String(receipt.record.id)
+        const funnelVisitId = lead.funnelVisitId
+        const submissionId = lead.submissionId!
+        const deliveryTasks: Array<Promise<DominionDeliveryOutcome>> = [
           withOptionsTimeout(sendEmailNotification(lead), 5000, 'options email notification'),
           withOptionsTimeout(forwardToLazarus(lead), 5000, 'options lazarus forward'),
-        ])
+          withOptionsTimeout(reportAndRecordOpenAIConversion({
+            submissionId,
+            funnelVisitId,
+            occurredAt: lead.submittedAt,
+            leadReceiptId: receiptId,
+            oppref: lead.adAttribution.oppref,
+            obref: lead.openaiObref,
+            adAttribution: lead.adAttribution,
+          }), 5000, 'OpenAI lead conversion'),
+        ]
+        if (funnelVisitId) {
+          deliveryTasks.push(
+            withOptionsTimeout(recordOptionsFunnelMilestone({
+              eventId: submissionId,
+              visitId: funnelVisitId,
+              eventType: 'lead_accepted',
+              occurredAt: lead.submittedAt,
+              leadReceiptId: receiptId,
+              adAttribution: lead.adAttribution,
+            }).then(() => ({ status: 'provider_accepted' as const })), 3000, 'seller funnel lead acceptance'),
+          )
+        }
+        const deliveries = await Promise.allSettled(deliveryTasks)
         const delivery: DominionDeliveryMap = {
           email: settledDelivery(deliveries[0]), lazarus: settledDelivery(deliveries[1]),
           teamSms: { status: 'skipped' }, sentinel: { status: 'skipped' }, mailchimp: { status: 'skipped' },
+        }
+        if (funnelVisitId && deliveries[3]?.status === 'rejected') {
+          console.error('[SELLER FUNNEL ACCEPTANCE EVENT ERROR]', { receiptId })
+        }
+        if (deliveries[2]?.status === 'fulfilled') {
+          const conversion = deliveries[2].value as DominionDeliveryOutcome
+          if (conversion.status === 'failed' || conversion.status === 'outcome_unknown') {
+            console.error('[OPENAI LEAD CONVERSION NEEDS REVIEW]', {
+              receiptId,
+              referenceId: conversion.referenceId || null,
+            })
+          }
+        } else if (deliveries[2]?.status === 'rejected') {
+          console.error('[OPENAI LEAD CONVERSION OUTCOME UNKNOWN]', { receiptId })
         }
         deliveryStatus = dominionOptionsDeliveryStatus(delivery)
         try {

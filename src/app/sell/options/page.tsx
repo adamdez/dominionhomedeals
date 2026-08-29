@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { FadeIn } from "@/components/animations/FadeIn";
+import { SellerOptionsJourneyTracker } from "@/components/analytics/SellerOptionsJourneyTracker";
 import { LeadForm } from "@/components/forms/LeadForm";
 import { BreadcrumbJsonLd } from "@/components/seo/BreadcrumbJsonLd";
 import { SellStickyBar } from "@/components/sell/SellStickyBar";
@@ -132,6 +133,7 @@ export default async function SellerOptionsPage({
 
   return (
     <>
+      <SellerOptionsJourneyTracker />
       <BreadcrumbJsonLd
         items={[
           { name: "Home", url: SITE.url },
