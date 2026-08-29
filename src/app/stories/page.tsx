@@ -20,6 +20,8 @@ export const metadata: Metadata = {
 };
 
 export default function SellerStoriesPage() {
+  const storiesUrl = `${SITE.url}/stories`;
+
   return (
     <>
       <BreadcrumbJsonLd
@@ -27,6 +29,33 @@ export default function SellerStoriesPage() {
           { name: "Home", url: SITE.url },
           { name: "Local Deal Snapshots", url: `${SITE.url}/stories` },
         ]}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "CollectionPage",
+            "@id": `${storiesUrl}#webpage`,
+            url: storiesUrl,
+            name: "Local Spokane and North Idaho Seller-Situation Articles",
+            description: metadata.description,
+            dateModified: "2026-08-29",
+            inLanguage: "en-US",
+            isAccessibleForFree: true,
+            isPartOf: { "@id": `${SITE.url}/#website` },
+            publisher: { "@id": `${SITE.url}/#business` },
+            mainEntity: {
+              "@type": "ItemList",
+              itemListElement: SELLER_STORIES.map((story, index) => ({
+                "@type": "ListItem",
+                position: index + 1,
+                name: story.title,
+                url: `${storiesUrl}/${story.slug}`,
+              })),
+            },
+          }),
+        }}
       />
       <section className="relative overflow-hidden bg-cream-50 pt-32 pb-20 md:pt-40 md:pb-28">
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-stone-50 via-forest-50/20 to-stone-50" />
@@ -40,7 +69,7 @@ export default function SellerStoriesPage() {
           <p className="mx-auto mt-5 max-w-3xl text-lg leading-relaxed text-ink-400">
             These pages show the kinds of inherited, rental, and moving situations
             that come up in Spokane County and North Idaho. Identifying details are
-            left out.
+            left out. They are educational examples, not public testimonials.
           </p>
         </div>
       </section>

@@ -9,6 +9,7 @@
     "lint": "next lint",
     "images:optimize": "node scripts/optimize-public-images.cjs",
     "verify:seller-funnel": "node scripts/verify-seller-funnel.mjs",
+    "verify:search-discovery": "node scripts/verify-search-discovery.mjs",
     "al:bench": "node scripts/al-benchmark-runner.cjs run",
     "al:bench:compare": "node scripts/al-benchmark-runner.cjs compare",
     "al:smoke": "node scripts/al-smoke-check.cjs"

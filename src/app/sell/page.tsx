@@ -78,7 +78,10 @@ function SellStructuredData() {
     url: pageUrl,
     name: "Sell Your Spokane or CDA House As-Is",
     description: metadata.description,
-    dateModified: "2026-05-27",
+    dateModified: "2026-08-29",
+    inLanguage: "en-US",
+    isAccessibleForFree: true,
+    isPartOf: { "@id": `${SITE.url}/#website` },
     about: { "@id": `${pageUrl}#service` },
     publisher: { "@id": `${SITE.url}/#business` },
   };

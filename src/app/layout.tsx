@@ -28,7 +28,17 @@ export const metadata: Metadata = {
   },
   description:
     "Local Spokane and Coeur d'Alene area team that buys houses for cash in any condition. No commissions, no repairs, close on your timeline.",
-  robots: { index: true, follow: true },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+      "max-video-preview": -1,
+    },
+  },
   openGraph: {
     type: "website",
     locale: "en_US",
@@ -58,6 +68,10 @@ function JsonLd() {
         alternateName: SITE.name,
         description: SITE.description,
         url: SITE.url,
+        logo: {
+          "@type": "ImageObject",
+          url: `${SITE.url}/images/logo1.png`,
+        },
         hasMap: SITE.profiles.googleBusiness,
         award: "BBB Accredited Business since August 19, 2026",
         telephone: SITE.phone,
@@ -84,6 +98,51 @@ function JsonLd() {
           opens: "08:00",
           closes: "18:00",
         },
+        contactPoint: {
+          "@type": "ContactPoint",
+          telephone: SITE.phone,
+          contactType: "sales",
+          areaServed: ["US-WA", "US-ID"],
+          availableLanguage: "English",
+        },
+        knowsAbout: [
+          "Selling a house as-is in Spokane County",
+          "Direct house sales in Spokane, Washington",
+          "Direct house sales in Kootenai County, Idaho",
+          "Inherited and probate property sales",
+          "Rental property and tenant-occupied house sales",
+          "Houses with deferred maintenance or back taxes",
+        ],
+        hasOfferCatalog: {
+          "@type": "OfferCatalog",
+          name: "Direct home-sale options",
+          itemListElement: [
+            {
+              "@type": "Offer",
+              itemOffered: {
+                "@type": "Service",
+                name: "Direct as-is house purchase",
+                url: `${SITE.url}/sell/as-is`,
+              },
+            },
+            {
+              "@type": "Offer",
+              itemOffered: {
+                "@type": "Service",
+                name: "Spokane County direct house sale",
+                url: SITE.url,
+              },
+            },
+            {
+              "@type": "Offer",
+              itemOffered: {
+                "@type": "Service",
+                name: "Coeur d'Alene and Kootenai County direct house sale",
+                url: `${SITE.url}/sell-my-house-fast-coeur-d-alene`,
+              },
+            },
+          ],
+        },
         ...(SITE.sameAs.length > 0 && { sameAs: SITE.sameAs }),
       },
       {
@@ -91,6 +150,7 @@ function JsonLd() {
         "@id": `${SITE.url}/#website`,
         url: SITE.url,
         name: SITE.name,
+        inLanguage: "en-US",
         publisher: { "@id": `${SITE.url}/#business` },
       },
     ],

@@ -1,5 +1,6 @@
 import type { MetadataRoute } from "next";
 import { SITE } from "@/lib/constants";
+import { PUBLIC_CRAWLER_TOKENS } from "@/lib/crawler-access";
 
 export default function robots(): MetadataRoute.Robots {
   return {
@@ -9,42 +10,13 @@ export default function robots(): MetadataRoute.Robots {
         allow: "/",
         disallow: "/api/",
       },
-      {
-        userAgent: "OAI-SearchBot",
+      ...PUBLIC_CRAWLER_TOKENS.map((userAgent) => ({
+        userAgent,
         allow: "/",
         disallow: "/api/",
-      },
-      {
-        userAgent: "GPTBot",
-        allow: "/",
-        disallow: "/api/",
-      },
-      {
-        userAgent: "ChatGPT-User",
-        allow: "/",
-        disallow: "/api/",
-      },
-      {
-        userAgent: "ClaudeBot",
-        allow: "/",
-        disallow: "/api/",
-      },
-      {
-        userAgent: "Claude-SearchBot",
-        allow: "/",
-        disallow: "/api/",
-      },
-      {
-        userAgent: "PerplexityBot",
-        allow: "/",
-        disallow: "/api/",
-      },
-      {
-        userAgent: "Google-Extended",
-        allow: "/",
-        disallow: "/api/",
-      },
+      })),
     ],
     sitemap: `${SITE.url}/sitemap.xml`,
+    host: SITE.url,
   };
 }

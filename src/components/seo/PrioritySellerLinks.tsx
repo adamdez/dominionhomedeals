@@ -2,19 +2,14 @@ import Link from "next/link";
 
 const PRIORITY_SELLER_LINKS = [
   {
-    title: "Sell My House Fast Spokane",
+    title: "Spokane Fast-Sale Guide",
     href: "/sell-my-house-fast-spokane",
-    text: "For Spokane sellers dealing with repairs, tenants, taxes, or a tight timeline.",
+    text: "Compare a direct sale with listing, repairs, showings, and buyer financing.",
   },
   {
-    title: "Cash Home Buyers Spokane",
+    title: "Compare Spokane Cash Buyers",
     href: "/cash-home-buyers-spokane",
-    text: "What to ask before choosing a cash buyer.",
-  },
-  {
-    title: "We Buy Houses Spokane",
-    href: "/we-buy-houses-spokane",
-    text: "For houses that need repairs, cleanup, or a simpler sale.",
+    text: "Questions to ask about funding, terms, inspections, and title closing.",
   },
   {
     title: "Sell My House Fast Coeur d'Alene",
@@ -25,6 +20,26 @@ const PRIORITY_SELLER_LINKS = [
     title: "How Cash Offers Are Calculated",
     href: "/how-we-calculate-cash-offers-spokane-cda",
     text: "How we think about repairs, costs, timing, and price.",
+  },
+  {
+    title: "Sell a House As-Is",
+    href: "/sell/as-is",
+    text: "A Spokane guide for houses needing repairs, cleanup, or updates.",
+  },
+  {
+    title: "Probate House Sales",
+    href: "/sell-house-probate-spokane",
+    text: "What usually has to be clear before a Spokane probate property can close.",
+  },
+  {
+    title: "Back Taxes and Liens",
+    href: "/sell-house-with-back-taxes-spokane",
+    text: "How delinquent property taxes are typically handled through closing.",
+  },
+  {
+    title: "Local Seller Stories",
+    href: "/stories",
+    text: "Common inherited, rental, vacant, and relocation situations in our market.",
   },
 ] as const;
 
@@ -51,7 +66,7 @@ export function PrioritySellerLinks({
             <p className="mt-4 text-base leading-relaxed text-ink-400">{intro}</p>
           </div>
 
-          <div className="mt-8 grid gap-4 md:grid-cols-2 lg:grid-cols-5">
+          <div className="mt-8 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             {PRIORITY_SELLER_LINKS.map((link) => (
               <Link
                 key={link.href}

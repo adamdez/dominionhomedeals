@@ -2,8 +2,11 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { SmsDisclosure } from "@/components/consent/SmsDisclosure";
+import { FaqJsonLd } from "@/components/seo/FaqJsonLd";
 import { PrioritySellerLinks } from "@/components/seo/PrioritySellerLinks";
+import { SITE } from "@/lib/constants";
 import { NEIGHBORHOODS, getNeighborhood, getAllSlugs } from "@/lib/neighborhoods";
+import { SELLER_SEO_LAST_UPDATED } from "@/lib/seller-seo-pages";
 
 export function generateStaticParams() {
   return getAllSlugs().map((slug) => ({ slug }));
@@ -46,6 +49,25 @@ export default async function NeighborhoodPage({
     notFound();
   }
 
+  const pageUrl = `${SITE.url}/neighborhoods/${slug}`;
+  const primaryMarketGuide = data.state === "ID"
+    ? "/sell-my-house-fast-coeur-d-alene"
+    : "/";
+  const faqs = [
+    {
+      q: `Does Dominion Homes buy houses in ${data.name}?`,
+      a: `Yes. Dominion Homes reviews direct as-is purchase opportunities in ${data.name}, ${data.county}. The house can be occupied, vacant, inherited, rented, or in need of repairs.`,
+    },
+    {
+      q: `Do I need to repair or clean a ${data.name} house before asking for an offer?`,
+      a: "No. You can ask for an offer based on the property as it sits today. Condition, cleanup, title, occupancy, and timing are reviewed before written terms are presented.",
+    },
+    {
+      q: `How does closing work for a ${data.name} property?`,
+      a: `If the written offer works for both sides, closing is handled through title or escrow. Payoffs, taxes, liens, and ownership documents must be resolved before funds can be released.`,
+    },
+  ];
+
   return (
     <>
       <script
@@ -53,28 +75,47 @@ export default async function NeighborhoodPage({
         dangerouslySetInnerHTML={{
           __html: JSON.stringify({
             "@context": "https://schema.org",
-            "@type": "Service",
-            "@id": `https://www.dominionhomedeals.com/neighborhoods/${slug}#service`,
-            name: `Cash home buyers in ${data.name}, ${data.state}`,
-            description: `Cash home buying service for ${data.name}, ${data.county}. Dominion Homes buys houses in any condition across the Spokane-CDA corridor.`,
-            provider: { "@id": "https://www.dominionhomedeals.com/#business" },
-            url: `https://www.dominionhomedeals.com/neighborhoods/${slug}`,
-            areaServed: {
-              "@type": "City",
-              name: data.name,
-              containedInPlace: {
-                "@type": "State",
-                name: data.state === "WA" ? "Washington" : "Idaho",
+            "@graph": [
+              {
+                "@type": "Service",
+                "@id": `${pageUrl}#service`,
+                name: `Direct as-is house purchases in ${data.name}, ${data.state}`,
+                description: `Direct as-is house purchase option for ${data.name}, ${data.county}.`,
+                provider: { "@id": `${SITE.url}/#business` },
+                url: pageUrl,
+                areaServed: {
+                  "@type": "City",
+                  name: data.name,
+                  containedInPlace: {
+                    "@type": "State",
+                    name: data.state === "WA" ? "Washington" : "Idaho",
+                  },
+                },
+                makesOffer: {
+                  "@type": "Offer",
+                  name: `Direct as-is offer review for houses in ${data.name}`,
+                  description: `A written direct-sale option based on the condition, title, occupancy, and timeline of a ${data.name} property.`,
+                },
               },
-            },
-            makesOffer: {
-              "@type": "Offer",
-              name: `Cash offer for houses in ${data.name}`,
-              description: `Fair cash offer for your ${data.name} home. No agents, no commissions, no repairs.`,
-            },
+              {
+                "@type": "WebPage",
+                "@id": `${pageUrl}#webpage`,
+                url: pageUrl,
+                name: `Sell a ${data.name} House Directly`,
+                description: data.description,
+                dateModified: SELLER_SEO_LAST_UPDATED,
+                inLanguage: "en-US",
+                isAccessibleForFree: true,
+                isPartOf: { "@id": `${SITE.url}/#website` },
+                about: { "@id": `${pageUrl}#service` },
+                publisher: { "@id": `${SITE.url}/#business` },
+              },
+            ],
           }),
         }}
       />
+
+      <FaqJsonLd faqs={faqs} />
 
       <script
         type="application/ld+json"
@@ -138,6 +179,38 @@ export default async function NeighborhoodPage({
             </a>
           </div>
           <SmsDisclosure />
+        </div>
+      </section>
+
+      <section className="border-y border-stone-200 bg-white">
+        <div className="section-wrap">
+          <div className="mx-auto grid max-w-5xl gap-8 lg:grid-cols-[1fr_.8fr]">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-widest text-forest-500">Direct answer</p>
+              <h2 className="mt-2 font-display text-display text-ink-600 text-balance">
+                Can you sell a {data.name} house directly and as-is?
+              </h2>
+              <p className="mt-4 text-lg leading-relaxed text-ink-400">
+                Yes. Dominion Homes reviews houses in {data.name}, {data.state} for a direct as-is purchase.
+                You can ask for an offer without repairing, cleaning, staging, or listing the property first.
+                The written offer depends on the house, title, occupancy, repair scope, and your timeline.
+              </p>
+            </div>
+            <aside className="rounded-2xl border border-stone-200 bg-stone-50 p-6">
+              <h3 className="font-display text-xl text-ink-600">Best next references</h3>
+              <div className="mt-4 flex flex-col gap-3 text-sm">
+                <Link href={primaryMarketGuide} className="font-semibold text-forest-600 hover:text-forest-700">
+                  {data.state === "ID" ? "Coeur d'Alene and Kootenai County seller guide" : "Spokane direct-sale overview"} →
+                </Link>
+                <Link href="/how-we-calculate-cash-offers-spokane-cda" className="font-semibold text-forest-600 hover:text-forest-700">
+                  How direct offers are calculated →
+                </Link>
+                <Link href="/stories" className="font-semibold text-forest-600 hover:text-forest-700">
+                  Local seller-situation examples →
+                </Link>
+              </div>
+            </aside>
+          </div>
         </div>
       </section>
 

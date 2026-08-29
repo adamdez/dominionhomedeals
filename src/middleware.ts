@@ -1,27 +1,8 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { isPublicCrawler } from "@/lib/crawler-access";
 
 const ALLOWED_COUNTRIES = new Set(["US"]);
-const ALLOWED_BOT_PATTERNS = [
-  /Googlebot/i,
-  /AdsBot-Google/i,
-  /Google-InspectionTool/i,
-  /Mediapartners-Google/i,
-  /Bingbot/i,
-  /DuckDuckBot/i,
-  /OAI-SearchBot/i,
-  /ChatGPT-User/i,
-  /GPTBot/i,
-  /ClaudeBot/i,
-  /Claude-SearchBot/i,
-  /PerplexityBot/i,
-  /Google-Extended/i,
-  /facebookexternalhit/i,
-  /Twitterbot/i,
-  /LinkedInBot/i,
-  /Slackbot/i,
-  /WhatsApp/i,
-];
 
 const LEGACY_AL_PATHS = [
   /^\/al(?:\/|$)/i,
@@ -68,13 +49,9 @@ function redirectLegacyAlPath(request: NextRequest): NextResponse | null {
   return NextResponse.redirect(redirectUrl, 308);
 }
 
-function isAllowedBot(userAgent: string): boolean {
-  return ALLOWED_BOT_PATTERNS.some((pattern) => pattern.test(userAgent));
-}
-
 function shouldBlockByCountry(request: NextRequest): boolean {
   const userAgent = request.headers.get("user-agent") ?? "";
-  if (isAllowedBot(userAgent)) return false;
+  if (isPublicCrawler(userAgent)) return false;
 
   const country = request.headers.get("x-vercel-ip-country")?.toUpperCase();
   if (!country) return false;

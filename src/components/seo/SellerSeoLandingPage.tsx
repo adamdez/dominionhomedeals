@@ -6,8 +6,12 @@ import { BreadcrumbJsonLd } from "@/components/seo/BreadcrumbJsonLd";
 import { FaqJsonLd } from "@/components/seo/FaqJsonLd";
 import { CashOfferMathSection, SellerProofBand, VerifyCashBuyerSection } from "@/components/sell/TrustAndOfferSections";
 import type { SellerSeoPage } from "@/lib/seller-seo-pages";
-import { SELLER_SEO_LAST_UPDATED } from "@/lib/seller-seo-pages";
-import { getSellerSeoUrl } from "@/lib/seller-seo-pages";
+import {
+  getSellerSeoServiceAreas,
+  getSellerSeoUpdateScope,
+  getSellerSeoUrl,
+  SELLER_SEO_LAST_UPDATED,
+} from "@/lib/seller-seo-pages";
 import { SITE } from "@/lib/constants";
 
 function CheckIcon() {
@@ -34,13 +38,13 @@ function StructuredData({ page }: { page: SellerSeoPage }) {
     name: page.title,
     description: page.description,
     provider: { "@id": `${SITE.url}/#business` },
-    areaServed: [
-      { "@type": "City", name: "Spokane" },
-      { "@type": "AdministrativeArea", name: "Spokane County, WA" },
-      { "@type": "AdministrativeArea", name: "Kootenai County, ID" },
-    ],
+    areaServed: getSellerSeoServiceAreas(page),
     serviceType: "Direct cash home buying",
     url: pageUrl,
+    audience: {
+      "@type": "Audience",
+      audienceType: getSellerSeoUpdateScope(page),
+    },
   };
 
   const webPageSchema = {
@@ -51,14 +55,30 @@ function StructuredData({ page }: { page: SellerSeoPage }) {
     name: page.metaTitle,
     description: page.description,
     dateModified: SELLER_SEO_LAST_UPDATED,
+    inLanguage: "en-US",
+    isPartOf: { "@id": `${SITE.url}/#website` },
     about: { "@id": `${pageUrl}#service` },
     publisher: { "@id": `${SITE.url}/#business` },
+    mainEntity: { "@id": `${pageUrl}#service` },
+  };
+
+  const relatedGuidesSchema = {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    name: `Related guides for ${page.title}`,
+    itemListElement: page.related.map((link, index) => ({
+      "@type": "ListItem",
+      position: index + 1,
+      name: link.label,
+      url: new URL(link.href, SITE.url).toString(),
+    })),
   };
 
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(serviceSchema) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(webPageSchema) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(relatedGuidesSchema) }} />
     </>
   );
 }
@@ -108,7 +128,7 @@ export function SellerSeoLandingPage({ page }: { page: SellerSeoPage }) {
                     day: "numeric",
                     year: "numeric",
                   })}
-                  {" "}for Spokane-area sellers.
+                  {" "}for {getSellerSeoUpdateScope(page)}.
                 </p>
               </FadeIn>
 

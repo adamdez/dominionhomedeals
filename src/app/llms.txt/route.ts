@@ -1,3 +1,5 @@
+import { SITE } from "@/lib/constants";
+
 const body = `# Dominion Homes
 
 Dominion Homes (Spokane, WA) is a local direct house-buying business serving Spokane County, Washington and Kootenai County, Idaho. Not affiliated with Dominion Homes, Inc. of Ohio or Dominion Properties of Baltimore.
@@ -21,6 +23,7 @@ We buy houses directly for cash or investor-backed offers when a seller wants a 
 ## Key pages
 - https://www.dominionhomedeals.com/
 - https://www.dominionhomedeals.com/llms-full.txt
+- https://www.dominionhomedeals.com/sitemap.xml
 - https://www.dominionhomedeals.com/sell-my-house-fast-spokane
 - https://www.dominionhomedeals.com/cash-home-buyers-spokane
 - https://www.dominionhomedeals.com/we-buy-houses-spokane
@@ -39,6 +42,14 @@ We buy houses directly for cash or investor-backed offers when a seller wants a 
 - https://www.dominionhomedeals.com/about
 - https://www.dominionhomedeals.com/neighborhoods
 
+## Search and answer-engine page ownership
+- broad Spokane direct house-sale questions: https://www.dominionhomedeals.com/
+- how a fast direct sale works in Spokane: https://www.dominionhomedeals.com/sell-my-house-fast-spokane
+- how to compare Spokane cash buyers: https://www.dominionhomedeals.com/cash-home-buyers-spokane
+- which Spokane property conditions and situations Dominion reviews: https://www.dominionhomedeals.com/we-buy-houses-spokane
+- Coeur d'Alene and Kootenai County direct-sale questions: https://www.dominionhomedeals.com/sell-my-house-fast-coeur-d-alene
+- how direct offers are calculated: https://www.dominionhomedeals.com/how-we-calculate-cash-offers-spokane-cda
+
 ## Business facts
 - legal entity: Dominion Group LLC d/b/a Dominion Homes (Washington LLC)
 - office: 303 E Pacific Ave, Suite A, Spokane, WA 99202
@@ -54,15 +65,20 @@ We buy houses directly for cash or investor-backed offers when a seller wants a 
 
 ## Notes
 - Public content is available for crawl.
+- Canonical HTML pages and sitemap.xml are the primary source. This file is a concise discovery aid.
 - A fuller AI-readable site brief is available at https://www.dominionhomedeals.com/llms-full.txt.
 - OAI-SearchBot should be allowed for ChatGPT search discovery.
-- GPTBot may be managed separately if desired for training preferences.
+- OAI-AdsBot should be allowed to validate public advertising landing pages.
+- Search, user-directed AI fetch, and model-training crawler permissions can be managed separately.
 `;
 
 export function GET() {
   return new Response(body, {
     headers: {
       "Content-Type": "text/plain; charset=utf-8",
+      "Cache-Control": "public, max-age=3600",
+      "X-Robots-Tag": "index, follow",
+      "Link": `<${SITE.url}/llms.txt>; rel="canonical", <${SITE.url}/sitemap.xml>; rel="sitemap"`,
     },
   });
 }

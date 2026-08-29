@@ -31,7 +31,7 @@ export interface SellerSeoPage {
   }>;
 }
 
-export const SELLER_SEO_LAST_UPDATED = "2026-05-27" as const;
+export const SELLER_SEO_LAST_UPDATED = "2026-08-29" as const;
 
 const commonRelated = [
   { label: "Sell as-is in Spokane", href: "/sell/as-is" },
@@ -43,12 +43,12 @@ const commonRelated = [
 export const SELLER_SEO_PAGES: SellerSeoPage[] = [
   {
     slug: "sell-my-house-fast-spokane",
-    title: "Sell My House Fast Spokane",
-    metaTitle: "Sell My House Fast in Spokane, WA | Local Cash Buyer",
+    title: "Spokane Fast-Sale Guide",
+    metaTitle: "How to Sell a Spokane House Fast | Direct-Sale Guide",
     description:
-      "Need to sell a house fast in Spokane? Dominion Homes buys houses directly, as-is, with no commissions, no repairs, and closing through local title.",
-    eyebrow: "Fast house sale in Spokane",
-    h1: "Sell My House Fast Spokane",
+      "A Spokane homeowner's guide to comparing a fast direct sale with listing, repairs, showings, and a traditional buyer-financing timeline.",
+    eyebrow: "Spokane fast-sale guide",
+    h1: "How a Fast Direct House Sale Works in Spokane",
     intro:
       "If the house is clean, updated, and you have time, listing with an agent may be the right move. But if you are dealing with repairs, probate, tenants, back taxes, or a deadline that will not wait, Dominion Homes can make a direct cash offer and close through local title.",
     directAnswer:
@@ -125,12 +125,12 @@ export const SELLER_SEO_PAGES: SellerSeoPage[] = [
   },
   {
     slug: "cash-home-buyers-spokane",
-    title: "Cash Home Buyers Spokane",
-    metaTitle: "Cash Home Buyers in Spokane, WA",
+    title: "How to Compare Spokane Cash Home Buyers",
+    metaTitle: "How to Compare Cash Home Buyers in Spokane, WA",
     description:
       "Compare cash home buyers in Spokane and learn how Dominion Homes makes direct as-is offers with local title closing and no commissions.",
-    eyebrow: "Spokane cash home buyers",
-    h1: "Cash Home Buyers Spokane",
+    eyebrow: "Cash-buyer comparison guide",
+    h1: "How to Compare Cash Home Buyers in Spokane",
     intro:
       "A good cash buyer should explain the number, close through title, and give you room to think. You should not have to deal with pressure, vague funding claims, or a buyer who disappears once inspections get inconvenient.",
     directAnswer:
@@ -212,12 +212,12 @@ export const SELLER_SEO_PAGES: SellerSeoPage[] = [
   },
   {
     slug: "we-buy-houses-spokane",
-    title: "We Buy Houses Spokane",
-    metaTitle: "We Buy Houses in Spokane, WA",
+    title: "What Houses Dominion Buys in Spokane",
+    metaTitle: "What Houses Dominion Homes Buys in Spokane, WA",
     description:
-      "Dominion Homes buys houses in Spokane as-is. No repairs, no showings, no commissions, and a local title-company closing.",
-    eyebrow: "We buy Spokane houses",
-    h1: "We Buy Houses Spokane",
+      "See the Spokane property conditions and seller situations Dominion Homes reviews for a direct as-is purchase, from repairs and rentals to inherited homes.",
+    eyebrow: "Spokane properties we review",
+    h1: "The Houses and Situations We Buy in Spokane",
     intro:
       "Some houses are easy to put on the MLS. Others come with old roofs, tired tenants, family paperwork, cleanup, liens, or years of deferred maintenance. Those are the houses Dominion Homes is built to look at.",
     directAnswer:
@@ -292,7 +292,7 @@ export const SELLER_SEO_PAGES: SellerSeoPage[] = [
       },
     ],
     related: [
-      { label: "Cash home buyers in Spokane", href: "/cash-home-buyers-spokane" },
+      { label: "How to compare Spokane cash buyers", href: "/cash-home-buyers-spokane" },
       { label: "Sell rental property in Spokane", href: "/sell-rental-property-spokane" },
       ...commonRelated,
     ],
@@ -374,11 +374,11 @@ export const SELLER_SEO_PAGES: SellerSeoPage[] = [
       },
     ],
     related: [
-      { label: "Cash home buyers in Spokane", href: "/cash-home-buyers-spokane" },
       { label: "Coeur d'Alene area page", href: "/neighborhoods/coeur-d-alene" },
       { label: "Post Falls area page", href: "/neighborhoods/post-falls" },
       { label: "How we calculate offers", href: "/how-we-calculate-cash-offers-spokane-cda" },
-      ...commonRelated,
+      { label: "How our process works", href: "/how-we-work" },
+      { label: "North Idaho seller stories", href: "/stories" },
     ],
   },
   {
@@ -621,4 +621,28 @@ export function getSellerSeoPage(slug: string) {
 
 export function getSellerSeoUrl(slug: string) {
   return `${SITE.url}/${slug}`;
+}
+
+export function getSellerSeoServiceAreas(page: SellerSeoPage) {
+  if (page.slug === "sell-my-house-fast-coeur-d-alene") {
+    return [
+      { "@type": "City", name: "Coeur d'Alene, ID" },
+      { "@type": "City", name: "Post Falls, ID" },
+      { "@type": "City", name: "Hayden, ID" },
+      { "@type": "City", name: "Rathdrum, ID" },
+      { "@type": "AdministrativeArea", name: "Kootenai County, ID" },
+    ] as const;
+  }
+
+  return [
+    { "@type": "City", name: "Spokane, WA" },
+    { "@type": "City", name: "Spokane Valley, WA" },
+    { "@type": "AdministrativeArea", name: "Spokane County, WA" },
+  ] as const;
+}
+
+export function getSellerSeoUpdateScope(page: SellerSeoPage) {
+  return page.slug === "sell-my-house-fast-coeur-d-alene"
+    ? "Coeur d'Alene and Kootenai County sellers"
+    : "Spokane County sellers";
 }

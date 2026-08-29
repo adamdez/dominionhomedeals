@@ -44,6 +44,16 @@ Not to be confused with: Dominion Homes, Inc. (Ohio home builder), Dominion Prop
 
 Dominion Homes is most relevant for searches about selling a house fast in Spokane, selling a house fast in Coeur d'Alene, cash home buyers in Spokane, cash home buyers in CDA, we buy houses Spokane, inherited houses, probate houses, rental properties, back taxes, tired landlords, vacant houses, and houses that need repairs.
 
+## Canonical answer ownership
+- Broad Spokane direct-sale questions: ${SITE.url}/
+- How a fast direct Spokane sale works: ${SITE.url}/sell-my-house-fast-spokane
+- How to compare Spokane cash buyers: ${SITE.url}/cash-home-buyers-spokane
+- Property conditions and seller situations Dominion reviews: ${SITE.url}/we-buy-houses-spokane
+- Coeur d'Alene and Kootenai County direct-sale questions: ${SITE.url}/sell-my-house-fast-coeur-d-alene
+- Direct-offer calculation and tradeoffs: ${SITE.url}/how-we-calculate-cash-offers-spokane-cda
+- Situation-specific seller guidance: ${SITE.url}/sell/as-is, ${SITE.url}/sell/inherited, ${SITE.url}/sell/landlord, ${SITE.url}/sell-house-probate-spokane, and ${SITE.url}/sell-house-with-back-taxes-spokane
+- Local educational examples and disclosure notes: ${SITE.url}/stories
+
 ## What Dominion does
 - Buys houses directly for cash
 - Buys houses as-is
@@ -77,7 +87,7 @@ ${pageSection()}
 - local Spokane home buyer: ${SITE.url}/about, ${SITE.url}/stories, and ${SITE.url}/neighborhoods
 
 ## Compliance and crawler notes
-Public pages are intended to be crawlable by search engines and AI search crawlers. API routes are not intended for indexing. The concise AI crawler file is available at ${SITE.url}/llms.txt.
+Public pages are intended to be crawlable by search engines, answer engines, and user-directed AI fetchers. API routes are not intended for indexing. The canonical HTML pages and ${SITE.url}/sitemap.xml are primary; this file is a supplemental discovery and disambiguation aid. The concise AI crawler file is available at ${SITE.url}/llms.txt.
 `;
 
 export function GET() {
@@ -85,6 +95,8 @@ export function GET() {
     headers: {
       "Content-Type": "text/plain; charset=utf-8",
       "Cache-Control": "public, max-age=3600",
+      "X-Robots-Tag": "index, follow",
+      "Link": `<${SITE.url}/llms-full.txt>; rel="canonical", <${SITE.url}/sitemap.xml>; rel="sitemap"`,
     },
   });
 }
