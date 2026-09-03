@@ -24,6 +24,7 @@ const dominionStorage = read("src/lib/dominion-supabase.ts");
 const migrationPath = fs.readdirSync(path.join(root, "supabase/migrations"))
   .find((name) => name.endsWith("_create_dominion_seller_funnel_events.sql"));
 const migration = migrationPath ? read(`supabase/migrations/${migrationPath}`) : "";
+const lifecycleMigration = read("supabase/migrations/20260903195719_seller_measurement_lifecycle.sql");
 const sellerOptionsPage = read("src/app/sell/options/page.tsx");
 const sellerOptionsLanding = read("src/lib/seller-options-landing.ts");
 const envExample = read(".env.example");
@@ -47,6 +48,13 @@ const eventNames = [
 ];
 
 const checks = [
+  check(
+    "lifecycle_migration_prepared",
+    lifecycleMigration.includes("add column active_visible_ms") &&
+      ["page_hidden", "page_visible", "page_restored", "conversion_validated", "conversion_skipped", "conversion_unknown"]
+        .every((name) => lifecycleMigration.includes(`'${name}'`)),
+    "Migration permits distinct lifecycle, visible-time, and conversion outcomes. Verify its application before release.",
+  ),
   check(
     "durable_event_table",
     migration.includes("create table if not exists public.dominion_seller_funnel_events") &&

@@ -405,6 +405,7 @@ export function dominionOptionsDeliveryStatus(delivery: DominionDeliveryMap | un
 export async function recordDominionOptionsLeadSubmission(
   input: DominionLeadSubmissionInput,
   submissionId: string,
+  measurement: { internalQa: boolean } = { internalQa: false },
 ): Promise<OptionsSubmissionReceipt> {
   if (!isDominionOptionsSubmissionId(submissionId) || !sellerAuthority(input.sellerAuthority)) {
     throw new Error("Invalid seller-options submission identity.");
@@ -425,6 +426,7 @@ export async function recordDominionOptionsLeadSubmission(
   const optionsReceipt: DominionOptionsReceipt = {
     flow: DOMINION_OPTIONS_FLOW, submissionId: normalizedId, payloadFingerprint,
     receivedAt: base.submittedAt, delivery: pendingDelivery(),
+    measurementClass: measurement.internalQa ? "internal_qa" : "unmarked",
   };
   const content = dominionLeadToContent({ ...base, optionsReceipt });
 
@@ -466,6 +468,7 @@ export async function recordDominionOptionsLeadSubmission(
 export async function recordDominionOptionsDelivery(
   receipt: OptionsSubmissionReceipt,
   delivery: DominionDeliveryMap,
+  openaiConversion?: DominionDeliveryOutcome & { measurementMode: string },
 ): Promise<void> {
   const supabase = getDominionServiceClient();
   if (!supabase || !receipt.record.optionsReceipt || receipt.duplicate) {
@@ -474,7 +477,8 @@ export async function recordDominionOptionsDelivery(
   const updatedAt = new Date().toISOString();
   const content = dominionLeadToContent({
     ...receipt.record,
-    optionsReceipt: { ...receipt.record.optionsReceipt, delivery, deliveryUpdatedAt: updatedAt },
+    optionsReceipt: { ...receipt.record.optionsReceipt, delivery, deliveryUpdatedAt: updatedAt,
+      ...(openaiConversion ? { openaiConversion } : {}) },
   });
   const { data, error } = await supabase.from(DOMINION_LEAD_TABLE)
     .update({ content, updated_at: updatedAt })

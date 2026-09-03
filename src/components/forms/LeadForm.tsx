@@ -464,7 +464,7 @@ export function LeadForm({
             sellerTimeline: formData.timeline || 'Not provided',
             propertyCondition: formData.condition || 'Not provided',
           })
-          if (isSellerOptions && optionsSubmissionId) {
+          if (isSellerOptions && optionsSubmissionId && data.openaiBrowserEligible === true) {
             trackOpenAILeadCreated(optionsSubmissionId)
           }
         } catch (trackingError) {

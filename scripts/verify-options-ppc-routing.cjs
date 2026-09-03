@@ -130,10 +130,14 @@ function setup(config = {}, sharedStore) {
   });
   vm.runInNewContext((config.before ? beforeCompiled : compiled)[files[0]] + '\nexports.__test = {rowToDominionLead, dominionLeadToContent};', helperContext);
   const helper = helperContext.exports;
+  const measurementContext = moduleContext(() => { throw new Error('Unexpected measurement policy import'); });
+  measurementContext.URL = URL;
+  vm.runInNewContext(compile(fs.readFileSync(path.join(repo, 'src/lib/seller-measurement-policy.ts'), 'utf8')), measurementContext);
   const routeContext = moduleContext(name => {
     if (name === 'next/server') return { NextResponse: { json: (body, options = {}) => ({ status: options.status || 200, body }) } };
     if (name === '@/lib/constants') return { SITE: { phone: '2025550100' } };
     if (name === '@/lib/dominion-leads') return helper;
+    if (name === '@/lib/seller-measurement-policy') return measurementContext.exports;
     if (name === 'node:crypto') return crypto;
     if (name === '@/server/openai-ads-conversions') return {
       reportOpenAILeadCreated: async () => ({ status: 'skipped' }),

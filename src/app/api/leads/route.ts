@@ -10,7 +10,8 @@ import {
   type DominionSellerAuthority,
 } from '@/lib/dominion-leads'
 import { syncSellerLeadToMailchimp } from '@/lib/mailchimp'
-import { reportOpenAILeadCreated } from '@/server/openai-ads-conversions'
+import { reportOpenAILeadCreated, type OpenAIConversionOutcome } from '@/server/openai-ads-conversions'
+import { isSellerMeasurementQa } from '@/lib/seller-measurement-policy'
 import { normalizeSellerFunnelEvent, recordSellerFunnelEvent } from '@/lib/seller-funnel-events'
 
 /* ------------------------------------------------------------------ */
@@ -18,6 +19,7 @@ import { normalizeSellerFunnelEvent, recordSellerFunnelEvent } from '@/lib/selle
 /* ------------------------------------------------------------------ */
 
 interface LeadPayload {
+  internalQa?: boolean
   address: string
   city?: string
   state?: string
@@ -194,7 +196,7 @@ function settledDelivery(result: PromiseSettledResult<DominionDeliveryOutcome>):
 async function recordOptionsFunnelMilestone(input: {
   eventId: string
   visitId: string
-  eventType: 'lead_accepted' | 'conversion_reported' | 'conversion_failed'
+  eventType: 'lead_accepted' | 'conversion_reported' | 'conversion_failed' | 'conversion_validated' | 'conversion_skipped' | 'conversion_unknown'
   occurredAt: string
   leadReceiptId: string
   detail?: string
@@ -219,6 +221,7 @@ async function recordOptionsFunnelMilestone(input: {
 }
 
 async function reportAndRecordOpenAIConversion(input: {
+  internalQa: boolean
   submissionId: string
   funnelVisitId?: string
   occurredAt: string
@@ -226,21 +229,24 @@ async function reportAndRecordOpenAIConversion(input: {
   oppref?: string
   obref?: string
   adAttribution: Record<string, string>
-}): Promise<DominionDeliveryOutcome> {
+}): Promise<OpenAIConversionOutcome> {
   const outcome = await reportOpenAILeadCreated({
     submissionId: input.submissionId,
     occurredAt: input.occurredAt,
     oppref: input.oppref,
     obref: input.obref,
+    internalQa: input.internalQa,
   })
-  if (outcome.status === 'skipped') return outcome
 
   try {
     if (!input.funnelVisitId) return outcome
     await recordOptionsFunnelMilestone({
       eventId: randomUUID(),
       visitId: input.funnelVisitId,
-      eventType: outcome.status === 'provider_accepted' ? 'conversion_reported' : 'conversion_failed',
+      eventType: outcome.status === 'skipped' ? 'conversion_skipped' :
+        outcome.status === 'outcome_unknown' ? 'conversion_unknown' :
+        outcome.status !== 'provider_accepted' ? 'conversion_failed' :
+          outcome.measurementMode === 'validation' ? 'conversion_validated' : 'conversion_reported',
       occurredAt: new Date().toISOString(),
       leadReceiptId: input.leadReceiptId,
       detail: outcome.referenceId || outcome.status,
@@ -813,9 +819,11 @@ export async function POST(request: NextRequest) {
     }
 
     if (isOptionsFlow) {
+      // QA marks only suppress ad measurement. All validation and intake protections stay intact.
+      const internalQa = isSellerMeasurementQa(body)
       let receipt
       try {
-        receipt = await withOptionsTimeout(recordDominionOptionsLeadSubmission(controlInput, body.submissionId!),
+        receipt = await withOptionsTimeout(recordDominionOptionsLeadSubmission(controlInput, body.submissionId!, { internalQa }),
           5000, 'seller-options receipt')
       } catch (error) {
         if (error instanceof DominionOptionsSubmissionConflictError) {
@@ -836,6 +844,7 @@ export async function POST(request: NextRequest) {
           withOptionsTimeout(sendEmailNotification(lead), 5000, 'options email notification'),
           withOptionsTimeout(forwardToLazarus(lead), 5000, 'options lazarus forward'),
           withOptionsTimeout(reportAndRecordOpenAIConversion({
+            internalQa,
             submissionId,
             funnelVisitId,
             occurredAt: lead.submittedAt,
@@ -851,6 +860,7 @@ export async function POST(request: NextRequest) {
               eventId: submissionId,
               visitId: funnelVisitId,
               eventType: 'lead_accepted',
+              detail: internalQa ? 'internal_qa' : 'unmarked',
               occurredAt: lead.submittedAt,
               leadReceiptId: receiptId,
               adAttribution: lead.adAttribution,
@@ -878,7 +888,12 @@ export async function POST(request: NextRequest) {
         }
         deliveryStatus = dominionOptionsDeliveryStatus(delivery)
         try {
-          await withOptionsTimeout(recordDominionOptionsDelivery(receipt, delivery), 3000, 'delivery outcome record')
+          const conversion = deliveries[2]?.status === 'fulfilled'
+            ? deliveries[2].value as OpenAIConversionOutcome
+            : { status: 'outcome_unknown' as const, referenceId: 'task_timeout_unknown',
+              measurementMode: internalQa ? 'qa' as const :
+                process.env.OPENAI_ADS_CONVERSIONS_VALIDATE_ONLY === 'true' ? 'validation' as const : 'production' as const }
+          await withOptionsTimeout(recordDominionOptionsDelivery(receipt, delivery, conversion), 3000, 'delivery outcome record')
         } catch {
           // The initial durable pending envelope remains a reconciliation item.
           deliveryStatus = 'needs_review'
@@ -892,6 +907,9 @@ export async function POST(request: NextRequest) {
       // Saved inquiry is not a delivered notification or a qualified seller.
       return NextResponse.json({ success: true, accepted: true, controlRecorded: true,
         receiptId: String(receipt.record.id), duplicate: receipt.duplicate, deliveryStatus,
+        openaiBrowserEligible: !receipt.duplicate && !internalQa &&
+          receipt.record.optionsReceipt?.measurementClass !== 'internal_qa' &&
+          process.env.OPENAI_ADS_CONVERSIONS_VALIDATE_ONLY !== 'true',
         message: 'Your inquiry has been recorded.' })
     }
 

@@ -16,7 +16,13 @@ export const SELLER_FUNNEL_EVENT_TYPES = [
   "lead_accepted",
   "call_clicked",
   "page_exited",
+  "page_hidden",
+  "page_visible",
+  "page_restored",
   "conversion_reported",
+  "conversion_validated",
+  "conversion_skipped",
+  "conversion_unknown",
   "conversion_failed",
 ] as const;
 
@@ -56,6 +62,7 @@ export interface SellerFunnelEvent {
   stage: SellerFunnelStage | null;
   detail: string | null;
   elapsedMs: number | null;
+  activeVisibleMs: number | null;
   scrollDepth: number | null;
   leadReceiptId: number | null;
   platform: "ios" | "android" | "desktop" | "unknown";
@@ -129,6 +136,7 @@ export function normalizeSellerFunnelEvent(value: unknown): SellerFunnelEvent | 
     stage,
     detail: optionalDetail(raw.detail),
     elapsedMs: optionalInteger(raw.elapsedMs, 0, 1_800_000),
+    activeVisibleMs: optionalInteger(raw.activeVisibleMs, 0, 1_800_000),
     scrollDepth: optionalInteger(raw.scrollDepth, 0, 100),
     leadReceiptId,
     platform: enumValue(raw.platform, PLATFORMS, "unknown"),
@@ -152,6 +160,7 @@ export async function recordSellerFunnelEvent(event: SellerFunnelEvent): Promise
     stage: event.stage,
     detail: event.detail,
     elapsed_ms: event.elapsedMs,
+    active_visible_ms: event.activeVisibleMs,
     scroll_depth: event.scrollDepth,
     lead_receipt_id: event.leadReceiptId,
     platform: event.platform,

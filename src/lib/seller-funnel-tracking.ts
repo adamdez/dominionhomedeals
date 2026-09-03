@@ -10,7 +10,10 @@ export type SellerFunnelClientEventType =
   | "submit_attempted"
   | "submit_failed"
   | "call_clicked"
-  | "page_exited";
+  | "page_exited"
+  | "page_hidden"
+  | "page_visible"
+  | "page_restored";
 
 export type SellerFunnelClientStage = "address" | "name" | "phone" | "details";
 
@@ -18,6 +21,7 @@ interface SellerFunnelEventOptions {
   stage?: SellerFunnelClientStage;
   detail?: string;
   elapsedMs?: number;
+  activeVisibleMs?: number;
   scrollDepth?: number;
   onceKey?: string;
   beacon?: boolean;
@@ -182,6 +186,8 @@ export function trackSellerFunnelEvent(
     stage: options.stage,
     detail: options.detail,
     elapsedMs: Number.isFinite(options.elapsedMs) ? Math.max(0, Math.round(options.elapsedMs!)) : undefined,
+    activeVisibleMs: Number.isFinite(options.activeVisibleMs)
+      ? Math.min(1_800_000, Math.max(0, Math.round(options.activeVisibleMs!))) : undefined,
     scrollDepth: Number.isFinite(options.scrollDepth)
       ? Math.min(100, Math.max(0, Math.round(options.scrollDepth!)))
       : undefined,
@@ -190,9 +196,11 @@ export function trackSellerFunnelEvent(
   };
   const body = JSON.stringify(payload);
 
+  let queued = false;
   if (options.beacon && typeof navigator.sendBeacon === "function") {
-    navigator.sendBeacon("/api/funnel-events", new Blob([body], { type: "application/json" }));
-  } else {
+    try { queued = navigator.sendBeacon("/api/funnel-events", new Blob([body], { type: "application/json" })); } catch {}
+  }
+  if (!queued) {
     void fetch("/api/funnel-events", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
