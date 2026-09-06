@@ -341,6 +341,31 @@ export default function SellAsIsPage() {
         </div>
       </section>
 
+      <section className="section-wrap pb-0" aria-labelledby="compare-sale-options">
+        <div className="rounded-2xl border border-forest-200 bg-forest-50 p-6 sm:p-8">
+          <h2 id="compare-sale-options" className="font-display text-2xl text-ink-600">
+            Compare what you could keep
+          </h2>
+          <p className="mt-3 max-w-3xl text-sm leading-relaxed text-ink-500">
+            Start with a realistic sale price. Subtract repairs and selling costs.
+            Allow for the bills while you wait and any mortgage or other amounts owed.
+            Then compare that with an actual written investor offer and its costs.
+          </p>
+          <p className="mt-3 max-w-3xl text-sm leading-relaxed text-ink-500">
+            You can also list the house in its current condition.
+            A direct offer may help with timing and repairs. It may leave you with less money.
+            Compare the numbers and terms before deciding.
+          </p>
+          <div className="mt-5 flex flex-wrap gap-3">
+            <a href="#get-offer" className="btn-primary">Request an offer to compare</a>
+            <Link href="/sell/options" className="btn-secondary">Compare ways to sell</Link>
+          </div>
+          <Link href="/how-we-calculate-cash-offers-spokane-cda" className="mt-4 inline-block text-sm font-semibold text-forest-700 underline underline-offset-4">
+            See how Dominion works out an offer
+          </Link>
+        </div>
+      </section>
+
       <section className="section-wrap">
         <FadeIn>
           <div className="grid gap-6 md:grid-cols-2">
@@ -364,7 +389,7 @@ export default function SellAsIsPage() {
 
             <div className="rounded-2xl border border-stone-200 bg-cream-50 p-6">
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-forest-500">
-                Internal links that help
+                More help for your situation
               </p>
               <div className="mt-4 flex flex-wrap gap-2">
                 {INTERNAL_LINKS.map((link) => (
@@ -378,9 +403,8 @@ export default function SellAsIsPage() {
                 ))}
               </div>
               <p className="mt-4 text-sm leading-relaxed text-ink-400">
-                These supporting pages help answer related questions around inherited
-                houses, rental properties, neighborhood context, and the direct-sale
-                process.
+                Find answers about inherited houses and your local market.
+                See what happens when you request an offer.
               </p>
             </div>
           </div>
