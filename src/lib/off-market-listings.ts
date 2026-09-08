@@ -1,5 +1,6 @@
 import princeton4129Photos from '@/data/4129-e-princeton-ave-photos.json'
 import { SITE } from '@/lib/constants'
+import { plymouthListing } from '@/data/plymouth-listing'
 
 export type OffMarketPhoto = { src: string; alt: string }
 
@@ -36,8 +37,8 @@ export type OffMarketListing = {
   compLinks?: { label: string; href: string }[]
   mapQuery: string
   leadSource: string
-  lat: number
-  lng: number
+  lat?: number
+  lng?: number
   cardImageSrc: string
   countySearchUrl?: string
   countySearchLabel?: string
@@ -54,9 +55,12 @@ export type OffMarketListing = {
   submitLabel?: string
   sourceNote?: string
   dueDiligenceNote?: string
+  galleryNote?: string
+  layoutStudy?: { currentImage: string; conceptImage: string; pdf: string }
 }
 
 const listings: Record<string, OffMarketListing> = {
+  '6722-s-plymouth-rd': plymouthListing,
   '4129-e-princeton-ave': {
     slug: '4129-e-princeton-ave',
     status: 'active',
@@ -162,7 +166,11 @@ export function getOffMarketSlugs(): string[] {
 
 export function getOffMarketListing(slug: string): OffMarketListing | undefined {
   const listing = listings[slug]
-  return listing?.status === 'active' ? listing : undefined
+  // Drafts are reviewable locally. Production and the public catalog exclude them.
+  return listing?.status === 'active' ||
+    (process.env.NODE_ENV === 'development' && listing?.status === 'draft')
+    ? listing
+    : undefined
 }
 
 export function getAllOffMarketListings(): OffMarketListing[] {

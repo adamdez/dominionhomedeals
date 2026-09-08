@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 660" role="img">
+<rect x="0" y="0" width="900" height="660" rx="8" fill="#FAFAF8" stroke="#FAFAF8"/>
+<rect x="0" y="0" width="900" height="115" rx="8" fill="#122A1A" stroke="#122A1A"/>
+<text x="28" y="29" font-family="Arial, sans-serif" font-size="12" font-weight="700" fill="#F5AD1B">CURRENT / COUNTY FOOTPRINT</text>
+<text x="28" y="65" font-family="Arial, sans-serif" font-size="28" font-weight="700" fill="#FFFFFF">House footprint and floor areas</text>
+<text x="28" y="93" font-family="Arial, sans-serif" font-size="13" font-weight="400" fill="#E2E7DF">County outline redrawn for clarity. No interior walls or room locations are implied.</text>
+<polygon points="35,158 131,158 131,224 437,224 437,284 353,284 353,404 263,404 263,428 185,428 185,404 131,404 131,446 35,446" fill="#E3EDDF" stroke="#1B3A25" stroke-width="2"/>
+<polygon points="437,224 485,224 485,446 353,446 353,284 437,284" fill="#EBEAE4" stroke="#686D65" stroke-width="2"/>
+<polygon points="131,158 299,158 299,224 131,224" fill="#FFF2CC" stroke="#B58A25" stroke-width="2"/>
+<text x="153" y="192" font-family="Arial, sans-serif" font-size="14" font-weight="400" fill="#343A40">Deck 308 sq ft</text>
+<text x="73" y="300" font-family="Arial, sans-serif" font-size="19" font-weight="700" fill="#343A40">HOUSE</text>
+<text x="73" y="327" font-family="Arial, sans-serif" font-size="15" font-weight="400" fill="#343A40">2,070 sq ft first floor</text>
+<text x="73" y="350" font-family="Arial, sans-serif" font-size="15" font-weight="400" fill="#343A40">980 sq ft second floor</text>
+<text x="365" y="361" font-family="Arial, sans-serif" font-size="14" font-weight="700" fill="#343A40">GARAGE</text>
+<text x="370" y="385" font-family="Arial, sans-serif" font-size="14" font-weight="400" fill="#343A40">674 sq ft</text>
+<text x="36" y="479" font-family="Arial, sans-serif" font-size="11" font-weight="400" fill="#343A40">County drawing orientation. No compass direction assumed.</text>
+<rect x="535" y="145" width="335" height="344" rx="8" fill="#FFFFFF" stroke="#D5D3CB"/>
+<text x="553" y="176" font-family="Arial, sans-serif" font-size="18" font-weight="700" fill="#343A40">Current property details</text>
+<text x="553" y="207" font-family="Arial, sans-serif" font-size="15" font-weight="400" fill="#343A40">3,050 sq ft above grade</text>
+<text x="553" y="237" font-family="Arial, sans-serif" font-size="15" font-weight="400" fill="#343A40">1,236 sq ft basement separately</text>
+<text x="553" y="267" font-family="Arial, sans-serif" font-size="15" font-weight="400" fill="#343A40">4 bedrooms per county</text>
+<text x="553" y="297" font-family="Arial, sans-serif" font-size="15" font-weight="400" fill="#343A40">3 full baths + 1 half reported</text>
+<text x="553" y="339" font-family="Arial, sans-serif" font-size="14" font-weight="400" fill="#343A40">Basement has a very clean concrete</text>
+<text x="553" y="360" font-family="Arial, sans-serif" font-size="14" font-weight="400" fill="#343A40">finish. No egress windows.</text>
+<text x="553" y="381" font-family="Arial, sans-serif" font-size="14" font-weight="400" fill="#343A40">Ceilings about 8 ft. Unmeasured.</text>
+<text x="553" y="429" font-family="Arial, sans-serif" font-size="13" font-weight="400" fill="#343A40">Basement and upper-floor outlines</text>
+<text x="553" y="450" font-family="Arial, sans-serif" font-size="13" font-weight="400" fill="#343A40">are not separately mapped here.</text>
+<rect x="28" y="506" width="842" height="88" rx="8" fill="#F0F3ED" stroke="#F0F3ED"/>
+<text x="46" y="532" font-family="Arial, sans-serif" font-size="16" font-weight="700" fill="#343A40">Acreage and outbuildings</text>
+<text x="46" y="557" font-family="Arial, sans-serif" font-size="14" font-weight="400" fill="#343A40">Three outbuildings with water and electricity. One horse stall and a three car garage.</text>
+<text x="46" y="579" font-family="Arial, sans-serif" font-size="14" font-weight="400" fill="#343A40">Utility storage and a work room. Small orchard. Reported at the September 8 walkthrough.</text>
+<text x="28" y="624" font-family="Arial, sans-serif" font-size="12" font-weight="400" fill="#343A40">6722 S Plymouth Rd  |  Dominion Group LLC  |  September 8 2026</text>
+<text x="28" y="645" font-family="Arial, sans-serif" font-size="12" font-weight="400" fill="#343A40">Study only. Not a measured floor plan. Interior room positions remain unverified.</text>
+<text x="854" y="644" font-family="Arial, sans-serif" font-size="12" font-weight="400" fill="#343A40">1</text>
+</svg>

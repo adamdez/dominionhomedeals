@@ -97,9 +97,23 @@ export function ListingGallery({ photos, prioritySrc }: Props) {
           ))}
         </div>
         {rest.length > 6 && (
-          <p className="mt-4 text-center text-sm text-ink-400">
-            +{rest.length - 6} more in gallery — click any photo
-          </p>
+          <details className="mt-5">
+            <summary className="mx-auto w-fit cursor-pointer rounded-xl border border-forest-300 bg-white px-6 py-3 text-sm font-semibold text-forest-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2">
+              Browse all {photos.length} photos
+            </summary>
+            <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+              {rest.slice(6).map((photo, i) => (
+                <button
+                  key={photo.src}
+                  type="button"
+                  onClick={() => openAt(i + 7)}
+                  className="relative aspect-[4/3] overflow-hidden rounded-xl bg-stone-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-forest-500"
+                >
+                  <Image src={photo.src} alt={photo.alt} fill sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw" className="object-cover" loading="lazy" quality={70} />
+                </button>
+              ))}
+            </div>
+          </details>
         )}
       </div>
 

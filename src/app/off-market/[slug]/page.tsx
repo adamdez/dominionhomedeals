@@ -12,6 +12,7 @@ import {
 import { DealInterestForm } from '@/components/off-market/DealInterestForm'
 import { ListingGallery } from '@/components/off-market/ListingGallery'
 import { OffMarketStickyBar } from '@/components/off-market/OffMarketStickyBar'
+import { LayoutStudy } from '@/components/off-market/LayoutStudy'
 
 export function generateStaticParams() {
   return getOffMarketSlugs().map((slug) => ({ slug }))
@@ -135,6 +136,7 @@ export default async function OffMarketListingPage({ params }: { params: Promise
             <span className="text-white/90">{l.title}</span>
           </nav>
           <p className="mb-3 text-xs font-semibold uppercase tracking-[0.2em] text-amber-200/90">{l.eyebrow}</p>
+          {l.status === 'draft' ? <p className="mb-4 rounded-lg bg-amber-100 px-4 py-2 text-sm text-amber-950">Private review. Pricing and room layout are being confirmed.</p> : null}
           <h1 className="font-display text-hero text-white text-balance max-w-4xl">{l.title}</h1>
           <p className="mt-3 text-lg text-stone-200">{l.locationLine}</p>
           <div className="mt-5 flex flex-wrap gap-2">
@@ -160,22 +162,22 @@ export default async function OffMarketListingPage({ params }: { params: Promise
               ) : null}
               <p className="mt-2 max-w-xl text-sm text-stone-300">{l.conditionSummary}</p>
             </div>
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+            <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
               <a
                 href="#inquire"
-                className="btn-primary"
+                className="btn-primary whitespace-nowrap"
               >
                 {primaryCtaLabel}
               </a>
               <a
                 href={`sms:${contactPhone}?&body=${encodeURIComponent(smsBody)}`}
-                className="inline-flex items-center justify-center rounded-xl border border-white/30 px-8 py-3.5 text-[15px] font-semibold text-white transition hover:bg-white/10"
+                className="inline-flex items-center justify-center whitespace-nowrap rounded-xl border border-white/30 px-8 py-3.5 text-[15px] font-semibold text-white transition hover:bg-white/10"
               >
                 {secondaryCtaLabel}
               </a>
               <a
                 href={`tel:${contactPhone}`}
-                className="inline-flex items-center justify-center rounded-xl border border-white/30 px-8 py-3.5 text-[15px] font-semibold text-white transition hover:bg-white/10"
+                className="inline-flex items-center justify-center whitespace-nowrap rounded-xl border border-white/30 px-8 py-3.5 text-[15px] font-semibold text-white transition hover:bg-white/10"
               >
                 Call {contactPhoneDisplay}
               </a>
@@ -184,6 +186,7 @@ export default async function OffMarketListingPage({ params }: { params: Promise
         </div>
       </section>
 
+      {l.galleryNote ? <p className="bg-stone-100 px-5 pt-6 text-center text-sm text-ink-500">{l.galleryNote}</p> : null}
       <ListingGallery photos={l.photos} prioritySrc={l.photos[0]?.src} />
 
       <section className="border-t border-stone-200 bg-stone-50 pb-28 md:pb-0">
@@ -262,6 +265,7 @@ export default async function OffMarketListingPage({ params }: { params: Promise
                   </a>
                 ) : null}
               </div>
+              {l.layoutStudy ? <LayoutStudy {...l.layoutStudy} /> : null}
               {actionSteps.length ? (
                 <div className="rounded-2xl border border-amber-200/80 bg-amber-50/80 p-6">
                   <h2 className="font-display text-xl font-semibold text-ink-700 mb-4">{actionTitle}</h2>
@@ -290,6 +294,7 @@ export default async function OffMarketListingPage({ params }: { params: Promise
                     </p>
                   </div>
                   <div className="px-5 py-6">
+                    {l.status === 'draft' ? <p className="text-sm leading-relaxed text-ink-500">The inquiry form will be enabled when this page is released. Contact details and the final asking price are under review.</p> : (
                     <DealInterestForm
                       address={l.streetAddress}
                       city={l.city}
@@ -304,6 +309,7 @@ export default async function OffMarketListingPage({ params }: { params: Promise
                       contactPhone={contactPhone}
                       contactPhoneDisplay={contactPhoneDisplay}
                     />
+                    )}
                   </div>
                 </div>
                 <div className="mt-4 rounded-xl border border-amber-200/80 bg-amber-50/90 px-5 py-4 text-center">
