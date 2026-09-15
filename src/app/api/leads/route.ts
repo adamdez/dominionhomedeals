@@ -19,6 +19,7 @@ import { normalizeSellerFunnelEvent, recordSellerFunnelEvent } from '@/lib/selle
 /* ------------------------------------------------------------------ */
 
 interface LeadPayload {
+  message?: string
   internalQa?: boolean
   address: string
   city?: string
@@ -279,6 +280,12 @@ function isRateLimited(ip: string): boolean {
 /*  Email via Resend                                                   */
 /* ------------------------------------------------------------------ */
 
+function isListingInquiry(lead: Record<string, unknown>) {
+  const source = typeof lead.source === 'string' ? lead.source : ''
+  const page = typeof lead.landingPage === 'string' ? lead.landingPage : ''
+  return /^off-market-[a-z0-9-]+$/.test(source) && page === `/off-market/${source.slice(11)}`
+}
+
 async function sendEmailNotification(lead: Record<string, unknown>): Promise<DominionDeliveryOutcome> {
   const RESEND_API_KEY = process.env.RESEND_API_KEY
   if (!RESEND_API_KEY) {
@@ -286,11 +293,12 @@ async function sendEmailNotification(lead: Record<string, unknown>): Promise<Dom
     return { status: 'skipped' }
   }
 
+  const listingInquiry = isListingInquiry(lead)
   const priorityLabel = lead.timeline === 'ASAP' ? '🔴 URGENT' : lead.timeline === 'Soon' ? '🟡 SOON' : '🟢 NORMAL'
   const optionsSubmissionId = lead.submissionFlow === DOMINION_OPTIONS_FLOW &&
     isDominionOptionsSubmissionId(lead.submissionId) ? lead.submissionId.toLowerCase() : null
 
-  const htmlLead = lead.submissionFlow === DOMINION_OPTIONS_FLOW
+  const htmlLead = listingInquiry || lead.submissionFlow === DOMINION_OPTIONS_FLOW
     ? Object.fromEntries(Object.entries(lead).map(([key, value]) =>
       [key, typeof value === 'string' ? escapeHtml(value) : value]))
     : lead
@@ -311,8 +319,8 @@ async function sendEmailNotification(lead: Record<string, unknown>): Promise<Dom
   const htmlBody = `
     <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto;">
       <div style="background: #1a3a2a; color: white; padding: 20px 24px; border-radius: 8px 8px 0 0;">
-        <h1 style="margin: 0; font-size: 20px;">🏠 New Lead from dominionhomedeals.com</h1>
-        <p style="margin: 4px 0 0; opacity: 0.8; font-size: 14px;">${priorityLabel} — ${htmlLead.timeline}</p>
+        <h1 style="margin: 0; font-size: 20px;">🏠 ${listingInquiry ? 'New buyer inquiry' : 'New Lead'} from dominionhomedeals.com</h1>
+        <p style="margin: 4px 0 0; opacity: 0.8; font-size: 14px;">${listingInquiry ? 'Listing inquiry' : `${priorityLabel} — ${htmlLead.timeline}`}</p>
       </div>
       
       <div style="background: #f9f8f6; padding: 24px; border: 1px solid #e5e3df;">
@@ -359,6 +367,7 @@ async function sendEmailNotification(lead: Record<string, unknown>): Promise<Dom
         </table>
       </div>
 
+      ${listingInquiry ? `<div style="padding: 24px; border: 1px solid #e5e3df;"><p>Buyer message:</p><p style="white-space: pre-wrap;">${htmlLead.message || 'No message included.'}</p></div>` : ''}
       <div style="padding: 24px; border: 1px solid #e5e3df; border-top: none; border-radius: 0 0 8px 8px;">
         <h2 style="margin: 0 0 12px; font-size: 16px; color: #1a3a2a;">SMS Consent</h2>
         <p style="margin: 0; font-size: 12px; color: #888;">
@@ -384,7 +393,7 @@ async function sendEmailNotification(lead: Record<string, unknown>): Promise<Dom
       body: JSON.stringify({
         from: 'Dominion Homes Leads <leads@dominionhomedeals.com>',
         to: ['adam@dominionhomedeals.com', 'logan@dominionhomedeals.com', 'leads@dominionhomedeals.com'],
-        subject: `${priorityLabel} New Lead: ${lead.firstName} ${lead.lastName} — ${lead.address}, ${lead.city}`,
+        subject: `${listingInquiry ? 'New buyer inquiry:' : `${priorityLabel} New Lead:`} ${lead.firstName} ${lead.lastName} — ${lead.address}, ${lead.city}`,
         html: htmlBody,
         // The trusted-sender Gmail guard uses both headers, never copy/subject text.
         ...(optionsSubmissionId ? { headers: {
@@ -434,7 +443,9 @@ async function sendSmsNotification(lead: Record<string, unknown>) {
   const priorityEmoji = lead.timeline === 'ASAP' ? '🔴 URGENT' : lead.timeline === 'Soon' ? '🟡 SOON' : '🟢'
 
   // Keep it short — carrier SMS gateways truncate long messages
-  const message = `${priorityEmoji} NEW LEAD: ${lead.firstName} ${lead.lastName}\n${lead.address}, ${lead.city} ${lead.state}\nPhone: ${lead.phone}\n${lead.condition} | ${lead.timeline}\n\nCall them back ASAP!`
+  const message = isListingInquiry(lead)
+    ? `NEW BUYER INQUIRY: ${lead.firstName} ${lead.lastName}\n${lead.address}, ${lead.city}\nPhone: ${lead.phone}\n${lead.message || 'Listing inquiry'}`
+    : `${priorityEmoji} NEW LEAD: ${lead.firstName} ${lead.lastName}\n${lead.address}, ${lead.city} ${lead.state}\nPhone: ${lead.phone}\n${lead.condition} | ${lead.timeline}\n\nCall them back ASAP!`
 
   // Internal team alert gateways. Seller SMS consent is tracked separately.
   const smsRecipients = getTeamSmsRecipients()
@@ -451,7 +462,7 @@ async function sendSmsNotification(lead: Record<string, unknown>) {
           body: JSON.stringify({
             from: 'Dominion Leads <leads@dominionhomedeals.com>',
             to: [gateway],
-            subject: `New Lead: ${lead.firstName} ${lead.lastName}`,
+            subject: `${isListingInquiry(lead) ? 'New buyer inquiry' : 'New Lead'}: ${lead.firstName} ${lead.lastName}`,
             text: message,
           }),
         })
@@ -770,6 +781,7 @@ export async function POST(request: NextRequest) {
       city: cleanText(body.city || ''),
       state: isOptionsFlow ? body.state!.trim().toUpperCase() : sanitize(body.state || 'WA'),
       zip: cleanText(body.zip || ''),
+      message: cleanText((body.message || '').slice(0, 5000)),
       condition: cleanText(body.condition || 'Not provided'),
       timeline: cleanText(body.timeline || 'Not provided'),
       firstName: cleanText(body.firstName),
@@ -921,9 +933,9 @@ export async function POST(request: NextRequest) {
     const sideEffectPromises = [
       withTimeout(sendEmailNotification(lead), 1500, 'email notification'),
       withTimeout(sendSmsNotification(lead), 3500, 'sms notification'),
-      withTimeout(forwardToSentinel(lead), 1500, 'sentinel forward'),
-      withTimeout(forwardToLazarus(lead), 1500, 'lazarus forward'),
-      withTimeout(syncSellerLeadToMailchimp(lead), 1500, 'mailchimp seller sync'),
+      isListingInquiry(lead) ? Promise.resolve() : withTimeout(forwardToSentinel(lead), 1500, 'sentinel forward'),
+      isListingInquiry(lead) ? Promise.resolve() : withTimeout(forwardToLazarus(lead), 1500, 'lazarus forward'),
+      isListingInquiry(lead) ? Promise.resolve() : withTimeout(syncSellerLeadToMailchimp(lead), 1500, 'mailchimp seller sync'),
       withTimeout(recordDominionLeadSubmission(controlInput), 1500, 'lead control write'),
     ]
 
