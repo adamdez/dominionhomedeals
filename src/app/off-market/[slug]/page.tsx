@@ -92,16 +92,8 @@ export default async function OffMarketListingPage({ params }: { params: Promise
   const secondaryCtaLabel = l.secondaryCtaLabel ?? `Text ${contactName} to claim`
   const smsBody =
     l.smsBody ?? `I want to claim ${l.streetAddress} at ${l.priceDisplay}.`
-  const actionTitle = l.actionTitle ?? 'How to move on this'
   const actionIntro =
     l.actionIntro ?? `Send your contact info and decision path. ${contactName} will respond as quickly as possible.`
-  const actionSteps =
-    l.actionSteps ?? [
-      ['1', 'Review the photos and facts now.'],
-      ['2', `Text ${contactName} with "I want it at $25K" if you want to claim the buy-now price.`],
-      ['3', 'If claimed at buy now, the Saturday walkthrough is cancelled and the contract is assigned.'],
-      ['4', 'If not claimed first, the May 9 walkthrough becomes the fallback showing window.'],
-    ]
   const dueDiligenceNote =
     l.dueDiligenceNote ??
     'Aerial and map layers are for convenience only. Property lines, acreage, easements, and condition must be verified by buyer with the county, title, park management, and qualified inspectors. This is a private off-market opportunity and not a retail MLS listing.'
@@ -186,10 +178,21 @@ export default async function OffMarketListingPage({ params }: { params: Promise
         </div>
       </section>
 
+      <nav aria-label="Property page sections" className="border-b border-stone-200 bg-white">
+        <div className="mx-auto flex max-w-6xl flex-wrap gap-6 px-5 py-4 text-sm font-semibold text-forest-800 sm:px-6 lg:px-8">
+          <a href="#property" className="underline underline-offset-4">1. Property photos and facts</a>
+          <a href="#comparables" className="underline underline-offset-4">2. Comparable properties</a>
+        </div>
+      </nav>
+      <section id="property" aria-labelledby="property-title" className="scroll-mt-24 bg-stone-100">
+        <div className="mx-auto max-w-6xl px-5 pt-10 sm:px-6 lg:px-8">
+          <h2 id="property-title" className="font-display text-heading text-ink-600">1. The property</h2>
+        </div>
       {l.galleryNote ? <p className="bg-stone-100 px-5 pt-6 text-center text-sm text-ink-500">{l.galleryNote}</p> : null}
       <ListingGallery photos={l.photos} prioritySrc={l.photos[0]?.src} />
 
-      <section className="border-t border-stone-200 bg-stone-50 pb-28 md:pb-0">
+
+      <section className="border-t border-stone-200 bg-stone-50">
         <div className="mx-auto max-w-6xl px-5 sm:px-6 lg:px-8 py-12 lg:py-16">
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-5 lg:gap-4">
             {[
@@ -209,8 +212,8 @@ export default async function OffMarketListingPage({ params }: { params: Promise
             ))}
           </div>
 
-          <div className="mt-14 grid grid-cols-1 gap-12 lg:grid-cols-3 lg:gap-14">
-            <div className="lg:col-span-2 space-y-12">
+          <div className="mt-10">
+            <div className="space-y-8">
               <div>
                 <h2 className="font-display text-heading text-ink-600 mb-5">Highlights</h2>
                 <ul className="space-y-3">
@@ -235,8 +238,8 @@ export default async function OffMarketListingPage({ params }: { params: Promise
                   </div>
                 </div>
               ) : null}
-              <div>
-                <h2 className="font-display text-heading text-ink-600 mb-5">Property facts</h2>
+              <details className="rounded-2xl border border-stone-200 p-5">
+                <summary className="cursor-pointer font-display text-xl font-semibold text-ink-600 mb-5">Full property facts and sources</summary>
                 <div className="overflow-hidden rounded-2xl border border-stone-200">
                   <table className="w-full text-sm">
                     <tbody>
@@ -264,70 +267,18 @@ export default async function OffMarketListingPage({ params }: { params: Promise
                     {countyLabel}
                   </a>
                 ) : null}
-              </div>
-              {l.layoutStudy ? <LayoutStudy {...l.layoutStudy} /> : null}
-              {actionSteps.length ? (
-                <div className="rounded-2xl border border-amber-200/80 bg-amber-50/80 p-6">
-                  <h2 className="font-display text-xl font-semibold text-ink-700 mb-4">{actionTitle}</h2>
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    {actionSteps.map(([step, text]) => (
-                      <div key={step} className="flex gap-3 rounded-xl bg-white/75 p-4 text-sm text-ink-600">
-                        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-forest-700 text-xs font-semibold text-white">
-                          {step}
-                        </span>
-                        <p className="leading-relaxed">{text}</p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ) : null}
+              </details>
+              {l.layoutStudy ? <details className="rounded-2xl border border-stone-200 p-5"><summary className="mb-5 cursor-pointer font-display text-xl font-semibold text-ink-600">Floor plan and proposed changes</summary><LayoutStudy {...l.layoutStudy} /></details> : null}
+
             </div>
 
-            <div className="lg:col-span-1">
-              <div id="inquire" className="scroll-mt-28 lg:scroll-mt-32" />
-              <div className="lg:sticky lg:top-28">
-                <div className="rounded-2xl border border-stone-200/90 bg-white p-1 shadow-elevated">
-                  <div className="rounded-[14px] bg-forest-800 px-6 py-6">
-                    <h2 className="font-display text-lg font-semibold text-white">{primaryCtaLabel}</h2>
-                    <p className="mt-2 text-xs leading-relaxed text-stone-300">
-                      {actionIntro}
-                    </p>
-                  </div>
-                  <div className="px-5 py-6">
-                    {l.status === 'draft' ? <p className="text-sm leading-relaxed text-ink-500">The inquiry form will be enabled when this page is released. Contact details and the final asking price are under review.</p> : (
-                    <DealInterestForm
-                      address={l.streetAddress}
-                      city={l.city}
-                      state={l.state}
-                      zip={l.zip}
-                      landingPage={`/off-market/${l.slug}`}
-                      source={l.leadSource}
-                      propertyLabel={l.title}
-                      submitLabel={l.submitLabel ?? 'Claim / ask Adam'}
-                      variant="prestige"
-                      contactName={contactName}
-                      contactPhone={contactPhone}
-                      contactPhoneDisplay={contactPhoneDisplay}
-                    />
-                    )}
-                  </div>
-                </div>
-                <div className="mt-4 rounded-xl border border-amber-200/80 bg-amber-50/90 px-5 py-4 text-center">
-                  <p className="text-xs font-semibold text-amber-900/90">Prefer to talk first?</p>
-                  <a
-                    href={`tel:${contactPhone}`}
-                    className="mt-1 inline-block font-display text-lg font-semibold text-forest-800 hover:text-forest-600"
-                  >
-                    {contactPhoneDisplay}
-                  </a>
-                </div>
-              </div>
-            </div>
+
           </div>
         </div>
       </section>
 
-      <section className="bg-[#0f1f14] py-14 lg:py-20">
+      <details className="bg-[#0f1f14] py-8">
+        <summary className="mx-auto max-w-6xl cursor-pointer px-5 font-display text-xl text-white sm:px-6 lg:px-8">Location and inspection notes</summary>
         <div className="mx-auto max-w-6xl px-5 sm:px-6 lg:px-8">
           <h2 className="font-display text-display text-white mb-3">{l.neighborhoodTitle}</h2>
           <p className="max-w-2xl text-forest-100/90 leading-relaxed mb-10">{l.neighborhoodBody}</p>
@@ -386,26 +337,7 @@ export default async function OffMarketListingPage({ params }: { params: Promise
                   </a>
                 ) : null}
               </div>
-              {l.compLinks?.length ? (
-                <div className="mt-6 rounded-2xl border border-white/10 bg-white/5 p-5">
-                  <h3 className="text-sm font-semibold uppercase tracking-widest text-forest-300 mb-3">
-                    Retail comps
-                  </h3>
-                  <div className="grid gap-2 sm:grid-cols-2">
-                    {l.compLinks.map((comp) => (
-                      <a
-                        key={comp.href}
-                        href={comp.href}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-semibold text-amber-200/95 transition hover:border-amber-200/40 hover:bg-white/10 hover:text-amber-100"
-                      >
-                        {comp.label}
-                      </a>
-                    ))}
-                  </div>
-                </div>
-              ) : null}
+
             </div>
             <div className="flex flex-col justify-center rounded-2xl border border-white/10 bg-white/5 p-8 backdrop-blur-sm">
               <h3 className="font-display text-xl text-white mb-3">Due diligence</h3>
@@ -415,22 +347,98 @@ export default async function OffMarketListingPage({ params }: { params: Promise
             </div>
           </div>
         </div>
+      </details>
+
       </section>
 
+              {l.compLinks?.length ? (
+                <section id="comparables" aria-labelledby="comparables-title" className="scroll-mt-24 bg-[#0a1410] py-12 lg:py-16">
+                  <div className="mx-auto max-w-6xl px-5 sm:px-6 lg:px-8">
+                  <h2 id="comparables-title" className="font-display text-heading text-white mb-3">
+                    2. Comparable properties
+                  </h2>
+                  {l.arv ? (
+                    <div className="mb-8 grid gap-6 rounded-2xl border border-amber-200/30 bg-white/5 p-6 md:grid-cols-[220px_1fr]">
+                      <div>
+                        <p className="text-xs font-semibold uppercase tracking-widest text-amber-200">Estimated after repair value</p>
+                        <p className="mt-2 font-display text-4xl text-white">{l.arv.value}</p>
+                        <p className="mt-2 text-sm text-stone-300">Existing home after renovation</p>
+                      </div>
+                      <div>
+                        <p className="text-sm leading-relaxed text-stone-200">{l.arv.rationale}</p>
+                        <p className="mt-3 text-sm leading-relaxed text-stone-300">{l.arv.assumptions}</p>
+                      </div>
+                    </div>
+                  ) : null}
+                  <p className="mb-5 text-sm leading-relaxed text-stone-300">Compare the acreage and outbuildings as well as the home. Listed square footage may include finished basement space. Asking prices are not closed sale prices.</p>
+                  {(['sold', 'active'] as const).map((status) => {
+                    const comps = (l.compLinks ?? []).filter((comp) => comp.status === status)
+                    return comps.length ? (
+                      <div key={status} className="mt-5">
+                        <h3 className="mb-3 text-lg font-semibold text-white">{status === 'sold' ? 'Recently sold' : 'Currently listed'}</h3>
+                        <div className="grid gap-3 sm:grid-cols-2">
+                          {comps.map((comp) => (
+                            <article key={comp.href} className="rounded-xl border border-white/10 bg-white/5 p-4">
+                              <p className="text-xs uppercase tracking-wide text-stone-300">{status === 'sold' ? 'Sold price' : 'Asking price'}</p>
+                              <p className="mt-1 text-xl font-semibold text-white">{comp.price}</p>
+                              <a href={comp.href} target="_blank" rel="noopener noreferrer" className="mt-2 inline-block text-sm font-semibold text-amber-200 underline underline-offset-4 hover:text-amber-100">{comp.label}</a>
+                              <p className="mt-2 text-xs text-stone-400">{comp.dateLabel}</p>
+                              <p className="mt-3 text-sm text-stone-200">{comp.details}</p>
+                              <p className="mt-2 text-sm leading-relaxed text-stone-300">{comp.comparison}</p>
+                              {comp.sourceHref ? <a href={comp.sourceHref} target="_blank" rel="noopener noreferrer" className="mt-3 inline-block text-xs text-amber-200 underline underline-offset-4 hover:text-amber-100">View sale history</a> : null}
+                            </article>
+                          ))}
+                        </div>
+                      </div>
+                    ) : null
+                  })}
+                  {l.compsCheckedAt ? <p className="mt-4 text-xs text-stone-400">Sources checked {l.compsCheckedAt}. Prices and availability can change. Open each listing for its latest details.</p> : null}
+                  </div>
+                </section>
+              ) : null}
+
       <section className="bg-stone-100 py-14">
-        <div className="mx-auto max-w-6xl px-5 sm:px-6 lg:px-8 text-center">
-          <h2 className="font-display text-display text-ink-600 mb-4">Ready to move forward?</h2>
-          <p className="mx-auto max-w-lg text-ink-500 mb-8">
-            Contact {contactName} directly. Call, text, or send a private inquiry above.
-          </p>
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <a href={`tel:${contactPhone}`} className="btn-primary text-base px-8 py-4">
-              Call {contactPhoneDisplay}
-            </a>
-            <a href={`sms:${contactPhone}`} className="btn-secondary text-base px-8 py-4">
-              Send a text
-            </a>
-          </div>
+        <div className="mx-auto max-w-2xl px-5 sm:px-6">
+            <div className="lg:col-span-1">
+              <div id="inquire" className="scroll-mt-28 lg:scroll-mt-32" />
+              <div className="lg:sticky lg:top-28">
+                <div className="rounded-2xl border border-stone-200/90 bg-white p-1 shadow-elevated">
+                  <div className="rounded-[14px] bg-forest-800 px-6 py-6">
+                    <h2 className="font-display text-lg font-semibold text-white">{primaryCtaLabel}</h2>
+                    <p className="mt-2 text-xs leading-relaxed text-stone-300">
+                      {actionIntro}
+                    </p>
+                  </div>
+                  <div className="px-5 py-6">
+                    {l.status === 'draft' ? <p className="text-sm leading-relaxed text-ink-500">The inquiry form will be enabled when this page is released. Contact details and the final asking price are under review.</p> : (
+                    <DealInterestForm
+                      address={l.streetAddress}
+                      city={l.city}
+                      state={l.state}
+                      zip={l.zip}
+                      landingPage={`/off-market/${l.slug}`}
+                      source={l.leadSource}
+                      propertyLabel={l.title}
+                      submitLabel={l.submitLabel ?? 'Claim / ask Adam'}
+                      variant="prestige"
+                      contactName={contactName}
+                      contactPhone={contactPhone}
+                      contactPhoneDisplay={contactPhoneDisplay}
+                    />
+                    )}
+                  </div>
+                </div>
+                <div className="mt-4 rounded-xl border border-amber-200/80 bg-amber-50/90 px-5 py-4 text-center">
+                  <p className="text-xs font-semibold text-amber-900/90">Prefer to talk first?</p>
+                  <a
+                    href={`tel:${contactPhone}`}
+                    className="mt-1 inline-block font-display text-lg font-semibold text-forest-800 hover:text-forest-600"
+                  >
+                    {contactPhoneDisplay}
+                  </a>
+                </div>
+              </div>
+            </div>
         </div>
       </section>
 

@@ -33,7 +33,18 @@ export type OffMarketListing = {
   neighborhoodTitle: string
   neighborhoodBody: string
   distanceChips: { label: string; value: string }[]
-  compLinks?: { label: string; href: string }[]
+  compLinks?: {
+    label: string
+    href: string
+    status: 'sold' | 'active'
+    price: string
+    dateLabel: string
+    details: string
+    comparison: string
+    sourceHref?: string
+  }[]
+  compsCheckedAt?: string
+  arv?: { value: string; assumptions: string; rationale: string }
   mapQuery: string
   leadSource: string
   lat?: number
