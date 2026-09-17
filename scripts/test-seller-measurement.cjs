@@ -30,11 +30,17 @@ function journey(initiallyVisible = true) {
   let now = 0, cleanup, observerCallback;
   const events = [], timers = new Map(), win = new Map(), doc = new Map();
   let timerId = 0;
+  const address = {}, form = { querySelector: () => address };
   const document = { visibilityState: initiallyVisible ? 'visible' : 'hidden',
     documentElement: { scrollHeight: 5000 }, body: { scrollHeight: 5000 },
-    getElementById: () => ({}), addEventListener: (k, f) => doc.set(k, f),
+    getElementById: () => form, addEventListener: (k, f) => doc.set(k, f),
     removeEventListener: (k) => doc.delete(k) };
-  class Observer { constructor(cb) { observerCallback = cb; } observe() {} disconnect() {} }
+  class Observer { constructor(cb) { observerCallback = cb; } observe() {} unobserve() {} disconnect() {} }
+  class Element {
+    constructor(href) { this.href = href; }
+    closest(selector) { return selector.startsWith('a[') ? this : null; }
+    getAttribute(name) { return name === 'href' ? this.href : null; }
+  }
   const window = { innerHeight: 500, scrollY: 0, IntersectionObserver: Observer,
     addEventListener: (k, f) => win.set(k, f), removeEventListener: (k) => win.delete(k),
     setTimeout: (f, ms) => { timers.set(++timerId, { f, at: now + ms }); return timerId; },
@@ -43,13 +49,14 @@ function journey(initiallyVisible = true) {
     react: { useEffect: (f) => { cleanup = f(); } },
     '@/lib/seller-funnel-tracking': { trackSellerFunnelEvent: (type, data) => events.push({ type, ...data }) },
     '@/lib/seller-visibility-clock': clockModule,
-  }, { window, document, IntersectionObserver: Observer, performance: { now: () => now } });
+  }, { window, document, Element, IntersectionObserver: Observer, performance: { now: () => now } });
   module.SellerOptionsJourneyTracker();
   return { events, cleanup,
     advance(ms) { now += ms; for (const [id, t] of [...timers]) if (t.at <= now) { timers.delete(id); t.f(); } },
     visibility(value) { document.visibilityState = value; doc.get('visibilitychange')(); },
     page(type, persisted) { win.get(type)({ persisted }); },
-    intersect() { observerCallback([{ isIntersecting: true, intersectionRatio: .5 }]); },
+    click(href) { doc.get('click')({ target: new Element(href) }); },
+    intersect(target = 'form', ratio = .5) { observerCallback([{ target: target === 'address' ? address : form, isIntersecting: ratio > 0, intersectionRatio: ratio }]); },
   };
 }
 
@@ -75,6 +82,84 @@ test('form intersecting in a background page is not recorded as viewed', () => {
   const j = journey(false); j.intersect();
   assert.equal(j.events.some(e => e.type === 'form_viewed'), false);
   j.visibility('visible'); assert.equal(j.events.some(e => e.type === 'form_viewed'), true); j.cleanup();
+});
+test('container visibility does not imply the address field was visible', () => {
+  const j = journey(); j.intersect(); j.intersect('address', .5);
+  assert.deepEqual(j.events.filter(e => e.type === 'form_viewed').map(e => e.detail), ['form_container_visible']);
+  j.intersect('address', .8); j.intersect('address', .9);
+  assert.equal(j.events.filter(e => e.detail === 'address_field_visible').length, 1);
+  assert.equal(j.events.find(e => e.detail === 'address_field_visible').stage, 'address'); j.cleanup();
+});
+test('a field hidden again before tab return is not claimed visible', () => {
+  const j = journey(false); j.intersect('address', 1); j.intersect('address', 0);
+  j.visibility('visible'); assert.equal(j.events.some(e => e.detail === 'address_field_visible'), false); j.cleanup();
+});
+test('review CTA is distinct from phone or SMS clicks', () => {
+  const j = journey(); j.click('#get-options'); j.click('tel:+12025550100');
+  assert.equal(j.events.filter(e => e.detail === 'review_cta_clicked' && e.type === 'page_engaged').length, 1);
+  assert.equal(j.events.filter(e => e.type === 'call_clicked').length, 1); j.cleanup();
+});
+
+function identityHarness(blocked = false) {
+  let now = 10000000;
+  const storage = new Map();
+  const location = { search: '?utm_source=chatgpt&utm_campaign=pilot&utm_content=compare&oppref=click-a', pathname: '/sell/options', hostname: 'example.test' };
+  const document = { cookie: '', referrer: '' };
+  const tracking = load('src/lib/seller-funnel-tracking.ts', {}, {
+    window: { location }, document, Date: { now: () => now },
+    localStorage: { getItem: () => null },
+    sessionStorage: { getItem: k => { if (blocked) throw Error('blocked'); return storage.get(k); },
+      setItem: (k,v) => { if (blocked) throw Error('blocked'); storage.set(k,v); } },
+  });
+  return { tracking, location, document, advance: ms => { now += ms; } };
+}
+test('URL cleanup preserves visit and attribution even when the Pixel cookie is late', () => {
+  const h = identityHarness(), first = h.tracking.getSellerFunnelVisitId();
+  h.location.search = ''; assert.equal(h.tracking.getSellerFunnelVisitId(), first);
+  h.document.cookie = '__oppref=click-a'; assert.equal(h.tracking.getSellerFunnelVisitId(), first);
+  assert.equal(h.tracking.readSellerAttribution().utm_content, 'compare');
+  assert.equal(h.tracking.readSellerAttribution().oppref, 'click-a');
+});
+test('landing revision comes only from the fixed rendered page marker', () => {
+  const h = identityHarness();
+  h.location.search = '?landing_revision=options_handoff_v1';
+  assert.equal(h.tracking.readSellerAttribution().landing_revision, undefined);
+  h.document.getElementById = () => ({ dataset: { sellerRevision: 'original' } });
+  assert.equal(h.tracking.readSellerAttribution().landing_revision, 'original');
+});
+test('a new explicit click rotates visit once and clears previous campaign attribution', () => {
+  const h = identityHarness(), first = h.tracking.getSellerFunnelVisitId();
+  h.location.search = '?oppref=click-b'; const second = h.tracking.getSellerFunnelVisitId();
+  assert.notEqual(second, first); assert.equal(h.tracking.getSellerFunnelVisitId(), second);
+  assert.equal(h.tracking.readSellerAttribution().utm_campaign, undefined);
+  h.document.cookie = '__oppref=click-a'; h.location.search = '';
+  assert.equal(h.tracking.readSellerAttribution().oppref, 'click-b');
+});
+test('another campaign without a click reference does not inherit the old Pixel cookie', () => {
+  const h = identityHarness(); h.tracking.getSellerFunnelVisitId();
+  h.document.cookie = '__oppref=click-a'; h.location.search = '?utm_campaign=different';
+  assert.equal(h.tracking.readSellerAttribution().oppref, undefined);
+  assert.equal(h.tracking.readSellerAttribution().oppref, undefined);
+  h.advance(30 * 60 * 1000); assert.equal(h.tracking.readSellerAttribution().oppref, undefined);
+  h.location.search = ''; assert.equal(h.tracking.readSellerAttribution().oppref, undefined);
+});
+test('explicit source changes and an initial non-OpenAI arrival never inherit an OpenAI cookie', () => {
+  for (const existing of [true, false]) {
+    const h = identityHarness(); const old = existing ? h.tracking.getSellerFunnelVisitId() : null;
+    h.document.cookie = '__oppref=click-a'; h.location.search = '?utm_source=google&utm_medium=cpc';
+    if (existing) assert.notEqual(h.tracking.getSellerFunnelVisitId(), old);
+    assert.equal(h.tracking.readSellerAttribution().oppref, undefined);
+    assert.equal(h.tracking.readSellerAttribution().utm_campaign, undefined);
+    h.location.search = ''; h.advance(30 * 60 * 1000);
+    assert.equal(h.tracking.readSellerAttribution().oppref, undefined);
+  }
+});
+test('idle expiry rotates a visit and denied storage remains stable in memory', () => {
+  for (const blocked of [false, true]) {
+    const h = identityHarness(blocked), first = h.tracking.getSellerFunnelVisitId();
+    h.location.search = ''; assert.equal(h.tracking.getSellerFunnelVisitId(), first);
+    h.advance(30 * 60 * 1000); assert.notEqual(h.tracking.getSellerFunnelVisitId(), first);
+  }
 });
 test('failed beacon falls back to keepalive fetch with the identical event', () => {
   const store = new Map(), requests = [], beacons = [];

@@ -76,7 +76,7 @@ const AD_LANDINGS: Record<string, SellerOptionsLanding> = {
     introduction: "The highest sale price doesn't always leave you with the most after costs. Compare listing as-is, repairing and listing, and an as-is offer from our Spokane–Coeur d'Alene team—with the time and tradeoffs included.",
     focusTitle: "What could you actually keep?",
     focusCopy: "Look at repair costs, agent fees, closing costs, bills while you wait, and amounts owed. You don't need to want a cash offer before we can have a useful conversation.",
-    formIntro: "Start with the address. We'll compare realistic paths for your house.",
+    formIntro: "Tell us about the property and your timing. We will review the selling options that may fit. You do not have to accept an offer.",
     actionLabel: "Compare My Selling Options",
     stickyLabel: "Compare Options",
     prioritiesHeading: "Compare the numbers on the same basis",

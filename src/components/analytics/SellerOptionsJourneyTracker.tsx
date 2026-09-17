@@ -56,33 +56,48 @@ export function SellerOptionsJourneyTracker() {
     scheduleEngagement();
 
     const form = document.getElementById("get-options");
+    const address = form?.querySelector<HTMLInputElement>('input[name="address"]');
     let observer: IntersectionObserver | null = null;
-    let formInView = false;
+    const visibleTargets = new Set<Element>();
+    const recordedTargets = new Set<Element>();
     const recordFormView = () => {
-      if (!formInView || !clock.isVisible()) return;
-      trackSellerFunnelEvent("form_viewed", {
-        ...clock.snapshot(), scrollDepth: currentScrollDepth(), onceKey: "form_viewed",
-      });
-      observer?.disconnect();
+      if (!clock.isVisible()) return;
+      for (const target of visibleTargets) {
+        if (recordedTargets.has(target)) continue;
+        const isAddress = target === address;
+        const detail = isAddress ? "address_field_visible" : "form_container_visible";
+        trackSellerFunnelEvent("form_viewed", {
+          detail, stage: isAddress ? "address" : undefined,
+          ...clock.snapshot(), scrollDepth: currentScrollDepth(), onceKey: detail,
+        });
+        recordedTargets.add(target);
+        observer?.unobserve(target);
+      }
     };
     if (form && "IntersectionObserver" in window) {
       observer = new IntersectionObserver((entries) => {
-        formInView = entries.some((entry) => entry.isIntersecting && entry.intersectionRatio >= 0.25);
+        for (const entry of entries) {
+          const threshold = entry.target === address ? 0.75 : 0.25;
+          if (entry.isIntersecting && entry.intersectionRatio >= threshold) visibleTargets.add(entry.target);
+          else visibleTargets.delete(entry.target);
+        }
         recordFormView();
-      }, { threshold: [0.25] });
+      }, { threshold: [0.25, 0.75] });
       observer.observe(form);
+      if (address) observer.observe(address);
     }
 
     const onDocumentClick = (event: MouseEvent) => {
       const target = event.target instanceof Element
-        ? event.target.closest<HTMLAnchorElement>('a[href^="tel:"], a[href^="sms:"]')
+        ? event.target.closest<HTMLAnchorElement>('a[href^="tel:"], a[href^="sms:"], a[href="#get-options"]')
         : null;
       if (!target) return;
       const location = target.closest("header")
         ? "header"
         : target.closest("footer") ? "footer" : target.closest("#get-options") ? "form" : "page";
-      trackSellerFunnelEvent("call_clicked", {
-        detail: location,
+      const isReview = target.getAttribute("href") === "#get-options";
+      trackSellerFunnelEvent(isReview ? "page_engaged" : "call_clicked", {
+        detail: isReview ? "review_cta_clicked" : location,
         ...clock.snapshot(),
         scrollDepth: currentScrollDepth(),
       });

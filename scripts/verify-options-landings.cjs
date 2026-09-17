@@ -52,6 +52,9 @@ function makeHarness(source, config = {}) {
     search: config.search || '',
     assign: url => redirects.push(url),
   };
+  let visitId = 'aaaaaaaa-1234-4234-8234-123456789012';
+  let attribution = Object.fromEntries(new URLSearchParams(location.search));
+  let browserReference = '';
   class TestDate extends Date {
     constructor(...args) { super(...(args.length ? args : [now])); if (!args.length) now += 1000; }
   }
@@ -121,10 +124,10 @@ function makeHarness(source, config = {}) {
       trackOpenAILeadCreated: data => events.push({kind: 'openai_lead_created', data}),
     };
     if (spec === '@/lib/seller-funnel-tracking') return {
-      getSellerFunnelVisitId: () => 'aaaaaaaa-1234-4234-8234-123456789012',
+      getSellerFunnelVisitId: () => visitId,
       isInternalQaSession: () => false,
-      readOpenAIBrowserReference: () => '',
-      readSellerAttribution: () => ({}),
+      readOpenAIBrowserReference: () => browserReference,
+      readSellerAttribution: () => ({...attribution}),
       trackSellerFunnelEvent: (...args) => events.push({kind: 'funnel', args}),
     };
     throw new Error('Unapproved import: ' + spec);
@@ -211,6 +214,12 @@ function makeHarness(source, config = {}) {
     requests, events, redirects, storageReads, generatedIds,
     get focuses() { return focuses; },
     setSearch: value => { location.search = value; },
+    advanceClock: ms => { now += ms; },
+    setJourney: next => {
+      if (Object.hasOwn(next, 'visitId')) visitId = next.visitId;
+      if (Object.hasOwn(next, 'attribution')) attribution = {...next.attribution};
+      if (Object.hasOwn(next, 'browserReference')) browserReference = next.browserReference;
+    },
     setTrackingThrows: value => { trackingThrows = value; },
     setCryptoThrows: value => { cryptoThrows = value; },
   };
@@ -468,8 +477,50 @@ const report = {
     equal(retry.status().length,1,'Duplicate durable receipt rendered');
     equal(leadEvents(retry).length,0,'Duplicate never creates new inquiry event');
     equal(retry.redirects.length,0,'Duplicate remains on tailored page');
+
+    const delayed = setup();
+    await details(delayed,'owner');
+    delayed.queueFailure('network');
+    await delayed.submit();
+    const delayedBody = delayed.requests[0].body;
+    const delayedId = delayed.requests[0].payload.submissionId;
+    delayed.advanceClock(31 * 60 * 1000);
+    delayed.setSearch('?utm_source=google&utm_campaign=another');
+    delayed.setJourney({
+      visitId:'bbbbbbbb-1234-4234-8234-123456789012',
+      attribution:{utm_source:'google',utm_campaign:'another'},
+      browserReference:'new-synthetic-browser-reference',
+    });
+    delayed.queueFailure('network');
+    await delayed.submit();
+    equal(delayed.requests[1].body,delayedBody,'Response-lost retry retains exact body after clock/journey/attribution/browser changes');
+    equal(delayed.requests[1].payload.submissionId,delayedId,'Response-lost retry retains same durable submission ID after idle expiry');
+    delayed.input('email','changed@example.invalid');
+    delayed.queueJson(accepted());
+    await delayed.submit();
+    check(delayed.requests[2].payload.submissionId !== delayedId,'Actual seller field edit creates a new submission ID');
+    equal(delayed.requests[2].payload.email,'changed@example.invalid','Edited seller value is in new request');
+    equal(delayed.requests[2].payload.utmSource,'google','New attempt uses current attribution rather than mounted source');
+    equal(delayed.requests[2].payload.utmCampaign,'another','New attempt uses current campaign');
+    check(!delayed.requests[2].payload.oppref,'New attempt cannot resurrect cleared mounted OpenAI reference');
+
+    const cleared = makeHarness(formSource,{
+      props:forms[0],pathname:'/sell/options',search:search + '&gclid=old-synthetic-google-reference',
+    });
+    await details(cleared,'owner');
+    check(Boolean(cleared.formData().oppref) && Boolean(cleared.formData().gclid),'Both stale refs exist in mounted form state for this regression');
+    cleared.setSearch('');
+    cleared.setJourney({attribution:{}});
+    cleared.queueJson(accepted());
+    await cleared.submit();
+    check(!cleared.requests[0].payload.oppref,'Empty current OpenAI reference does not fall back to mounted form value');
+    check(!cleared.requests[0].payload.gclid,'Empty current Google reference does not fall back to mounted form value');
+    for (const key of ['utmSource','utmMedium','utmCampaign','utmTerm','utmContent']) {
+      check(!cleared.requests[0].payload[key],'Empty current ' + key + ' does not fall back to mounted form value');
+    }
   }
   checks.push('Each variant preserves actual form authority, consent, UUID, receipt, raw attribution, duplicate protection and tracking boundaries');
+  checks.push('Response-lost retries preserve exact body and ID across idle/tracking changes; actual field edits create a new ID; cleared attribution cannot resurrect mounted values');
   execFileSync('git',['diff','--check'],{cwd:repo});
   report.result='PASS';
 })().catch(error=>{

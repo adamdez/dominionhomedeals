@@ -210,7 +210,9 @@ export default async function SellerOptionsPage({
             </div>
 
             <FadeIn delay={200} direction="left">
-              <div id="get-options" className="scroll-mt-24">
+              <div id="get-options" data-seller-measurement="journey_v2"
+                data-seller-revision={landing.key === "options_net_tradeoffs" ? "options_handoff_v1" : "original"}
+                className="scroll-mt-24">
                 <LeadForm
                   intro={landing.formIntro}
                   addressLabel="What's the address of the house?"

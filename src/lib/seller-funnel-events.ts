@@ -51,6 +51,7 @@ const ATTRIBUTION_KEYS = new Set([
   "ad_group_id",
   "ad_id",
   "creative_id",
+  "landing_revision",
 ]);
 
 export interface SellerFunnelEvent {

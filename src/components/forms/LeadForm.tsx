@@ -397,20 +397,37 @@ export function LeadForm({
           primaryConstraint: formData.primaryConstraint,
           submissionFlow: 'seller_options_v1',
           sellerAuthority: formData.sellerAuthority,
-          oppref: sellerAttribution.oppref || formData.oppref,
-          gclid: sellerAttribution.gclid || formData.gclid,
+          oppref: sellerAttribution.oppref || '',
+          gclid: sellerAttribution.gclid || '',
+          utmSource: sellerAttribution.utm_source || '',
+          utmMedium: sellerAttribution.utm_medium || '',
+          utmCampaign: sellerAttribution.utm_campaign || '',
+          utmTerm: sellerAttribution.utm_term || '',
+          utmContent: sellerAttribution.utm_content || '',
           openaiObref: readOpenAIBrowserReference(),
-          funnelVisitId: formData.funnelVisitId || getSellerFunnelVisitId(),
+          funnelVisitId: getSellerFunnelVisitId(),
           adAttribution: sellerAttribution,
           landingPage: window.location.pathname + window.location.search,
         }
         trackingLandingPage = optionsPayload.landingPage
         // Keep the exact request, including consent times, for an identical retry.
-        // Generated times are not a change to what the homeowner submitted.
+        // Journey rotation, attribution and generated times must not turn an
+        // ambiguous response into a second lead. Only seller-input changes do.
         const fingerprint = JSON.stringify({
-          ...optionsPayload,
-          sms_consent_timestamp: null,
-          smsOptInTimestamp: null,
+          address: optionsPayload.address,
+          city: optionsPayload.city,
+          state: optionsPayload.state,
+          zip: optionsPayload.zip,
+          condition: optionsPayload.condition,
+          timeline: optionsPayload.timeline,
+          firstName: optionsPayload.firstName,
+          lastName: optionsPayload.lastName,
+          phone: optionsPayload.phone,
+          email: optionsPayload.email,
+          smsConsent: optionsPayload.sms_consent,
+          primaryConstraint: optionsPayload.primaryConstraint,
+          sellerAuthority: optionsPayload.sellerAuthority,
+          honeypot: optionsPayload.honeypot,
         })
         if (!optionsAttempt.current || optionsAttempt.current.fingerprint !== fingerprint) {
           const submissionId = crypto.randomUUID()
@@ -422,6 +439,7 @@ export function LeadForm({
         }
         optionsSubmissionId = optionsAttempt.current.submissionId
         body = optionsAttempt.current.body
+        trackingLandingPage = JSON.parse(body).landingPage
       }
 
       const response = await fetch('/api/leads', {

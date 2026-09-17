@@ -27,8 +27,8 @@ interface SellerFunnelEventOptions {
   beacon?: boolean;
 }
 
-const VISIT_ID_KEY = "dominion_seller_options_visit_id";
-const VISIT_SIGNATURE_KEY = "dominion_seller_options_visit_signature";
+const JOURNEY_KEY = "dominion_seller_options_journey_v2";
+const JOURNEY_IDLE_MS = 30 * 60 * 1000;
 const INTERNAL_QA_KEY = "dominion_internal_qa";
 const ATTRIBUTION_KEYS = [
   "utm_source",
@@ -46,10 +46,17 @@ const ATTRIBUTION_KEYS = [
   "ad_group_id",
   "ad_id",
   "creative_id",
+  "landing_revision",
 ] as const;
 
 const sentOnce = new Set<string>();
-let fallbackVisitId = "";
+interface SellerJourney {
+  id: string;
+  updatedAt: number;
+  attribution: Record<string, string>;
+  ignoredOppref?: string;
+}
+let fallbackJourney: SellerJourney | null = null;
 const ATTRIBUTION_MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000;
 
 declare global {
@@ -76,7 +83,7 @@ export function isInternalQaSession(): boolean {
   return window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
 }
 
-export function readSellerAttribution(): Record<string, string> {
+function readCurrentSellerAttribution(): Record<string, string> {
   if (typeof window === "undefined") return {};
   const params = new URLSearchParams(window.location.search);
   const attribution: Record<string, string> = {};
@@ -88,6 +95,11 @@ export function readSellerAttribution(): Record<string, string> {
     attribution.oppref = readRawCookie("__oppref") || readStoredOppref();
     if (!attribution.oppref) delete attribution.oppref;
   }
+  // Only the server-rendered fixed revision is trusted. Never take it from a URL.
+  const revision = typeof document.getElementById === "function"
+    ? document.getElementById("get-options")?.dataset.sellerRevision : undefined;
+  delete attribution.landing_revision;
+  if (revision === "options_handoff_v1" || revision === "original") attribution.landing_revision = revision;
   return attribution;
 }
 
@@ -116,28 +128,54 @@ export function readOpenAIBrowserReference(): string {
   return readRawCookie("__obref");
 }
 
-export function getSellerFunnelVisitId(): string {
-  if (typeof window === "undefined") return "";
-  const attribution = readSellerAttribution();
-  const signature = JSON.stringify({
-    path: window.location.pathname,
-    oppref: attribution.oppref || "",
-    campaign: attribution.utm_campaign || "",
-    content: attribution.utm_content || "",
-  });
-
+function sellerJourney(): SellerJourney {
+  const now = Date.now();
+  const current = readCurrentSellerAttribution();
+  const params = new URLSearchParams(window.location.search);
+  let previous = fallbackJourney;
   try {
-    const existing = sessionStorage.getItem(VISIT_ID_KEY) || "";
-    const existingSignature = sessionStorage.getItem(VISIT_SIGNATURE_KEY) || "";
-    if (existing && existingSignature === signature) return existing;
-    const next = uuid();
-    sessionStorage.setItem(VISIT_ID_KEY, next);
-    sessionStorage.setItem(VISIT_SIGNATURE_KEY, signature);
-    return next;
-  } catch {
-    if (!fallbackVisitId) fallbackVisitId = uuid();
-    return fallbackVisitId;
+    const stored = JSON.parse(sessionStorage.getItem(JOURNEY_KEY) || "null");
+    if (stored && typeof stored.id === "string" && Number.isFinite(stored.updatedAt) &&
+      stored.attribution && typeof stored.attribution === "object" && !Array.isArray(stored.attribution)) {
+      previous = { ...stored, attribution: Object.fromEntries(Object.entries(stored.attribution)
+        .filter(([key, value]) => ATTRIBUTION_KEYS.includes(key as typeof ATTRIBUTION_KEYS[number]) && typeof value === "string")) };
+    }
+  } catch {}
+  // URL cleanup and late Pixel cookie creation do not start a second visit.
+  // A new explicit click/campaign or 30 minutes without an event does.
+  const acquisitionKeys = ATTRIBUTION_KEYS.filter((key) => key !== "landing_revision");
+  const newAcquisition = previous && acquisitionKeys.some((key) => {
+    const incoming = params.get(key);
+    return incoming && incoming !== previous.attribution[key];
+  });
+  const fresh = !previous || now < previous.updatedAt || now - previous.updatedAt >= JOURNEY_IDLE_MS || newAcquisition;
+  const explicitSource = (params.get("utm_source") || "").toLowerCase();
+  const otherSource = (explicitSource && !["chatgpt", "openai"].includes(explicitSource)) ||
+    params.has("gclid") || params.has("gbraid") || params.has("wbraid");
+  const ignoredOppref = params.get("oppref") ? undefined
+    : (newAcquisition || otherSource) && current.oppref ? current.oppref : previous?.ignoredOppref;
+  // A previous campaign's cookie must not label a different explicit campaign.
+  if (!params.get("oppref") && current.oppref === ignoredOppref) delete current.oppref;
+  if (!fresh && previous?.attribution.oppref && !params.get("oppref")) {
+    current.oppref = previous.attribution.oppref;
   }
+  const journey: SellerJourney = {
+    id: fresh ? uuid() : previous!.id,
+    updatedAt: now,
+    attribution: fresh ? current : { ...previous!.attribution, ...current },
+    ignoredOppref,
+  };
+  fallbackJourney = journey;
+  try { sessionStorage.setItem(JOURNEY_KEY, JSON.stringify(journey)); } catch {}
+  return journey;
+}
+
+export function readSellerAttribution(): Record<string, string> {
+  return typeof window === "undefined" ? {} : sellerJourney().attribution;
+}
+
+export function getSellerFunnelVisitId(): string {
+  return typeof window === "undefined" ? "" : sellerJourney().id;
 }
 
 function clientContext() {
