@@ -1427,3 +1427,109 @@
   stroke-width: 7;
   fill: none;
 }
+
+/* Keep the complete facade visible in the wider approach photograph. */
+.heroImage {
+  object-position: center 61%;
+}
+.heroShade {
+  background: linear-gradient(
+    180deg,
+    #05140e80 0%,
+    #091c1300 29%,
+    #07150f4a 55%,
+    #07150fea 100%
+  );
+}
+.mainRoutes {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 4;
+}
+.photoCaption {
+  margin: 0;
+  padding: 14px 24px 0;
+  color: #e1dfd1;
+  font-size: 12px;
+  line-height: 1.5;
+}
+.passageLine {
+  fill: none;
+  stroke: #7a896b;
+  stroke-width: 2;
+  stroke-dasharray: 5 4;
+}
+.mainDoor {
+  fill: none;
+  stroke: #f9f8f2;
+  stroke-width: 7;
+}
+.redDoor {
+  stroke: #9a4940;
+  stroke-width: 6;
+}
+.routeArrow {
+  stroke: #7a896b;
+  stroke-width: 2;
+  fill: none;
+}
+.redDoorLabel {
+  position: absolute;
+  left: 47%;
+  top: 79%;
+  font-size: 7px;
+  letter-spacing: 0.03em;
+  color: #91493e;
+}
+.entryMarker {
+  left: 60%;
+  top: 93%;
+  font-size: 8px;
+}
+.unmappedRoom {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 0;
+  font-size: 11px;
+  color: #47633e;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.unmappedRoom[aria-pressed="true"] {
+  font-weight: 700;
+}
+@media (max-width: 600px) {
+  .hero {
+    height: auto;
+    min-height: 0;
+    max-height: none;
+    display: block;
+    background: #0b1d13;
+  }
+  .heroImage {
+    height: auto !important;
+    aspect-ratio: 3/4;
+    object-fit: contain;
+    object-position: top center;
+  }
+  .heroContent {
+    padding-top: 87vw;
+    padding-bottom: 105px;
+  }
+  .hero h1 {
+    font-size: 43px;
+  }
+  .heroShade {
+    background: linear-gradient(
+      180deg,
+      #05140e75 0,
+      #07150f00 36vw,
+      #07150f26 67vw,
+      #0b1d13 133.333vw
+    );
+  }
+}

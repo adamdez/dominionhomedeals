@@ -2,6 +2,19 @@ const { chromium } = require("playwright");
 const fs = require("node:fs");
 const path = require("node:path");
 const assert = require("node:assert/strict");
+const photoCount = new Set(
+  Array.from(
+    fs
+      .readFileSync(
+        path.join(
+          __dirname,
+          "../src/components/off-market/black-road/tour-data.ts",
+        ),
+        "utf8",
+      )
+      .matchAll(/photo\(\s*(\d+)/g),
+  ).map((match) => match[1]),
+).size;
 const base = process.env.TOUR_BASE_URL || "http://localhost:3127";
 const proof = process.env.TOUR_PROOF_DIR || "/tmp/black-road-web-proof";
 fs.mkdirSync(proof, { recursive: true });
@@ -88,12 +101,56 @@ fs.mkdirSync(proof, { recursive: true });
       true,
     );
   }
+  await page.getByRole("button", { name: /02.*Main living/ }).click();
+  const garage = await page
+    .getByRole("button", { name: "Explore The attached garage", exact: true })
+    .boundingBox();
+  const living = await page
+    .getByRole("button", { name: "Explore The living room", exact: true })
+    .boundingBox();
+  assert(
+    garage.y < living.y && Math.abs(garage.x - living.x) < 2,
+    "Garage behind living room",
+  );
   await page
-    .getByRole("button", { name: "View all 64 photographs", exact: true })
+    .getByRole("button", { name: "Explore The kitchen", exact: true })
+    .click();
+  await page
+    .getByRole("button", {
+      name: /View photo 2: View from the kitchen toward pantry/,
+    })
+    .click();
+  assert.match(
+    await page.locator("#tour-viewer img").first().getAttribute("src"),
+    /7732/,
+  );
+  assert.match(
+    await page.locator("#walkthrough").innerText(),
+    /pantry shelving and the adjoining passage/,
+  );
+  await page.getByRole("button", { name: /01.*The setting/ }).click();
+  const grounds = await page
+    .getByRole("button", {
+      name: "Explore 12.8 acres in Chattaroy",
+      exact: true,
+    })
+    .boundingBox();
+  const outbuildings = await page
+    .getByRole("button", {
+      name: "Explore Space for the practical side of life",
+      exact: true,
+    })
+    .boundingBox();
+  assert(outbuildings.x < grounds.x, "Outbuildings left and grounds right");
+  await page
+    .getByRole("button", {
+      name: `View all ${photoCount} photographs`,
+      exact: true,
+    })
     .click();
   assert.equal(
     await page.locator('#gallery button[aria-label^="Open photo:"]').count(),
-    64,
+    photoCount,
   );
   await page
     .getByRole("button", { name: "Primary suite", exact: true })
@@ -189,7 +246,7 @@ fs.mkdirSync(proof, { recursive: true });
   assert.deepEqual(errors, []);
   await browser.close();
   console.log(
-    "PASS Black Road room navigation, nook on right, six levels, 64-photo gallery, fullscreen, Escape, deep links, phone/tablet overflow and both hub listings. Inquiry request verified with browser interception. No external inquiry sent.",
+    "PASS Black Road room navigation, nook on right, six levels, expanded photo gallery, fullscreen, Escape, deep links, phone/tablet overflow and both hub listings. Inquiry request verified with browser interception. No external inquiry sent.",
   );
 })().catch((e) => {
   console.error(e);

@@ -19,14 +19,14 @@ export const metadata: Metadata = {
     description,
     url: `${SITE.url}/off-market/11211-e-black-rd`,
     images: [
-      { url: "/images/black-road/8021.webp", width: 1500, height: 1125 },
+      { url: "/images/black-road/2055.webp", width: 1440, height: 1920 },
     ],
   },
   twitter: {
     card: "summary_large_image",
     title,
     description,
-    images: ["/images/black-road/8021.webp"],
+    images: ["/images/black-road/2055.webp"],
   },
 };
 export default function BlackRoadPage() {

@@ -143,7 +143,7 @@ export function BlackRoadPresentation() {
       </header>
       <section className={s.hero} aria-labelledby="property-title">
         <Image
-          src="/images/black-road/8021.webp"
+          src="/images/black-road/2055.webp"
           alt="Tudor-inspired Black Road home with stonework and a wooded setting"
           fill
           priority
@@ -354,6 +354,9 @@ export function BlackRoadPresentation() {
                 {String(room.photos.length).padStart(2, "0")}
               </span>
             </div>
+            <p className={s.photoCaption} aria-live="polite">
+              {photo.alt}
+            </p>
             <div className={s.thumbnails} aria-label="Room photographs">
               {room.photos.map((p, i) => (
                 <button
@@ -389,24 +392,26 @@ export function BlackRoadPresentation() {
               className={s.floorMap}
               aria-label={`${level.name} interactive schematic`}
             >
-              {floorRooms.map((r) => (
-                <button
-                  key={r.id}
-                  className={`${s.mapRoom} ${r.id === room.id ? s.selectedRoom : ""}`}
-                  onClick={() => navigateRoom(roomById(r.id))}
-                  aria-pressed={r.id === room.id}
-                  aria-label={`Explore ${r.name}`}
-                  style={{
-                    left: `${r.box[0] / 5.05}%`,
-                    top: `${r.box[1] / 4.1}%`,
-                    width: `${r.box[2] / 5.05}%`,
-                    height: `${r.box[3] / 4.1}%`,
-                  }}
-                >
-                  <span>{r.short}</span>
-                  {r.id === room.id && <i />}
-                </button>
-              ))}
+              {floorRooms
+                .filter((r) => r.box !== null)
+                .map((r) => (
+                  <button
+                    key={r.id}
+                    className={`${s.mapRoom} ${r.id === room.id ? s.selectedRoom : ""}`}
+                    onClick={() => navigateRoom(roomById(r.id))}
+                    aria-pressed={r.id === room.id}
+                    aria-label={`Explore ${r.name}`}
+                    style={{
+                      left: `${r.box![0] / 5.05}%`,
+                      top: `${r.box![1] / 4.1}%`,
+                      width: `${r.box![2] / 5.05}%`,
+                      height: `${r.box![3] / 4.1}%`,
+                    }}
+                  >
+                    <span>{r.short}</span>
+                    {r.id === room.id && <i />}
+                  </button>
+                ))}
               {(room.level === "primary" || room.level === "bedrooms") && (
                 <svg
                   className={s.doorways}
@@ -441,17 +446,34 @@ export function BlackRoadPresentation() {
                   <button
                     className={s.stairLink}
                     onClick={() => changeLevel("bedrooms")}
-                    style={{ left: "66%", top: "44%", width: "30%" }}
+                    style={{ left: "79%", top: "14%", width: "19%" }}
                   >
                     UP TO BEDROOMS <ArrowUpRight size={15} />
                   </button>
                   <button
                     className={s.stairLink}
                     onClick={() => changeLevel("lower")}
-                    style={{ left: "66%", top: "62%", width: "30%" }}
+                    style={{ left: "79%", top: "34%", width: "19%" }}
                   >
                     DOWN TO FAMILY <ArrowDown size={15} />
                   </button>
+                  <svg
+                    className={s.mainRoutes}
+                    viewBox="0 0 505 410"
+                    aria-hidden="true"
+                  >
+                    <path
+                      className={s.passageLine}
+                      d="M305 315H250V215 M305 350H210 M250 215H90V195"
+                    />
+                    <path
+                      className={s.mainDoor}
+                      d="M305 155v25 M225 125h25 M225 215h25 M210 338v24 M305 338v24 M330 370h30 M78 195h24"
+                    />
+                    <path className={s.redDoor} d="M305 300v30" />
+                    <path className={s.routeArrow} d="M243 230l7 -11 7 11" />
+                  </svg>
+                  <span className={s.redDoorLabel}>RED DOOR</span>
                   <span className={s.entryMarker}>FRONT ENTRY ↑</span>
                 </>
               )}
@@ -465,6 +487,18 @@ export function BlackRoadPresentation() {
                 </button>
               )}
             </div>
+            {floorRooms
+              .filter((r) => !r.box)
+              .map((r) => (
+                <button
+                  key={r.id}
+                  className={s.unmappedRoom}
+                  aria-pressed={r.id === room.id}
+                  onClick={() => navigateRoom(roomById(r.id))}
+                >
+                  View {r.short} photos <ArrowUpRight size={14} />
+                </button>
+              ))}
             <p className={s.mapNote}>
               {room.level === "grounds"
                 ? "Photo navigation only. Not a parcel or boundary map."
