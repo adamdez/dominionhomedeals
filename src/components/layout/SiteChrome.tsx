@@ -7,7 +7,7 @@ import { usePathname } from "next/navigation";
 export function SiteChrome({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
 
-  if (pathname === "/review") {
+  if (pathname === "/review" || pathname === "/off-market/11211-e-black-rd") {
     return <main id="main-content">{children}</main>;
   }
 

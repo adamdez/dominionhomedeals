@@ -40,6 +40,14 @@ export default function OffMarketHubPage() {
         <div className="mx-auto max-w-6xl px-5 sm:px-6 lg:px-8">
           <h2 className="font-display text-heading text-ink-600 mb-10 text-center">Current offerings</h2>
           <div className="mx-auto grid max-w-3xl gap-8 lg:gap-10">
+            <Link href="/off-market/11211-e-black-rd" className="group overflow-hidden rounded-2xl border border-stone-200/80 bg-white shadow-soft transition hover:-translate-y-0.5 hover:shadow-elevated">
+              <div className="relative aspect-[16/10] overflow-hidden bg-stone-200">
+                <Image src="/images/black-road/8021.webp" alt="Tudor-inspired Black Road home in its wooded setting" fill sizes="(max-width: 768px) 100vw, 768px" className="object-cover transition duration-500 group-hover:scale-[1.03]" priority />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
+                <div className="absolute bottom-0 p-6 text-white"><p className="mb-2 text-xs uppercase tracking-[.18em] text-amber-100">Interactive property tour</p><p className="font-display text-2xl">11211 E Black Rd</p><p className="mt-1 text-sm text-white/85">Chattaroy WA · 12.8 acres</p></div>
+              </div>
+              <div className="flex items-center justify-between gap-4 px-6 py-5"><div><p className="text-xs uppercase tracking-wider text-ink-400">Explore the property</p><p className="mt-1 font-display text-xl text-ink-600">Step inside Black Road</p></div><span className="text-sm font-semibold text-forest-600 group-hover:underline">View tour →</span></div>
+            </Link>
             {listings.map((l, index) => (
               <Link
                 key={l.slug}

@@ -35,6 +35,7 @@ export type DealInterestFormProps = {
   source: string
   propertyLabel: string
   submitLabel?: string
+  messagePlaceholder?: string
   variant?: 'default' | 'prestige'
   contactName?: string
   contactPhone?: string
@@ -50,6 +51,7 @@ export function DealInterestForm({
   source,
   propertyLabel,
   submitLabel = 'Request more info',
+  messagePlaceholder = 'Questions, financing situation, preferred showing time…',
   variant = 'default',
   contactName = 'our team',
   contactPhone = '5098225460',
@@ -240,7 +242,7 @@ export function DealInterestForm({
           rows={4}
           value={form.message}
           onChange={handleChange}
-          placeholder="Questions, financing situation, preferred showing time…"
+          placeholder={messagePlaceholder}
           className="w-full rounded-xl border border-stone-300 px-4 py-3 text-sm text-ink-600 bg-white placeholder-ink-300 transition-colors duration-150 hover:border-stone-400 focus:outline-none focus:ring-2 focus:ring-forest-400 focus:ring-offset-1 resize-none"
         />
       </div>
