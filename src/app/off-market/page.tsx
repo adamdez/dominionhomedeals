@@ -12,7 +12,18 @@ export const metadata: Metadata = {
 }
 
 export default function OffMarketHubPage() {
-  const listings = getAllOffMarketListings()
+  const listings = [
+    {
+      slug: '5919-n-atlantic-st',
+      title: '5919 N Atlantic St',
+      locationLine: 'Spokane WA 99205 · Basement bedroom potential · Detached shop',
+      priceDisplay: '$231,000',
+      priceNumeric: 231000,
+      buyNowDisplay: undefined,
+      cardImageSrc: '/off-market/5919-n-atlantic-st/assets/IMG_1965.jpg',
+    },
+    ...getAllOffMarketListings(),
+  ]
 
   return (
     <>
