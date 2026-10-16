@@ -48,6 +48,7 @@ const ATTRIBUTION_KEYS = new Set([
   "gad_source",
   "gad_campaignid",
   "campaign_id",
+  "adset_id",
   "ad_group_id",
   "ad_id",
   "creative_id",

@@ -4,7 +4,7 @@ import { createHash } from "node:crypto";
 const DOMINION_LEAD_TABLE = "dominion_website_lead_receipts";
 export const DOMINION_OPTIONS_FLOW = "seller_options_v1";
 
-export type DominionSellerAuthority = "owner" | "authorized_representative";
+export type DominionSellerAuthority = "owner" | "authorized_representative" | "heir_without_authority" | "helper_tenant_agent" | "researching" | "unsure";
 export type DominionDeliveryOutcome = {
   status: "pending" | "provider_accepted" | "skipped" | "failed" | "outcome_unknown";
   referenceId?: string;
@@ -127,7 +127,7 @@ function optionsReceiptFromContent(value: unknown): DominionOptionsReceipt | nul
 }
 
 function sellerAuthority(value: unknown): DominionSellerAuthority | null {
-  return value === "owner" || value === "authorized_representative" ? value : null;
+  return typeof value === "string" && ["owner", "authorized_representative", "heir_without_authority", "helper_tenant_agent", "researching", "unsure"].includes(value) ? value as DominionSellerAuthority : null;
 }
 
 function shortText(value: unknown, max = 400): string {
@@ -405,9 +405,9 @@ export function dominionOptionsDeliveryStatus(delivery: DominionDeliveryMap | un
 export async function recordDominionOptionsLeadSubmission(
   input: DominionLeadSubmissionInput,
   submissionId: string,
-  measurement: { internalQa: boolean } = { internalQa: false },
+  measurement: { internalQa: boolean; metaSellerAssessment?: JsonRecord; metaMeasurement?: { consent: boolean; consentVersion: string }; metaConversion?: DominionDeliveryOutcome & { measurementMode: string; eventId: string } } = { internalQa: false },
 ): Promise<OptionsSubmissionReceipt> {
-  if (!isDominionOptionsSubmissionId(submissionId) || !sellerAuthority(input.sellerAuthority)) {
+  if (!isDominionOptionsSubmissionId(submissionId) || !(measurement.metaSellerAssessment ? sellerAuthority(input.sellerAuthority) : ["owner", "authorized_representative"].includes(input.sellerAuthority || ""))) {
     throw new Error("Invalid seller-options submission identity.");
   }
   const supabase = getDominionServiceClient();
@@ -422,11 +422,15 @@ export async function recordDominionOptionsLeadSubmission(
     ...immutable,
     adAttribution: Object.fromEntries(Object.entries(base.adAttribution).sort(([a], [b]) => a < b ? -1 : a > b ? 1 : 0)),
     tcpaConsented: input.tcpaConsented === true,
+    ...(measurement.metaSellerAssessment ? { metaSellerAssessment: measurement.metaSellerAssessment } : {}),
   })).digest("hex");
   const optionsReceipt: DominionOptionsReceipt = {
     flow: DOMINION_OPTIONS_FLOW, submissionId: normalizedId, payloadFingerprint,
     receivedAt: base.submittedAt, delivery: pendingDelivery(),
     measurementClass: measurement.internalQa ? "internal_qa" : "unmarked",
+    ...(measurement.metaSellerAssessment ? { metaSellerAssessment: measurement.metaSellerAssessment } : {}),
+    ...(measurement.metaMeasurement ? { metaMeasurement: measurement.metaMeasurement } : {}),
+    ...(measurement.metaConversion ? { metaConversion: measurement.metaConversion } : {}),
   };
   const content = dominionLeadToContent({ ...base, optionsReceipt });
 
@@ -469,6 +473,7 @@ export async function recordDominionOptionsDelivery(
   receipt: OptionsSubmissionReceipt,
   delivery: DominionDeliveryMap,
   openaiConversion?: DominionDeliveryOutcome & { measurementMode: string },
+  metaConversion?: DominionDeliveryOutcome & { measurementMode: string; eventId: string },
 ): Promise<void> {
   const supabase = getDominionServiceClient();
   if (!supabase || !receipt.record.optionsReceipt || receipt.duplicate) {
@@ -478,7 +483,8 @@ export async function recordDominionOptionsDelivery(
   const content = dominionLeadToContent({
     ...receipt.record,
     optionsReceipt: { ...receipt.record.optionsReceipt, delivery, deliveryUpdatedAt: updatedAt,
-      ...(openaiConversion ? { openaiConversion } : {}) },
+      ...(openaiConversion ? { openaiConversion } : {}),
+      ...(metaConversion ? { metaConversion } : {}) },
   });
   const { data, error } = await supabase.from(DOMINION_LEAD_TABLE)
     .update({ content, updated_at: updatedAt })

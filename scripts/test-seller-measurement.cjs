@@ -210,18 +210,34 @@ test('provider errors and ambiguous network failures retain mode without raw err
   assert.equal(unknown.status, 'outcome_unknown'); assert.equal(unknown.referenceId, 'production_transport_unknown');
 });
 
-function routeHarness({ duplicate = false, savedQa = false, validateOnly = false, transportUnknown = false } = {}) {
-  const events = [], submissions = [], conversions = [], savedOutcomes = [];
+const metaPolicy = load('src/lib/meta-measurement-policy.ts');
+function routeHarness({ duplicate = false, savedQa = false, validateOnly = false, transportUnknown = false,
+  metaEnabled = false, metaUnknown = false,
+  lazarusConfigured = false } = {}) {
+  const events = [], submissions = [], conversions = [], savedOutcomes = [], forwardedLeads = [], requests = [], metaCalls = [], metaSaved = [];
   const api = load('src/app/api/leads/route.ts', {
     'next/server': { NextResponse: { json: (data, init) => Response.json(data, init) } },
     '@/lib/constants': { SITE: { url: 'https://example.test', phone: '555-0100' } },
     '@/lib/mailchimp': { syncSellerLeadToMailchimp: () => { throw new Error('Not permitted'); } },
     '@/lib/seller-measurement-policy': policy,
+    '@/lib/meta-measurement-policy': metaPolicy,
+    '@/server/meta-ads-conversions': {
+      metaMeasurementConfig: input => {
+        const eventId = metaPolicy.metaLeadEventId(input.submissionId);
+        return metaEnabled && !input.internalQa && metaPolicy.hasMetaMeasurementPermission(input.choice)
+          ? { mode: 'production', eventId }
+          : { skipped: { status: 'skipped', measurementMode: 'disabled', eventId } };
+      },
+      reportMetaLead: async input => { metaCalls.push(input); return {
+        status: metaUnknown ? 'outcome_unknown' : 'provider_accepted', measurementMode: 'production',
+        eventId: metaPolicy.metaLeadEventId(input.submissionId),
+      }; },
+    },
     '@/lib/dominion-leads': {
       DOMINION_OPTIONS_FLOW: 'seller_options_v1', DominionOptionsSubmissionConflictError: class extends Error {},
       isDominionOptionsSubmissionId: value => typeof value === 'string' && value.length === 36,
       dominionOptionsDeliveryStatus: () => 'needs_review',
-      recordDominionOptionsDelivery: async (_, __, outcome) => { savedOutcomes.push(outcome); },
+      recordDominionOptionsDelivery: async (_, __, outcome, meta) => { savedOutcomes.push(outcome); metaSaved.push(meta); },
       recordDominionOptionsLeadSubmission: async (input, id, measurement) => {
         submissions.push({ input, measurement });
         return { duplicate, record: { id: 1, optionsReceipt: {
@@ -233,6 +249,11 @@ function routeHarness({ duplicate = false, savedQa = false, validateOnly = false
       normalizeSellerFunnelEvent: event => event,
       recordSellerFunnelEvent: async event => { events.push(event); return { duplicate: false }; },
     },
+    '@/lib/meta-seller-qualifier': load('src/lib/meta-seller-qualifier.ts'),
+    '@/lib/meta-seller-funnel-events': {
+      normalizeMetaSellerFunnelEvent: event => event,
+      recordMetaSellerFunnelEvent: async event => { events.push(event); return { duplicate: false }; },
+    },
     '@/server/openai-ads-conversions': {
       reportOpenAILeadCreated: async input => {
         conversions.push(input);
@@ -242,13 +263,31 @@ function routeHarness({ duplicate = false, savedQa = false, validateOnly = false
           measurementMode: validateOnly ? 'validation' : 'production' };
       },
     },
-  }, { process: { env: { OPENAI_ADS_CONVERSIONS_VALIDATE_ONLY: String(validateOnly) } } });
+  }, {
+    process: { env: {
+      OPENAI_ADS_CONVERSIONS_VALIDATE_ONLY: String(validateOnly),
+      ...(lazarusConfigured ? {
+        LAZARUS_OPTIONS_INTAKE_URL: 'https://lazarus.example.test/api/intake/leads',
+        LAZARUS_OPTIONS_INTAKE_CREATE_LEAD_KEY: 'test-only',
+      } : {}),
+    } },
+    fetch: async (url, options) => {
+      requests.push(url);
+      forwardedLeads.push(JSON.parse(options.body));
+      return Response.json({ ppcLeadId: 'test-ppc-1', lead: { id: 'test-ppc-1' } });
+    },
+  });
   const body = { address: '123 Example Street', state: 'WA', firstName: 'QA', phone: '2025550100',
     sellerAuthority: 'owner', submissionFlow: 'seller_options_v1', submissionId: lead.submissionId,
     funnelVisitId: '00000000-0000-4000-8000-000000000002', utmSource: 'chatgpt' };
-  return { events, submissions, conversions, savedOutcomes, async post(changes = {}) {
+  return { events, submissions, conversions, savedOutcomes, forwardedLeads, metaCalls, metaSaved, async post(changes = {}) {
     const response = await api.POST({ headers: new Headers(), json: async () => ({ ...body, ...changes }) });
-    return { status: response.status, data: await response.json() };
+    // Check outside the route so its best-effort delivery catch cannot swallow a failed assertion.
+    for (const url of requests) {
+      assert.equal(lazarusConfigured, true);
+      assert.equal(url, 'https://lazarus.example.test/api/intake/leads');
+    }
+    return { status: response.status, data: await response.json(), headers: response.headers };
   } };
 }
 test('server QA accepts valid intake but marks receipt and excludes both OpenAI transports', async () => {

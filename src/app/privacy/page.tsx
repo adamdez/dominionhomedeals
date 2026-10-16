@@ -160,6 +160,23 @@ export default function PrivacyPolicyPage() {
               <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer">Google Privacy Policy</a>.
             </p>
 
+            <h3 id="meta-measurement">Optional Meta Advertising Measurement</h3>
+            <p>
+              Our property-inquiry form includes a separate optional choice for Meta advertising measurement.
+              If you allow it and your browser privacy settings permit it we share an accepted-request event with Meta.
+              This can include browser identifiers and your device information such as IP address and browser type.
+              Meta may use these events to measure and improve our advertising.
+              We do not include your phone number. email. property address. property answers. or SMS consent in these events.
+              Declining measurement does not affect your offer request or permission for Dominion to respond.
+              Global Privacy Control and Do Not Track signals block this measurement.
+            </p>
+            <p>
+              You can leave the optional measurement box unchecked.
+              After submitting you can block future Meta measurement using the privacy control on the confirmation page.
+              Blocking future measurement cannot recall an event already received by Meta.
+              Meta processes information under its{' '}
+              <a href="https://www.facebook.com/privacy/policy/" target="_blank" rel="noopener noreferrer">Privacy Policy</a>.
+            </p>
             <h2>8. Your Rights</h2>
             <p>Depending on your location, you may have the following rights regarding your personal information:</p>
             <ul>

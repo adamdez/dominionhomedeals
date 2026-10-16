@@ -12,7 +12,22 @@ import {
 import { syncSellerLeadToMailchimp } from '@/lib/mailchimp'
 import { reportOpenAILeadCreated, type OpenAIConversionOutcome } from '@/server/openai-ads-conversions'
 import { isSellerMeasurementQa } from '@/lib/seller-measurement-policy'
+import { metaMeasurementConfig, reportMetaLead, type MetaConversionOutcome, type MetaLeadInput } from '@/server/meta-ads-conversions'
+import { hasMetaMeasurementPermission, normalizeMetaClickCookie, META_MEASUREMENT_CONSENT_VERSION, type MetaMeasurementChoice } from '@/lib/meta-measurement-policy'
 import { normalizeSellerFunnelEvent, recordSellerFunnelEvent } from '@/lib/seller-funnel-events'
+import {
+  META_SELLER_QUALIFICATION_VERSION,
+  metaSellerQualificationSummary,
+  metaSellerServiceArea,
+  metaSellerFollowUpTier,
+  META_SELLER_FOLLOWUP_LABELS,
+  validateMetaSellerQualification,
+  type NormalizedMetaSellerQualification,
+} from '@/lib/meta-seller-qualifier'
+import {
+  normalizeMetaSellerFunnelEvent,
+  recordMetaSellerFunnelEvent,
+} from '@/lib/meta-seller-funnel-events'
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -62,6 +77,17 @@ interface LeadPayload {
   submissionId?: string
   funnelVisitId?: string
   sellerAuthority?: DominionSellerAuthority
+  qualificationVersion?: string
+  serviceArea?: string
+  propertyType?: string
+  listingStatus?: string
+  offerReadiness?: string
+  priceTradeoff?: string
+  sellerReason?: string
+  bestTimeToSpeak?: string
+  contactConsent?: boolean
+  metaVariant?: string
+  metaMeasurement?: MetaMeasurementChoice
 }
 
 /* ------------------------------------------------------------------ */
@@ -107,6 +133,11 @@ const AD_ATTRIBUTION_KEYS = new Set([
   'wbraid',
   'gad_source',
   'gad_campaignid',
+  'campaign_id',
+  'adset_id',
+  'ad_group_id',
+  'ad_id',
+  'creative_id',
   'keyword',
   'matchtype',
   'adgroup',
@@ -221,6 +252,29 @@ async function recordOptionsFunnelMilestone(input: {
   return recordSellerFunnelEvent(event)
 }
 
+async function recordMetaSellerLeadAccepted(input: {
+  eventId: string
+  visitId: string
+  occurredAt: string
+  leadReceiptId: string
+  variant: 'repairs' | 'estate' | 'direct'
+  adAttribution: Record<string, string>
+}) {
+  const event = normalizeMetaSellerFunnelEvent({
+    eventId: input.eventId,
+    visitId: input.visitId,
+    eventType: 'lead_accepted',
+    occurredAt: input.occurredAt,
+    stage: 'contact',
+    detail: 'server_accepted',
+    leadReceiptId: input.leadReceiptId,
+    variant: input.variant,
+    attribution: input.adAttribution,
+  })
+  if (!event) throw new Error('Invalid Meta seller lead milestone.')
+  return recordMetaSellerFunnelEvent(event)
+}
+
 async function reportAndRecordOpenAIConversion(input: {
   internalQa: boolean
   submissionId: string
@@ -294,7 +348,7 @@ async function sendEmailNotification(lead: Record<string, unknown>): Promise<Dom
   }
 
   const listingInquiry = isListingInquiry(lead)
-  const priorityLabel = lead.timeline === 'ASAP' ? '🔴 URGENT' : lead.timeline === 'Soon' ? '🟡 SOON' : '🟢 NORMAL'
+  const priorityLabel = lead.followUpLabel ? String(lead.followUpLabel) : lead.timeline === 'ASAP' ? '🔴 URGENT' : lead.timeline === 'Soon' ? '🟡 SOON' : '🟢 NORMAL'
   const optionsSubmissionId = lead.submissionFlow === DOMINION_OPTIONS_FLOW &&
     isDominionOptionsSubmissionId(lead.submissionId) ? lead.submissionId.toLowerCase() : null
 
@@ -564,6 +618,7 @@ async function forwardToSentinel(lead: Record<string, unknown>): Promise<void> {
 
 async function forwardToLazarus(lead: Record<string, unknown>): Promise<DominionDeliveryOutcome> {
   const isOptionsFlow = lead.submissionFlow === DOMINION_OPTIONS_FLOW
+  const isStrictMetaFlow = lead.qualificationVersion === META_SELLER_QUALIFICATION_VERSION
   // Dedicated settings prevent enabling this new flow from rerouting legacy forms.
   // Never fall back between the options-only and existing legacy configurations.
   const intakeUrl = (isOptionsFlow ? process.env.LAZARUS_OPTIONS_INTAKE_URL : process.env.LAZARUS_INTAKE_URL)?.trim()
@@ -582,7 +637,7 @@ async function forwardToLazarus(lead: Record<string, unknown>): Promise<Dominion
 
   const sourceDetails = Object.fromEntries(
     Object.entries({
-      sourceLabel: 'Dominion website seller form',
+      sourceLabel: isStrictMetaFlow ? 'Dominion Meta seller conversation' : 'Dominion website seller form',
       sourceType: 'Website',
       propertyZip: optionalText(lead.zip),
       landingPage: optionalText(lead.landingPage),
@@ -606,6 +661,12 @@ async function forwardToLazarus(lead: Record<string, unknown>): Promise<Dominion
         submissionFlow: DOMINION_OPTIONS_FLOW,
         submissionId: optionalText(lead.submissionId),
         sellerAuthority: optionalText(lead.sellerAuthority),
+        qualificationVersion: isStrictMetaFlow ? META_SELLER_QUALIFICATION_VERSION : null,
+        metaVariant: isStrictMetaFlow ? optionalText(lead.metaVariant) : null,
+        followUpTier: isStrictMetaFlow ? optionalText(lead.followUpTier) : null,
+        followUpLabel: isStrictMetaFlow ? optionalText(lead.followUpLabel) : null,
+        metaSellerAssessmentJson: isStrictMetaFlow ? JSON.stringify(lead.metaSellerAssessment) : null,
+        qualificationStatus: isStrictMetaFlow ? 'self_reported_not_human_verified' : null,
         adAttributionJson: JSON.stringify(adAttribution),
         intakeMode: 'create_only',
         automatedSellerSms: 'disabled_for_this_intake',
@@ -618,7 +679,9 @@ async function forwardToLazarus(lead: Record<string, unknown>): Promise<Dominion
     lead.submittedAt ? `Submitted: ${lead.submittedAt}` : null,
     lead.condition ? `Condition: ${lead.condition}` : null,
     lead.timeline ? `Timeline: ${lead.timeline}` : null,
-    isOptionsFlow && lead.primaryConstraint ? `Main problem to solve: ${lead.primaryConstraint}` : null,
+    isOptionsFlow && lead.primaryConstraint
+      ? `${isStrictMetaFlow ? 'Follow-up assessment' : 'Main problem to solve'}: ${lead.primaryConstraint}`
+      : null,
     lead.smsConsent ? `SMS consent captured: ${lead.smsConsentTimestamp || 'yes'}` : 'SMS consent: no',
     lead.landingPage ? `Landing page: ${lead.landingPage}` : null,
     adNotes ? `Ad attribution:\n${adNotes}` : null,
@@ -633,6 +696,7 @@ async function forwardToLazarus(lead: Record<string, unknown>): Promise<Dominion
       },
       body: JSON.stringify({
         name: `${lead.firstName || ''} ${lead.lastName || ''}`.trim(),
+        ...(isStrictMetaFlow ? { tags: ['Meta seller', `Follow-up: ${lead.followUpTier}`] } : {}),
         phone: lead.phone,
         email: lead.email,
         address: lead.address,
@@ -679,6 +743,8 @@ async function forwardToLazarus(lead: Record<string, unknown>): Promise<Dominion
 
 export async function POST(request: NextRequest) {
   let isOptionsFlow = false
+  let isStrictMetaFlow = false
+  let strictMetaQualification: NormalizedMetaSellerQualification | null = null
   try {
     const ip =
       request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
@@ -698,6 +764,11 @@ export async function POST(request: NextRequest) {
     }
     const body: LeadPayload = await request.json()
     isOptionsFlow = body?.submissionFlow === DOMINION_OPTIONS_FLOW
+    isStrictMetaFlow = isOptionsFlow && [META_SELLER_QUALIFICATION_VERSION, 'meta_distressed_seller_v1'].includes(body?.qualificationVersion || '')
+
+    if (body?.qualificationVersion && !isStrictMetaFlow) {
+      return optionsFailure('This form has been updated. Please refresh the page and try again.', 409)
+    }
 
     // Honeypot
     if (body.honeypot) {
@@ -714,7 +785,8 @@ export async function POST(request: NextRequest) {
         'firstName', 'lastName', 'phone', 'email', 'source', 'landingPage', 'utmSource', 'utmMedium',
         'utmCampaign', 'utmTerm', 'utmContent', 'gclid', 'oppref', 'gbraid', 'wbraid', 'gadSource',
         'gadCampaignId', 'keyword', 'matchtype', 'adgroup', 'searchterm', 'openaiObref', 'funnelVisitId', 'tcpaTimestamp',
-        'sms_consent_timestamp', 'smsOptInTimestamp'] as const
+        'sms_consent_timestamp', 'smsOptInTimestamp', 'qualificationVersion', 'serviceArea', 'propertyType',
+        'listingStatus', 'offerReadiness', 'priceTradeoff', 'sellerReason', 'bestTimeToSpeak', 'metaVariant'] as const
       if (textFields.some((field) => body[field] != null && typeof body[field] !== 'string')) {
         return optionsFailure('Please check the form details and try again.', 400)
       }
@@ -727,13 +799,21 @@ export async function POST(request: NextRequest) {
         body.openaiObref.trim() !== body.openaiObref || /[\u0000-\u001f\u007f]/.test(body.openaiObref))) {
         errors.push('Invalid browser attribution reference')
       }
-      if (body.sellerAuthority !== 'owner' && body.sellerAuthority !== 'authorized_representative') {
+      if (!isStrictMetaFlow && body.sellerAuthority !== 'owner' && body.sellerAuthority !== 'authorized_representative') {
         errors.push('Please confirm your relationship to the property')
       }
-      if (!['WA', 'ID'].includes(body.state?.trim().toUpperCase() || '')) {
+      if (!isStrictMetaFlow && !['WA', 'ID'].includes(body.state?.trim().toUpperCase() || '')) {
         errors.push('Please include the property state: WA or ID')
       }
       if (!body.address || body.address.trim().length < 6) errors.push('Complete property address required')
+      if (isStrictMetaFlow) {
+        const qualification = validateMetaSellerQualification(body)
+        if (qualification.ok) strictMetaQualification = qualification.value
+        else errors.push(qualification.error)
+        if (body.metaVariant !== 'repairs' && body.metaVariant !== 'estate' && body.metaVariant !== 'direct') {
+          errors.push('Valid landing-page variant required')
+        }
+      }
     }
     if (!body.address || body.address.trim().length < 3) errors.push('Address required')
     if (!body.firstName?.trim()) errors.push('First name required')
@@ -774,16 +854,18 @@ export async function POST(request: NextRequest) {
         .filter(([, value]) => typeof value === 'string' && value.length > 0)) : submittedAdFields),
     }, isOptionsFlow)
 
+    const metaArea = strictMetaQualification ? metaSellerServiceArea(strictMetaQualification.serviceArea) : null
+
     // Build lead object
     const cleanText = isOptionsFlow ? plainText : sanitize
     const lead = {
       address: cleanText(body.address),
-      city: cleanText(body.city || ''),
-      state: isOptionsFlow ? body.state!.trim().toUpperCase() : sanitize(body.state || 'WA'),
+      city: isStrictMetaFlow ? metaArea?.city || '' : cleanText(body.city || ''),
+      state: isStrictMetaFlow ? metaArea?.state || '' : isOptionsFlow ? body.state!.trim().toUpperCase() : sanitize(body.state || 'WA'),
       zip: cleanText(body.zip || ''),
       message: cleanText((body.message || '').slice(0, 5000)),
-      condition: cleanText(body.condition || 'Not provided'),
-      timeline: cleanText(body.timeline || 'Not provided'),
+      condition: strictMetaQualification?.condition || cleanText(body.condition || 'Not provided'),
+      timeline: strictMetaQualification?.timeline || cleanText(body.timeline || 'Not provided'),
       firstName: cleanText(body.firstName),
       lastName: cleanText(body.lastName || ''),
       phone: body.phone.replace(/\D/g, '').substring(0, 11),
@@ -797,7 +879,7 @@ export async function POST(request: NextRequest) {
       smsOptIn: smsConsent,
       smsOptInTimestamp: smsConsentTimestamp,
       source: cleanText(body.source || 'website'),
-      landingPage: cleanText(body.landingPage || '/'),
+      landingPage: isStrictMetaFlow ? '/sell/offer-check' : cleanText(body.landingPage || '/'),
       utmSource: cleanText(body.utmSource || ''),
       utmMedium: cleanText(body.utmMedium || ''),
       utmCampaign: cleanText(body.utmCampaign || ''),
@@ -807,12 +889,21 @@ export async function POST(request: NextRequest) {
       adAttribution,
       submittedAt,
       ...(isOptionsFlow ? {
-        primaryConstraint: cleanText(body.primaryConstraint || 'Not provided'),
+        primaryConstraint: strictMetaQualification
+          ? metaSellerQualificationSummary(strictMetaQualification)
+          : cleanText(body.primaryConstraint || 'Not provided'),
         submissionFlow: DOMINION_OPTIONS_FLOW,
         submissionId: body.submissionId!.toLowerCase(),
         funnelVisitId: body.funnelVisitId?.toLowerCase() || '',
         openaiObref: body.openaiObref || '',
-        sellerAuthority: body.sellerAuthority,
+        sellerAuthority: strictMetaQualification?.sellerAuthority || body.sellerAuthority,
+        ...(isStrictMetaFlow ? {
+          qualificationVersion: META_SELLER_QUALIFICATION_VERSION,
+          metaVariant: body.metaVariant,
+          followUpTier: metaSellerFollowUpTier(strictMetaQualification!),
+          followUpLabel: META_SELLER_FOLLOWUP_LABELS[metaSellerFollowUpTier(strictMetaQualification!)],
+          metaSellerAssessment: strictMetaQualification,
+        } : {}),
       } : {}),
     }
 
@@ -833,9 +924,25 @@ export async function POST(request: NextRequest) {
     if (isOptionsFlow) {
       // QA marks only suppress ad measurement. All validation and intake protections stay intact.
       const internalQa = isSellerMeasurementQa(body)
+      const metaInput: MetaLeadInput = {
+        submissionId: body.submissionId!, occurredAt: lead.submittedAt, internalQa,
+        host: request.headers.get('host') || '',
+        choice: body.metaMeasurement && typeof body.metaMeasurement === 'object' && !Array.isArray(body.metaMeasurement)
+          ? body.metaMeasurement : undefined,
+        globalPrivacyControl: request.headers.get('sec-gpc') === '1' || request.headers.get('dnt') === '1',
+        ip, userAgent: request.headers.get('user-agent') || '',
+      }
+      const metaConfig = isStrictMetaFlow ? metaMeasurementConfig(metaInput) : undefined
       let receipt
       try {
-        receipt = await withOptionsTimeout(recordDominionOptionsLeadSubmission(controlInput, body.submissionId!, { internalQa }),
+        receipt = await withOptionsTimeout(recordDominionOptionsLeadSubmission(controlInput, body.submissionId!, { internalQa,
+          ...(isStrictMetaFlow ? {
+            metaSellerAssessment: { ...strictMetaQualification!, tier: metaSellerFollowUpTier(strictMetaQualification!), humanQualified: false },
+            metaMeasurement: { consent: hasMetaMeasurementPermission(metaInput.choice) && !metaInput.globalPrivacyControl,
+              consentVersion: META_MEASUREMENT_CONSENT_VERSION },
+            metaConversion: metaConfig?.skipped || { status: 'pending' as const, measurementMode: metaConfig?.mode || 'disabled', eventId: metaConfig!.eventId! },
+          } : {}),
+        }),
           5000, 'seller-options receipt')
       } catch (error) {
         if (error instanceof DominionOptionsSubmissionConflictError) {
@@ -852,10 +959,9 @@ export async function POST(request: NextRequest) {
         const receiptId = String(receipt.record.id)
         const funnelVisitId = lead.funnelVisitId
         const submissionId = lead.submissionId!
-        const deliveryTasks: Array<Promise<DominionDeliveryOutcome>> = [
-          withOptionsTimeout(sendEmailNotification(lead), 5000, 'options email notification'),
-          withOptionsTimeout(forwardToLazarus(lead), 5000, 'options lazarus forward'),
-          withOptionsTimeout(reportAndRecordOpenAIConversion({
+        const conversionTask: Promise<OpenAIConversionOutcome> = isStrictMetaFlow
+          ? Promise.resolve({ status: 'skipped', referenceId: 'not_openai_campaign', measurementMode: 'disabled' })
+          : withOptionsTimeout(reportAndRecordOpenAIConversion({
             internalQa,
             submissionId,
             funnelVisitId,
@@ -864,27 +970,42 @@ export async function POST(request: NextRequest) {
             oppref: lead.adAttribution.oppref,
             obref: lead.openaiObref,
             adAttribution: lead.adAttribution,
-          }), 5000, 'OpenAI lead conversion'),
+          }), 5000, 'OpenAI lead conversion')
+        const deliveryTasks: Array<Promise<DominionDeliveryOutcome>> = [
+          withOptionsTimeout(sendEmailNotification(lead), 5000, 'options email notification'),
+          withOptionsTimeout(forwardToLazarus(lead), 5000, 'options lazarus forward'),
+          conversionTask,
         ]
-        if (funnelVisitId) {
+        if (funnelVisitId && !(isStrictMetaFlow && internalQa)) {
           deliveryTasks.push(
-            withOptionsTimeout(recordOptionsFunnelMilestone({
-              eventId: submissionId,
-              visitId: funnelVisitId,
-              eventType: 'lead_accepted',
-              detail: internalQa ? 'internal_qa' : 'unmarked',
-              occurredAt: lead.submittedAt,
-              leadReceiptId: receiptId,
-              adAttribution: lead.adAttribution,
-            }).then(() => ({ status: 'provider_accepted' as const })), 3000, 'seller funnel lead acceptance'),
+            withOptionsTimeout((isStrictMetaFlow
+              ? recordMetaSellerLeadAccepted({
+                eventId: submissionId,
+                visitId: funnelVisitId,
+                occurredAt: lead.submittedAt,
+                leadReceiptId: receiptId,
+                variant: body.metaVariant === 'estate' || body.metaVariant === 'direct' ? body.metaVariant : 'repairs',
+                adAttribution: lead.adAttribution,
+              })
+              : recordOptionsFunnelMilestone({
+                eventId: submissionId,
+                visitId: funnelVisitId,
+                eventType: 'lead_accepted',
+                detail: internalQa ? 'internal_qa' : 'unmarked',
+                occurredAt: lead.submittedAt,
+                leadReceiptId: receiptId,
+                adAttribution: lead.adAttribution,
+              })).then(() => ({ status: 'provider_accepted' as const })), 3000, 'seller funnel lead acceptance'),
           )
         }
+        const metaDeliveryIndex = deliveryTasks.length
+        if (isStrictMetaFlow) deliveryTasks.push(reportMetaLead(metaInput))
         const deliveries = await Promise.allSettled(deliveryTasks)
         const delivery: DominionDeliveryMap = {
           email: settledDelivery(deliveries[0]), lazarus: settledDelivery(deliveries[1]),
           teamSms: { status: 'skipped' }, sentinel: { status: 'skipped' }, mailchimp: { status: 'skipped' },
         }
-        if (funnelVisitId && deliveries[3]?.status === 'rejected') {
+        if (funnelVisitId && !(isStrictMetaFlow && internalQa) && deliveries[3]?.status === 'rejected') {
           console.error('[SELLER FUNNEL ACCEPTANCE EVENT ERROR]', { receiptId })
         }
         if (deliveries[2]?.status === 'fulfilled') {
@@ -905,7 +1026,12 @@ export async function POST(request: NextRequest) {
             : { status: 'outcome_unknown' as const, referenceId: 'task_timeout_unknown',
               measurementMode: internalQa ? 'qa' as const :
                 process.env.OPENAI_ADS_CONVERSIONS_VALIDATE_ONLY === 'true' ? 'validation' as const : 'production' as const }
-          await withOptionsTimeout(recordDominionOptionsDelivery(receipt, delivery, conversion), 3000, 'delivery outcome record')
+          const metaResult = isStrictMetaFlow ? deliveries[metaDeliveryIndex] : undefined
+          const metaConversion: MetaConversionOutcome | undefined = metaResult?.status === 'fulfilled'
+            ? metaResult.value as MetaConversionOutcome
+            : isStrictMetaFlow ? { status: 'outcome_unknown', referenceId: 'task_unknown',
+              measurementMode: metaConfig?.mode || 'disabled', eventId: metaConfig?.eventId || metaConfig?.skipped?.eventId || '' } : undefined
+          await withOptionsTimeout(recordDominionOptionsDelivery(receipt, delivery, conversion, metaConversion), 3000, 'delivery outcome record')
         } catch {
           // The initial durable pending envelope remains a reconciliation item.
           deliveryStatus = 'needs_review'
@@ -917,12 +1043,25 @@ export async function POST(request: NextRequest) {
       }
 
       // Saved inquiry is not a delivered notification or a qualified seller.
-      return NextResponse.json({ success: true, accepted: true, controlRecorded: true,
+      const acceptedResponse = NextResponse.json({ success: true, accepted: true, controlRecorded: true,
         receiptId: String(receipt.record.id), duplicate: receipt.duplicate, deliveryStatus,
+        metaBrowserEligible: isStrictMetaFlow && !receipt.duplicate && !metaConfig?.skipped && metaConfig?.mode === 'production',
+        ...(isStrictMetaFlow ? { metaEventId: metaConfig?.eventId || metaConfig?.skipped?.eventId } : {}),
         openaiBrowserEligible: !receipt.duplicate && !internalQa &&
+          !isStrictMetaFlow &&
           receipt.record.optionsReceipt?.measurementClass !== 'internal_qa' &&
           process.env.OPENAI_ADS_CONVERSIONS_VALIDATE_ONLY !== 'true',
         message: 'Your inquiry has been recorded.' })
+      // The clean confirmation URL has no fbclid. Preserve only the consented
+      // formatted click cookie so browser and server can match the same ad click.
+      const fbc = isStrictMetaFlow && !receipt.duplicate && !metaConfig?.skipped
+        ? normalizeMetaClickCookie(metaInput.choice?.fbc) : undefined
+      const existingFbc = request.headers.get('cookie')?.split(';').map((value) => value.trim())
+        .find((value) => value.startsWith('_fbc='))?.slice(5)
+      if (fbc && fbc !== existingFbc) {
+        acceptedResponse.headers.append('Set-Cookie', `_fbc=${fbc}; Domain=dominionhomedeals.com; Path=/; Max-Age=7776000; Secure; SameSite=Lax`)
+      }
+      return acceptedResponse
     }
 
     // Log non-PII summary (visible in Vercel logs)
