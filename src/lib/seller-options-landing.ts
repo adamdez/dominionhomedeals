@@ -33,6 +33,24 @@ const GENERAL: SellerOptionsLanding = {
 };
 
 const AD_LANDINGS: Record<string, SellerOptionsLanding> = {
+  deadline_feasibility_v1: {
+    key: "deadline_feasibility_v1",
+    lane: "urgent",
+    headline: "Can selling your house fit your deadline?",
+    introduction: "Tell us about the house and the date you're working toward. We'll discuss whether an as-is sale could fit, what needs checking and what could delay closing.",
+    focusTitle: "Start with the date that matters",
+    focusCopy: "You don't need to repair the house before we talk. A conversation helps us understand the property and whether your timing could work. It isn't a promise of an offer or a closing date.",
+    formIntro: "The house and your timing. Then how to reach you.",
+    actionLabel: "Send the property details",
+    stickyLabel: "Discuss my deadline",
+    prioritiesHeading: "What we'll work through",
+    priorities: [
+      { title: "Your date", copy: "What needs to happen by then and whether the date is fixed." },
+      { title: "The property", copy: "Its condition, access and who needs to agree to a sale." },
+      { title: "The closing requirements", copy: "Title work, agreed terms and anything else that could affect timing." },
+    ],
+    pathOrder: [2, 0, 1, 3],
+  },
   urgent_fast_sale: {
     key: "urgent_fast_sale",
     lane: "urgent",

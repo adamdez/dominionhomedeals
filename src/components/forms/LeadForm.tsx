@@ -64,7 +64,8 @@ const initialFormData: FormData = {
   zip: '',
 }
 
-const stages: Stage[] = ['address', 'name', 'phone', 'details']
+const standardStages: Stage[] = ['address', 'name', 'phone', 'details']
+const deadlineStages: Stage[] = ['address', 'details']
 
 const conditionOptions = [
   'Great shape',
@@ -88,6 +89,14 @@ const primaryConstraintOptions = [
   'Compare listing with selling as-is',
   'Something else',
 ] as const
+
+function SmsDisclosure() {
+  return <div className="mt-4 rounded-2xl border border-stone-200 bg-white px-4 py-3 text-[11px] leading-relaxed text-ink-500">
+    {SMS_CTA_DISCLOSURE}{' '}
+    <Link href="/privacy#sms-terms" className="font-semibold underline hover:text-ink-700">Privacy Policy</Link>{' '}
+    and{' '}<Link href="/terms" className="font-semibold underline hover:text-ink-700">Terms</Link>.
+  </div>
+}
 
 function SmsConsentCheckbox({
   checked,
@@ -189,6 +198,7 @@ interface LeadFormProps {
   submitLabel?: string
   requirePropertyState?: boolean
   submissionFlow?: 'seller_options_v1'
+  deadlineFocused?: boolean
 }
 
 interface OptionsReceipt {
@@ -217,8 +227,11 @@ export function LeadForm({
   submitLabel = 'Get My Cash Offer',
   requirePropertyState = false,
   submissionFlow,
+  deadlineFocused = false,
 }: LeadFormProps = {}) {
   const isSellerOptions = submissionFlow === 'seller_options_v1'
+  const isDeadline = isSellerOptions && deadlineFocused
+  const stages = isDeadline ? deadlineStages : standardStages
   const [stage, setStage] = useState<Stage>('address')
   const [formData, setFormData] = useState<FormData>(() => (
     isSellerOptions ? { ...initialFormData, state: '' } : initialFormData
@@ -229,12 +242,17 @@ export function LeadForm({
   const submissionLock = useRef(false)
   const optionsAttempt = useRef<{ fingerprint: string; body: string; submissionId: string } | null>(null)
   const receiptElement = useRef<HTMLDivElement>(null)
+  const stepHeading = useRef<HTMLHeadingElement>(null)
   const formFocused = useRef(false)
   const inputStartedStages = useRef(new Set<Stage>())
 
   useEffect(() => {
     if (optionsReceipt) receiptElement.current?.focus()
   }, [optionsReceipt])
+
+  useEffect(() => {
+    if (isDeadline && stage === 'details') stepHeading.current?.focus()
+  }, [isDeadline, stage])
 
   useEffect(() => {
     if (typeof window === 'undefined') return
@@ -292,6 +310,7 @@ export function LeadForm({
         return formData.phone.replace(/\D/g, '').length >= 10
       case 'details':
         return (
+          (!isDeadline || (formData.fullName.trim().length >= 2 && formData.phone.replace(/\D/g, '').length >= 10)) &&
           (!isSellerOptions || hasSellerAuthority(formData.sellerAuthority)) && (
             !formData.email.trim() ||
             /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i.test(formData.email)
@@ -479,7 +498,8 @@ export function LeadForm({
             utmCampaign: formData.utmCampaign,
             propertyCity: formData.city || inferredAddressParts.city,
             propertyState,
-            sellerTimeline: formData.timeline || 'Not provided',
+            // The exact deadline belongs in the protected inquiry, not analytics.
+            sellerTimeline: isDeadline ? 'Not provided' : formData.timeline || 'Not provided',
             propertyCondition: formData.condition || 'Not provided',
           })
           if (isSellerOptions && optionsSubmissionId && data.openaiBrowserEligible === true) {
@@ -532,17 +552,16 @@ export function LeadForm({
       >
         <p className="text-sm font-semibold text-forest-600">Inquiry received</p>
         <h2 id="seller-options-receipt-heading" className="mt-3 font-display text-3xl text-ink-600">
-          Thanks for telling us about your house.
+          {isDeadline ? 'Your inquiry has been recorded.' : 'Thanks for telling us about your house.'}
         </h2>
         <p className="mt-4 leading-relaxed text-ink-400">
           {optionsReceipt.duplicate
             ? 'We already have this inquiry. You do not need to submit it again.'
-            : 'Your inquiry has been recorded.'}
-          {' '}The next step is a conversation about the house, what matters to you,
-          and which selling paths may fit.
+            : isDeadline ? '' : 'Your inquiry has been recorded.'}
+          {' '}{isDeadline ? 'The next step is a conversation about the house and your timing.' : 'The next step is a conversation about the house, what matters to you, and which selling paths may fit.'}
         </p>
         <p className="mt-4 text-sm leading-relaxed text-ink-400">
-          This receipt confirms your inquiry, not an offer or a confirmed sale.
+          This receipt confirms your inquiry, not an offer or {isDeadline ? 'a confirmed closing date.' : 'a confirmed sale.'}
           There is no obligation to accept an offer.
         </p>
         <p className="mt-5 break-all text-xs text-ink-400">Reference: {optionsReceipt.receiptId}</p>
@@ -559,7 +578,8 @@ export function LeadForm({
         {intro}
       </p>
 
-      <div className="mt-6 flex items-center justify-center gap-2.5">
+      {isDeadline ? <h2 ref={stepHeading} tabIndex={-1} className="mt-5 font-display text-2xl text-ink-600">{stage === 'address' ? '1. The house and your timing' : '2. How to reach you'}</h2> : null}
+      <div aria-label={`Step ${progressIndex + 1} of ${stages.length}`} className="mt-6 flex items-center justify-center gap-2.5">
         {stages.map((item, index) => (
           <span
             key={item}
@@ -570,26 +590,16 @@ export function LeadForm({
         ))}
       </div>
 
-      <div className="mt-6 rounded-2xl bg-stone-50 px-4 py-3 text-sm text-ink-400">
+      {!isDeadline ? <div className="mt-6 rounded-2xl bg-stone-50 px-4 py-3 text-sm text-ink-400">
         {stage === 'address' && 'What is the property address?'}
         {stage === 'name' && `Property: ${formData.address}`}
         {stage === 'phone' && `Thanks, ${formData.fullName}. What is the best phone number?`}
         {stage === 'details' && (isSellerOptions
           ? 'Tell us your role with the property. The remaining details are optional.'
           : 'Optional details help us review the property, but your phone number is enough to get started.')}
-      </div>
+      </div> : null}
 
-      <div className="mt-4 rounded-2xl border border-stone-200 bg-white px-4 py-3 text-[11px] leading-relaxed text-ink-500">
-        {SMS_CTA_DISCLOSURE}{' '}
-        <Link href="/privacy#sms-terms" className="font-semibold underline hover:text-ink-700">
-          Privacy Policy
-        </Link>{' '}
-        and{' '}
-        <Link href="/terms" className="font-semibold underline hover:text-ink-700">
-          Terms
-        </Link>
-        .
-      </div>
+      {!isDeadline ? <SmsDisclosure /> : null}
 
       <form
         onSubmit={handleSubmit}
@@ -629,10 +639,21 @@ export function LeadForm({
                 Include the city and state, such as Spokane, WA or Coeur d&apos;Alene, ID.
               </p>
             ) : null}
+            {isDeadline ? <div className="mt-6">
+              <label htmlFor="deadline" className="mb-2 block text-sm font-semibold text-ink-500">Is there a date you need the sale completed by? <span className="font-normal">(optional)</span></label>
+              <input id="deadline" name="deadline" type="date"
+                value={/^\d{4}-\d{2}-\d{2}$/.test(formData.timeline) ? formData.timeline : ''}
+                onChange={(event) => updateField('timeline', event.target.value)}
+                aria-describedby="deadline-hint"
+                className="w-full min-w-0 rounded-2xl border border-stone-200 bg-stone-50 px-4 py-4 text-base text-ink-600 focus:border-forest-400 focus:ring-forest-400" />
+              <button type="button" aria-pressed={formData.timeline === 'No firm date'} onClick={() => updateField('timeline', formData.timeline === 'No firm date' ? '' : 'No firm date')}
+                className={`mt-3 w-full rounded-2xl border px-4 py-3 text-left text-sm ${formData.timeline === 'No firm date' ? 'border-forest-500 bg-forest-50 text-forest-700' : 'border-stone-200 text-ink-500'}`}>I don&apos;t have a firm date</button>
+              <p id="deadline-hint" className="mt-2 text-xs leading-relaxed text-ink-500">You can leave this blank. A requested date is not a confirmed closing date.</p>
+            </div> : null}
           </div>
         )}
 
-        {stage === 'name' && (
+        {(stage === 'name' || (isDeadline && stage === 'details')) && (
           <div>
             <label htmlFor="fullName" className="mb-2 block text-sm font-semibold text-ink-500">
               What&apos;s your name?
@@ -654,7 +675,7 @@ export function LeadForm({
           </div>
         )}
 
-        {stage === 'phone' && (
+        {(stage === 'phone' || (isDeadline && stage === 'details')) && (
           <div className="space-y-3">
             <div>
               <label htmlFor="phone" className="mb-2 block text-sm font-semibold text-ink-500">
@@ -675,10 +696,10 @@ export function LeadForm({
                 className="w-full rounded-2xl border border-stone-200 bg-stone-50 px-4 py-4 text-base text-ink-600 placeholder:text-stone-300 transition-colors focus:border-forest-400 focus:ring-forest-400"
               />
             </div>
-            <SmsConsentCheckbox
+            {!isDeadline ? <SmsConsentCheckbox
               checked={formData.smsConsent}
               onChange={(checked) => updateField('smsConsent', checked)}
-            />
+            /> : null}
           </div>
         )}
 
@@ -733,12 +754,13 @@ export function LeadForm({
               />
             </div>
 
+            {isDeadline ? <SmsDisclosure /> : null}
             <SmsConsentCheckbox
               checked={formData.smsConsent}
               onChange={(checked) => updateField('smsConsent', checked)}
             />
 
-            {isSellerOptions ? <div>
+            {isSellerOptions && !isDeadline ? <div>
               <p className="text-sm font-semibold text-ink-500">
                 Optional: what are you mainly trying to solve?
               </p>
@@ -765,7 +787,7 @@ export function LeadForm({
               </div>
             </div> : null}
 
-            <div>
+            {!isDeadline ? <div>
               <p className="text-sm font-semibold text-ink-500">
                 Optional: what condition is the property in?
               </p>
@@ -787,9 +809,9 @@ export function LeadForm({
                   </button>
                 ))}
               </div>
-            </div>
+            </div> : null}
 
-            <div>
+            {!isDeadline ? <div>
               <p className="text-sm font-semibold text-ink-500">
                 Optional: when do you want to sell?
               </p>
@@ -811,7 +833,7 @@ export function LeadForm({
                   </button>
                 ))}
               </div>
-            </div>
+            </div> : null}
           </div>
         )}
 
@@ -844,7 +866,7 @@ export function LeadForm({
           disabled={!canContinueCurrentStage() || isSubmitting}
           className="btn-primary w-full rounded-2xl px-5 py-4 text-base disabled:cursor-not-allowed"
         >
-          {isSubmitting ? 'Submitting...' : stage === 'address' || stage === 'details' ? submitLabel : 'Continue'}
+          {isSubmitting ? 'Submitting...' : isDeadline && stage === 'address' ? 'Continue to contact details' : stage === 'address' || stage === 'details' ? submitLabel : 'Continue'}
         </button>
 
         {stage !== 'address' ? (

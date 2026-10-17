@@ -100,7 +100,7 @@ function readCurrentSellerAttribution(): Record<string, string> {
   const revision = typeof document.getElementById === "function"
     ? document.getElementById("get-options")?.dataset.sellerRevision : undefined;
   delete attribution.landing_revision;
-  if (revision === "options_handoff_v1" || revision === "original") attribution.landing_revision = revision;
+  if (revision === "options_handoff_v1" || revision === "deadline_feasibility_v1" || revision === "original") attribution.landing_revision = revision;
   return attribution;
 }
 

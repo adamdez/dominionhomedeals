@@ -127,6 +127,7 @@ export default async function SellerOptionsPage({
   // Render the matching message on the server for people and ad crawlers alike.
   // The existing ad URLs already carry the four approved utm_content values.
   const landing = getSellerOptionsLanding(await searchParams);
+  const isDeadline = landing.key === "deadline_feasibility_v1";
   const priorities = landing.priorities.length ? landing.priorities : PRIORITIES;
   const paths = landing.pathOrder.map((index) => PATHS[index]);
   const phoneClean = SITE.phone.replace(/\D/g, "");
@@ -150,7 +151,7 @@ export default async function SellerOptionsPage({
           <div className="grid items-start gap-10 lg:grid-cols-[1.05fr_.95fr] lg:gap-14">
             <div className="pt-2">
               <FadeIn>
-                <div className="trust-badge mb-5">Spokane &amp; Coeur d&apos;Alene seller options</div>
+                <div className="trust-badge mb-5">Spokane &amp; Coeur d&apos;Alene {isDeadline ? "homeowners" : "seller options"}</div>
               </FadeIn>
               <FadeIn delay={80}>
                 <h1 className="font-display text-[2.5rem] leading-[1.08] text-ink-700 text-balance sm:text-[3rem] lg:text-[3.5rem]">
@@ -188,16 +189,17 @@ export default async function SellerOptionsPage({
                   <h2 className="font-display text-xl text-ink-600">{landing.focusTitle}</h2>
                   <p className="mt-2 text-sm leading-relaxed text-ink-400">{landing.focusCopy}</p>
                   <div className="mt-4 flex flex-wrap items-center gap-4">
+                    {isDeadline ? <a href={`tel:${phoneClean}`} className="btn-primary">Talk about my deadline</a> : null}
                     <a href="#get-options" className="text-sm font-semibold text-forest-600 underline underline-offset-4">
                       {landing.actionLabel} →
                     </a>
-                    <a href="#compare" className="text-sm font-semibold text-forest-600 underline underline-offset-4">
+                    {!isDeadline ? <a href="#compare" className="text-sm font-semibold text-forest-600 underline underline-offset-4">
                       See the selling paths →
-                    </a>
+                    </a> : null}
                   </div>
                 </div>}
                 <div className="mt-5 flex flex-wrap items-center gap-3">
-                  <a href={`tel:${phoneClean}`} className="btn-secondary">
+                  <a href={`tel:${phoneClean}`} className={isDeadline ? "text-sm font-semibold text-forest-600 underline underline-offset-4" : "btn-secondary"}>
                     Call {SITE.phone}
                   </a>
                 </div>
@@ -211,7 +213,7 @@ export default async function SellerOptionsPage({
 
             <FadeIn delay={200} direction="left">
               <div id="get-options" data-seller-measurement="journey_v2"
-                data-seller-revision={landing.key === "options_net_tradeoffs" ? "options_handoff_v1" : "original"}
+                data-seller-revision={isDeadline ? "deadline_feasibility_v1" : landing.key === "options_net_tradeoffs" ? "options_handoff_v1" : "original"}
                 className="scroll-mt-24">
                 <LeadForm
                   intro={landing.formIntro}
@@ -219,6 +221,7 @@ export default async function SellerOptionsPage({
                   submitLabel={landing.actionLabel}
                   submissionFlow="seller_options_v1"
                   requirePropertyState
+                  deadlineFocused={isDeadline}
                 />
               </div>
             </FadeIn>
@@ -226,7 +229,7 @@ export default async function SellerOptionsPage({
         </div>
       </section>
 
-      <section aria-labelledby="conversation-heading" className="border-y border-stone-200 bg-stone-50 py-12">
+      {!isDeadline ? <section aria-labelledby="conversation-heading" className="border-y border-stone-200 bg-stone-50 py-12">
         <div className="mx-auto max-w-6xl px-5 sm:px-6 lg:px-8">
           <FadeIn>
             <h2 id="conversation-heading" className="font-display text-3xl text-ink-600 sm:text-4xl">
@@ -244,15 +247,16 @@ export default async function SellerOptionsPage({
             </ol>
           </FadeIn>
         </div>
-      </section>
+      </section> : null}
 
       <section className="border-y border-stone-200 bg-white py-14">
         <div className="mx-auto max-w-6xl px-5 sm:px-6 lg:px-8">
           <FadeIn>
             <p className="text-xs font-bold uppercase tracking-widest text-forest-500">Start with what matters to you</p>
-            <h2 className="mt-2 max-w-3xl font-display text-display text-ink-600 text-balance">
+            <h2 id={isDeadline ? "conversation-heading" : undefined} className="mt-2 max-w-3xl scroll-mt-24 font-display text-display text-ink-600 text-balance">
               {landing.prioritiesHeading}
             </h2>
+            {isDeadline ? <p className="mt-4 max-w-3xl leading-relaxed text-ink-500">A direct offer may be lower than a price you could achieve by listing. Compare what you would keep, the work involved and the conditions that must be met before closing.</p> : null}
           </FadeIn>
           <div className="mt-10 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
             {priorities.map((item, index) => (
