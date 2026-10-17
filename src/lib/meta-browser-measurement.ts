@@ -4,6 +4,35 @@ import { browserMetaPrivacyBlocked, hasMetaMeasurementPermission, isMetaProducti
 import { isInternalQaSession } from '@/lib/seller-funnel-tracking';
 
 const RECEIPT_EVENT_KEY = 'dominion_meta_accepted_event';
+const FEEDBACK_PRIVACY_KEY = 'dominion_meta_feedback_privacy';
+type FeedbackPrivacyReceipt = { submissionId:string; token:string; expiresAt:number };
+let pendingFeedbackPrivacy: FeedbackPrivacyReceipt[]=[];
+export function rememberMetaFeedbackReceipt(submissionId:string, token:string, allowed:boolean) {
+  if (!allowed || !/^[0-9a-f-]{36}$/i.test(submissionId) || !/^[a-f0-9]{64}$/.test(token)) return;
+  const receipt={submissionId,token,expiresAt:Date.now()+90*86400000};
+  pendingFeedbackPrivacy=[...pendingFeedbackPrivacy.filter(v=>v.submissionId!==submissionId),receipt];
+  try {
+    const previous = JSON.parse(localStorage.getItem(FEEDBACK_PRIVACY_KEY)||'[]');
+    const receipts:FeedbackPrivacyReceipt[] = Array.isArray(previous) ? previous.filter(v=>v.expiresAt>Date.now() && v.submissionId!==submissionId) : [];
+    localStorage.setItem(FEEDBACK_PRIVACY_KEY,JSON.stringify([...receipts,receipt]));
+  } catch { /* The inline receipt can still use the in-memory capability. */ }
+}
+export async function blockMetaFeedbackMeasurement() {
+  try { localStorage.setItem('dominion_meta_opt_out','1'); } catch {}
+  window.fbq?.('consent','revoke');
+  let receipts:FeedbackPrivacyReceipt[] = pendingFeedbackPrivacy;
+  try { const saved=JSON.parse(localStorage.getItem(FEEDBACK_PRIVACY_KEY)||'[]'); if(Array.isArray(saved)) receipts=[...saved,...receipts]; } catch {}
+  receipts=[...new Map(receipts.filter(v=>v.expiresAt>Date.now()).map(v=>[v.submissionId,v])).values()];
+  if (!receipts.length) return { browserBlocked:true, requestsBlocked:0 };
+  let requestsBlocked=0;
+  for (const receipt of receipts) {
+    const response=await fetch('/api/meta-measurement/revoke',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({submissionId:receipt.submissionId,token:receipt.token})});
+    if (!response.ok || (await response.json()).blocked!==true) throw new Error('Browser measurement is blocked. Could not confirm the request privacy update. Please retry.');
+    requestsBlocked++;
+  }
+  return {browserBlocked:true,requestsBlocked};
+}
 type PixelQueue = ((...args: unknown[]) => void) & { callMethod?: (...args: unknown[]) => void;
   queue: unknown[][]; push: PixelQueue; loaded: boolean; version: string };
 declare global { interface Window { fbq?: PixelQueue; _fbq?: PixelQueue; } }

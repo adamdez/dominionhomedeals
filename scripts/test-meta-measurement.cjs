@@ -20,7 +20,7 @@ function load(file, mocks = {}, globals = {}) {
 const policy = load('src/lib/meta-measurement-policy.ts');
 const sourceUrl = 'https://www.dominionhomedeals.com/sell/offer-check/received';
 const input = { submissionId: '00000000-0000-4000-8000-000000000001', occurredAt: '2026-10-14T12:00:00Z',
-  host: 'www.dominionhomedeals.com', choice: { consent: true, consentVersion: 'meta_measurement_v1' },
+  host: 'www.dominionhomedeals.com', choice: { consent: true, consentVersion: 'meta_measurement_v2' },
   ip: '192.0.2.4', userAgent: 'Test browser' };
 const env = { META_ADS_MEASUREMENT_MODE: 'production', META_ADS_PIXEL_ID: '1234567890',
   META_ADS_CONVERSIONS_ACCESS_TOKEN: 'fake-unit-test-only', META_GRAPH_API_VERSION: 'v25.0', VERCEL_ENV: 'production' };

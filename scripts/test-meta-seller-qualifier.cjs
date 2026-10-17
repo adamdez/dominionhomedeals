@@ -140,16 +140,18 @@ test('the lead API invokes server qualification and keeps Meta requests out of t
   assert.match(route, /!isStrictMetaFlow &&/);
 });
 
-function strictRouteHarness() {
+function strictRouteHarness({ duplicate = false, withdrawal = true } = {}) {
   const recorded = [];
   const metaEvents = [];
   let openAiCalls = 0;
+  let withdrawals = 0;
   const api = load('src/app/api/leads/route.ts', {
     'next/server': { NextResponse: { json: (data, init) => Response.json(data, init) } },
     '@/lib/constants': { SITE: { url: 'https://example.test', phone: '509-822-5460' } },
     '@/lib/mailchimp': { syncSellerLeadToMailchimp: async () => ({ status: 'skipped' }) },
     '@/lib/seller-measurement-policy': { isSellerMeasurementQa: () => false },
     '@/lib/meta-measurement-policy': { META_MEASUREMENT_CONSENT_VERSION: 'meta_measurement_v1', hasMetaMeasurementPermission: () => false },
+    '@/server/meta-seller-feedback-context': { buildMetaFeedbackContext: () => undefined, withdrawMetaFeedbackPermission: async () => { withdrawals++;return withdrawal; } },
     '@/server/meta-ads-conversions': {
       metaMeasurementConfig: input => ({ skipped: { status: 'skipped', measurementMode: 'disabled',
         eventId: `dh_lead_${input.submissionId}` } }),
@@ -165,7 +167,7 @@ function strictRouteHarness() {
       recordDominionOptionsLeadSubmission: async input => {
         recorded.push(input);
         return {
-          duplicate: false,
+          duplicate,
           record: {
             id: 42,
             optionsReceipt: { delivery: {}, measurementClass: 'unmarked' },
@@ -218,6 +220,7 @@ function strictRouteHarness() {
     recorded,
     metaEvents,
     get openAiCalls() { return openAiCalls; },
+    get withdrawals() { return withdrawals; },
     async post(changes = {}) {
       const response = await api.POST({
         headers: new Headers(),
@@ -298,4 +301,14 @@ test('transport retries reuse the inquiry ID while honoring the latest measureme
   assert.equal(JSON.parse(retry.body).metaMeasurement.consent, false);
   const otherProperty = submission.prepareMetaSellerSubmission(retry, { ...input, address: 'Different House' });
   assert.notEqual(otherProperty.submissionId, first.submissionId);
+});
+test('a saved inquiry retry that withdraws measurement also revokes future outcome permission',async()=>{
+  const h=strictRouteHarness({duplicate:true});
+  const r=await h.post({metaPrivacyToken:'a'.repeat(64),metaMeasurement:{consent:false,consentVersion:'meta_measurement_v2'}});
+  assert.equal(r.status,200);assert.equal(r.data.duplicate,true);assert.equal(h.withdrawals,1);assert.equal(h.metaEvents.length,0);
+});
+test('a failed retry privacy update never claims it was saved and retains the existing inquiry identity',async()=>{
+  const h=strictRouteHarness({duplicate:true,withdrawal:false});
+  const r=await h.post({metaPrivacyToken:'a'.repeat(64),metaMeasurement:{consent:false,consentVersion:'meta_measurement_v2'}});
+  assert.equal(r.status,503);assert.equal(r.data.accepted,true);assert.equal(r.data.receiptId,'42');assert.equal(r.data.metaPrivacyUpdateRequired,true);assert.equal(h.metaEvents.length,0);
 });

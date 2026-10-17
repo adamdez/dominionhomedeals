@@ -1,4 +1,4 @@
-export const META_MEASUREMENT_CONSENT_VERSION = 'meta_measurement_v1';
+export const META_MEASUREMENT_CONSENT_VERSION = 'meta_measurement_v2';
 export const META_MEASUREMENT_PATH = '/sell/offer-check/received';
 export const META_PRODUCTION_HOSTS = ['www.dominionhomedeals.com', 'dominionhomedeals.com'];
 
@@ -22,7 +22,7 @@ export function hasMetaMeasurementPermission(choice: MetaMeasurementChoice | und
 
 export function normalizeMetaCookie(value: unknown): string | undefined {
   // Meta matching cookies only. Arbitrary text and qualification answers never pass.
-  return typeof value === 'string' && /^fb\.\d{1,2}\.\d{10,13}\.[A-Za-z0-9_-]{1,500}$/.test(value)
+  return typeof value === 'string' && /^fb\.[012]\.\d{13}\.[A-Za-z0-9_-]{1,500}$/.test(value)
     ? value : undefined;
 }
 

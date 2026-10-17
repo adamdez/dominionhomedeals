@@ -13,6 +13,7 @@ import { syncSellerLeadToMailchimp } from '@/lib/mailchimp'
 import { reportOpenAILeadCreated, type OpenAIConversionOutcome } from '@/server/openai-ads-conversions'
 import { isSellerMeasurementQa } from '@/lib/seller-measurement-policy'
 import { metaMeasurementConfig, reportMetaLead, type MetaConversionOutcome, type MetaLeadInput } from '@/server/meta-ads-conversions'
+import { buildMetaFeedbackContext, withdrawMetaFeedbackPermission } from '@/server/meta-seller-feedback-context'
 import { hasMetaMeasurementPermission, normalizeMetaClickCookie, META_MEASUREMENT_CONSENT_VERSION, type MetaMeasurementChoice } from '@/lib/meta-measurement-policy'
 import { normalizeSellerFunnelEvent, recordSellerFunnelEvent } from '@/lib/seller-funnel-events'
 import {
@@ -88,6 +89,7 @@ interface LeadPayload {
   contactConsent?: boolean
   metaVariant?: string
   metaMeasurement?: MetaMeasurementChoice
+  metaPrivacyToken?: unknown
 }
 
 /* ------------------------------------------------------------------ */
@@ -940,6 +942,8 @@ export async function POST(request: NextRequest) {
             metaSellerAssessment: { ...strictMetaQualification!, tier: metaSellerFollowUpTier(strictMetaQualification!), humanQualified: false },
             metaMeasurement: { consent: hasMetaMeasurementPermission(metaInput.choice) && !metaInput.globalPrivacyControl,
               consentVersion: META_MEASUREMENT_CONSENT_VERSION },
+            metaFeedback: !metaConfig?.skipped && metaConfig?.mode==='production'
+              ? buildMetaFeedbackContext({choice:metaInput.choice,token:body.metaPrivacyToken,internalQa,globalPrivacyControl:metaInput.globalPrivacyControl===true}) : undefined,
             metaConversion: metaConfig?.skipped || { status: 'pending' as const, measurementMode: metaConfig?.mode || 'disabled', eventId: metaConfig!.eventId! },
           } : {}),
         }),
@@ -952,6 +956,16 @@ export async function POST(request: NextRequest) {
         return optionsFailure(`We could not confirm your submission. Please call or text us at ${SITE.phone}.`, 503)
       }
 
+      // A retry may withdraw permission after an earlier request committed but its
+      // response was lost. Keep the inquiry idempotent while honoring that change.
+      if (isStrictMetaFlow && receipt.duplicate &&
+        (!hasMetaMeasurementPermission(metaInput.choice) || metaInput.globalPrivacyControl) &&
+        typeof body.metaPrivacyToken==='string' && /^[a-f0-9]{64}$/.test(body.metaPrivacyToken)) {
+        const withdrawn=await withdrawMetaFeedbackPermission(body.submissionId!,body.metaPrivacyToken)
+        if(!withdrawn)return NextResponse.json({success:false,accepted:true,controlRecorded:true,
+          receiptId:String(receipt.record.id),duplicate:true,metaPrivacyUpdateRequired:true,
+          error:'Your inquiry is saved. We could not save your updated Meta privacy choice. Please retry.'},{status:503})
+      }
       let deliveryStatus = dominionOptionsDeliveryStatus(receipt.record.optionsReceipt?.delivery)
       if (!receipt.duplicate) {
         // Options inquiries go only to the existing operator email recipients and

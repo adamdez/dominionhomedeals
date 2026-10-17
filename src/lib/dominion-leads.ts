@@ -405,7 +405,7 @@ export function dominionOptionsDeliveryStatus(delivery: DominionDeliveryMap | un
 export async function recordDominionOptionsLeadSubmission(
   input: DominionLeadSubmissionInput,
   submissionId: string,
-  measurement: { internalQa: boolean; metaSellerAssessment?: JsonRecord; metaMeasurement?: { consent: boolean; consentVersion: string }; metaConversion?: DominionDeliveryOutcome & { measurementMode: string; eventId: string } } = { internalQa: false },
+  measurement: { internalQa: boolean; metaSellerAssessment?: JsonRecord; metaMeasurement?: { consent: boolean; consentVersion: string }; metaFeedback?: JsonRecord; metaConversion?: DominionDeliveryOutcome & { measurementMode: string; eventId: string } } = { internalQa: false },
 ): Promise<OptionsSubmissionReceipt> {
   if (!isDominionOptionsSubmissionId(submissionId) || !(measurement.metaSellerAssessment ? sellerAuthority(input.sellerAuthority) : ["owner", "authorized_representative"].includes(input.sellerAuthority || ""))) {
     throw new Error("Invalid seller-options submission identity.");
@@ -430,6 +430,7 @@ export async function recordDominionOptionsLeadSubmission(
     measurementClass: measurement.internalQa ? "internal_qa" : "unmarked",
     ...(measurement.metaSellerAssessment ? { metaSellerAssessment: measurement.metaSellerAssessment } : {}),
     ...(measurement.metaMeasurement ? { metaMeasurement: measurement.metaMeasurement } : {}),
+    ...(measurement.metaFeedback ? { metaFeedback: measurement.metaFeedback } : {}),
     ...(measurement.metaConversion ? { metaConversion: measurement.metaConversion } : {}),
   };
   const content = dominionLeadToContent({ ...base, optionsReceipt });

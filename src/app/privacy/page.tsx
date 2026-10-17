@@ -163,16 +163,19 @@ export default function PrivacyPolicyPage() {
             <h3 id="meta-measurement">Optional Meta Advertising Measurement</h3>
             <p>
               Our property-inquiry form includes a separate optional choice for Meta advertising measurement.
-              If you allow it and your browser privacy settings permit it we share an accepted-request event with Meta.
+              If you allow it and your browser privacy settings permit it we share an accepted-request event and later business steps with Meta.
+              Later steps can include a seller conversation. a qualified inquiry. a signed contract. or a completed sale.
               This can include browser identifiers and your device information such as IP address and browser type.
               Meta may use these events to measure and improve our advertising.
+              We use permitted browser and click identifiers to connect later steps to your request for up to 90 days after you submit.
               We do not include your phone number. email. property address. property answers. or SMS consent in these events.
               Declining measurement does not affect your offer request or permission for Dominion to respond.
               Global Privacy Control and Do Not Track signals block this measurement.
             </p>
             <p>
               You can leave the optional measurement box unchecked.
-              After submitting you can block future Meta measurement using the privacy control on the confirmation page.
+              After submitting you can block future Meta measurement for requests saved in this browser using the privacy control on the confirmation page.
+              If you use another browser or clear browser storage please contact us to block later reporting for an earlier request.
               Blocking future measurement cannot recall an event already received by Meta.
               Meta processes information under its{' '}
               <a href="https://www.facebook.com/privacy/policy/" target="_blank" rel="noopener noreferrer">Privacy Policy</a>.

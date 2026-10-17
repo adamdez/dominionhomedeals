@@ -14,8 +14,9 @@ import {
 } from '@/lib/meta-seller-funnel-tracking'
 import { isInternalQaSession, readSellerAttribution } from '@/lib/seller-funnel-tracking'
 import { META_SELLER_LANDINGS, type MetaSellerVariant } from '@/lib/meta-seller-landing'
-import { openMetaMeasuredReceipt, readMetaMeasurementChoice } from '@/lib/meta-browser-measurement'
-import { prepareMetaSellerSubmission } from '@/lib/meta-seller-submission'
+import { openMetaMeasuredReceipt, readMetaMeasurementChoice, rememberMetaFeedbackReceipt } from '@/lib/meta-browser-measurement'
+import { MetaReceiptTracker } from '@/components/analytics/MetaReceiptTracker'
+import { prepareMetaSellerSubmission, type MetaSellerSubmissionAttempt } from '@/lib/meta-seller-submission'
 import { browserMetaPrivacyBlocked } from '@/lib/meta-measurement-policy'
 type AnswerKey =
   | 'serviceArea'
@@ -215,7 +216,7 @@ export function MetaSellerQualifier({ variant = 'repairs' }: { variant?: MetaSel
   const [measurementConsent, setMeasurementConsent] = useState(false)
   const [privacyBlocked, setPrivacyBlocked] = useState(true)
   const [receipt, setReceipt] = useState<{ receiptId: string; duplicate: boolean } | null>(null)
-  const attempt = useRef<{ fingerprint: string; submissionId: string; body: string } | null>(null)
+  const attempt = useRef<MetaSellerSubmissionAttempt | null>(null)
 
   useEffect(() => {
     setPrivacyBlocked(browserMetaPrivacyBlocked())
@@ -315,6 +316,7 @@ export function MetaSellerQualifier({ variant = 'repairs' }: { variant?: MetaSel
         return
       }
       setReceipt(accepted)
+      rememberMetaFeedbackReceipt(attempt.current.submissionId,attempt.current.privacyToken,measurementConsent && !privacyBlocked)
       if (!accepted.duplicate && data.metaBrowserEligible === true && typeof data.metaEventId === 'string') {
         openMetaMeasuredReceipt(data.metaEventId, measurementConsent)
       }
@@ -337,6 +339,7 @@ export function MetaSellerQualifier({ variant = 'repairs' }: { variant?: MetaSel
         </p>
         <p className="mt-5 break-all text-xs text-ink-400">Reference: {receipt.receiptId}</p>
         <a href={`tel:${SITE.phone.replace(/\D/g, '')}`} className="btn-secondary mt-6">Call {SITE.phone}</a>
+        <MetaReceiptTracker pixelId="" mode="disabled" deployment="" />
       </div>
     )
   }
@@ -465,9 +468,9 @@ export function MetaSellerQualifier({ variant = 'repairs' }: { variant?: MetaSel
             <span>{SMS_CONSENT_TEXT}</span>
           </label>
           <label className="flex items-start gap-3 rounded-2xl border border-stone-200 bg-stone-50 px-4 py-4 text-xs leading-relaxed text-ink-400">
-            <input type="checkbox" checked={measurementConsent} disabled={privacyBlocked}
+            <input type="checkbox" checked={measurementConsent} disabled={privacyBlocked || submitting}
               onChange={(event) => setMeasurementConsent(event.target.checked)} className="mt-1 h-4 w-4 shrink-0 rounded border-stone-300 text-forest-600" />
-            <span>Optional. Allow Meta to measure this request using browser and device information. Your contact details and property answers are not shared with Meta. This does not affect your offer request.{' '}
+            <span>Optional. Allow Meta to measure this request and later steps such as a seller conversation or completed sale. We use browser and device information. Your contact details and property answers are not shared with Meta. This does not affect your offer request.{' '}
               <Link href="/privacy#meta-measurement" className="underline">How measurement works</Link>.
               {privacyBlocked ? ' Your browser privacy choice currently blocks this measurement.' : ''}</span>
           </label>

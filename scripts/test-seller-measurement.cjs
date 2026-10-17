@@ -221,6 +221,7 @@ function routeHarness({ duplicate = false, savedQa = false, validateOnly = false
     '@/lib/mailchimp': { syncSellerLeadToMailchimp: () => { throw new Error('Not permitted'); } },
     '@/lib/seller-measurement-policy': policy,
     '@/lib/meta-measurement-policy': metaPolicy,
+    '@/server/meta-seller-feedback-context': { buildMetaFeedbackContext: () => undefined, withdrawMetaFeedbackPermission: async () => true },
     '@/server/meta-ads-conversions': {
       metaMeasurementConfig: input => {
         const eventId = metaPolicy.metaLeadEventId(input.submissionId);
