@@ -928,6 +928,9 @@ export async function POST(request: NextRequest) {
       const internalQa = isSellerMeasurementQa(body)
       const metaInput: MetaLeadInput = {
         submissionId: body.submissionId!, occurredAt: lead.submittedAt, internalQa,
+        // Keep the inquiry and its review route. Only accepted local-area choices
+        // may count as a positive Meta Lead; browser eligibility uses this same config.
+        leadEligible: !isStrictMetaFlow || Boolean(metaArea),
         host: request.headers.get('host') || '',
         choice: body.metaMeasurement && typeof body.metaMeasurement === 'object' && !Array.isArray(body.metaMeasurement)
           ? body.metaMeasurement : undefined,

@@ -11,6 +11,8 @@ export interface MetaLeadInput {
   host: string;
   choice?: MetaMeasurementChoice;
   internalQa?: boolean;
+  /** Internal server decision only; never included in a Meta payload. */
+  leadEligible?: boolean;
   globalPrivacyControl?: boolean;
   ip?: string;
   userAgent?: string;
@@ -31,6 +33,7 @@ export function metaMeasurementConfig(input: MetaLeadInput):
   if (!hasMetaMeasurementPermission(input.choice) || input.globalPrivacyControl) {
     return { skipped: skipped('privacy_blocked') };
   }
+  if (input.leadEligible === false) return { skipped: skipped('outside_service_area') };
   const mode = process.env.META_ADS_MEASUREMENT_MODE;
   if (mode !== 'production' && mode !== 'test') return { skipped: skipped('measurement_disabled') };
   if (process.env.VERCEL_ENV !== 'production' && mode === 'production') {

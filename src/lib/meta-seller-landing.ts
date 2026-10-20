@@ -12,7 +12,7 @@ export const META_SELLER_LANDINGS = {
     formIntro: 'For an inherited or estate property. Share the property and how to reach you. We can discuss your relationship to the property on the call.',
   },
   direct: {
-    headline: 'Request an as-is investor offer for a Spokane County house.',
+    headline: 'Request an as-is investor offer for a house in Spokane or nearby North Idaho.',
     intro: 'Tell us about the property and when you might sell. You can start a conversation now or ask us to follow up later.',
     formIntro: 'Share the property and how to reach you. You can consider an offer without committing to sell.',
   },
