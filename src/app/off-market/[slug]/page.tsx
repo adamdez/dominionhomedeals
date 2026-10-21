@@ -181,7 +181,7 @@ export default async function OffMarketListingPage({ params }: { params: Promise
       <nav aria-label="Property page sections" className="border-b border-stone-200 bg-white">
         <div className="mx-auto flex max-w-6xl flex-wrap gap-6 px-5 py-4 text-sm font-semibold text-forest-800 sm:px-6 lg:px-8">
           <a href="#property" className="underline underline-offset-4">1. Property photos and facts</a>
-          <a href="#comparables" className="underline underline-offset-4">2. Comparable properties</a>
+          {l.compLinks?.length ? <a href="#comparables" className="underline underline-offset-4">2. Comparable properties</a> : null}
         </div>
       </nav>
       <section id="property" aria-labelledby="property-title" className="scroll-mt-24 bg-stone-100">

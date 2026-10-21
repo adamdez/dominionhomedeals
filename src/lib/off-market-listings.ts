@@ -1,4 +1,5 @@
 import { SITE } from '@/lib/constants'
+import { lamonteListing } from '@/data/lamonte-listing'
 import { plymouthListing } from '@/data/plymouth-listing'
 
 export type OffMarketPhoto = { src: string; alt: string }
@@ -70,6 +71,7 @@ export type OffMarketListing = {
 }
 
 const listings: Record<string, OffMarketListing> = {
+  '3016-s-lamonte-st': lamonteListing,
   '6722-s-plymouth-rd': plymouthListing,
 
 }
