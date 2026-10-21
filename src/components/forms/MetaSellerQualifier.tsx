@@ -1,6 +1,6 @@
 'use client'
 
-import { FormEvent, useEffect, useMemo, useRef, useState } from 'react'
+import { FormEvent, type SyntheticEvent, useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
 import { SITE, SMS_CONSENT_TEXT } from '@/lib/constants'
 import {
@@ -17,6 +17,7 @@ import { META_SELLER_LANDINGS, type MetaSellerVariant } from '@/lib/meta-seller-
 import { openMetaMeasuredReceipt, readMetaMeasurementChoice, rememberMetaFeedbackReceipt } from '@/lib/meta-browser-measurement'
 import { MetaReceiptTracker } from '@/components/analytics/MetaReceiptTracker'
 import { prepareMetaSellerSubmission, type MetaSellerSubmissionAttempt } from '@/lib/meta-seller-submission'
+import { completedMetaField, metaProgressField } from '@/lib/meta-seller-form-progress'
 import { browserMetaPrivacyBlocked } from '@/lib/meta-measurement-policy'
 type AnswerKey =
   | 'serviceArea'
@@ -208,6 +209,12 @@ function acceptedReceipt(responseOk: boolean, value: unknown) {
     : null
 }
 
+export function MetaSellerFormJump({ variant }: { variant: MetaSellerVariant }) {
+  return <a href="#seller-contact" className="btn-primary mt-5 lg:hidden" onClick={() => trackMetaSellerFunnelEvent('cta_clicked', { variant, detail: 'offer_jump', onceKey: 'offer_jump' })}>
+    {variant === 'direct' ? 'Request My Cash Offer' : 'Talk About My Property'}
+  </a>
+}
+
 export function MetaSellerQualifier({ variant = 'repairs' }: { variant?: MetaSellerVariant }) {
   const [answers, setAnswers] = useState<Answers>(initialAnswers)
   const [contact, setContact] = useState<ContactData>(initialContact)
@@ -226,6 +233,34 @@ export function MetaSellerQualifier({ variant = 'repairs' }: { variant?: MetaSel
     })
   }, [variant])
 
+  const formView = useRef<HTMLInputElement>(null)
+  const cashOffer = variant === 'direct'
+
+  useEffect(() => {
+    const field = formView.current
+    if (!field || typeof IntersectionObserver === 'undefined') return
+    const observer = new IntersectionObserver(entries => {
+      if (entries.some(entry => entry.isIntersecting)) {
+        trackMetaSellerFunnelEvent('form_viewed', { variant, stage: 'contact', onceKey: 'form_viewed' })
+        observer.disconnect()
+      }
+    }, { threshold: 0.5 })
+    observer.observe(field)
+    return () => observer.disconnect()
+  }, [variant])
+
+  function formInteraction(event: SyntheticEvent<HTMLFormElement>) {
+    const field = event.target as HTMLInputElement | HTMLSelectElement
+    if (!metaProgressField(field.name)) return
+    trackMetaSellerFunnelEvent('form_started', { variant, stage: 'contact', onceKey: 'form_started' })
+  }
+
+  function fieldCompleted(event: SyntheticEvent<HTMLFormElement>) {
+    const field = event.target as HTMLInputElement | HTMLSelectElement
+    const detail = completedMetaField(field.name, field.value, field.validity?.valid === true, 'checked' in field && field.checked)
+    if (detail) trackMetaSellerFunnelEvent('field_completed', { variant, stage: detail === 'service_area' ? 'service_area' : 'contact', detail, onceKey: `field:${detail}` })
+  }
+
   const variantIntro = META_SELLER_LANDINGS[variant].formIntro
 
   const contactValid = useMemo(() => {
@@ -234,6 +269,10 @@ export function MetaSellerQualifier({ variant = 'repairs' }: { variant?: MetaSel
     return contact.fullName.trim().length >= 2 && digits.length >= 10 && contact.address.trim().length >= 6 &&
       Boolean(answers.serviceArea) && contact.contactConsent && emailValid
   }, [contact, answers.serviceArea])
+
+  useEffect(() => {
+    if (contactValid) trackMetaSellerFunnelEvent('form_ready', { variant, stage: 'contact', onceKey: 'form_ready' })
+  }, [contactValid, variant])
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -345,11 +384,26 @@ export function MetaSellerQualifier({ variant = 'repairs' }: { variant?: MetaSel
   }
 
   return (
-    <div id="seller-contact" className="scroll-mt-24 rounded-[28px] border border-stone-200 bg-white p-6 shadow-soft sm:p-8">
-      <p className="text-sm font-semibold text-forest-600">Talk through your selling options</p>
-      <h2 className="mt-2 font-display text-3xl text-ink-700">Start with the property and how to reach you.</h2>
-      <p className="mt-3 text-sm leading-relaxed text-ink-400">{variantIntro} You can ask us to follow up even if your timing or next steps are uncertain.</p>
-        <form onSubmit={submit} className="mt-7 space-y-4">
+    <div id="seller-contact" data-form-revision="offer_form_v2" className="scroll-mt-24 rounded-[28px] border border-stone-200 bg-white p-5 shadow-soft sm:p-8">
+      <p className="text-sm font-semibold text-forest-600">{cashOffer ? 'Your as-is cash offer' : 'Talk through your selling options'}</p>
+      <h2 className="mt-2 font-display text-3xl text-ink-700">{cashOffer ? 'Start with your house.' : 'Start with the property and how to reach you.'}</h2>
+      <p className="mt-3 text-sm leading-relaxed text-ink-400">{variantIntro}</p>
+        <form onSubmit={submit} onChangeCapture={formInteraction} onBlurCapture={fieldCompleted}
+          onFocusCapture={event => {
+            const target = event.target
+            if (!(target instanceof HTMLInputElement || target instanceof HTMLSelectElement)) return
+            const field = metaProgressField(target.name)
+            if (field) trackMetaSellerFunnelEvent('field_focused', { variant, stage: field === 'service_area' ? 'service_area' : 'contact', detail: field, onceKey: `focus:${field}` })
+          }}
+          onInvalidCapture={event => {
+            const target = event.target
+            if (!(target instanceof HTMLInputElement || target instanceof HTMLSelectElement)) return
+            const optionalSection = target.closest('details')
+            if (optionalSection) optionalSection.open = true
+            setError('Complete the required fields below to request your offer.')
+            const field = metaProgressField(target.name)
+            if (field) trackMetaSellerFunnelEvent('validation_failed', { variant, stage: 'contact', detail: field, onceKey: `invalid:${field}` })
+          }} className="mt-5 space-y-4">
 
           <input
             type="text"
@@ -365,57 +419,60 @@ export function MetaSellerQualifier({ variant = 'repairs' }: { variant?: MetaSel
             Full name <span className="font-normal text-ink-400">required</span>
             <input
               required
+              name="full_name" ref={formView} minLength={2}
               autoComplete="name"
               value={contact.fullName}
               onChange={(event) => setContact((data) => ({ ...data, fullName: event.target.value }))}
-              className="mt-2 w-full rounded-2xl border border-stone-200 bg-stone-50 px-4 py-4 text-base text-ink-600 focus:border-forest-400 focus:ring-forest-400"
+              className="mt-2 w-full rounded-2xl border border-stone-200 bg-stone-50 px-4 py-3 text-base text-ink-600 focus:border-forest-400 focus:ring-forest-400"
             />
           </label>
           <label className="block text-sm font-semibold text-ink-500">
             Best phone number <span className="font-normal text-ink-400">required</span>
             <input
               required
-              type="tel"
+              type="tel" name="phone" minLength={14}
               inputMode="tel"
               autoComplete="tel"
               value={contact.phone}
               onChange={(event) => setContact((data) => ({ ...data, phone: formatPhone(event.target.value) }))}
-              className="mt-2 w-full rounded-2xl border border-stone-200 bg-stone-50 px-4 py-4 text-base text-ink-600 focus:border-forest-400 focus:ring-forest-400"
-            />
-          </label>
-          <label className="block text-sm font-semibold text-ink-500">
-            Email <span className="font-normal text-ink-300">optional</span>
-            <input
-              type="email"
-              autoComplete="email"
-              value={contact.email}
-              onChange={(event) => setContact((data) => ({ ...data, email: event.target.value }))}
-              className="mt-2 w-full rounded-2xl border border-stone-200 bg-stone-50 px-4 py-4 text-base text-ink-600 focus:border-forest-400 focus:ring-forest-400"
+              className="mt-2 w-full rounded-2xl border border-stone-200 bg-stone-50 px-4 py-3 text-base text-ink-600 focus:border-forest-400 focus:ring-forest-400"
             />
           </label>
           <label className="block text-sm font-semibold text-ink-500">
             Full property address <span className="font-normal text-ink-400">required</span>
             <input
               required
+              name="address" minLength={6}
               autoComplete="street-address"
               placeholder="123 Main St, Spokane, WA 99205"
               value={contact.address}
               onChange={(event) => setContact((data) => ({ ...data, address: event.target.value }))}
-              className="mt-2 w-full rounded-2xl border border-stone-200 bg-stone-50 px-4 py-4 text-base text-ink-600 focus:border-forest-400 focus:ring-forest-400"
+              className="mt-2 w-full rounded-2xl border border-stone-200 bg-stone-50 px-4 py-3 text-base text-ink-600 focus:border-forest-400 focus:ring-forest-400"
             />
           </label>
           <label className="block text-sm font-semibold text-ink-500">
             Property area <span className="font-normal text-ink-400">required</span>
-            <select required value={answers.serviceArea} onChange={event => setAnswers(previous => ({ ...previous, serviceArea: event.target.value }))}
-              className="mt-2 w-full rounded-2xl border border-stone-200 bg-stone-50 px-4 py-4 text-base text-ink-600">
+            <select name="service_area" required value={answers.serviceArea} onChange={event => setAnswers(previous => ({ ...previous, serviceArea: event.target.value }))}
+              className="mt-2 w-full rounded-2xl border border-stone-200 bg-stone-50 px-4 py-3 text-base text-ink-600">
               <option value="">Choose the property area</option>
               {steps[0].options.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}
             </select>
           </label>
           <details className="rounded-2xl border border-stone-200 p-4">
-            <summary className="cursor-pointer text-sm font-semibold text-forest-600">Optional: tell us a little more</summary>
+            <summary className="cursor-pointer text-sm font-semibold text-forest-600">Optional: more details & email</summary>
             <p className="mt-3 text-sm text-ink-400">These answers help us prepare for a conversation. The offer questions apply if you want to discuss a direct investor offer. You can leave them unanswered.</p>
             <div className="mt-4 space-y-4">
+          <label className="block text-sm font-semibold text-ink-500">
+            Email <span className="font-normal text-ink-300">optional</span>
+            <input
+              type="email" name="email"
+              autoComplete="email"
+              value={contact.email}
+              onChange={(event) => setContact((data) => ({ ...data, email: event.target.value }))}
+              className="mt-2 w-full rounded-2xl border border-stone-200 bg-stone-50 px-4 py-3 text-base text-ink-600 focus:border-forest-400 focus:ring-forest-400"
+            />
+          </label>
+
               {steps.slice(1).map(step => <label key={step.key} className="block text-sm font-semibold text-ink-500">
                 {step.question}
                 <select value={answers[step.key]} onChange={event => setAnswers(previous => ({ ...previous, [step.key]: event.target.value }))}
@@ -429,7 +486,7 @@ export function MetaSellerQualifier({ variant = 'repairs' }: { variant?: MetaSel
             <select
               value={contact.bestTimeToSpeak}
               onChange={(event) => setContact((data) => ({ ...data, bestTimeToSpeak: event.target.value }))}
-              className="mt-2 w-full rounded-2xl border border-stone-200 bg-stone-50 px-4 py-4 text-base text-ink-600 focus:border-forest-400 focus:ring-forest-400"
+              className="mt-2 w-full rounded-2xl border border-stone-200 bg-stone-50 px-4 py-3 text-base text-ink-600 focus:border-forest-400 focus:ring-forest-400"
             >
               <option value="">Choose one</option>
               {bestTimeOptions.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
@@ -440,7 +497,7 @@ export function MetaSellerQualifier({ variant = 'repairs' }: { variant?: MetaSel
             <select
               value={contact.sellerReason}
               onChange={(event) => setContact((data) => ({ ...data, sellerReason: event.target.value }))}
-              className="mt-2 w-full rounded-2xl border border-stone-200 bg-stone-50 px-4 py-4 text-base text-ink-600 focus:border-forest-400 focus:ring-forest-400"
+              className="mt-2 w-full rounded-2xl border border-stone-200 bg-stone-50 px-4 py-3 text-base text-ink-600 focus:border-forest-400 focus:ring-forest-400"
             >
               <option value="">Choose one</option>
               {reasonOptions.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
@@ -451,13 +508,15 @@ export function MetaSellerQualifier({ variant = 'repairs' }: { variant?: MetaSel
           <label className="flex items-start gap-3 rounded-2xl border border-stone-200 bg-stone-50 px-4 py-4 text-sm leading-relaxed text-ink-500">
             <input
               required
-              type="checkbox"
+              type="checkbox" name="contact_permission"
               checked={contact.contactConsent}
               onChange={(event) => setContact((data) => ({ ...data, contactConsent: event.target.checked }))}
               className="mt-1 h-4 w-4 rounded border-stone-300 text-forest-600 focus:ring-forest-400"
             />
             <span>I want Dominion Homes to contact me by phone or email about this property and possible sale.</span>
           </label>
+          <details className="rounded-2xl border border-stone-200 p-4">
+            <summary className="cursor-pointer text-sm font-semibold text-forest-600">Optional: text updates</summary>
           <label className="flex items-start gap-3 rounded-2xl border border-forest-200 bg-forest-50 px-4 py-4 text-[11px] leading-relaxed text-ink-500">
             <input
               type="checkbox"
@@ -467,6 +526,7 @@ export function MetaSellerQualifier({ variant = 'repairs' }: { variant?: MetaSel
             />
             <span>{SMS_CONSENT_TEXT}</span>
           </label>
+          </details>
           <label className="flex items-start gap-3 rounded-2xl border border-stone-200 bg-stone-50 px-4 py-4 text-xs leading-relaxed text-ink-400">
             <input type="checkbox" checked={measurementConsent} disabled={privacyBlocked || submitting}
               onChange={(event) => setMeasurementConsent(event.target.checked)} className="mt-1 h-4 w-4 shrink-0 rounded border-stone-300 text-forest-600" />
@@ -475,17 +535,17 @@ export function MetaSellerQualifier({ variant = 'repairs' }: { variant?: MetaSel
               {privacyBlocked ? ' Your browser privacy choice currently blocks this measurement.' : ''}</span>
           </label>
           <p className="text-[11px] leading-relaxed text-ink-400">
-            SMS consent is optional and is not required to receive an offer. See our{' '}
+            Text updates and ad measurement are optional. See our{' '}
             <Link href="/privacy#sms-terms" className="font-semibold underline">Privacy Policy</Link>{' '}
             and <Link href="/terms" className="font-semibold underline">Terms</Link>.
           </p>
           {error ? <p role="alert" className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p> : null}
-          <button disabled={!contactValid || submitting} type="submit" className="btn-primary w-full disabled:cursor-not-allowed disabled:opacity-50">
-            {submitting ? 'Confirming request…' : 'Ask Dominion to Contact Me'}
+          <button disabled={submitting} type="submit" className="btn-primary w-full disabled:cursor-not-allowed disabled:opacity-50">
+            {submitting ? 'Sending request…' : cashOffer ? 'Request My Cash Offer' : 'Ask Dominion to Contact Me'}
           </button>
         </form>
 
-      <p className="mt-6 text-xs leading-relaxed text-ink-300">Submitting the form is a request for review. It is not an offer or an agreement to sell.</p>
+      <p className="mt-6 text-xs leading-relaxed text-ink-300">We’ll review the property before preparing an offer. No commitment to sell.</p>
     </div>
   )
 }

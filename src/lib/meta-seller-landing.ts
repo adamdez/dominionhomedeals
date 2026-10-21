@@ -12,9 +12,9 @@ export const META_SELLER_LANDINGS = {
     formIntro: 'For an inherited or estate property. Share the property and how to reach you. We can discuss your relationship to the property on the call.',
   },
   direct: {
-    headline: 'Request an as-is investor offer for a house in Spokane or nearby North Idaho.',
-    intro: 'Tell us about the property and when you might sell. You can start a conversation now or ask us to follow up later.',
-    formIntro: 'Share the property and how to reach you. You can consider an offer without committing to sell.',
+    headline: 'Sell your house as-is. Request a cash offer.',
+    intro: 'For houses in Spokane and nearby North Idaho. Skip the repairs and contractors. Let’s talk through your property and closing timeline.',
+    formIntro: 'Tell us about the house. We’ll contact you to discuss an as-is cash offer. No commitment to sell.',
   },
 } satisfies Record<MetaSellerVariant, { headline: string; intro: string; formIntro: string }>
 

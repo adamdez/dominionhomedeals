@@ -13,6 +13,12 @@ export type MetaSellerClientStage =
 
 export type MetaSellerClientEventType =
   | "landing_arrived"
+  | "form_viewed"
+  | "form_started"
+  | "field_completed"
+  | "field_focused"
+  | "form_ready"
+  | "cta_clicked"
   | "gate_answered"
   | "gate_exited"
   | "validation_failed"
@@ -32,6 +38,8 @@ export function getMetaSellerVisitId(variant: "repairs" | "estate" | "direct"): 
     variant,
     campaign: attribution.utm_campaign || "",
     content: attribution.utm_content || "",
+    ad: attribution.ad_id || "",
+    revision: "offer_form_v2",
   });
   try {
     const existing = sessionStorage.getItem(VISIT_ID_KEY) || "";
@@ -70,7 +78,7 @@ export function trackMetaSellerFunnelEvent(
     stage: options.stage,
     detail: options.detail,
     variant: options.variant,
-    attribution: readSellerAttribution(),
+    attribution: { ...readSellerAttribution(), landing_revision: "offer_form_v2" },
   });
   void fetch("/api/meta-seller-funnel-events", {
     method: "POST",

@@ -4,6 +4,12 @@ import { getDominionServiceClient } from "@/lib/dominion-supabase";
 
 export const META_SELLER_EVENT_TYPES = [
   "landing_arrived",
+  "form_viewed",
+  "form_started",
+  "field_completed",
+  "field_focused",
+  "form_ready",
+  "cta_clicked",
   "gate_answered",
   "gate_exited",
   "validation_failed",
@@ -40,6 +46,7 @@ const ATTRIBUTION_KEYS = new Set([
   "ad_group_id",
   "ad_id",
   "creative_id",
+  "landing_revision",
 ]);
 
 export interface MetaSellerFunnelEvent {
@@ -83,6 +90,9 @@ export function normalizeMetaSellerFunnelEvent(value: unknown): MetaSellerFunnel
   const detail = typeof raw.detail === "string" && /^[a-z0-9][a-z0-9_-]{0,63}$/.test(raw.detail)
     ? raw.detail
     : null;
+  // Progress details contain fixed field names only, never user-entered values.
+  if (["field_completed", "field_focused", "validation_failed"].includes(raw.eventType) && detail &&
+    !new Set(["full_name", "phone", "email", "address", "service_area", "contact_permission", "contact_invalid", "contact_format"]).has(detail)) return null;
   const leadReceiptId = typeof raw.leadReceiptId === "string" && /^\d{1,18}$/.test(raw.leadReceiptId)
     ? Number(raw.leadReceiptId)
     : Number.isSafeInteger(raw.leadReceiptId) && Number(raw.leadReceiptId) > 0
