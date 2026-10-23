@@ -19,6 +19,7 @@ import { MetaReceiptTracker } from '@/components/analytics/MetaReceiptTracker'
 import { prepareMetaSellerSubmission, type MetaSellerSubmissionAttempt } from '@/lib/meta-seller-submission'
 import { completedMetaField, metaProgressField } from '@/lib/meta-seller-form-progress'
 import { browserMetaPrivacyBlocked } from '@/lib/meta-measurement-policy'
+import { formatSellerPhone } from '@/lib/seller-phone-input'
 type AnswerKey =
   | 'serviceArea'
   | 'timeline'
@@ -191,13 +192,6 @@ const bestTimeOptions = [
 function splitName(fullName: string) {
   const parts = fullName.trim().split(/\s+/)
   return { firstName: parts[0] || '', lastName: parts.slice(1).join(' ') }
-}
-
-function formatPhone(value: string) {
-  const digits = value.replace(/\D/g, '').slice(0, 10)
-  if (digits.length >= 7) return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`
-  if (digits.length >= 4) return `(${digits.slice(0, 3)}) ${digits.slice(3)}`
-  return digits ? `(${digits}` : ''
 }
 
 function acceptedReceipt(responseOk: boolean, value: unknown) {
@@ -434,7 +428,7 @@ export function MetaSellerQualifier({ variant = 'repairs' }: { variant?: MetaSel
               inputMode="tel"
               autoComplete="tel"
               value={contact.phone}
-              onChange={(event) => setContact((data) => ({ ...data, phone: formatPhone(event.target.value) }))}
+              onChange={(event) => setContact((data) => ({ ...data, phone: formatSellerPhone(event.target.value) }))}
               className="mt-2 w-full rounded-2xl border border-stone-200 bg-stone-50 px-4 py-3 text-base text-ink-600 focus:border-forest-400 focus:ring-forest-400"
             />
           </label>

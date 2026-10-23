@@ -312,3 +312,16 @@ test('a failed retry privacy update never claims it was saved and retains the ex
   const r=await h.post({metaPrivacyToken:'a'.repeat(64),metaMeasurement:{consent:false,consentVersion:'meta_measurement_v2'}});
   assert.equal(r.status,503);assert.equal(r.data.accepted,true);assert.equal(r.data.receiptId,'42');assert.equal(r.data.metaPrivacyUpdateRequired,true);assert.equal(h.metaEvents.length,0);
 });
+
+test('direct mid-project inquiry keeps originating ad and copy label in the durable intake record', async () => {
+ const h = strictRouteHarness();
+ const r = await h.post({metaVariant:'direct',utmContent:'dh_mid_project_v1',adAttribution:{utm_source:'meta',utm_campaign:'dh_spokane_pilot_01',utm_content:'dh_mid_project_v1',ad_id:'120250398636990073',adset_id:'120250285330660073',campaign_id:'120250237581430073'}});
+ assert.equal(r.status,200);assert.equal(r.data.accepted,true);
+ assert.equal(h.recorded[0].adAttribution.ad_id,'120250398636990073');
+ assert.equal(h.recorded[0].adAttribution.utm_content,'dh_mid_project_v1');
+ assert.equal(h.metaEvents.find(e=>e.eventType==='lead_accepted').variant,'direct');
+});
+test('intake preserves the country code on a direct request rather than cutting the callback number',async()=>{
+ const h=strictRouteHarness();const r=await h.post({phone:'+1 (202) 555-0147'});
+ assert.equal(r.status,200);assert.equal(h.recorded[0].phone,'12025550147');
+});

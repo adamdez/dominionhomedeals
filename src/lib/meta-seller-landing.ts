@@ -7,6 +7,15 @@ export const META_MOVE_AFTER_COPY = {
   terms: 'A title company holds the agreed portion of your proceeds in escrow. Before you agree, we explain the move-out date, release conditions, any occupancy costs and the money you receive at closing. The terms are put in writing.',
 } as const
 
+export const META_MID_PROJECT_COPY = {
+  headline: 'Sell your house mid-remodel.',
+  intro: 'Ready to sell instead of putting more time and money into the remodel? Request a cash offer without finishing the project. For houses in Spokane and nearby North Idaho.',
+} as const
+
+export function usesMidProjectMessage(query: Record<string, string | string[] | undefined>, variant: MetaSellerVariant): boolean {
+  return variant === 'direct' && query.message === 'mid_project'
+}
+
 export function usesMoveAfterMessage(query: Record<string, string | string[] | undefined>, variant: MetaSellerVariant): boolean {
   return variant === 'direct' && query.message === 'move_after'
 }

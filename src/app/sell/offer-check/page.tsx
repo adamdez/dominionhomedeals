@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import { MetaSellerQualifier, MetaSellerFormJump } from '@/components/forms/MetaSellerQualifier'
 import { SITE } from '@/lib/constants'
-import { META_SELLER_LANDINGS, META_MOVE_AFTER_COPY, resolveMetaSellerVariant, usesMoveAfterMessage } from '@/lib/meta-seller-landing'
+import { META_SELLER_LANDINGS, META_MOVE_AFTER_COPY, META_MID_PROJECT_COPY, resolveMetaSellerVariant, usesMoveAfterMessage, usesMidProjectMessage } from '@/lib/meta-seller-landing'
 
 export const metadata: Metadata = {
   title: 'Request an As-Is Cash Offer',
@@ -25,7 +25,8 @@ export default async function OfferCheckPage({ searchParams }: {
   const query = await searchParams
   const variant = resolveMetaSellerVariant(query)
   const moveAfter = usesMoveAfterMessage(query, variant)
-  const copy = moveAfter ? META_MOVE_AFTER_COPY : META_SELLER_LANDINGS[variant]
+  const midProject = usesMidProjectMessage(query, variant)
+  const copy = moveAfter ? META_MOVE_AFTER_COPY : midProject ? META_MID_PROJECT_COPY : META_SELLER_LANDINGS[variant]
   return (
     <main id="main-content" className="relative overflow-hidden py-7 sm:py-16">
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-stone-50 via-forest-50/25 to-stone-50" />
