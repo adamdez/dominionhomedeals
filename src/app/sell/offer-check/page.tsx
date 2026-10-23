@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import { MetaSellerQualifier, MetaSellerFormJump } from '@/components/forms/MetaSellerQualifier'
 import { SITE } from '@/lib/constants'
-import { META_SELLER_LANDINGS, resolveMetaSellerVariant } from '@/lib/meta-seller-landing'
+import { META_SELLER_LANDINGS, META_MOVE_AFTER_COPY, resolveMetaSellerVariant, usesMoveAfterMessage } from '@/lib/meta-seller-landing'
 
 export const metadata: Metadata = {
   title: 'Request an As-Is Cash Offer',
@@ -22,8 +22,10 @@ export const metadata: Metadata = {
 export default async function OfferCheckPage({ searchParams }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>
 }) {
-  const variant = resolveMetaSellerVariant(await searchParams)
-  const copy = META_SELLER_LANDINGS[variant]
+  const query = await searchParams
+  const variant = resolveMetaSellerVariant(query)
+  const moveAfter = usesMoveAfterMessage(query, variant)
+  const copy = moveAfter ? META_MOVE_AFTER_COPY : META_SELLER_LANDINGS[variant]
   return (
     <main id="main-content" className="relative overflow-hidden py-7 sm:py-16">
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-stone-50 via-forest-50/25 to-stone-50" />
@@ -37,6 +39,12 @@ export default async function OfferCheckPage({ searchParams }: {
             {copy.intro}
           </p>
           <MetaSellerFormJump variant={variant} />
+          {moveAfter && (
+            <div className="mt-5 rounded-2xl border border-forest-100 bg-white/80 p-4 text-sm leading-relaxed text-ink-500">
+              <p className="font-semibold text-ink-600">A clear plan for closing and moving</p>
+              <p className="mt-2">{META_MOVE_AFTER_COPY.terms}</p>
+            </div>
+          )}
           <div className="mt-7 hidden space-y-4 text-sm leading-relaxed text-ink-500 lg:block">
             <p><strong className="text-ink-600">First, tell us about the house.</strong><br />A team member will contact you to discuss the property, your timing and what you want from the sale.</p>
             <p><strong className="text-ink-600">Then, compare the next steps.</strong><br />Consider a direct as-is sale alongside listing the house as-is or after repairs. A conversation does not commit you to selling.</p>
