@@ -53,8 +53,10 @@ export async function validateScreening(input: ScreeningInput, lookup: typeof fe
   }
   const match=matchInsideBuyingArea(matches,contact)
   if(!match) {
-    const outside=matches.length===1 && Number.isFinite(matches[0]?.coordinates?.y) && Number.isFinite(matches[0]?.coordinates?.x) &&
-      milesFromBuyingCenter(matches[0].coordinates.y,matches[0].coordinates.x)>SCREENING_AREA.miles
+    const county=matches[0]?.geographies?.Counties?.[0]
+    const outside=matches.length===1 && ((county && !['53063','16055'].includes(county.STATE+county.COUNTY)) ||
+      (Number.isFinite(matches[0]?.coordinates?.y) && Number.isFinite(matches[0]?.coordinates?.x) &&
+      milesFromBuyingCenter(matches[0].coordinates.y,matches[0].coordinates.x)>SCREENING_AREA.miles))
     return {ok:false,error:outside ? 'This property is outside our current buying area. Please check the address or call 509-822-5460 to discuss it.' :
       'We could not confirm this street address. Please check the house number, city and ZIP, or call 509-822-5460.',status:422}
   }
@@ -74,7 +76,10 @@ export async function validateScreening(input: ScreeningInput, lookup: typeof fe
     sellerReason:({estate:'inherited_estate',moving:'relocating',rental:'rental',repairs:'repairs'} as Record<string,string>)[answers.reason] || 'other',
     bestTimeToSpeak:'anytime',contactConsent:true,sms_consent:contact.smsConsent,smsOptIn:contact.smsConsent,
     tcpaConsent:false, source:'meta_website',landingPage:'/sell/property-check',
-    message:`Screening ${FLOW_VERSION}; type=${answers.property}; authority=${answers.connection}; reason=${answers.reason}; price=${answers.tradeoff}${reason ? '; seller note: '+reason : ''}`,
+    message:`Property: ${({house:'House',multi:'Duplex or multi-unit',condo:'Condo or townhome',manufactured:'Manufactured home with owned land'} as Record<string,string>)[answers.property]}. `+
+      `Connection: ${({owner:'Owner or co-owner',estate:'Handling an estate or family sale',helper:'Helping the owner'} as Record<string,string>)[answers.connection]}. `+
+      `Reason: ${({estate:'Inherited property or estate',moving:'Moving',rental:'Rental property',repairs:'Repairs',plans:'Changing plans',deadline:'Tax or mortgage deadline',another:'Another reason'} as Record<string,string>)[answers.reason]}. `+
+      `Cash-offer tradeoff: ${answers.tradeoff==='yes'?'Would consider a below-market cash offer':'Wants to compare a cash offer with listing'}.${reason ? ' Seller note: '+reason : ''}`,
   }
   return {ok:true,fields,contact}
 }

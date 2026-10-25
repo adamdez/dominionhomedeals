@@ -689,6 +689,8 @@ async function forwardToLazarus(lead: Record<string, unknown>): Promise<Dominion
     isOptionsFlow && lead.primaryConstraint
       ? `${isStrictMetaFlow ? 'Follow-up assessment' : 'Main problem to solve'}: ${lead.primaryConstraint}`
       : null,
+    isStrictMetaFlow && lead.landingPage === '/sell/property-check' && lead.message
+      ? `Seller details: ${lead.message}` : null,
     lead.smsConsent ? `SMS consent captured: ${lead.smsConsentTimestamp || 'yes'}` : 'SMS consent: no',
     lead.landingPage ? `Landing page: ${lead.landingPage}` : null,
     adNotes ? `Ad attribution:\n${adNotes}` : null,
@@ -915,7 +917,9 @@ export async function POST(request: NextRequest) {
           metaVariant: body.metaVariant,
           followUpTier: metaSellerFollowUpTier(strictMetaQualification!),
           followUpLabel: META_SELLER_FOLLOWUP_LABELS[metaSellerFollowUpTier(strictMetaQualification!)],
-          metaSellerAssessment: strictMetaQualification,
+          metaSellerAssessment: { ...strictMetaQualification,
+            ...(isScreeningFlow ? {screeningVersion:SCREENING_VERSION,screeningSummary:cleanText(body.message || '')} : {}),
+          },
         } : {}),
       } : {}),
     }
@@ -953,7 +957,9 @@ export async function POST(request: NextRequest) {
       try {
         receipt = await withOptionsTimeout(recordDominionOptionsLeadSubmission(controlInput, body.submissionId!, { internalQa,
           ...(isStrictMetaFlow ? {
-            metaSellerAssessment: { ...strictMetaQualification!, tier: metaSellerFollowUpTier(strictMetaQualification!), humanQualified: false },
+            metaSellerAssessment: { ...strictMetaQualification!, tier: metaSellerFollowUpTier(strictMetaQualification!), humanQualified: false,
+              ...(isScreeningFlow ? {screeningVersion:SCREENING_VERSION,screeningSummary:cleanText(body.message || '')} : {}),
+            },
             metaMeasurement: { consent: hasMetaMeasurementPermission(metaInput.choice) && !metaInput.globalPrivacyControl,
               consentVersion: META_MEASUREMENT_CONSENT_VERSION },
             metaFeedback: !metaConfig?.skipped && metaConfig?.mode==='production'

@@ -28,7 +28,7 @@ function focusScreen(){
   const heading=byId('question-title');
   if(heading){heading.focus({preventScroll:true});window.scrollTo({top:0,behavior:'instant'});}
 }
-function reset(replace=false){answers={};contact={};reasonDetail='';reasonSelection='';show('area',{replace});}
+function reset(replace=false){answers={};contact={};reasonDetail='';reasonSelection='';receipt=null;attempt=null;measurementConsent=false;show('area',{replace});}
 function show(id,{replace=false,fromHistory=false}={}){
   const gate=evaluate(answers,order);
   if(id==='not-a-fit' && gate.kind!=='rejected') id=gate.step;
