@@ -141,12 +141,17 @@ test('the lead API invokes server qualification and keeps Meta requests out of t
   assert.match(route, /!isStrictMetaFlow &&/);
 });
 
-function strictRouteHarness({ duplicate = false, withdrawal = true } = {}) {
+function strictRouteHarness({ duplicate = false, withdrawal = true, screeningLookup } = {}) {
   const recorded = [];
+  const assessments = [];
   const metaEvents = [];
   let openAiCalls = 0;
   let withdrawals = 0;
   const api = load('src/app/api/leads/route.ts', {
+    ...(screeningLookup ? { '@/lib/seller-screening-server': {
+      ...require(path.join(root,'src/lib/seller-screening-server.ts')),
+      validateScreening: input => require(path.join(root,'src/lib/seller-screening-server.ts')).validateScreening(input,screeningLookup),
+    } } : {}),
     'next/server': { NextResponse: { json: (data, init) => Response.json(data, init) } },
     '@/lib/constants': { SITE: { url: 'https://example.test', phone: '509-822-5460' } },
     '@/lib/mailchimp': { syncSellerLeadToMailchimp: async () => ({ status: 'skipped' }) },
@@ -165,8 +170,9 @@ function strictRouteHarness({ duplicate = false, withdrawal = true } = {}) {
       dominionOptionsDeliveryStatus: () => 'needs_review',
       recordDominionLeadSubmission: async () => null,
       recordDominionOptionsDelivery: async () => undefined,
-      recordDominionOptionsLeadSubmission: async input => {
+      recordDominionOptionsLeadSubmission: async (input,id,measurement) => {
         recorded.push(input);
+        assessments.push(measurement?.metaSellerAssessment);
         return {
           duplicate,
           record: {
@@ -219,6 +225,7 @@ function strictRouteHarness({ duplicate = false, withdrawal = true } = {}) {
   };
   return {
     recorded,
+    assessments,
     metaEvents,
     get openAiCalls() { return openAiCalls; },
     get withdrawals() { return withdrawals; },
@@ -325,4 +332,24 @@ test('direct mid-project inquiry keeps originating ad and copy label in the dura
 test('intake preserves the country code on a direct request rather than cutting the callback number',async()=>{
  const h=strictRouteHarness();const r=await h.post({phone:'+1 (202) 555-0147'});
  assert.equal(r.status,200);assert.equal(h.recorded[0].phone,'12025550147');
+});
+
+test('the actual screening API saves exact answers and human-unverified authority with the original ad',async()=>{
+  const answers={area:'inside',property:'house',connection:'estate',listing:'expired',condition:'some',reason:'moving',timeline:'within_60',tradeoff:'yes'};
+  const screeningLookup=async()=>Response.json({result:{addressMatches:[{
+    matchedAddress:'808 W SPOKANE FALLS BLVD, SPOKANE, WA, 99201',coordinates:{x:-117.426,y:47.661},
+    addressComponents:{state:'WA',city:'SPOKANE',zip:'99201'},geographies:{Counties:[{STATE:'53',COUNTY:'063'}]},
+  }]}});
+  const h=strictRouteHarness({screeningLookup});
+  const r=await h.post({screeningVersion:'dominion-screening-live-v1',screeningAnswers:answers,
+    screeningContact:{name:'QA Test',phone:'5095550128',street:'808 W Spokane Falls Blvd',city:'Spokane',state:'WA',zip:'99201',email:'',contactConsent:true,smsConsent:false},
+    adAttribution:{utm_source:'meta',ad_id:'120250428203840073',campaign_id:'120250428143350073'}});
+  assert.equal(r.status,200);assert.equal(r.data.accepted,true);
+  assert.equal(h.recorded[0].timeline,'within_60_days');assert.equal(h.recorded[0].sellerAuthority,'unsure');
+  assert.equal(h.recorded[0].adAttribution.ad_id,'120250428203840073');
+  assert.equal(h.assessments[0].humanQualified,false);assert.equal(h.assessments[0].tier,'needs_review');
+  assert.equal(h.assessments[0].listingStatus,'expired');
+  assert.deepEqual(JSON.parse(JSON.stringify(h.assessments[0].screeningAnswers)),answers);
+  assert.match(h.recorded[0].primaryConstraint,/needs_review/);assert.equal(h.openAiCalls,0);
+  for(const privateValue of ['estate','expired','within_60','moving','screeningAnswers'])assert.equal(JSON.stringify(h.metaEvents).includes(privateValue),false);
 });

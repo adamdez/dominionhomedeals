@@ -1,4 +1,4 @@
-import { evaluate, validateContact, DEFAULT_ORDER, FLOW_VERSION } from '../../public/seller-screening/flow.mjs'
+import { evaluate, validateContact, DEFAULT_ORDER, FLOW_VERSION, QUESTIONS } from '../../public/seller-screening/flow.mjs'
 
 // Numerical boundary fitted to the approved regional map. Address lookup is
 // independent of the browser's answer; a city/ZIP alone never grants admission.
@@ -7,7 +7,7 @@ export { FLOW_VERSION as SCREENING_VERSION }
 type Contact = { name: string; phone: string; street: string; city: string; state: string; zip: string; email: string; contactConsent: boolean; smsConsent: boolean }
 type AddressMatch = { matchedAddress: string; coordinates: {x: number; y: number}; addressComponents: { state: string; city: string; zip: string }; geographies?: {Counties?: Array<{STATE: string; COUNTY: string}>} }
 type ScreeningInput = { screeningVersion?: unknown; screeningAnswers?: unknown; screeningContact?: unknown; reasonDetail?: unknown }
-type ScreeningResult = {ok: false; error: string; status: number} | {ok: true; fields: Record<string, string | boolean>; contact: Contact}
+type ScreeningResult = {ok: false; error: string; status: number} | {ok: true; fields: Record<string, string | boolean>; contact: Contact; answers: Record<string,string>}
 
 export function milesFromBuyingCenter(latitude: number, longitude: number): number {
   const rad = (v: number) => v * Math.PI / 180
@@ -62,24 +62,27 @@ export async function validateScreening(input: ScreeningInput, lookup: typeof fe
   }
   const names=contact.name.split(/\s+/), firstName=names.shift() || ''
   const reason=typeof input.reasonDetail==='string' ? input.reasonDetail.trim().slice(0,500) : ''
+  const selectedAnswers=Object.fromEntries(gate.route.filter((id:string)=>id!=='contact').map((id:string)=>[id,answers[id]])) as Record<string,string>
+  const labels: Record<string,string>={area:'Buying area',property:'Property',land:'Land ownership',connection:'Connection',listing:'Listing',condition:'Condition',reason:'Reason',timeline:'Timing',tradeoff:'Cash-offer tradeoff'}
+  const summary=Object.entries(selectedAnswers).map(([id,value])=>{
+    const question=QUESTIONS[id as Exclude<keyof typeof QUESTIONS,'contact'>]
+    return `${labels[id]}: ${question.options.find((choice:{value:string})=>choice.value===value)?.label ?? value}`
+  }).join(' ')
   const fields={
     qualificationVersion:'meta_seller_followup_v2', submissionFlow:'seller_options_v1', metaVariant:'direct',
     firstName,lastName:names.join(' '),phone:contact.phone,email:contact.email,
     address:match.matchedAddress,city:match.addressComponents.city,state:contact.state,zip:match.addressComponents.zip,
     serviceArea:contact.state==='WA'?'spokane_buying_area_wa':'north_idaho_buying_area_id',
     propertyType:answers.property==='manufactured'?'manufactured_with_owned_land':'site_built',
-    sellerAuthority:answers.connection==='owner'?'owner':answers.connection==='estate'?'authorized_representative':'helper_tenant_agent',
-    listingStatus:'not_listed',offerReadiness:'wants_offer_now',
+    sellerAuthority:answers.connection==='owner'?'owner':answers.connection==='estate'?'unsure':'helper_tenant_agent',
+    listingStatus:answers.listing,offerReadiness:'wants_offer_now',
     priceTradeoff:answers.tradeoff==='yes'?'accepts_below_repaired_retail':'unsure',
     condition:({major:'major_work',some:'repairs_needed',minor:'normal_wear',ready:'move_in_ready'} as Record<string,string>)[answers.condition],
-    timeline:({asap:'asap',within_60:'within_31_to_60_days',later:'more_than_60_days'} as Record<string,string>)[answers.timeline],
+    timeline:({asap:'asap',within_60:'within_60_days',later:'more_than_60_days'} as Record<string,string>)[answers.timeline],
     sellerReason:({estate:'inherited_estate',moving:'relocating',rental:'rental',repairs:'repairs'} as Record<string,string>)[answers.reason] || 'other',
     bestTimeToSpeak:'anytime',contactConsent:true,sms_consent:contact.smsConsent,smsOptIn:contact.smsConsent,
     tcpaConsent:false, source:'meta_website',landingPage:'/sell/property-check',
-    message:`Property: ${({house:'House',multi:'Duplex or multi-unit',condo:'Condo or townhome',manufactured:'Manufactured home with owned land'} as Record<string,string>)[answers.property]}. `+
-      `Connection: ${({owner:'Owner or co-owner',estate:'Handling an estate or family sale',helper:'Helping the owner'} as Record<string,string>)[answers.connection]}. `+
-      `Reason: ${({estate:'Inherited property or estate',moving:'Moving',rental:'Rental property',repairs:'Repairs',plans:'Changing plans',deadline:'Tax or mortgage deadline',another:'Another reason'} as Record<string,string>)[answers.reason]}. `+
-      `Cash-offer tradeoff: ${answers.tradeoff==='yes'?'Would consider a below-market cash offer':'Wants to compare a cash offer with listing'}.${reason ? ' Seller note: '+reason : ''}`,
+    message:`Self-reported property answers. ${summary}${answers.connection==='estate'?' Authority to sell has not been verified.':''}${reason ? ' Seller note: '+reason : ''}`,
   }
-  return {ok:true,fields,contact}
+  return {ok:true,fields,contact,answers:selectedAnswers}
 }

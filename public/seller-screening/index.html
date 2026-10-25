@@ -11,7 +11,7 @@
 </head>
 <body>
   <div class="preview-bar" hidden>
-    <span>Working preview <span class="preview-detail">· No requests are sent</span></span>
+    <span>Question flow review</span>
     <button id="review-toggle" class="text-button" type="button" aria-controls="review-panel" aria-expanded="false">Review page order</button>
   </div>
   <aside id="review-panel" class="review-panel" aria-label="Page order and branching" hidden>
@@ -20,7 +20,7 @@
       <ol id="order-list"></ol>
       <p class="review-note">The land question stays attached to manufactured homes. Changing the order restarts the preview.</p>
       <p id="order-announcement" class="sr-only" aria-live="polite"></p>
-      <div class="review-boundary"><strong>Before release</strong><p>The map is the existing reference artwork. Its exact address boundary still needs to be defined. This preview sends no CRM records or tracking events.</p></div>
+      <div class="review-boundary"><strong>Property check</strong><p>The map is a guide. We verify the full property address before accepting a request.</p></div>
     </div>
   </aside>
   <header class="brand-header">
@@ -28,11 +28,11 @@
     <span class="brand-place">Spokane &amp; nearby North Idaho</span>
   </header>
   <main id="main-content">
-    <div class="progress-wrap" id="progress-wrap"><div class="progress-label"><span id="step-label">Your property</span><span id="step-count"></span></div><div id="progress" class="progress" role="progressbar" aria-label="Questions completed" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div id="progress-fill"></div></div></div>
-    <div id="screen"></div>
+    <div class="progress-wrap" id="progress-wrap" hidden><div class="progress-label"><span id="step-label">Your property</span><span id="step-count"></span></div><div id="progress" class="progress" role="progressbar" aria-label="Questions completed" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div id="progress-fill"></div></div></div>
+    <div id="screen"><section class="outcome" role="status"><h1 class="focus-heading">Your property. Your next step.</h1><p class="intro">If the property questions don't appear, we can help by phone.</p><a class="primary-button" href="tel:5098225460">Call 509-822-5460</a></section></div>
     <div class="bottom-nav"><button type="button" id="back" class="back-button" hidden><span aria-hidden="true">←</span> Back</button><span id="privacy-note">Your details are used for this request.</span></div>
   </main>
   <footer class="site-footer"><span>Dominion Homes</span><span>We buy and wholesale homes. Agreements may be assigned.<br><a href="/privacy">Privacy</a> · <a href="/terms">Terms</a> · <a href="tel:5098225460">509-822-5460</a></span></footer>
-  <noscript><p class="noscript">Please enable JavaScript to use these question pages.</p></noscript>
+  <noscript><p class="noscript">You can discuss the property with us by calling <a href="tel:5098225460">509-822-5460</a>.</p></noscript>
 </body>
 </html>

@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {validateScreening,matchInsideBuyingArea,milesFromBuyingCenter,SCREENING_VERSION} from '../src/lib/seller-screening-server.ts';
 import {evaluate} from '../public/seller-screening/flow.mjs';
+import {validateMetaSellerQualification,metaSellerFollowUpTier} from '../src/lib/meta-seller-qualifier.ts';
 
 const contact={name:'QA Test',phone:'5095550128',street:'808 W Spokane Falls Blvd',city:'Spokane',state:'WA',zip:'99201',email:'',contactConsent:true,smsConsent:false};
 const answers={area:'inside',property:'house',connection:'owner',listing:'not_listed',condition:'some',reason:'moving',timeline:'asap',tradeoff:'yes'};
@@ -30,6 +31,20 @@ test('manufactured homes require owned land; stale land answers do not admit ren
 test('longer timelines continue and map to follow-up over time',async()=>{
   assert.equal(evaluate({...answers,timeline:'later'}).kind,'ready_for_contact');
   const r=await validateScreening(input({...answers,timeline:'later'}),lookup());assert.equal(r.ok,true);assert.equal(r.fields.timeline,'more_than_60_days');
+});
+test('within sixty days and an expired listing retain the exact meaning without inventing a narrower date',async()=>{
+  const r=await validateScreening(input({...answers,timeline:'within_60',listing:'expired'}),lookup());
+  assert.equal(r.ok,true);assert.equal(r.fields.timeline,'within_60_days');assert.equal(r.fields.listingStatus,'expired');
+  assert.equal(r.answers.timeline,'within_60');assert.equal(r.answers.listing,'expired');
+  assert.match(r.fields.message,/Within the next 60 days/);assert.match(r.fields.message,/listing has ended/);
+  const q=validateMetaSellerQualification(r.fields);assert.equal(q.ok,true);assert.equal(metaSellerFollowUpTier(q.value),'ready_now');
+});
+test('estate assistance stays unverified and original answers survive without forged or irrelevant fields',async()=>{
+  const r=await validateScreening(input({...answers,connection:'estate',land:'owned',fake:'authorized'}),lookup());
+  assert.equal(r.ok,true);assert.equal(r.fields.sellerAuthority,'unsure');assert.equal(r.answers.connection,'estate');
+  assert.equal('fake' in r.answers,false);assert.equal('land' in r.answers,false);
+  assert.match(r.fields.message,/Authority to sell has not been verified/);
+  const q=validateMetaSellerQualification(r.fields);assert.equal(q.ok,true);assert.equal(metaSellerFollowUpTier(q.value),'needs_review');
 });
 test('a claimed inside answer cannot override independent geography, county, state or ZIP',async()=>{
   for(const bad of [

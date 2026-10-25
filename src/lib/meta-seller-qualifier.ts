@@ -12,10 +12,10 @@ const VERIFIED_SCREENING_AREAS = [
 
 const CHOICES = {
   serviceArea: [...META_SELLER_SERVICE_AREAS.map(area => area.value), ...VERIFIED_SCREENING_AREAS.map(area => area.value), 'outside_service_area'],
-  timeline: ['asap', 'within_30_days', 'within_31_to_60_days', 'more_than_60_days', 'checking_value', 'unsure'],
+  timeline: ['asap', 'within_30_days', 'within_31_to_60_days', 'within_60_days', 'more_than_60_days', 'checking_value', 'unsure'],
   sellerAuthority: ['owner', 'authorized_representative', 'heir_without_authority', 'helper_tenant_agent', 'researching', 'unsure'],
   propertyType: ['site_built', 'manufactured_with_owned_land', 'manufactured_without_land', 'vacant_land', 'commercial_or_five_plus', 'other', 'unsure'],
-  listingStatus: ['not_listed', 'listed', 'unsure'],
+  listingStatus: ['not_listed', 'expired', 'listed', 'unsure'],
   offerReadiness: ['wants_offer_now', 'value_only', 'not_ready', 'retail_only', 'unsure'],
   priceTradeoff: ['accepts_below_repaired_retail', 'requires_retail', 'unsure'],
   condition: ['move_in_ready', 'normal_wear', 'repairs_needed', 'major_work', 'unsure'],
@@ -56,8 +56,8 @@ export function metaSellerFollowUpTier(value: NormalizedMetaSellerQualification)
     !['site_built', 'manufactured_with_owned_land', 'unsure'].includes(value.propertyType)) return 'outside_buy_box';
   if (value.sellerAuthority === 'heir_without_authority') return 'probate_help';
   if (['helper_tenant_agent', 'researching', 'unsure'].includes(value.sellerAuthority) ||
-    value.listingStatus !== 'not_listed' || value.propertyType === 'unsure') return 'needs_review';
-  if (['asap', 'within_30_days', 'within_31_to_60_days'].includes(value.timeline) &&
+    !['not_listed','expired'].includes(value.listingStatus) || value.propertyType === 'unsure') return 'needs_review';
+  if (['asap', 'within_30_days', 'within_31_to_60_days', 'within_60_days'].includes(value.timeline) &&
     value.offerReadiness === 'wants_offer_now' && value.priceTradeoff === 'accepts_below_repaired_retail') return 'ready_now';
   return 'nurture';
 }

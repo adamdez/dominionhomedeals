@@ -1,6 +1,16 @@
 // The approved questions are separate from their order and their presentation.
 export const FLOW_VERSION = 'dominion-screening-live-v1';
 export const DEFAULT_ORDER = Object.freeze(['area','property','connection','listing','condition','reason','timeline','tradeoff','contact']);
+// Older supported browsers have secure random bytes but no randomUUID method.
+// Never substitute Math.random for request or privacy identifiers.
+export function secureUuid(random=globalThis.crypto) {
+  if(typeof random?.randomUUID==='function')return random.randomUUID();
+  if(typeof random?.getRandomValues!=='function')throw new Error('Secure request identifiers are unavailable.');
+  const bytes=random.getRandomValues(new Uint8Array(16));
+  bytes[6]=(bytes[6]&15)|64;bytes[8]=(bytes[8]&63)|128;
+  const hex=Array.from(bytes,b=>b.toString(16).padStart(2,'0')).join('');
+  return `${hex.slice(0,8)}-${hex.slice(8,12)}-${hex.slice(12,16)}-${hex.slice(16,20)}-${hex.slice(20)}`;
+}
 const option = (value, label, detail, stop) => ({ value, label, detail, ...(stop ? { stop } : {}) });
 export const QUESTIONS = Object.freeze({
   area: { title:'Is the property you want to sell inside this red circle?', category:'Where we buy', intro:'Check the location of the property you want to sell.', map:true, options:[
@@ -66,7 +76,7 @@ export const STOPS = Object.freeze({
 export const FOLLOW_UPS = Object.freeze([{id:'land',parent:'property',answer:'manufactured'}]);
 export function normalizeOrder(order=DEFAULT_ORDER) {
   if (!Array.isArray(order) || order.length !== DEFAULT_ORDER.length || new Set(order).size !== order.length ||
-      order[0] !== 'area' || order.at(-1) !== 'contact' || order.some(id => !DEFAULT_ORDER.includes(id))) throw new Error('Invalid question order. Keep the map first and contact last.');
+      order[0] !== 'area' || order[order.length-1] !== 'contact' || order.some(id => !DEFAULT_ORDER.includes(id))) throw new Error('Invalid question order. Keep the map first and contact last.');
   return [...order];
 }
 export function routeFor(answers={},order=DEFAULT_ORDER) {
@@ -119,7 +129,7 @@ export function validateContact(raw={}) {
   return {ok:Object.keys(errors).length===0,value,errors};
 }
 // This reusable check fails closed until an address service supplies a verified result.
-// The UI preview deliberately never supplies that result and never calls a CRM.
+// Production supplies its independent address check before using the intake.
 export function addressKey(contact={}) {
   return ['street','city','state','zip'].map(k=>String(contact[k]??'').trim().toLowerCase().replace(/[^a-z0-9]/g,'')).join('|');
 }

@@ -1,11 +1,12 @@
 import {privacyBlocked,measurementChoice,rememberReceipt,openMeasuredReceipt} from './measurement.mjs';
-import {FLOW_VERSION,QUESTIONS,STOPS,DEFAULT_ORDER,routeFor,evaluate,applyAnswer,canVisit,moveQuestion,validateContact,crmAdmission} from './flow.mjs';
+import {FLOW_VERSION,QUESTIONS,STOPS,DEFAULT_ORDER,routeFor,evaluate,applyAnswer,canVisit,moveQuestion,validateContact,secureUuid} from './flow.mjs';
 
 let receipt=null,attempt=null,measurementConsent=false,submitting=false;
 const query=new URLSearchParams(location.search);
 const qa=query.get('internal_qa')==='1';
 const attribution=Object.fromEntries(['utm_source','utm_medium','utm_campaign','utm_content','utm_term','campaign_id','adset_id','ad_id','creative_id'].map(k=>[k,query.get(k)||'']).filter(([,v])=>v&&v.length<=500));
-const visitId=crypto.randomUUID();
+let visitId=null;
+try{visitId=secureUuid();}catch{/* The static call option remains available. */}
 const screen=document.getElementById('screen');
 const back=document.getElementById('back');
 const progressWrap=document.getElementById('progress-wrap');
@@ -62,13 +63,16 @@ function renderQuestion(id){
   <form id="question-form"><fieldset aria-labelledby="question-title"><legend class="sr-only">Choose one answer</legend><div class="choice-list ${q.map?'area-choices':''}">${q.options.map(o=>{
     let label=o.label,detail=o.detail;
     if(q.map){label=o.value==='inside'?'Yes':'No';detail=o.value==='inside'?'The property is inside.':'The property is outside.';}
-    return `<label class="choice"><input type="radio" name="answer" value="${o.value}" ${selected===o.value?'checked':''}><span class="choice-mark" aria-hidden="true"></span><span><span class="choice-label">${esc(label)}</span>${detail?`<span class="choice-detail">${esc(detail)}</span>`:''}</span><span class="choice-arrow" aria-hidden="true">›</span></label>`;
+    return `<label class="choice${selected===o.value?' is-selected':''}"><input type="radio" name="answer" value="${o.value}" ${selected===o.value?'checked':''}><span class="choice-mark" aria-hidden="true"></span><span><span class="choice-label">${esc(label)}</span>${detail?`<span class="choice-detail">${esc(detail)}</span>`:''}</span><span class="choice-arrow" aria-hidden="true">›</span></label>`;
   }).join('')}</div></fieldset>
   ${q.optionalDetail?`<label class="field reason-detail" for="reason-detail">Anything else you'd like us to know? <span class="optional">Optional</span><textarea id="reason-detail" name="detail" maxlength="1000">${esc(reasonDetail)}</textarea></label>`:''}
   <div class="question-actions"><button id="continue" class="primary-button" type="submit" ${selected?'':'disabled'}>Continue <span aria-hidden="true">→</span></button></div></form>`;
   const form=byId('question-form');
   let submitted=false;
-  form.addEventListener('change',()=>{byId('continue').disabled=!form.elements.answer.value;});
+  form.addEventListener('change',()=>{
+    byId('continue').disabled=!form.elements.answer.value;
+    form.querySelectorAll('.choice').forEach(choice=>choice.classList.toggle('is-selected',choice.querySelector('input').checked));
+  });
   byId('reason-detail')?.addEventListener('input',e=>{reasonDetail=e.target.value;});
   form.addEventListener('submit',event=>{
     event.preventDefault();
@@ -140,7 +144,7 @@ function renderContact(errors={}){
       sms_consent_timestamp:contact.smsConsent?now:null,smsOptInTimestamp:contact.smsConsent?now:null};
     const identity={...input};delete identity.metaMeasurement;delete identity.sms_consent_timestamp;delete identity.smsOptInTimestamp;
     const fingerprint=JSON.stringify(identity);
-    if(!attempt||attempt.fingerprint!==fingerprint){const bytes=crypto.getRandomValues(new Uint8Array(32));attempt={fingerprint,submissionId:crypto.randomUUID(),privacyToken:Array.from(bytes,v=>v.toString(16).padStart(2,'0')).join('')};}
+    if(!attempt||attempt.fingerprint!==fingerprint){const bytes=crypto.getRandomValues(new Uint8Array(32));attempt={fingerprint,submissionId:secureUuid(),privacyToken:Array.from(bytes,v=>v.toString(16).padStart(2,'0')).join('')};}
     const payload={...input,submissionId:attempt.submissionId,metaPrivacyToken:attempt.privacyToken};
     const button=form.querySelector('[type=submit]');submitting=true;button.disabled=true;back.disabled=true;button.textContent='Checking your property and sending…';byId('submit-error').textContent='';
     try{
@@ -176,6 +180,7 @@ back.addEventListener('click',()=>{
   if(current==='not-a-fit'){show(gate.step,{replace:true});return;}
   const route=routeFor(answers,order),at=route.indexOf(current);if(at>0)show(route[at-1],{replace:true});
 });
-window.addEventListener('popstate',event=>show(event.state?.step||'area',{fromHistory:true}));
+window.addEventListener('popstate',event=>{if(visitId)show(event.state?.step||'area',{fromHistory:true});});
 // Deliberately ignore incoming deep links on reload: there are no saved answers.
-renderOrder();show('area',{replace:true});
+if(visitId){renderOrder();show('area',{replace:true});}
+else{progressWrap.hidden=true;back.hidden=true;}

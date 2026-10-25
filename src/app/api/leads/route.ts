@@ -773,10 +773,12 @@ export async function POST(request: NextRequest) {
     }
     const body: LeadPayload = await request.json()
     const isScreeningFlow = body?.screeningVersion === SCREENING_VERSION
+    let verifiedScreeningAnswers: Record<string,string> | undefined
     if (body?.screeningVersion !== undefined) {
       const screened = await validateScreening(body)
       if (!screened.ok) return NextResponse.json({success:false,accepted:false,error:screened.error},{status:screened.status})
       Object.assign(body, screened.fields)
+      verifiedScreeningAnswers=screened.answers
     }
     isOptionsFlow = body?.submissionFlow === DOMINION_OPTIONS_FLOW
     isStrictMetaFlow = isOptionsFlow && [META_SELLER_QUALIFICATION_VERSION, 'meta_distressed_seller_v1'].includes(body?.qualificationVersion || '')
@@ -918,7 +920,7 @@ export async function POST(request: NextRequest) {
           followUpTier: metaSellerFollowUpTier(strictMetaQualification!),
           followUpLabel: META_SELLER_FOLLOWUP_LABELS[metaSellerFollowUpTier(strictMetaQualification!)],
           metaSellerAssessment: { ...strictMetaQualification,
-            ...(isScreeningFlow ? {screeningVersion:SCREENING_VERSION,screeningSummary:cleanText(body.message || '')} : {}),
+            ...(isScreeningFlow ? {screeningVersion:SCREENING_VERSION,screeningAnswers:verifiedScreeningAnswers,screeningSummary:cleanText(body.message || ''),humanQualified:false} : {}),
           },
         } : {}),
       } : {}),
@@ -958,7 +960,7 @@ export async function POST(request: NextRequest) {
         receipt = await withOptionsTimeout(recordDominionOptionsLeadSubmission(controlInput, body.submissionId!, { internalQa,
           ...(isStrictMetaFlow ? {
             metaSellerAssessment: { ...strictMetaQualification!, tier: metaSellerFollowUpTier(strictMetaQualification!), humanQualified: false,
-              ...(isScreeningFlow ? {screeningVersion:SCREENING_VERSION,screeningSummary:cleanText(body.message || '')} : {}),
+              ...(isScreeningFlow ? {screeningVersion:SCREENING_VERSION,screeningAnswers:verifiedScreeningAnswers,screeningSummary:cleanText(body.message || '')} : {}),
             },
             metaMeasurement: { consent: hasMetaMeasurementPermission(metaInput.choice) && !metaInput.globalPrivacyControl,
               consentVersion: META_MEASUREMENT_CONSENT_VERSION },

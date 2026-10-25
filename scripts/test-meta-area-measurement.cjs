@@ -5,7 +5,7 @@ function load(file,mocks={},globals={}){
  const module={exports:{}}; const code=ts.transpileModule(fs.readFileSync(path.join(root,file),'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText;
  vm.runInNewContext(code,{module,exports:module.exports,Date,URL,URLSearchParams,Request,Response,AbortSignal,setTimeout,clearTimeout,crypto:require('node:crypto').webcrypto,console:{log(){},error(){}},process:{env:{}},fetch:()=>{throw Error('Unexpected network');},require:n=>{if(n in mocks)return mocks[n];if(n==='@/lib/seller-screening-server')return require(path.join(root,'src/lib/seller-screening-server.ts'));if(n.startsWith('node:'))return require(n);throw Error('Unexpected dependency '+n);},...globals});return module.exports;
 }
-function harness(){
+function harness({screeningLookup}={}){
  const receipts=new Map(),saved=[],crm=[],meta=[];
  const env={META_ADS_MEASUREMENT_MODE:'production',META_ADS_PIXEL_ID:'1234567890',META_ADS_CONVERSIONS_ACCESS_TOKEN:'unit-test-only',META_GRAPH_API_VERSION:'v25.0',VERCEL_ENV:'production',LAZARUS_OPTIONS_INTAKE_URL:'https://crm.example.test/intake',LAZARUS_OPTIONS_INTAKE_CREATE_LEAD_KEY:'unit-test-only'};
  const policy=load('src/lib/meta-measurement-policy.ts');
@@ -27,6 +27,7 @@ function harness(){
   },recordDominionOptionsDelivery:async(receipt,delivery,conversion,metaConversion)=>{receipt.record.optionsReceipt.delivery=delivery;receipt.record.optionsReceipt.metaConversion=metaConversion;},
   recordDominionLeadSubmission:async()=>{throw Error('Legacy storage must not run');}};
  const route=load('src/app/api/leads/route.ts',{
+  ...(screeningLookup?{'@/lib/seller-screening-server':{...require(path.join(root,'src/lib/seller-screening-server.ts')),validateScreening:input=>require(path.join(root,'src/lib/seller-screening-server.ts')).validateScreening(input,screeningLookup)}}:{}),
   'next/server':{NextResponse:{json:Response.json}},'@/lib/constants':constants,'@/lib/dominion-leads':storage,
   '@/lib/mailchimp':{},'@/server/openai-ads-conversions':{},'@/lib/seller-measurement-policy':{isSellerMeasurementQa:b=>b.internalQa===true},
   '@/server/meta-ads-conversions':conversions,'@/server/meta-seller-feedback-context':{buildMetaFeedbackContext:()=>undefined,withdrawMetaFeedbackPermission:async()=>true},
@@ -40,6 +41,26 @@ test('explicit outside area remains saved and delivered to CRM, but no Meta Lead
  assert.equal(r.status,200);assert.equal(r.body.accepted,true);assert.equal(h.saved.length,1);assert.equal(h.crm.length,1);assert.equal(h.meta.length,0);assert.equal(r.body.metaBrowserEligible,false);
  assert.equal(h.saved[0].metadata.metaConversion.referenceId,'outside_service_area');
  assert.equal([...h.receipts.values()][0].record.optionsReceipt.metaConversion.status,'skipped');
+});
+test('new screening answers survive the actual CRM payload and do not alter Lead eligibility or leak to Meta',async()=>{
+ const answers={area:'inside',property:'house',connection:'estate',listing:'expired',condition:'some',reason:'moving',timeline:'within_60',tradeoff:'yes'};
+ const screeningLookup=async()=>Response.json({result:{addressMatches:[{matchedAddress:'808 W SPOKANE FALLS BLVD, SPOKANE, WA, 99201',coordinates:{x:-117.426,y:47.661},addressComponents:{state:'WA',city:'SPOKANE',zip:'99201'},geographies:{Counties:[{STATE:'53',COUNTY:'063'}]}}]}});
+ const h=harness({screeningLookup}),r=await h.submit({screeningVersion:'dominion-screening-live-v1',screeningAnswers:answers,screeningContact:{name:'Fixture Seller',phone:'5095550100',street:'808 W Spokane Falls Blvd',city:'Spokane',state:'WA',zip:'99201',email:'',contactConsent:true,smsConsent:false}});
+ assert.equal(r.status,200);assert.equal(h.crm.length,1);assert.equal(h.meta.length,1);assert.equal(r.body.metaBrowserEligible,true);
+ const assessment=JSON.parse(h.crm[0].sourceDetails.metaSellerAssessmentJson);
+ assert.deepEqual(assessment.screeningAnswers,answers);assert.equal(assessment.humanQualified,false);
+ assert.equal(assessment.listingStatus,'expired');assert.equal(assessment.timeline,'within_60_days');assert.equal(assessment.sellerAuthority,'unsure');
+ assert.equal(h.crm[0].sourceDetails.followUpTier,'needs_review');
+ for(const value of ['estate','expired','within_60','moving','screeningAnswers'])assert.equal(JSON.stringify(h.meta).includes(value),false);
+});
+test('the real receipt serializer preserves the exact screening answers and unverified status',async()=>{
+ let savedRow;
+ const db={from:()=>({insert:payload=>({select:()=>({single:async()=>{savedRow={id:1,content:payload.content,created_at:new Date().toISOString(),updated_at:new Date().toISOString()};return{data:savedRow};}})})})};
+ const real=load('src/lib/dominion-leads.ts',{'@/lib/dominion-supabase':{getDominionServiceClient:()=>db}});
+ const assessment={timeline:'within_60_days',listingStatus:'expired',sellerAuthority:'unsure',humanQualified:false,screeningAnswers:{timeline:'within_60',listing:'expired',connection:'estate'}};
+ const r=await real.recordDominionOptionsLeadSubmission({firstName:'Fixture',phone:'5095550100',address:'100 Example Street',timeline:'within_60_days',sellerAuthority:'unsure'},'00000000-0000-4000-8000-000000000003',{internalQa:true,metaSellerAssessment:assessment});
+ assert.deepEqual(JSON.parse(JSON.stringify(r.record.optionsReceipt.metaSellerAssessment)),assessment);
+ assert.equal(r.record.timeline,'within_60_days');assert.equal(r.record.sellerAuthority,'unsure');
 });
 test('local-area request reports one server Lead and permits browser with same event ID, without leaking area or seller details',async()=>{
  const h=harness(),r=await h.submit();assert.equal(r.status,200);assert.equal(h.crm.length,1);assert.equal(h.meta.length,1);assert.equal(r.body.metaBrowserEligible,true);assert.equal(h.meta[0].data[0].event_id,r.body.metaEventId);
