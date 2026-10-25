@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { randomUUID } from 'node:crypto'
+import { validateScreening, SCREENING_VERSION } from '@/lib/seller-screening-server'
 import { SITE } from '@/lib/constants'
 import {
   DOMINION_OPTIONS_FLOW, DominionOptionsSubmissionConflictError,
@@ -35,6 +36,10 @@ import {
 /* ------------------------------------------------------------------ */
 
 interface LeadPayload {
+  screeningVersion?: unknown
+  screeningAnswers?: unknown
+  screeningContact?: unknown
+  reasonDetail?: unknown
   message?: string
   internalQa?: boolean
   address: string
@@ -765,6 +770,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Request is too large.' }, { status: 413 })
     }
     const body: LeadPayload = await request.json()
+    const isScreeningFlow = body?.screeningVersion === SCREENING_VERSION
+    if (body?.screeningVersion !== undefined) {
+      const screened = await validateScreening(body)
+      if (!screened.ok) return NextResponse.json({success:false,accepted:false,error:screened.error},{status:screened.status})
+      Object.assign(body, screened.fields)
+    }
     isOptionsFlow = body?.submissionFlow === DOMINION_OPTIONS_FLOW
     isStrictMetaFlow = isOptionsFlow && [META_SELLER_QUALIFICATION_VERSION, 'meta_distressed_seller_v1'].includes(body?.qualificationVersion || '')
 
@@ -862,7 +873,7 @@ export async function POST(request: NextRequest) {
     const cleanText = isOptionsFlow ? plainText : sanitize
     const lead = {
       address: cleanText(body.address),
-      city: isStrictMetaFlow ? metaArea?.city || '' : cleanText(body.city || ''),
+      city: isScreeningFlow ? cleanText(body.city || '') : isStrictMetaFlow ? metaArea?.city || '' : cleanText(body.city || ''),
       state: isStrictMetaFlow ? metaArea?.state || '' : isOptionsFlow ? body.state!.trim().toUpperCase() : sanitize(body.state || 'WA'),
       zip: cleanText(body.zip || ''),
       message: cleanText((body.message || '').slice(0, 5000)),
@@ -881,7 +892,7 @@ export async function POST(request: NextRequest) {
       smsOptIn: smsConsent,
       smsOptInTimestamp: smsConsentTimestamp,
       source: cleanText(body.source || 'website'),
-      landingPage: isStrictMetaFlow ? '/sell/offer-check' : cleanText(body.landingPage || '/'),
+      landingPage: isScreeningFlow ? '/sell/property-check' : isStrictMetaFlow ? '/sell/offer-check' : cleanText(body.landingPage || '/'),
       utmSource: cleanText(body.utmSource || ''),
       utmMedium: cleanText(body.utmMedium || ''),
       utmCampaign: cleanText(body.utmCampaign || ''),

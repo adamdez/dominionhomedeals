@@ -3,7 +3,7 @@ const test=require('node:test'),assert=require('node:assert/strict'),fs=require(
 const root=path.resolve(__dirname,'..');
 function load(file,mocks={},globals={}){
  const module={exports:{}}; const code=ts.transpileModule(fs.readFileSync(path.join(root,file),'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText;
- vm.runInNewContext(code,{module,exports:module.exports,Date,URL,URLSearchParams,Request,Response,AbortSignal,setTimeout,clearTimeout,crypto:require('node:crypto').webcrypto,console:{log(){},error(){}},process:{env:{}},fetch:()=>{throw Error('Unexpected network');},require:n=>{if(n in mocks)return mocks[n];if(n.startsWith('node:'))return require(n);throw Error('Unexpected dependency '+n);},...globals});return module.exports;
+ vm.runInNewContext(code,{module,exports:module.exports,Date,URL,URLSearchParams,Request,Response,AbortSignal,setTimeout,clearTimeout,crypto:require('node:crypto').webcrypto,console:{log(){},error(){}},process:{env:{}},fetch:()=>{throw Error('Unexpected network');},require:n=>{if(n in mocks)return mocks[n];if(n==='@/lib/seller-screening-server')return require(path.join(root,'src/lib/seller-screening-server.ts'));if(n.startsWith('node:'))return require(n);throw Error('Unexpected dependency '+n);},...globals});return module.exports;
 }
 function harness(){
  const receipts=new Map(),saved=[],crm=[],meta=[];

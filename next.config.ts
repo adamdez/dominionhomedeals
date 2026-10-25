@@ -126,6 +126,7 @@ const nextConfig: NextConfig = {
       },
     ];
   },
+  async rewrites() { return [{ source: '/sell/property-check', destination: '/seller-screening/index.html' }]; },
   async headers() {
     return [
       {

@@ -13,7 +13,8 @@ function load(file, mocks = {}, globals = {}) {
   }).outputText;
   vm.runInNewContext(source, { exports: module.exports, module, URL, URLSearchParams, Date, Response, AbortSignal,
     console: { error() {} }, process: { env: {} }, fetch: () => { throw new Error('Unexpected network'); },
-    require(name) { if (name in mocks) return mocks[name]; if (name.startsWith('node:')) return require(name);
+    require(name) { if (name in mocks) return mocks[name];
+      if (name === '@/lib/seller-screening-server') return require(path.join(root, 'src/lib/seller-screening-server.ts')); if (name.startsWith('node:')) return require(name);
       throw new Error(`Unexpected dependency: ${name}`); }, ...globals }, { filename: file });
   return module.exports;
 }

@@ -5,8 +5,13 @@ export const META_SELLER_SERVICE_AREAS = [
   { value: "kootenai_county_id", label: "Kootenai County, Idaho", state: "ID", city: "Kootenai County" },
 ] as const;
 
+const VERIFIED_SCREENING_AREAS = [
+  { value: "spokane_buying_area_wa", label: "Spokane buying area, Washington", state: "WA", city: "Spokane buying area" },
+  { value: "north_idaho_buying_area_id", label: "Nearby North Idaho buying area", state: "ID", city: "North Idaho buying area" },
+] as const;
+
 const CHOICES = {
-  serviceArea: [...META_SELLER_SERVICE_AREAS.map(area => area.value), 'outside_service_area'],
+  serviceArea: [...META_SELLER_SERVICE_AREAS.map(area => area.value), ...VERIFIED_SCREENING_AREAS.map(area => area.value), 'outside_service_area'],
   timeline: ['asap', 'within_30_days', 'within_31_to_60_days', 'more_than_60_days', 'checking_value', 'unsure'],
   sellerAuthority: ['owner', 'authorized_representative', 'heir_without_authority', 'helper_tenant_agent', 'researching', 'unsure'],
   propertyType: ['site_built', 'manufactured_with_owned_land', 'manufactured_without_land', 'vacant_land', 'commercial_or_five_plus', 'other', 'unsure'],
@@ -96,7 +101,7 @@ export function validateMetaSellerQualification(
 }
 
 export function metaSellerServiceArea(value: string) {
-  return META_SELLER_SERVICE_AREAS.find((area) => area.value === value) || null;
+  return [...META_SELLER_SERVICE_AREAS, ...VERIFIED_SCREENING_AREAS].find((area) => area.value === value) || null;
 }
 
 export function metaSellerQualificationSummary(value: NormalizedMetaSellerQualification): string {

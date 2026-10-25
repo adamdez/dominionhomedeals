@@ -17,6 +17,7 @@ function load(file, mocks = {}, globals = {}) {
     fetch: () => { throw new Error('Unexpected network'); },
     require(name) {
       if (name in mocks) return mocks[name];
+      if (name === '@/lib/seller-screening-server') return require(path.join(root, 'src/lib/seller-screening-server.ts'));
       if (name.startsWith('node:')) return require(name);
       throw new Error(`Unexpected dependency: ${name}`);
     }, ...globals }, { filename: file });
