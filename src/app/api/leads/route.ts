@@ -130,6 +130,13 @@ function escapeHtml(value: string): string {
 }
 
 const AD_ATTRIBUTION_KEYS = new Set([
+  'msclkid',
+  'utm_id',
+  'ms_campaign_id',
+  'ms_adgroup_id',
+  'ms_matchtype',
+  'ms_network',
+  'ms_device',
   'utm_source',
   'utm_medium',
   'utm_campaign',

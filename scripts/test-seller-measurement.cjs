@@ -341,3 +341,15 @@ test('normalizer accepts explicit new lifecycle events and rejects invalid visib
   assert.equal(normalize({ ...base, activeVisibleMs: -1 }).activeVisibleMs, null);
   assert.equal(normalize({ ...base, eventType: 'conversion_unknown' }).eventType, 'conversion_unknown');
 });
+
+test('Microsoft click and campaign identifiers survive intake normalization without replacing Google fields', async () => {
+  const h=routeHarness();
+  const r=await h.post({internalQa:true,source:'microsoft_ads_ppc',utmSource:'bing',adAttribution:{msclkid:'0123456789abcdef0123456789abcdef',ms_campaign_id:'489403359',ms_adgroup_id:'123',ms_network:'o',ms_device:'c',ms_matchtype:'e',utm_id:'489403359',gclid:'preserved-existing-value',untrusted_secret:'must-not-survive'}});
+  assert.equal(r.data.accepted,true);
+  const a=h.submissions[0].input.adAttribution;
+  assert.equal(a.msclkid,'0123456789abcdef0123456789abcdef');
+  assert.equal(a.ms_campaign_id,'489403359');assert.equal(a.ms_adgroup_id,'123');
+  assert.equal(a.ms_network,'o');assert.equal(a.ms_device,'c');assert.equal(a.ms_matchtype,'e');
+  assert.equal(a.utm_id,'489403359');assert.equal(a.gclid,'preserved-existing-value');
+  assert.equal(a.untrusted_secret,undefined);
+});
