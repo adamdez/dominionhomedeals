@@ -163,7 +163,7 @@ function strictRouteHarness({ duplicate = false, withdrawal = true, screeningLoo
         eventId: `dh_lead_${input.submissionId}` } }),
       reportMetaLead: async input => ({ status: 'skipped', measurementMode: 'disabled', eventId: `dh_lead_${input.submissionId}` }),
     },
-    '@/lib/dominion-leads': {
+    '@/server/team-lead-alerts':{queueTeamLeadAlerts:async()=>false,dispatchTeamLeadAlerts:async()=>{}},'@/lib/dominion-leads': {
       DOMINION_OPTIONS_FLOW: 'seller_options_v1',
       DominionOptionsSubmissionConflictError: class extends Error {},
       isDominionOptionsSubmissionId: value => typeof value === 'string' && value.length === 36,

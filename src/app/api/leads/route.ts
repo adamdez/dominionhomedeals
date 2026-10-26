@@ -1,5 +1,6 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { after, NextRequest, NextResponse } from 'next/server'
 import { randomUUID } from 'node:crypto'
+import { queueTeamLeadAlerts, dispatchTeamLeadAlerts } from '@/server/team-lead-alerts'
 import { validateScreening, SCREENING_VERSION } from '@/lib/seller-screening-server'
 import { SITE } from '@/lib/constants'
 import {
@@ -996,9 +997,10 @@ export async function POST(request: NextRequest) {
           error:'Your inquiry is saved. We could not save your updated Meta privacy choice. Please retry.'},{status:503})
       }
       let deliveryStatus = dominionOptionsDeliveryStatus(receipt.record.optionsReceipt?.delivery)
+      let teamAlertReady = receipt.record.optionsReceipt?.delivery?.lazarus?.status === 'provider_accepted'
       if (!receipt.duplicate) {
-        // Options inquiries go only to the existing operator email recipients and
-        // the dedicated create-only intake. No automated texts or other enrollment.
+        // Keep existing operator email and create-only intake. Team-only alert
+        // texts below never enroll or message a seller.
         const receiptId = String(receipt.record.id)
         const funnelVisitId = lead.funnelVisitId
         const submissionId = lead.submissionId!
@@ -1046,8 +1048,11 @@ export async function POST(request: NextRequest) {
         const deliveries = await Promise.allSettled(deliveryTasks)
         const delivery: DominionDeliveryMap = {
           email: settledDelivery(deliveries[0]), lazarus: settledDelivery(deliveries[1]),
-          teamSms: { status: 'skipped' }, sentinel: { status: 'skipped' }, mailchimp: { status: 'skipped' },
+          // This legacy carrier-gateway field is separate from the durable
+          // Twilio team-alert receipts and must not be read as their status.
+          teamSms: { status: 'skipped', referenceId:'legacy_gateway_skipped;see_dominion_seller_team_alerts' }, sentinel: { status: 'skipped' }, mailchimp: { status: 'skipped' },
         }
+        teamAlertReady = delivery.lazarus.status === 'provider_accepted'
         if (funnelVisitId && !(isStrictMetaFlow && internalQa) && deliveries[3]?.status === 'rejected') {
           console.error('[SELLER FUNNEL ACCEPTANCE EVENT ERROR]', { receiptId })
         }
@@ -1083,6 +1088,15 @@ export async function POST(request: NextRequest) {
         if (deliveryStatus === 'needs_review') {
           console.error('[OPTIONS DELIVERY NEEDS REVIEW]', { receiptId: String(receipt.record.id) })
         }
+      }
+
+      if (isStrictMetaFlow && lead.landingPage === '/sell/property-check') {
+        try {
+          if (await queueTeamLeadAlerts({ submissionId:lead.submissionId!,
+            receivedAt:receipt.record.optionsReceipt?.receivedAt || receipt.record.createdAt || '', internalQa, crmReady:teamAlertReady })) {
+            after(async () => { try { await dispatchTeamLeadAlerts(lead.submissionId!) } catch { console.error('[TEAM ALERT NEEDS REVIEW]',{receiptId:String(receipt.record.id)}) } })
+          }
+        } catch { console.error('[TEAM ALERT QUEUE NEEDS REVIEW]',{receiptId:String(receipt.record.id)}) }
       }
 
       // Saved inquiry is not a delivered notification or a qualified seller.

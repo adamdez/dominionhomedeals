@@ -50,6 +50,9 @@ function redirectLegacyAlPath(request: NextRequest): NextResponse | null {
 }
 
 function shouldBlockByCountry(request: NextRequest): boolean {
+  // This server callback authenticates Twilio's signature in its route handler.
+  // Provider callbacks must not depend on the caller's geographic IP label.
+  if (request.nextUrl.pathname === '/api/internal/team-alert-status') return false;
   const userAgent = request.headers.get("user-agent") ?? "";
   if (isPublicCrawler(userAgent)) return false;
 

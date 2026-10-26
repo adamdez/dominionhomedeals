@@ -235,7 +235,7 @@ function routeHarness({ duplicate = false, savedQa = false, validateOnly = false
         eventId: metaPolicy.metaLeadEventId(input.submissionId),
       }; },
     },
-    '@/lib/dominion-leads': {
+    '@/server/team-lead-alerts':{queueTeamLeadAlerts:async()=>false,dispatchTeamLeadAlerts:async()=>{}},'@/lib/dominion-leads': {
       DOMINION_OPTIONS_FLOW: 'seller_options_v1', DominionOptionsSubmissionConflictError: class extends Error {},
       isDominionOptionsSubmissionId: value => typeof value === 'string' && value.length === 36,
       dominionOptionsDeliveryStatus: () => 'needs_review',
