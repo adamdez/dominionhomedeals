@@ -16,6 +16,26 @@ test('a complete in-area request maps to the existing intake without inventing t
   assert.equal(result.fields.sms_consent,false);assert.equal(result.fields.contactConsent,true);
   assert.equal('metaMeasurement' in result.fields,false);
 });
+test('the address request uses only the county layer and still requires an independent valid match',async()=>{
+  let requested;
+  const r=await validateScreening(input(),async(url,options)=>{requested=new URL(url);assert.equal(options.cache,'no-store');assert.ok(options.signal);return Response.json({result:{addressMatches:[match]}});});
+  assert.equal(r.ok,true);assert.equal(requested.hostname,'geocoding.geo.census.gov');assert.equal(requested.pathname,'/geocoder/geographies/address');
+  assert.equal(requested.searchParams.get('layers'),'Counties');assert.equal(requested.searchParams.get('street'),contact.street);
+  assert.equal(requested.searchParams.get('benchmark'),'Public_AR_Current');assert.equal(requested.searchParams.get('vintage'),'Current_Current');
+});
+test('upstream HTTP and connection failures stay closed and log no seller values',async()=>{
+  const logged=[],original=console.error;console.error=(...args)=>logged.push(args);
+  try{
+    for(const f of [async()=>new Response('unavailable',{status:502}),async()=>{throw new Error('private address echoed',{cause:{code:'UND_ERR_CONNECT_TIMEOUT'}})}]){
+      const r=await validateScreening(input(),f);assert.equal(r.ok,false);assert.equal(r.status,503);
+    }
+  }finally{console.error=original;}
+  assert.equal(logged[0][1].status,502);assert.equal(logged[0][1].stage,'http_response');assert.equal(logged[1][1].code,'UND_ERR_CONNECT_TIMEOUT');
+  for(const line of logged){assert.deepEqual(Object.keys(line[1]).sort(),['stage','status','elapsed_ms','code','timeout'].sort());for(const secret of [contact.street,contact.city,contact.zip,contact.phone,'geocoding.geo.census.gov','private address'])assert.equal(JSON.stringify(line).includes(secret),false);}
+});
+test('a county-only response missing the county fails closed without crashing',async()=>{
+  const r=await validateScreening(input(),lookup([{...match,geographies:{}}]));assert.equal(r.ok,false);assert.equal(r.status,422);
+});
 test('each stop and missing earlier answer prevents even an address lookup',async()=>{
   let calls=0;const fetcher=async()=>{calls++;throw Error('must not fetch');};
   for(const [key,value] of [['area','outside'],['property','other'],['connection','uninvolved'],['listing','listed'],['timeline','browsing'],['tradeoff','retail'],['condition',undefined]]){

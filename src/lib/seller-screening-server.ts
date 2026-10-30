@@ -41,14 +41,24 @@ export async function validateScreening(input: ScreeningInput, lookup: typeof fe
   const contact=checked.value as Contact
   if (Object.values(contact).some(v=>typeof v==='string' && v.length>254) ||
       !/^\d+[A-Za-z-]*\s+\S/.test(contact.street)) return {ok:false,error:'Please enter the full street address, including the house number.',status:400}
-  const query=new URLSearchParams({street:contact.street,city:contact.city,state:contact.state,zip:contact.zip.slice(0,5),benchmark:'Public_AR_Current',vintage:'Current_Current',format:'json'})
+  // Only county geography is used by the existing buying-area check. Asking
+  // Census for every district/layer adds dependencies the form does not need.
+  const query=new URLSearchParams({street:contact.street,city:contact.city,state:contact.state,zip:contact.zip.slice(0,5),benchmark:'Public_AR_Current',vintage:'Current_Current',layers:'Counties',format:'json'})
   let matches: AddressMatch[]
+  const lookupStarted=Date.now()
+  let lookupStage='request',lookupStatus:number|null=null
   try {
     const response=await lookup(`https://geocoding.geo.census.gov/geocoder/geographies/address?${query}`,{signal:AbortSignal.timeout(12000),cache:'no-store'})
+    lookupStatus=response.status;lookupStage='http_response'
     if(!response.ok)throw new Error('Address lookup unavailable')
+    lookupStage='json_response'
     const data=await response.json()
     matches=Array.isArray(data?.result?.addressMatches) ? data.result.addressMatches : []
-  } catch {
+  } catch (error) {
+    const cause=error instanceof Error ? (error.cause as {code?:unknown}|undefined)?.code : undefined
+    console.error('[SCREENING ADDRESS CHECK FAILED]',{stage:lookupStage,status:lookupStatus,elapsed_ms:Date.now()-lookupStarted,
+      code:typeof cause==='string' && /^[A-Z0-9_]{1,40}$/.test(cause)?cause:null,
+      timeout:error instanceof Error && ['TimeoutError','AbortError'].includes(error.name)})
     return {ok:false,error:'The address check is temporarily unavailable. Please try again, or call 509-822-5460.',status:503}
   }
   const match=matchInsideBuyingArea(matches,contact)
