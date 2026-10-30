@@ -126,6 +126,13 @@ test('address-service failure records a private QA error before saving, with no 
  assert.deepEqual(h.progressEvents.map(e=>e.detail),['server_attempt','address_check_unavailable']);
  assert.equal(h.progressEvents[1].attribution.ad_id,'120250428203840073');assert.equal(h.progressEvents[1].attribution.landing_revision,'screening_20261029_v2_qa');assert.equal(JSON.stringify(h.progressEvents).includes('509555'),false);
 });
+test('a recovered address lookup produces one saved handoff rather than retrying the inquiry',async()=>{
+ let calls=0;
+ const h=harness({screeningLookup:async()=>++calls===1?new Response('temporary gateway failure',{status:502}):progressLookup()});
+ const r=await h.submit({...progressInput,adAttribution:{ad_id:'120250428203840073'}});
+ assert.equal(r.body.accepted,true);assert.equal(calls,2);assert.equal(h.saved.length,1);assert.equal(h.crm.length,1);assert.equal(h.meta.length,0);
+ for(const run of h.background)await run();assert.equal(h.progressEvents.filter(e=>e.detail==='server_attempt').length,1);assert.equal(h.progressEvents.filter(e=>e.detail==='address_check_unavailable').length,0);
+});
 test('all eight original ad IDs survive the actual screening handoff; QA never creates an advertising conversion',async()=>{
  for(const ad_id of ['120250428203840073','120250428204200073','120250428204740073','120250428205070073','120250428206190073','120250428206790073','120250428207340073','120250428207620073']){
   const h=harness({screeningLookup:progressLookup});const r=await h.submit({...progressInput,adAttribution:{ad_id,campaign_id:'120250428143350073'}});

@@ -1,6 +1,5 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {readFileSync} from 'node:fs';
 import {validateScreening,matchInsideBuyingArea,milesFromBuyingCenter,SCREENING_VERSION} from '../src/lib/seller-screening-server.ts';
 import {evaluate} from '../public/seller-screening/flow.mjs';
 import {validateMetaSellerQualification,metaSellerFollowUpTier} from '../src/lib/meta-seller-qualifier.ts';
@@ -17,30 +16,48 @@ test('a complete in-area request maps to the existing intake without inventing t
   assert.equal(result.fields.sms_consent,false);assert.equal(result.fields.contactConsent,true);
   assert.equal('metaMeasurement' in result.fields,false);
 });
-test('the address request uses only the county layer and still requires an independent valid match',async()=>{
-  let requested;
-  const r=await validateScreening(input(),async(url,options)=>{requested=new URL(url);assert.equal(options.cache,'no-store');assert.ok(options.signal);return Response.json({result:{addressMatches:[match]}});});
-  assert.equal(r.ok,true);assert.equal(requested.hostname,'geocoding.geo.census.gov');assert.equal(requested.pathname,'/geocoder/geographies/onelineaddress');
-  assert.equal(requested.searchParams.get('layers'),'Counties');assert.equal(requested.searchParams.get('address'),contact.street+', '+contact.city+', '+contact.state+' '+contact.zip);
-  assert.equal(requested.searchParams.get('benchmark'),'Public_AR_Current');assert.equal(requested.searchParams.get('vintage'),'Current_Current');
+test('a temporary gateway error retries the exact original lookup once before continuing',async()=>{
+  const calls=[];
+  const r=await validateScreening(input(),async(url,options)=>{calls.push(String(url));assert.equal(options.cache,'no-store');assert.ok(options.signal);return calls.length===1?new Response('unavailable',{status:502}):Response.json({result:{addressMatches:[match]}});});
+  assert.equal(r.ok,true);assert.equal(calls.length,2);assert.equal(calls[0],calls[1]);
+  const u=new URL(calls[0]);assert.equal(u.pathname,'/geocoder/geographies/address');assert.equal(u.searchParams.get('street'),contact.street);assert.equal(u.searchParams.get('layers'),null);
 });
-test('the actual public civic county-only response satisfies every existing location check',async()=>{
-  const fixture=JSON.parse(readFileSync(new URL('./fixtures/census-public-civic-county.json',import.meta.url),'utf8'));
-  assert.deepEqual(Object.keys(fixture.result.addressMatches[0].geographies),['Counties']);
-  const r=await validateScreening(input(),async()=>Response.json(fixture));assert.equal(r.ok,true);assert.equal(r.fields.serviceArea,'spokane_buying_area_wa');
+test('a transient connection error can recover on the second lookup',async()=>{
+  let calls=0;const r=await validateScreening(input(),async()=>{if(++calls===1)throw new Error('network',{cause:{code:'ECONNRESET'}});return Response.json({result:{addressMatches:[match]}});});
+  assert.equal(r.ok,true);assert.equal(calls,2);
 });
-test('upstream HTTP and connection failures stay closed and log no seller values',async()=>{
-  const logged=[],original=console.error;console.error=(...args)=>logged.push(args);
+test('repeated outages stop after two lookups and log no seller values',async()=>{
+  const logged=[],oldError=console.error,oldWarn=console.warn;console.error=(...v)=>logged.push(v);console.warn=(...v)=>logged.push(v);
+  let calls=0;
+  try{const r=await validateScreening(input(),async()=>{calls++;return new Response('unavailable',{status:502});});assert.equal(r.ok,false);assert.equal(r.status,503);}finally{console.error=oldError;console.warn=oldWarn;}
+  assert.equal(calls,2);assert.equal(logged.length,2);assert.equal(logged[0][1].attempt,1);assert.equal(logged[1][1].attempt,2);
+  for(const line of logged)for(const secret of [contact.street,contact.city,contact.zip,contact.phone,'geocoding.geo.census.gov'])assert.equal(JSON.stringify(line).includes(secret),false);
+});
+test('no-match, multiple matches, outside area and HTTP400 are never retried',async()=>{
+  for(const response of [()=>Response.json({result:{addressMatches:[]}}),()=>Response.json({result:{addressMatches:[match,match]}}),()=>Response.json({result:{addressMatches:[{...match,coordinates:{x:-122.33,y:47.60},geographies:{Counties:[{STATE:'53',COUNTY:'033'}]}}]}}),()=>new Response('invalid',{status:400}),()=>new Response('rate limit',{status:429})]){
+    let calls=0;const r=await validateScreening(input(),async()=>{calls++;return response();});assert.equal(r.ok,false);assert.equal(calls,1);
+  }
+});
+test('invalid provider JSON can recover, but never become an accepted no-match result',async()=>{
+  let calls=0;const r=await validateScreening(input(),async()=>++calls===1?new Response('invalid JSON',{status:200}):Response.json({result:{addressMatches:[match]}}));assert.equal(r.ok,true);assert.equal(calls,2);
+  let missing=0;const bad=await validateScreening(input(),async()=>{missing++;return Response.json({result:{}});});assert.equal(bad.status,503);assert.equal(missing,2);
+});
+test('all transient gateway statuses can recover and non-ok response bodies are cancelled',async()=>{
+  for(const status of [500,502,503,504]){
+    let calls=0,cancelled=false;
+    const r=await validateScreening(input(),async()=>{if(++calls>1)return Response.json({result:{addressMatches:[match]}});return {ok:false,status,body:{cancel:async()=>{cancelled=true;}}};});
+    assert.equal(r.ok,true);assert.equal(calls,2);assert.equal(cancelled,true);
+  }
+});
+test('timeouts use independent signals and safe correlated logs',async()=>{
+  const signals=[],logged=[],oldWarn=console.warn;console.warn=(...v)=>logged.push(v);
   try{
-    for(const f of [async()=>new Response('unavailable',{status:502}),async()=>{throw new Error('private address echoed',{cause:{code:'UND_ERR_CONNECT_TIMEOUT'}})}]){
-      const r=await validateScreening(input(),f);assert.equal(r.ok,false);assert.equal(r.status,503);
-    }
-  }finally{console.error=original;}
-  assert.equal(logged[0][1].status,502);assert.equal(logged[0][1].stage,'http_response');assert.equal(logged[1][1].code,'UND_ERR_CONNECT_TIMEOUT');
-  for(const line of logged){assert.deepEqual(Object.keys(line[1]).sort(),['stage','status','elapsed_ms','code','timeout'].sort());for(const secret of [contact.street,contact.city,contact.zip,contact.phone,'geocoding.geo.census.gov','private address'])assert.equal(JSON.stringify(line).includes(secret),false);}
+    const r=await validateScreening(input(),async(url,options)=>{signals.push(options.signal);if(signals.length===1)throw new DOMException('private address','TimeoutError');return Response.json({result:{addressMatches:[match]}});});assert.equal(r.ok,true);
+  }finally{console.warn=oldWarn;}
+  assert.notEqual(signals[0],signals[1]);assert.equal(logged[0][1].timeout,true);assert.match(logged[0][1].request_id,/^[0-9a-f-]{36}$/);assert.equal(JSON.stringify(logged).includes('private address'),false);
 });
-test('a county-only response missing the county fails closed without crashing',async()=>{
-  const r=await validateScreening(input(),lookup([{...match,geographies:{}}]));assert.equal(r.ok,false);assert.equal(r.status,422);
+test('malformed match entries remain unavailable after the bounded retry',async()=>{
+  let calls=0;const r=await validateScreening(input(),async()=>{calls++;return Response.json({result:{addressMatches:[null]}});});assert.equal(r.status,503);assert.equal(calls,2);
 });
 test('each stop and missing earlier answer prevents even an address lookup',async()=>{
   let calls=0;const fetcher=async()=>{calls++;throw Error('must not fetch');};
