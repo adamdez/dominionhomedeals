@@ -3,10 +3,10 @@ const test=require('node:test'),assert=require('node:assert/strict'),fs=require(
 const root=path.resolve(__dirname,'..');
 function load(file,mocks={},globals={}){
  const module={exports:{}}; const code=ts.transpileModule(fs.readFileSync(path.join(root,file),'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText;
- vm.runInNewContext(code,{module,exports:module.exports,Date,URL,URLSearchParams,Request,Response,AbortSignal,setTimeout,clearTimeout,crypto:require('node:crypto').webcrypto,console:{log(){},error(){}},process:{env:{}},fetch:()=>{throw Error('Unexpected network');},require:n=>{if(n in mocks)return mocks[n];if(n==='@/lib/seller-screening-server')return require(path.join(root,'src/lib/seller-screening-server.ts'));if(n.startsWith('node:'))return require(n);throw Error('Unexpected dependency '+n);},...globals});return module.exports;
+ vm.runInNewContext(code,{module,exports:module.exports,Date,URL,URLSearchParams,Request,Response,AbortSignal,setTimeout,clearTimeout,crypto:require('node:crypto').webcrypto,console:{log(){},error(){}},process:{env:{}},fetch:()=>{throw Error('Unexpected network');},require:n=>{if(n in mocks)return mocks[n];if(n==='@/lib/screening-progress')return load('src/lib/screening-progress.ts',{'./meta-seller-funnel-events':load('src/lib/meta-seller-funnel-events.ts',{'server-only':{},'@/lib/dominion-supabase':{}})});if(n==='@/lib/seller-screening-server')return require(path.join(root,'src/lib/seller-screening-server.ts'));if(n.startsWith('node:'))return require(n);throw Error('Unexpected dependency '+n);},...globals});return module.exports;
 }
 function harness({screeningLookup,teamAlertsEnabled=false}={}){
- const receipts=new Map(),saved=[],crm=[],meta=[],teamAlerts=[],background=[];
+ const receipts=new Map(),saved=[],crm=[],meta=[],teamAlerts=[],background=[],progressEvents=[];
  const env={META_ADS_MEASUREMENT_MODE:'production',META_ADS_PIXEL_ID:'1234567890',META_ADS_CONVERSIONS_ACCESS_TOKEN:'unit-test-only',META_GRAPH_API_VERSION:'v25.0',VERCEL_ENV:'production',LAZARUS_OPTIONS_INTAKE_URL:'https://crm.example.test/intake',LAZARUS_OPTIONS_INTAKE_CREATE_LEAD_KEY:'unit-test-only'};
  const policy=load('src/lib/meta-measurement-policy.ts');
  const constants={SITE:{url:'https://www.dominionhomedeals.com',phone:'509-555-0100'}};
@@ -31,10 +31,10 @@ function harness({screeningLookup,teamAlertsEnabled=false}={}){
   'next/server':{NextResponse:{json:Response.json},after:fn=>background.push(fn)},'@/lib/constants':constants,'@/server/team-lead-alerts':{queueTeamLeadAlerts:async input=>{if(teamAlertsEnabled)teamAlerts.push(input);return teamAlertsEnabled;},dispatchTeamLeadAlerts:async id=>teamAlerts.push({dispatched:id})},'@/lib/dominion-leads':storage,
   '@/lib/mailchimp':{},'@/server/openai-ads-conversions':{},'@/lib/seller-measurement-policy':{isSellerMeasurementQa:b=>b.internalQa===true},
   '@/server/meta-ads-conversions':conversions,'@/server/meta-seller-feedback-context':{buildMetaFeedbackContext:()=>undefined,withdrawMetaFeedbackPermission:async()=>true},
-  '@/lib/meta-measurement-policy':policy,'@/lib/seller-funnel-events':{},'@/lib/meta-seller-qualifier':qualifier,'@/lib/meta-seller-funnel-events':{}
+  '@/lib/meta-measurement-policy':policy,'@/lib/seller-funnel-events':{},'@/lib/meta-seller-qualifier':qualifier,'@/lib/meta-seller-funnel-events':{...load('src/lib/meta-seller-funnel-events.ts',{'server-only':{},'@/lib/dominion-supabase':{}}),recordMetaSellerFunnelEvent:async e=>{progressEvents.push(e);return {duplicate:false};}}
  },{process:{env},fetch:transport});
  const payload={submissionFlow:'seller_options_v1',submissionId:'00000000-0000-4000-8000-000000000001',qualificationVersion:'meta_seller_followup_v2',serviceArea:'spokane_county_wa',metaVariant:'direct',address:'100 Example Street',firstName:'Fixture',phone:'5095550100',contactConsent:true,metaMeasurement:{consent:true,consentVersion:'meta_measurement_v2'}};
- return{saved,crm,meta,receipts,teamAlerts,background,submit:async(change={})=>{const body={...payload,...change};const response=await route.POST(new Request('https://www.dominionhomedeals.com/api/leads',{method:'POST',headers:{host:'www.dominionhomedeals.com','x-forwarded-for':'192.0.2.1','user-agent':'Fixture browser'},body:JSON.stringify(body)}));return{status:response.status,body:await response.json()};}};
+ return{saved,crm,meta,receipts,teamAlerts,background,progressEvents,submit:async(change={},headers={})=>{const body={...payload,...change};const response=await route.POST(new Request('https://www.dominionhomedeals.com/api/leads',{method:'POST',headers:{host:'www.dominionhomedeals.com','x-forwarded-for':'192.0.2.1','user-agent':'Fixture browser',...headers},body:JSON.stringify(body)}));return{status:response.status,body:await response.json()};}};
 }
 test('explicit outside area remains saved and delivered to CRM, but no Meta Lead on either channel',async()=>{
  const h=harness(),r=await h.submit({serviceArea:'outside_service_area'});
@@ -112,4 +112,27 @@ test('successful new screening handoff queues internal alerts after saving and s
  const result=await h.submit({screeningVersion:'dominion-screening-live-v1',screeningAnswers:{area:'inside',property:'house',connection:'owner',listing:'not_listed',condition:'some',reason:'moving',timeline:'within_60',tradeoff:'yes'},screeningContact:{name:'Fixture Seller',phone:'5095550100',street:'808 W Spokane Falls Blvd',city:'Spokane',state:'WA',zip:'99201',email:'',contactConsent:true,smsConsent:false}});
  assert.equal(result.status,200);assert.equal(h.saved.length,1);assert.equal(h.crm.length,1);assert.equal(h.teamAlerts.length,1);assert.equal(h.teamAlerts[0].internalQa,false);assert.equal(h.background.length,1);
  await h.background[0]();assert.equal(h.teamAlerts[1].dispatched,h.teamAlerts[0].submissionId);
+});
+
+const progressAnswers={area:'inside',property:'house',connection:'owner',listing:'not_listed',condition:'some',reason:'moving',timeline:'asap',tradeoff:'yes'};
+const progressContact={name:'Fixture Seller',phone:'5095550100',street:'808 W Spokane Falls Blvd',city:'Spokane',state:'WA',zip:'99201',email:'',contactConsent:true,smsConsent:false};
+const progressInput={screeningVersion:'dominion-screening-live-v1',screeningAnswers:progressAnswers,screeningContact:progressContact,funnelVisitId:'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',screeningJourney:{revision:'screening_20261029_v2',privacyAllowed:true},internalQa:true};
+const progressLookup=async()=>Response.json({result:{addressMatches:[{matchedAddress:'808 W SPOKANE FALLS BLVD, SPOKANE, WA, 99201',coordinates:{x:-117.426,y:47.661},addressComponents:{state:'WA',city:'SPOKANE',zip:'99201'},geographies:{Counties:[{STATE:'53',COUNTY:'063'}]}}]}});
+test('address-service failure records a private QA error before saving, with no CRM or Meta send',async()=>{
+ const h=harness({screeningLookup:async()=>{throw Error('unavailable')}});
+ const r=await h.submit({...progressInput,adAttribution:{ad_id:'120250428203840073'}});
+ assert.equal(r.status,503);assert.equal(h.saved.length,0);assert.equal(h.crm.length,0);assert.equal(h.meta.length,0);
+ for(const run of h.background)await run();
+ assert.deepEqual(h.progressEvents.map(e=>e.detail),['server_attempt','address_check_unavailable']);
+ assert.equal(h.progressEvents[1].attribution.ad_id,'120250428203840073');assert.equal(h.progressEvents[1].attribution.landing_revision,'screening_20261029_v2_qa');assert.equal(JSON.stringify(h.progressEvents).includes('509555'),false);
+});
+test('all eight original ad IDs survive the actual screening handoff; QA never creates an advertising conversion',async()=>{
+ for(const ad_id of ['120250428203840073','120250428204200073','120250428204740073','120250428205070073','120250428206190073','120250428206790073','120250428207340073','120250428207620073']){
+  const h=harness({screeningLookup:progressLookup});const r=await h.submit({...progressInput,adAttribution:{ad_id,campaign_id:'120250428143350073'}});
+  assert.equal(r.body.accepted,true,ad_id);assert.equal(JSON.parse(h.crm[0].sourceDetails.adAttributionJson).ad_id,ad_id);assert.equal(h.meta.length,0);for(const run of h.background)await run();assert.equal(h.progressEvents[0].attribution.ad_id,ad_id);
+ }
+});
+test('GPC blocks new journey diagnostics and Meta while allowing the seller inquiry',async()=>{
+ const h=harness({screeningLookup:progressLookup});const r=await h.submit({...progressInput,internalQa:false},{'sec-gpc':'1'});
+ assert.equal(r.body.accepted,true);assert.equal(h.crm.length,1);assert.equal(h.meta.length,0);for(const run of h.background)await run();assert.equal(h.progressEvents.length,0);
 });

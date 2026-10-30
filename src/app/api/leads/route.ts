@@ -2,6 +2,7 @@ import { after, NextRequest, NextResponse } from 'next/server'
 import { randomUUID } from 'node:crypto'
 import { queueTeamLeadAlerts, dispatchTeamLeadAlerts } from '@/server/team-lead-alerts'
 import { validateScreening, SCREENING_VERSION } from '@/lib/seller-screening-server'
+import { screeningRequestContext, screeningServerEvent, type ScreeningProgressContext } from '@/lib/screening-progress'
 import { SITE } from '@/lib/constants'
 import {
   DOMINION_OPTIONS_FLOW, DominionOptionsSubmissionConflictError,
@@ -40,6 +41,7 @@ interface LeadPayload {
   screeningVersion?: unknown
   screeningAnswers?: unknown
   screeningContact?: unknown
+  screeningJourney?: unknown
   reasonDetail?: unknown
   message?: string
   internalQa?: boolean
@@ -762,6 +764,12 @@ export async function POST(request: NextRequest) {
   let isOptionsFlow = false
   let isStrictMetaFlow = false
   let strictMetaQualification: NormalizedMetaSellerQualification | null = null
+  let journey: ScreeningProgressContext | null = null
+  const progressEvent = (eventType:'submit_attempted'|'submit_failed', detail:string) => {
+    if (!journey) return
+    const event=screeningServerEvent(journey,eventType,detail)
+    if(event) after(async()=>{try{await withOptionsTimeout(recordMetaSellerFunnelEvent(event),3000,'private screening progress')}catch{console.error('[SCREENING PROGRESS UNAVAILABLE]')}})
+  }
   try {
     const ip =
       request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
@@ -780,11 +788,16 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Request is too large.' }, { status: 413 })
     }
     const body: LeadPayload = await request.json()
+    journey=screeningRequestContext(body,{blocked:request.headers.get('sec-gpc')==='1'||request.headers.get('dnt')==='1',userAgent:request.headers.get('user-agent')||''})
+    progressEvent('submit_attempted','server_attempt')
     const isScreeningFlow = body?.screeningVersion === SCREENING_VERSION
     let verifiedScreeningAnswers: Record<string,string> | undefined
     if (body?.screeningVersion !== undefined) {
       const screened = await validateScreening(body)
-      if (!screened.ok) return NextResponse.json({success:false,accepted:false,error:screened.error},{status:screened.status})
+      if (!screened.ok) {
+        progressEvent('submit_failed',screened.status===503?'address_check_unavailable':screened.status===422?'address_not_accepted':screened.status===409?'version_mismatch':'screening_incomplete')
+        return NextResponse.json({success:false,accepted:false,error:screened.error},{status:screened.status})
+      }
       Object.assign(body, screened.fields)
       verifiedScreeningAnswers=screened.answers
     }
@@ -797,6 +810,7 @@ export async function POST(request: NextRequest) {
 
     // Honeypot
     if (body.honeypot) {
+      progressEvent('submit_failed','internal_check_stopped')
       console.log(`[SPAM] Honeypot triggered from ${ip}`)
       if (isOptionsFlow) return NextResponse.json({ success: true, accepted: false,
         controlRecorded: false, receiptId: null, duplicate: false, message: 'Thank you!' })
@@ -1021,7 +1035,7 @@ export async function POST(request: NextRequest) {
           withOptionsTimeout(forwardToLazarus(lead), 5000, 'options lazarus forward'),
           conversionTask,
         ]
-        if (funnelVisitId && !(isStrictMetaFlow && internalQa)) {
+        if (funnelVisitId && !(isStrictMetaFlow && internalQa) && (!body.screeningJourney || journey)) {
           deliveryTasks.push(
             withOptionsTimeout((isStrictMetaFlow
               ? recordMetaSellerLeadAccepted({
@@ -1030,7 +1044,7 @@ export async function POST(request: NextRequest) {
                 occurredAt: lead.submittedAt,
                 leadReceiptId: receiptId,
                 variant: body.metaVariant === 'estate' || body.metaVariant === 'direct' ? body.metaVariant : 'repairs',
-                adAttribution: lead.adAttribution,
+                adAttribution: {...lead.adAttribution,...(journey?journey.attribution:{})},
               })
               : recordOptionsFunnelMilestone({
                 eventId: submissionId,

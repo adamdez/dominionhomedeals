@@ -47,6 +47,7 @@ const ATTRIBUTION_KEYS = new Set([
   "ad_id",
   "creative_id",
   "landing_revision",
+  "device_class",
 ]);
 
 export interface MetaSellerFunnelEvent {

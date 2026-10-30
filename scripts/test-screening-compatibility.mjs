@@ -25,16 +25,16 @@ async function browserStart(random){
   }
   const history={state:null,replaceState(state){this.state=state;},pushState(state){this.state=state;}};
   const context=vm.createContext({URLSearchParams,location:{search:'',hash:''},crypto:random,history,
-    document:{getElementById:element},window:{addEventListener(){},scrollTo(){}}});
+    document:{getElementById:element,addEventListener(){}},window:{addEventListener(){},scrollTo(){}}});
   vm.runInContext('Array.prototype.at=undefined',context);
-  const modules=new Map(['app.mjs','flow.mjs','measurement.mjs'].map(name=>[name,new vm.SourceTextModule(fs.readFileSync(new URL(name,folder),'utf8'),{context,identifier:name})]));
-  await modules.get('app.mjs').link(name=>modules.get(name.replace('./','')));
+  const modules=new Map(['app.mjs','flow.mjs','measurement.mjs','progress.mjs'].map(name=>[name,new vm.SourceTextModule(fs.readFileSync(new URL(name,folder),'utf8'),{context,identifier:name})]));
+  await modules.get('app.mjs').link(name=>modules.get(name.replace('./','').split('?')[0]));
   await modules.get('app.mjs').evaluate();
   return elements;
 }
 test('the actual question page starts without randomUUID, Array.at or CSS has support',async()=>{
   const elements=await browserStart({getRandomValues:bytes=>webcrypto.getRandomValues(bytes)});
-  assert.match(elements.get('screen').innerHTML,/Is the property you want to sell inside this red circle/);
+  assert.match(elements.get('screen').innerHTML,/Is the property inside this red circle/);
   const css=fs.readFileSync(new URL('styles.css',folder),'utf8');assert.equal(css.includes(':has('),false);
   assert.match(css,/\.map-frame::before\{[^}]*padding-top:75\.780089%/);
 });

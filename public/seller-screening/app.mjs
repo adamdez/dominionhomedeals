@@ -1,5 +1,6 @@
-import {privacyBlocked,measurementChoice,rememberReceipt,openMeasuredReceipt} from './measurement.mjs';
-import {FLOW_VERSION,QUESTIONS,STOPS,DEFAULT_ORDER,routeFor,evaluate,applyAnswer,canVisit,moveQuestion,validateContact,secureUuid} from './flow.mjs';
+import {privacyBlocked,measurementChoice,rememberReceipt,openMeasuredReceipt} from './measurement.mjs?v=screening_20261029_v2';
+import {FLOW_VERSION,QUESTIONS,STOPS,DEFAULT_ORDER,routeFor,evaluate,applyAnswer,canVisit,moveQuestion,validateContact,secureUuid} from './flow.mjs?v=screening_20261029_v2';
+import {createProgress,PAGE_REVISION} from './progress.mjs?v=screening_20261029_v2';
 
 let receipt=null,attempt=null,measurementConsent=false,submitting=false;
 const query=new URLSearchParams(location.search);
@@ -7,6 +8,8 @@ const qa=query.get('internal_qa')==='1';
 const attribution=Object.fromEntries(['utm_source','utm_medium','utm_campaign','utm_content','utm_term','campaign_id','adset_id','ad_id','creative_id'].map(k=>[k,query.get(k)||'']).filter(([,v])=>v&&v.length<=500));
 let visitId=null;
 try{visitId=secureUuid();}catch{/* The static call option remains available. */}
+const track=createProgress({visitId,attribution,qa,blocked:privacyBlocked});
+track('landing_arrived',{detail:'screen',once:'arrival'});
 const screen=document.getElementById('screen');
 const back=document.getElementById('back');
 const progressWrap=document.getElementById('progress-wrap');
@@ -43,12 +46,14 @@ function show(id,{replace=false,fromHistory=false}={}){
   back.hidden=id==='area'||id==='complete';
   if(at>=0){
     stepLabel.textContent=QUESTIONS[id].category;
-    stepCount.textContent=`${at+1} of ${route.length}`;
-    const percent=Math.round(at/(route.length-1)*100);
+    stepCount.textContent='';
+    const percent=Math.round(at/route.length*100);
     progress.setAttribute('aria-valuenow',String(percent));
-    progress.setAttribute('aria-valuetext',`Question ${at+1} of ${route.length}`);
+    progress.setAttribute('aria-valuetext',QUESTIONS[id].category);
     progressFill.style.width=`${percent}%`;
   }
+  if(id==='not-a-fit')track('gate_exited',{question:gate.step});
+  else if(at>=0)track('form_viewed',{question:id,once:'view:'+id});
   if(id==='not-a-fit') renderStop(gate);
   else if(id==='complete') renderComplete();
   else if(id==='contact') renderContact();
@@ -57,9 +62,9 @@ function show(id,{replace=false,fromHistory=false}={}){
   focusScreen();
 }
 function renderQuestion(id){
-  const q=QUESTIONS[id],selected=id==='reason'?(reasonSelection||answers[id]):answers[id];
+  const q=id==='area'?{...QUESTIONS[id],title:'Is the property inside this red circle?',intro:'Check whether an as-is cash offer could fit your property.'}:QUESTIONS[id],selected=id==='reason'?(reasonSelection||answers[id]):answers[id];
   screen.innerHTML=`<h1 id="question-title" class="focus-heading" tabindex="-1">${esc(q.title)}</h1>${q.intro?`<p class="intro">${esc(q.intro)}</p>`:''}
-  ${q.map?`<div class="map-frame"><img src="/seller-screening/assets/service-area-reference.png" width="1005" height="1566" alt="Red-circle service-area reference covering Spokane, Airway Heights, Cheney, Deer Park, Post Falls and Coeur d'Alene. Athol, Newport and Sandpoint are outside."></div><p class="map-caption">Spokane County and nearby Kootenai County. The map is a guide; we also check the property address.</p>`:''}
+  ${q.map?`<div class="map-frame"><img src="/seller-screening/assets/service-area-reference-v2.webp" width="1005" height="1566" alt="Red-circle service-area reference covering Spokane, Airway Heights, Cheney, Deer Park, Post Falls and Coeur d'Alene. Athol, Newport and Sandpoint are outside."></div><p class="map-caption">Spokane County and nearby Kootenai County. The map is a guide; we also check the property address.</p>`:''}
   <form id="question-form"><fieldset aria-labelledby="question-title"><legend class="sr-only">Choose one answer</legend><div class="choice-list ${q.map?'area-choices':''}">${q.options.map(o=>{
     let label=o.label,detail=o.detail;
     if(q.map){label=o.value==='inside'?'Yes':'No';detail=o.value==='inside'?'The property is inside.':'The property is outside.';}
@@ -81,6 +86,8 @@ function renderQuestion(id){
     if(!value) return;
     submitted=true;
     const changed=answers[id]!==value;
+    track('form_started',{detail:'questions',once:'questions_started'});
+    track('gate_answered',{question:id});
     answers=applyAnswer(answers,id,value,order);
     if(changed){contact={};if(id!=='reason'){reasonSelection='';if(!answers.reason)reasonDetail='';}}
     if(id==='reason')reasonSelection=value;
@@ -125,7 +132,8 @@ function renderContact(errors={}){
   <label class="consent"><input type="checkbox" id="measurementConsent" ${measurementConsent&&!privacyBlocked()?'checked':''} ${privacyBlocked()?'disabled':''}><span>Optional. Allow Meta to measure this request and later steps such as a seller conversation or completed sale. We use browser and device information. Your contact details and property answers are not shared with Meta. This does not affect your offer request. <a href="/privacy#meta-measurement">How measurement works</a>. ${privacyBlocked()?'Your browser privacy choice blocks this measurement.':''}</span></label><label class="trap" aria-hidden="true">Leave blank<input name="honeypot" tabindex="-1" autocomplete="off"></label><p class="privacy-copy">Text updates and ad measurement are optional. <a href="/privacy#sms-terms">Privacy Policy</a> · <a href="/terms">Terms</a></p><p id="submit-error" class="form-error" role="alert"></p>
   <button class="primary-button submit" type="submit">Request my cash offer</button></form>`;
   const form=byId('contact-form');
-  form.addEventListener('input',()=>{contact=readContact(form);});
+  form.addEventListener('input',()=>{contact=readContact(form);track('form_started',{question:'contact',detail:'contact',once:'contact_started'});});
+  form.addEventListener('focusin',event=>{const key=event.target?.name;const detail=({name:'full_name',phone:'phone',email:'email',street:'address',city:'address',state:'address',zip:'address',contactConsent:'contact_permission'})[key];if(detail)track('field_focused',{question:'contact',detail,once:'focus:'+detail});});
   form.addEventListener('change',()=>{contact=readContact(form);});
   form.addEventListener('submit',async event=>{
     event.preventDefault();
@@ -133,11 +141,12 @@ function renderContact(errors={}){
     const gate=evaluate(answers,order);
     if(gate.kind!=='ready_for_contact'){show(gate.kind==='rejected'?'not-a-fit':gate.step);return;}
     const result=validateContact(readContact(form));contact=result.value;
-    if(!result.ok){renderContact(result.errors);byId('contact-form').querySelector('[aria-invalid="true"]')?.focus();return;}
+    if(!result.ok){for(const key of Object.keys(result.errors)){const detail=({name:'full_name',phone:'phone',email:'email',street:'address',city:'address',state:'address',zip:'address',contactConsent:'contact_permission'})[key]||'contact_invalid';track('validation_failed',{question:'contact',detail});}renderContact(result.errors);byId('contact-form').querySelector('[aria-invalid="true"]')?.focus();return;}
     measurementConsent=byId('measurementConsent').checked;
     const now=new Date().toISOString();
     const input={screeningVersion:FLOW_VERSION,screeningAnswers:answers,screeningContact:contact,reasonDetail,
       submissionFlow:'seller_options_v1',funnelVisitId:visitId,internalQa:qa,
+      screeningJourney:{revision:PAGE_REVISION,privacyAllowed:!privacyBlocked()},
       landingPage:location.pathname,adAttribution:attribution,
       utmSource:attribution.utm_source||'',utmMedium:attribution.utm_medium||'',utmCampaign:attribution.utm_campaign||'',utmContent:attribution.utm_content||'dh_screening_v1',
       honeypot:form.elements.honeypot.value,metaMeasurement:measurementChoice(measurementConsent,qa),
@@ -147,12 +156,13 @@ function renderContact(errors={}){
     if(!attempt||attempt.fingerprint!==fingerprint){const bytes=crypto.getRandomValues(new Uint8Array(32));attempt={fingerprint,submissionId:secureUuid(),privacyToken:Array.from(bytes,v=>v.toString(16).padStart(2,'0')).join('')};}
     const payload={...input,submissionId:attempt.submissionId,metaPrivacyToken:attempt.privacyToken};
     const button=form.querySelector('[type=submit]');submitting=true;button.disabled=true;back.disabled=true;button.textContent='Checking your property and sending…';byId('submit-error').textContent='';
+    track('submit_attempted',{question:'contact',detail:'contact'});
     try{
       const response=await fetch('/api/leads',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
       const data=await response.json();
-      if(!response.ok||data.accepted!==true||data.controlRecorded!==true||!data.receiptId){byId('submit-error').textContent=data.error||'We could not confirm receipt. Please retry or call 509-822-5460.';return;}
+      if(!response.ok||data.accepted!==true||data.controlRecorded!==true||!data.receiptId){track('submit_failed',{question:'contact',detail:[400,409,422,429,500,503].includes(response.status)?'http_'+response.status:'response_unconfirmed'});byId('submit-error').textContent=data.error||'We could not confirm receipt. Please retry or call 509-822-5460.';return;}
       receipt=data;rememberReceipt(attempt.submissionId,attempt.privacyToken,measurementConsent);show('complete');openMeasuredReceipt(data,measurementConsent,qa);
-    }catch{byId('submit-error').textContent='We could not confirm receipt. Please retry or call 509-822-5460.';}
+    }catch{track('submit_failed',{question:'contact',detail:'request_failed'});byId('submit-error').textContent='We could not confirm receipt. Please retry or call 509-822-5460.';}
     finally{submitting=false;back.disabled=false;button.disabled=false;button.textContent='Request my cash offer';}
   });
 }
@@ -180,6 +190,7 @@ back.addEventListener('click',()=>{
   if(current==='not-a-fit'){show(gate.step,{replace:true});return;}
   const route=routeFor(answers,order),at=route.indexOf(current);if(at>0)show(route[at-1],{replace:true});
 });
+document.addEventListener('click',event=>{if(event.target?.closest?.('a[href^="tel:"]'))track('cta_clicked',{question:current,detail:'phone_link'});});
 window.addEventListener('popstate',event=>{if(visitId)show(event.state?.step||'area',{fromHistory:true});});
 // Deliberately ignore incoming deep links on reload: there are no saved answers.
 if(visitId){renderOrder();show('area',{replace:true});}

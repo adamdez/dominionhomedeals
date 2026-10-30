@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { SITE } from "@/lib/constants";
+import { normalizeScreeningProgress } from "@/lib/screening-progress";
 import {
   metaSellerEventRateLimitKey,
   normalizeMetaSellerFunnelEvent,
@@ -50,7 +51,13 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ accepted: false, error: "Rate limit exceeded." }, { status: 429 });
   }
   try {
-    const event = normalizeMetaSellerFunnelEvent(await request.json());
+    const raw = await request.json();
+    const screening = typeof raw?.attribution?.landing_revision === 'string' && raw.attribution.landing_revision.startsWith('screening_');
+    const blocked = request.headers.get('sec-gpc') === '1' || request.headers.get('dnt') === '1';
+    if (screening && blocked) return NextResponse.json({accepted:false,skipped:'privacy_choice'});
+    const event = screening
+      ? normalizeScreeningProgress(raw, {blocked, userAgent:request.headers.get('user-agent') || ''})
+      : normalizeMetaSellerFunnelEvent(raw);
     if (!event) {
       return NextResponse.json({ accepted: false, error: "Invalid funnel event." }, { status: 400 });
     }
