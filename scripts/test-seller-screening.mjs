@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
 import {validateScreening,matchInsideBuyingArea,milesFromBuyingCenter,SCREENING_VERSION} from '../src/lib/seller-screening-server.ts';
 import {evaluate} from '../public/seller-screening/flow.mjs';
 import {validateMetaSellerQualification,metaSellerFollowUpTier} from '../src/lib/meta-seller-qualifier.ts';
@@ -19,9 +20,14 @@ test('a complete in-area request maps to the existing intake without inventing t
 test('the address request uses only the county layer and still requires an independent valid match',async()=>{
   let requested;
   const r=await validateScreening(input(),async(url,options)=>{requested=new URL(url);assert.equal(options.cache,'no-store');assert.ok(options.signal);return Response.json({result:{addressMatches:[match]}});});
-  assert.equal(r.ok,true);assert.equal(requested.hostname,'geocoding.geo.census.gov');assert.equal(requested.pathname,'/geocoder/geographies/address');
-  assert.equal(requested.searchParams.get('layers'),'Counties');assert.equal(requested.searchParams.get('street'),contact.street);
+  assert.equal(r.ok,true);assert.equal(requested.hostname,'geocoding.geo.census.gov');assert.equal(requested.pathname,'/geocoder/geographies/onelineaddress');
+  assert.equal(requested.searchParams.get('layers'),'Counties');assert.equal(requested.searchParams.get('address'),contact.street+', '+contact.city+', '+contact.state+' '+contact.zip);
   assert.equal(requested.searchParams.get('benchmark'),'Public_AR_Current');assert.equal(requested.searchParams.get('vintage'),'Current_Current');
+});
+test('the actual public civic county-only response satisfies every existing location check',async()=>{
+  const fixture=JSON.parse(readFileSync(new URL('./fixtures/census-public-civic-county.json',import.meta.url),'utf8'));
+  assert.deepEqual(Object.keys(fixture.result.addressMatches[0].geographies),['Counties']);
+  const r=await validateScreening(input(),async()=>Response.json(fixture));assert.equal(r.ok,true);assert.equal(r.fields.serviceArea,'spokane_buying_area_wa');
 });
 test('upstream HTTP and connection failures stay closed and log no seller values',async()=>{
   const logged=[],original=console.error;console.error=(...args)=>logged.push(args);

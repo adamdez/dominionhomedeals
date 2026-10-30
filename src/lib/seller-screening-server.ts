@@ -43,12 +43,12 @@ export async function validateScreening(input: ScreeningInput, lookup: typeof fe
       !/^\d+[A-Za-z-]*\s+\S/.test(contact.street)) return {ok:false,error:'Please enter the full street address, including the house number.',status:400}
   // Only county geography is used by the existing buying-area check. Asking
   // Census for every district/layer adds dependencies the form does not need.
-  const query=new URLSearchParams({street:contact.street,city:contact.city,state:contact.state,zip:contact.zip.slice(0,5),benchmark:'Public_AR_Current',vintage:'Current_Current',layers:'Counties',format:'json'})
+  const query=new URLSearchParams({address:`${contact.street}, ${contact.city}, ${contact.state} ${contact.zip.slice(0,5)}`,benchmark:'Public_AR_Current',vintage:'Current_Current',layers:'Counties',format:'json'})
   let matches: AddressMatch[]
   const lookupStarted=Date.now()
   let lookupStage='request',lookupStatus:number|null=null
   try {
-    const response=await lookup(`https://geocoding.geo.census.gov/geocoder/geographies/address?${query}`,{signal:AbortSignal.timeout(12000),cache:'no-store'})
+    const response=await lookup(`https://geocoding.geo.census.gov/geocoder/geographies/onelineaddress?${query}`,{signal:AbortSignal.timeout(12000),cache:'no-store'})
     lookupStatus=response.status;lookupStage='http_response'
     if(!response.ok)throw new Error('Address lookup unavailable')
     lookupStage='json_response'
